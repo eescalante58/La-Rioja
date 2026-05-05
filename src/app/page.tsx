@@ -83,68 +83,68 @@ export default async function Home() {
     <main className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
       {/* Logo (Top Left) */}
       <div className="fixed top-4 left-4 z-50 p-2 transition-colors">
-        <div className="relative h-14 w-40 md:h-20 md:w-80">
+        <div className="relative h-10 w-28 sm:h-12 sm:w-36 md:h-16 md:w-48 lg:h-20 lg:w-80">
           <Image
             src="/logo.png"
             alt="La Rioja Logo"
             fill
             className="object-contain"
             priority
-            sizes="(max-width: 768px) 160px, (max-width: 1200px) 320px, 384px"
+            sizes="(max-width: 640px) 112px, (max-width: 768px) 144px, (max-width: 1024px) 192px, 320px"
           />
         </div>
       </div>
 
       {/* Navigation (Top Right) */}
-      <nav className="fixed top-4 right-4 z-50 flex items-center gap-4 p-2 transition-colors">
-        <div className="flex items-center gap-3">
+      <nav className="fixed top-4 right-4 z-50 flex items-center gap-2 sm:gap-4 p-1 sm:p-2 transition-colors">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Link
             href="/about"
-            className="text-white hover:text-larioja-amarillo font-bold text-sm transition-all"
+            className="text-white hover:text-larioja-amarillo font-bold text-[10px] sm:text-xs md:text-sm transition-all"
           >
             Nosotros
           </Link>
           <Link
             href="/bingo"
-            className="text-white hover:text-larioja-verde font-bold text-sm transition-all"
+            className="text-white hover:text-larioja-verde font-bold text-[10px] sm:text-xs md:text-sm transition-all"
           >
             Bingo
           </Link>
           <Link
             href="/admin"
-            className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/30 font-bold py-1.5 px-6 rounded-full text-xs transition-all"
+            className="hidden sm:block bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/30 font-bold py-1 px-3 sm:py-1.5 sm:px-6 rounded-full text-[10px] sm:text-xs transition-all"
           >
             Panel de Control
           </Link>
-          <div className="bg-white/10 backdrop-blur-md rounded-full p-1 border border-white/30">
+          <div className="bg-white/10 backdrop-blur-md rounded-full p-0.5 sm:p-1 border border-white/30">
             <ThemeToggle />
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative h-[85vh] flex items-center justify-center text-white bg-larioja-azul overflow-hidden">
+      <section className="relative min-h-[90vh] flex items-center justify-center text-white bg-larioja-azul overflow-hidden py-20">
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-larioja-azul/20 z-10" />
-        <div className="container mx-auto px-6 relative z-20 text-center max-w-5xl">
-          <h1 className="text-6xl md:text-8xl font-bold mb-8 animate-fade-in tracking-tight">
+        <div className="container mx-auto px-4 sm:px-6 relative z-20 text-center max-w-5xl">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold mb-4 sm:mb-8 animate-fade-in tracking-tight leading-tight">
             {heroContent?.title || "Bienvenidos a La Rioja"}
           </h1>
-          <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto font-light leading-relaxed opacity-90">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-8 sm:mb-12 max-w-3xl mx-auto font-light leading-relaxed opacity-90 px-4">
             {heroContent?.description ||
               "Entidad de formación laboral para personas con discapacidad intelectual."}
           </p>
           <div className="flex justify-center gap-4">
             <Link
               href="/bingo"
-              className="bg-larioja-amarillo hover:bg-yellow-400 text-larioja-azul font-bold py-3 px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl shadow-larioja-amarillo/20"
+              className="bg-larioja-amarillo hover:bg-yellow-400 text-larioja-azul font-bold py-2.5 px-6 sm:py-3 sm:px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl shadow-larioja-amarillo/20 text-sm sm:text-base"
             >
               Jugar Bingo
             </Link>
           </div>
         </div>
         {/* Subtle decorative elements */}
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-larioja-verde/20 rounded-full blur-3xl z-0" />
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-larioja-amarillo/10 rounded-full blur-3xl z-0" />
+        <div className="absolute -bottom-12 -left-12 sm:-bottom-24 sm:-left-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-verde/20 rounded-full blur-2xl sm:blur-3xl z-0" />
+        <div className="absolute -top-12 -right-12 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-amarillo/10 rounded-full blur-2xl sm:blur-3xl z-0" />
       </section>
 
       {/* Services Section */}
