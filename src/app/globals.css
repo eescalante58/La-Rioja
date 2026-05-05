@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 1, 32, 96; /* larioja-azul */
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@layer base {
+  body {
+    @apply text-larioja-azul dark:text-gray-100 font-montserrat bg-white dark:bg-gray-950 transition-colors duration-300;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold;
+  }
+}
+
+.bg-larioja-gradient {
+  background: linear-gradient(135deg, #012060 0%, #1e9922 50%, #ffff00 100%);
+}
+
+.dark .bg-larioja-gradient {
+  background: linear-gradient(135deg, #00081a 0%, #0d4a11 50%, #666600 100%);
+}
+
+.bg-larioja-gradient-soft {
+  background: linear-gradient(
+    135deg,
+    rgba(1, 32, 96, 0.1) 0%,
+    rgba(30, 153, 34, 0.1) 50%,
+    rgba(255, 255, 0, 0.1) 100%
+  );
+}
