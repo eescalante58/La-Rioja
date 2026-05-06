@@ -37,7 +37,7 @@ export function SessionManager() {
     getSessionTimeout();
   }, [supabase]);
 
-  const { TimeoutDialog } = useAutoLogout(timeoutMinutes);
+  const {} = useAutoLogout(timeoutMinutes);
 
-  return <>{TimeoutDialog}</>;
+  return null;
 }
