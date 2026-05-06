@@ -10,10 +10,12 @@ export async function getUsersWithRoles() {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("users")
-    .select(`
+    .select(
+      `
       *,
       roles:role_id (name)
-    `)
+    `,
+    )
     .order("full_name", { ascending: true });
 
   if (error) {
@@ -45,15 +47,152 @@ export async function getRoles() {
  */
 export async function updateUser(userId: string, data: any) {
   const supabase = createClient();
-  
+
   const { error } = await supabase
     .from("users")
     .update({
+      full_name: data.full_name,
       role_id: data.role_id,
       status: data.status,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
+/**
+ * Server action to delete a user.
+ */
+export async function deleteUser(userId: string) {
+  const supabase = createClient();
+
+  // Note: This only deletes from our 'users' table, not Supabase Auth
+  const { error } = await supabase.from("users").delete().eq("id", userId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
+/**
+ * Server action to create a new role.
+ */
+export async function createRole(data: any) {
+  const supabase = createClient();
+  const { error } = await supabase.from("roles").insert([data]);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
+/**
+ * Server action to update a role.
+ */
+export async function updateRole(roleId: number, data: any) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("roles")
+    .update({
+      ...data,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("role_id", roleId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
+/**
+ * Server action to delete a role.
+ */
+export async function deleteRole(roleId: number) {
+  const supabase = createClient();
+  const { error } = await supabase.from("roles").delete().eq("role_id", roleId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
+/**
+ * Server action to assign a user to a company.
+ */
+export async function assignUserToCompany(
+  userId: string,
+  companyId: number,
+  roleId: number,
+) {
+  const supabase = createClient();
+  const { error } = await supabase.from("user_companies").insert([
+    {
+      user_id: userId,
+      company_id: companyId,
+      role_id: roleId,
+    },
+  ]);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
+/**
+ * Server action to remove a user from a company.
+ */
+export async function removeUserFromCompany(userId: string, companyId: number) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("user_companies")
+    .delete()
+    .match({ user_id: userId, company_id: companyId });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
+/**
+ * Server action to update user-company role.
+ */
+export async function updateUserCompanyRole(
+  userId: string,
+  companyId: number,
+  roleId: number,
+) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("user_companies")
+    .update({
+      role_id: roleId,
+      updated_at: new Date().toISOString(),
+    })
+    .match({ user_id: userId, company_id: companyId });
 
   if (error) {
     return { error: error.message };
@@ -70,11 +209,13 @@ export async function getUserCompanies(userId: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("user_companies")
-    .select(`
+    .select(
+      `
       *,
       company:company_id (company_name),
       role_data:role_id (name)
-    `)
+    `,
+    )
     .eq("user_id", userId);
 
   if (error) {
