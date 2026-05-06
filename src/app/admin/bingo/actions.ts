@@ -172,6 +172,7 @@ export async function generateCards(
   start: number,
   end: number,
   price: number,
+  deleteExisting: boolean = false,
 ) {
   const supabase = createClient();
   const {
@@ -185,6 +186,22 @@ export async function generateCards(
   const count = end - start + 1;
   if (count > 5000) {
     return { error: "No se pueden generar más de 5,000 cartones a la vez." };
+  }
+
+  // If requested, delete existing cards for this event first
+  if (deleteExisting) {
+    const { error: deleteError } = await supabase
+      .from("cards")
+      .delete()
+      .eq("company_id", companyId)
+      .eq("event_id", eventId);
+
+    if (deleteError) {
+      console.error("Error deleting existing cards:", deleteError);
+      return {
+        error: "Error al eliminar cartones previos: " + deleteError.message,
+      };
+    }
   }
 
   const cards = [];
@@ -238,6 +255,7 @@ export async function generateCards(
         range: `${start}-${end}`,
         count: count,
         price: price,
+        deleted_previous: deleteExisting,
         timestamp: new Date().toISOString(),
       },
     });
