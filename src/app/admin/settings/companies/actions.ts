@@ -4,6 +4,54 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 /**
+ * Helper to log user activity.
+ */
+async function logActivity(
+  action: string,
+  entity: string,
+  entityId: string | null,
+  metadata: any = {},
+) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  await supabase.from("user_activity_log").insert([
+    {
+      user_id: user.id,
+      action,
+      entity,
+      entity_id: entityId,
+      metadata,
+      timestamp: new Date().toISOString(),
+    },
+  ]);
+}
+
+/**
+ * Helper to check if the current user has a specific minimum role level.
+ */
+async function checkMinLevel(minLevel: number) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("roles:role_id (level)")
+    .eq("id", user.id)
+    .single();
+
+  const level = (userData?.roles as any)?.level || 0;
+  return level >= minLevel;
+}
+
+/**
  * Server action to fetch all companies.
  */
 export async function getCompanies() {
@@ -24,13 +72,17 @@ export async function getCompanies() {
  * Server action to save a company (create or update).
  */
 export async function saveCompany(formData: FormData) {
+  if (!(await checkMinLevel(80))) {
+    return { error: "No tienes permisos para gestionar empresas." };
+  }
+
   const supabase = createClient();
   const id = formData.get("id");
   const name = formData.get("company_name") as string;
   const phone_code = formData.get("phone_code_area") as string;
   const phone_number = formData.get("phone_number") as string;
-  const session_timeout =
-    parseInt(formData.get("session_timeout_minutes") as string) || 30;
+  const timeoutStr = formData.get("session_timeout_minutes") as string;
+  const session_timeout = timeoutStr ? parseInt(timeoutStr) : 30;
 
   const companyData = {
     company_name: name,
@@ -41,20 +93,30 @@ export async function saveCompany(formData: FormData) {
   };
 
   let error;
+  let finalId: string | null = id ? id.toString() : null;
+
   if (id) {
     const { error: updateError } = await supabase
       .from("companies")
       .update(companyData)
       .eq("company_id", id);
     error = updateError;
+    if (!error) await logActivity("UPDATE", "companies", finalId!, companyData);
   } else {
-    const { error: insertError } = await supabase
+    const { data, error: insertError } = await supabase
       .from("companies")
-      .insert([companyData]);
+      .insert([companyData])
+      .select()
+      .single();
     error = insertError;
+    if (!error && data) {
+      finalId = data.company_id.toString();
+      await logActivity("CREATE", "companies", finalId, companyData);
+    }
   }
 
   if (error) {
+    console.error("Error saving company:", error);
     return { error: error.message };
   }
 
@@ -66,6 +128,12 @@ export async function saveCompany(formData: FormData) {
  * Server action to delete a company.
  */
 export async function deleteCompany(id: number) {
+  if (!(await checkMinLevel(100))) {
+    return {
+      error: "Solo los Super Administradores pueden eliminar empresas.",
+    };
+  }
+
   const supabase = createClient();
   const { error } = await supabase
     .from("companies")
@@ -75,6 +143,8 @@ export async function deleteCompany(id: number) {
   if (error) {
     return { error: error.message };
   }
+
+  await logActivity("DELETE", "companies", id.toString());
 
   revalidatePath("/admin/settings/companies");
   return { success: true };
