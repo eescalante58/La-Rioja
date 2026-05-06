@@ -111,6 +111,7 @@ export default function UserManagerClient({
     useState<User | null>(null);
   const [userCompanies, setUserCompanies] = useState<UserCompany[]>([]);
   const [loadingUserCompanies, setLoadingUserCompanies] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const filteredUsers = users.filter(
     (u) =>
@@ -129,7 +130,19 @@ export default function UserManagerClient({
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
+    setAvatarPreview(user.avatar_url);
     setIsUserDialogOpen(true);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleEditRole = (role: Role | null) => {
@@ -474,7 +487,10 @@ export default function UserManagerClient({
       {/* DIALOGS */}
       <Dialog
         open={isCreateUserDialogOpen}
-        onClose={() => setIsCreateUserDialogOpen(false)}
+        onClose={() => {
+          setIsCreateUserDialogOpen(false);
+          setAvatarPreview(null);
+        }}
         static={true}
       >
         <DialogPanel className="max-w-2xl">
@@ -484,10 +500,19 @@ export default function UserManagerClient({
               <TextInput
                 name="email"
                 type="email"
-                placeholder="Email"
+                placeholder="Email Principal"
                 required
               />
-              <TextInput name="full_name" placeholder="Nombre" required />
+              <TextInput
+                name="secondary_email"
+                type="email"
+                placeholder="Email Secundario (Opcional)"
+              />
+              <TextInput
+                name="full_name"
+                placeholder="Nombre Completo"
+                required
+              />
               <select
                 name="role_id"
                 className="p-2 border rounded-lg text-sm bg-white"
@@ -529,32 +554,57 @@ export default function UserManagerClient({
                   required
                 />
               </div>
-              <div className="col-span-2 flex items-center gap-4">
-                <div className="h-8 w-12 border rounded overflow-hidden flex items-center justify-center bg-gray-50">
-                  <img
-                    id="flag-preview-create"
-                    src="https://flagcdn.com/w40/sv.png"
-                    className="object-cover w-full h-full"
-                    alt="Flag"
-                  />
+              <div className="col-span-2 flex items-center gap-4 p-4 border rounded-lg bg-gray-50/50">
+                <div className="flex flex-col items-center gap-2">
+                  <Text className="text-xs font-bold uppercase">País</Text>
+                  <div className="h-8 w-12 border rounded overflow-hidden flex items-center justify-center bg-white shadow-sm">
+                    <img
+                      id="flag-preview-create"
+                      src="https://flagcdn.com/w40/sv.png"
+                      className="object-cover w-full h-full"
+                      alt="Flag"
+                    />
+                  </div>
                 </div>
-                <input
-                  type="file"
-                  name="avatar"
-                  accept="image/*"
-                  className="text-xs"
-                />
+                <div className="flex-1 flex flex-col gap-2">
+                  <Text className="text-xs font-bold uppercase">
+                    Avatar / Foto de Perfil
+                  </Text>
+                  <div className="flex items-center gap-4">
+                    {avatarPreview && (
+                      <img
+                        src={avatarPreview}
+                        className="h-12 w-12 rounded-full object-cover border-2 border-larioja-azul"
+                        alt="Preview"
+                      />
+                    )}
+                    <input
+                      type="file"
+                      name="avatar"
+                      accept="image/*"
+                      className="text-xs flex-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 transition-all"
+                      onChange={handleAvatarChange}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4">
               <Button
                 variant="secondary"
-                onClick={() => setIsCreateUserDialogOpen(false)}
+                onClick={() => {
+                  setIsCreateUserDialogOpen(false);
+                  setAvatarPreview(null);
+                }}
               >
                 Cancelar
               </Button>
-              <Button type="submit" loading={loading}>
-                Crear
+              <Button
+                type="submit"
+                loading={loading}
+                className="bg-larioja-azul"
+              >
+                Crear Usuario
               </Button>
             </div>
           </form>
@@ -563,7 +613,10 @@ export default function UserManagerClient({
 
       <Dialog
         open={isUserDialogOpen}
-        onClose={() => setIsUserDialogOpen(false)}
+        onClose={() => {
+          setIsUserDialogOpen(false);
+          setAvatarPreview(null);
+        }}
         static={true}
       >
         <DialogPanel className="max-w-2xl">
@@ -573,12 +626,14 @@ export default function UserManagerClient({
               <TextInput
                 name="full_name"
                 defaultValue={editingUser?.full_name || ""}
+                placeholder="Nombre Completo"
                 required
               />
               <TextInput
                 name="secondary_email"
+                type="email"
                 defaultValue={editingUser?.secondary_email || ""}
-                placeholder="Secundario"
+                placeholder="Email Secundario (Opcional)"
               />
               <select
                 name="role_id"
@@ -632,37 +687,68 @@ export default function UserManagerClient({
                   className="flex-1"
                   defaultValue={
                     editingUser?.phone
-                      ? editingUser.phone.replace(/^\d+/, "")
+                      ? editingUser.phone.replace(
+                          countryCodes.find((c) =>
+                            editingUser?.phone?.startsWith(c.phone_code),
+                          )?.phone_code || "",
+                          "",
+                        )
                       : ""
                   }
+                  placeholder="Teléfono"
                 />
               </div>
-              <div className="flex items-center gap-4">
-                <div className="h-8 w-12 border rounded overflow-hidden flex items-center justify-center bg-gray-50">
-                  <img
-                    id="flag-preview-edit"
-                    src={getFlagUrl(editingUser?.phone || null)}
-                    className="object-cover w-full h-full"
-                    alt="Flag"
-                  />
+              <div className="col-span-2 flex items-center gap-4 p-4 border rounded-lg bg-gray-50/50">
+                <div className="flex flex-col items-center gap-2">
+                  <Text className="text-xs font-bold uppercase">País</Text>
+                  <div className="h-8 w-12 border rounded overflow-hidden flex items-center justify-center bg-white shadow-sm">
+                    <img
+                      id="flag-preview-edit"
+                      src={getFlagUrl(editingUser?.phone || null)}
+                      className="object-cover w-full h-full"
+                      alt="Flag"
+                    />
+                  </div>
                 </div>
-                <input
-                  type="file"
-                  name="avatar"
-                  accept="image/*"
-                  className="text-xs"
-                />
+                <div className="flex-1 flex flex-col gap-2">
+                  <Text className="text-xs font-bold uppercase">
+                    Avatar / Foto de Perfil
+                  </Text>
+                  <div className="flex items-center gap-4">
+                    {avatarPreview && (
+                      <img
+                        src={avatarPreview}
+                        className="h-12 w-12 rounded-full object-cover border-2 border-larioja-azul"
+                        alt="Preview"
+                      />
+                    )}
+                    <input
+                      type="file"
+                      name="avatar"
+                      accept="image/*"
+                      className="text-xs flex-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 transition-all"
+                      onChange={handleAvatarChange}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4">
               <Button
                 variant="secondary"
-                onClick={() => setIsUserDialogOpen(false)}
+                onClick={() => {
+                  setIsUserDialogOpen(false);
+                  setAvatarPreview(null);
+                }}
               >
                 Cancelar
               </Button>
-              <Button type="submit" loading={loading}>
-                Guardar
+              <Button
+                type="submit"
+                loading={loading}
+                className="bg-larioja-azul"
+              >
+                Guardar Cambios
               </Button>
             </div>
           </form>

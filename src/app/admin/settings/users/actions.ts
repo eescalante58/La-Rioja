@@ -189,7 +189,7 @@ export async function createNewUser(data: {
  */
 export async function uploadUserAvatar(file: FormData) {
   const supabase = createClient();
-  const image = file.get("file") as File;
+  const image = file.get("avatar") as File;
   const fileName = `${Date.now()}-${image.name}`;
 
   const { data, error } = await supabase.storage
