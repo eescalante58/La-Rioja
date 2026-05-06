@@ -46,7 +46,6 @@ import {
   deleteRole,
   assignUserToCompany,
   removeUserFromCompany,
-  updateUserCompanyRole,
   getUserCompanies,
   uploadUserAvatar,
 } from "./actions";
@@ -62,26 +61,22 @@ interface User {
   roles: { name: string; level: number } | null;
   avatar_url: string | null;
 }
-
 interface Role {
   role_id: number;
   name: string;
   description: string;
   level: number;
 }
-
 interface Company {
   company_id: number;
   company_name: string;
 }
-
 interface CountryCode {
   iso2: string;
   name: string;
   phone_code: string;
   flag_emoji: string;
 }
-
 interface UserCompany {
   user_id: string;
   company_id: number;
@@ -90,9 +85,6 @@ interface UserCompany {
   role_data: { name: string };
 }
 
-/**
- * Client component for managing users, roles, and user-company assignments.
- */
 export default function UserManagerClient({
   initialUsers,
   roles,
@@ -106,20 +98,14 @@ export default function UserManagerClient({
   countryCodes: CountryCode[];
   currentUserId?: string;
 }) {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users] = useState<User[]>(initialUsers);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // User Dialog State
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-
-  // Role Dialog State
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
-
-  // User-Company Dialog State
   const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
   const [selectedUserForCompanies, setSelectedUserForCompanies] =
     useState<User | null>(null);
@@ -129,87 +115,53 @@ export default function UserManagerClient({
   const filteredUsers = users.filter(
     (u) =>
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()),
+      (u.full_name || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  // RBAC Helper: Get current user's role level
   const currentUser = users.find((u) => u.id === currentUserId);
   const currentUserLevel = currentUser?.roles?.level || 0;
 
-  // Rules:
-  // - Admin (level 100) and Admin Empresa (level 80) can edit anyone.
-  // - Others (Ventas level 20, Reader level 10) can only edit themselves.
-  const canEditUser = (userId: string) => {
-    if (currentUserLevel >= 80) return true;
-    return userId === currentUserId;
-  };
+  // RBAC: admin=10, admin_empresa=9
+  const canEditUser = (userId: string) =>
+    currentUserLevel >= 9 || userId === currentUserId;
+  const canCreateUser = currentUserLevel >= 9;
+  const canManageRoles = currentUserLevel >= 10;
 
-  const canCreateUser = currentUserLevel >= 80;
-  const canManageRoles = currentUserLevel >= 100;
-
-  // Tabs for the settings page
-  const settingsTabs = [
-    <Tab key="users" icon={UsersIcon}>
-      Usuarios
-    </Tab>,
-  ];
-  if (canManageRoles) {
-    settingsTabs.push(
-      <Tab key="roles" icon={Shield}>
-        Roles del Sistema
-      </Tab>,
-    );
-  }
-
-  // User Handlers
   const handleEditUser = (user: User) => {
     setEditingUser(user);
     setIsUserDialogOpen(true);
   };
 
+  const handleEditRole = (role: Role | null) => {
+    setEditingRole(role);
+    setIsRoleDialogOpen(true);
+  };
+
   const handleUpdateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingUser) return;
-
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-
-    // Handle Avatar Upload if a new one is selected
     let avatarUrl = editingUser.avatar_url || "";
     const avatarFile = formData.get("avatar") as File;
     if (avatarFile && avatarFile.size > 0) {
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", avatarFile);
-      const uploadResult = await uploadUserAvatar(uploadFormData);
-      if (uploadResult.publicUrl) {
-        avatarUrl = uploadResult.publicUrl;
-      }
+      const uploadRes = await uploadUserAvatar(new FormData(e.currentTarget));
+      if (uploadRes.publicUrl) avatarUrl = uploadRes.publicUrl;
     }
-
-    const phoneCode = formData.get("phone_code") as string;
-    const phoneNumber = formData.get("phone_number") as string;
-    const fullPhone = phoneNumber ? `${phoneCode}${phoneNumber}` : "";
-
-    // If role_id or status are disabled, they won't be in formData.
-    // We fall back to the existing values in editingUser.
-    const roleIdStr = formData.get("role_id") as string;
-    const statusStr = formData.get("status") as string;
-
     const data = {
       full_name: (formData.get("full_name") as string) || editingUser.full_name,
-      role_id: roleIdStr ? parseInt(roleIdStr) : editingUser.role_id,
-      status: statusStr || editingUser.status,
+      role_id: formData.get("role_id")
+        ? parseInt(formData.get("role_id") as string)
+        : editingUser.role_id,
+      status: (formData.get("status") as string) || editingUser.status,
       secondary_email: formData.get("secondary_email") as string,
-      phone: fullPhone,
+      phone: `${formData.get("phone_code")}${formData.get("phone_number")}`,
       avatar_url: avatarUrl,
     };
-
-    const result = await updateUser(editingUser.id, data);
-
-    if (result.success) {
-      window.location.reload();
-    } else {
-      alert("Error: " + result.error);
+    const res = await updateUser(editingUser.id, data);
+    if (res.success) window.location.reload();
+    else {
+      alert("Error: " + res.error);
       setLoading(false);
     }
   };
@@ -218,59 +170,37 @@ export default function UserManagerClient({
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-
-    // Handle Avatar Upload
     let avatarUrl = "";
     const avatarFile = formData.get("avatar") as File;
     if (avatarFile && avatarFile.size > 0) {
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", avatarFile);
-      const uploadResult = await uploadUserAvatar(uploadFormData);
-      if (uploadResult.publicUrl) {
-        avatarUrl = uploadResult.publicUrl;
-      }
+      const uploadRes = await uploadUserAvatar(new FormData(e.currentTarget));
+      if (uploadRes.publicUrl) avatarUrl = uploadRes.publicUrl;
     }
-
-    const phoneCode = formData.get("phone_code") as string;
-    const phoneNumber = formData.get("phone_number") as string;
-    const fullPhone = phoneNumber ? `${phoneCode}${phoneNumber}` : "";
-
     const data = {
       email: formData.get("email") as string,
       full_name: formData.get("full_name") as string,
       role_id: parseInt(formData.get("role_id") as string),
       secondary_email: formData.get("secondary_email") as string,
-      phone: fullPhone,
+      phone: `${formData.get("phone_code")}${formData.get("phone_number")}`,
       avatar_url: avatarUrl,
     };
-
-    const result = await createNewUser(data);
-
-    if (result.success) {
-      window.location.reload();
-    } else {
-      alert("Error: " + result.error);
+    const res = await createNewUser(data);
+    if (res.success) window.location.reload();
+    else {
+      alert("Error: " + res.error);
       setLoading(false);
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("¿Estás seguro de eliminar este usuario del sistema?")) return;
-
+  const handleDeleteUser = async (id: string) => {
+    if (!confirm("¿Eliminar usuario?")) return;
     setLoading(true);
-    const result = await deleteUser(userId);
-    if (result.success) {
-      window.location.reload();
-    } else {
-      alert("Error: " + result.error);
+    const res = await deleteUser(id);
+    if (res.success) window.location.reload();
+    else {
+      alert("Error: " + res.error);
       setLoading(false);
     }
-  };
-
-  // Role Handlers
-  const handleEditRole = (role: Role | null) => {
-    setEditingRole(role);
-    setIsRoleDialogOpen(true);
   };
 
   const handleSaveRole = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -282,33 +212,27 @@ export default function UserManagerClient({
       description: formData.get("description") as string,
       level: parseInt(formData.get("level") as string),
     };
-
-    const result = editingRole
+    const res = editingRole
       ? await updateRole(editingRole.role_id, data)
       : await createRole(data);
-
-    if (result.success) {
-      window.location.reload();
-    } else {
-      alert("Error: " + result.error);
+    if (res.success) window.location.reload();
+    else {
+      alert("Error: " + res.error);
       setLoading(false);
     }
   };
 
-  const handleDeleteRole = async (roleId: number) => {
-    if (!confirm("¿Estás seguro de eliminar este rol?")) return;
-
+  const handleDeleteRole = async (id: number) => {
+    if (!confirm("¿Eliminar rol?")) return;
     setLoading(true);
-    const result = await deleteRole(roleId);
-    if (result.success) {
-      window.location.reload();
-    } else {
-      alert("Error: " + result.error);
+    const res = await deleteRole(id);
+    if (res.success) window.location.reload();
+    else {
+      alert("Error: " + res.error);
       setLoading(false);
     }
   };
 
-  // User-Company Handlers
   const handleManageCompanies = async (user: User) => {
     setSelectedUserForCompanies(user);
     setIsCompanyDialogOpen(true);
@@ -321,45 +245,60 @@ export default function UserManagerClient({
   const handleAssignCompany = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedUserForCompanies) return;
-
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    const companyId = parseInt(formData.get("company_id") as string);
-    const roleId = parseInt(formData.get("role_id") as string);
-
-    const result = await assignUserToCompany(
+    const res = await assignUserToCompany(
       selectedUserForCompanies.id,
-      companyId,
-      roleId,
+      parseInt(formData.get("company_id") as string),
+      parseInt(formData.get("role_id") as string),
     );
-    if (result.success) {
+    if (res.success) {
       const data = await getUserCompanies(selectedUserForCompanies.id);
       setUserCompanies(data as any);
       setLoading(false);
       (e.target as HTMLFormElement).reset();
     } else {
-      alert("Error: " + result.error);
+      alert("Error: " + res.error);
       setLoading(false);
     }
   };
 
   const handleRemoveFromCompany = async (companyId: number) => {
-    if (!selectedUserForCompanies || !confirm("¿Eliminar asignación?")) return;
-
+    if (!selectedUserForCompanies || !confirm("¿Eliminar?")) return;
     setLoading(true);
-    const result = await removeUserFromCompany(
+    const res = await removeUserFromCompany(
       selectedUserForCompanies.id,
       companyId,
     );
-    if (result.success) {
+    if (res.success) {
       const data = await getUserCompanies(selectedUserForCompanies.id);
       setUserCompanies(data as any);
       setLoading(false);
     } else {
-      alert("Error: " + result.error);
+      alert("Error: " + res.error);
       setLoading(false);
     }
   };
+
+  const getFlagUrl = (code: string | null) => {
+    const iso =
+      countryCodes
+        .find((c) => code?.startsWith(c.phone_code))
+        ?.iso2?.toLowerCase() || "sv";
+    return `https://flagcdn.com/w40/${iso}.png`;
+  };
+
+  const visibleTabs = [
+    <Tab key="u" icon={UsersIcon}>
+      Usuarios
+    </Tab>,
+  ];
+  if (canManageRoles)
+    visibleTabs.push(
+      <Tab key="r" icon={Shield}>
+        Roles
+      </Tab>,
+    );
 
   return (
     <div className="space-y-6">
@@ -367,38 +306,27 @@ export default function UserManagerClient({
         <div className="flex items-center gap-4">
           <Link href="/admin/settings">
             <Button variant="light" icon={ArrowLeft}>
-              Volver a Configuración
+              Volver
             </Button>
           </Link>
-          <div>
-            <Title className="text-lg font-bold text-larioja-azul/80 dark:text-larioja-amarillo/80">
-              Usuarios, Roles y Empresas [v2]
-            </Title>
-            <Text className="text-xs">
-              Administra el acceso global, los roles del sistema y la
-              pertenencia a empresas.
-            </Text>
-          </div>
+          <Title className="text-lg font-bold text-larioja-azul dark:text-larioja-amarillo">
+            Usuarios [v2.9]
+          </Title>
         </div>
       </div>
-
       <TabGroup>
-        <TabList className="mt-4">{settingsTabs}</TabList>
+        <TabList>{visibleTabs}</TabList>
         <TabPanels>
-          {/* USERS TAB */}
           <TabPanel>
             <Card className="p-4 mt-4">
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 flex-1">
-                  <Search className="text-gray-400" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Buscar por nombre o email..."
-                    className="bg-transparent border-none outline-none text-sm flex-1 dark:text-white"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
+              <div className="flex gap-4 mb-6">
+                <TextInput
+                  icon={Search}
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1"
+                />
                 {canCreateUser && (
                   <Button
                     icon={Plus}
@@ -409,13 +337,12 @@ export default function UserManagerClient({
                   </Button>
                 )}
               </div>
-
               <Table>
                 <TableHead>
                   <TableRow>
                     <TableHeaderCell>Usuario</TableHeaderCell>
                     <TableHeaderCell>Email</TableHeaderCell>
-                    <TableHeaderCell>Rol Global</TableHeaderCell>
+                    <TableHeaderCell>Rol</TableHeaderCell>
                     <TableHeaderCell>Estado</TableHeaderCell>
                     <TableHeaderCell className="text-right">
                       Acciones
@@ -423,75 +350,63 @@ export default function UserManagerClient({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
-                            {user.avatar_url ? (
-                              <img
-                                src={user.avatar_url}
-                                alt={user.full_name || "Avatar"}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <UsersIcon size={16} className="text-gray-400" />
-                            )}
-                          </div>
-                          {user.full_name || "Sin nombre"}
+                  {filteredUsers.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={u.avatar_url || ""}
+                            className="h-8 w-8 rounded-full bg-gray-100"
+                            onError={(e) =>
+                              (e.currentTarget.src =
+                                "https://www.gravatar.com/avatar/000?d=mp")
+                            }
+                            alt="Avatar"
+                          />
+                          {u.full_name}
                         </div>
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{u.email}</TableCell>
                       <TableCell>
-                        <Badge color="blue" icon={Shield}>
-                          {user.roles?.name || "Sin rol"}
+                        <Badge color="blue">{u.roles?.name}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          color={u.status === "active" ? "emerald" : "rose"}
+                        >
+                          {u.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        {user.status === "active" ? (
-                          <Badge color="emerald" icon={UserCheck}>
-                            Activo
-                          </Badge>
-                        ) : (
-                          <Badge color="rose" icon={UserX}>
-                            Inactivo
-                          </Badge>
-                        )}
-                      </TableCell>
                       <TableCell className="text-right space-x-2">
-                        {canEditUser(user.id) && (
+                        {canEditUser(u.id) && (
                           <>
                             <Button
                               variant="light"
-                              icon={Building2}
                               size="xs"
                               color="amber"
-                              onClick={() => handleManageCompanies(user)}
+                              onClick={() => handleManageCompanies(u)}
                             >
                               Empresas
                             </Button>
                             <Button
                               variant="light"
-                              icon={Edit}
                               size="xs"
-                              onClick={() => handleEditUser(user)}
+                              onClick={() => handleEditUser(u)}
                             >
                               Editar
                             </Button>
                           </>
                         )}
-                        {currentUserLevel >= 100 &&
-                          user.id !== currentUserId && (
-                            <Button
-                              variant="light"
-                              icon={Trash}
-                              size="xs"
-                              color="rose"
-                              onClick={() => handleDeleteUser(user.id)}
-                            >
-                              Eliminar
-                            </Button>
-                          )}
+                        {canManageRoles && u.id !== currentUserId && (
+                          <Button
+                            variant="light"
+                            size="xs"
+                            color="rose"
+                            onClick={() => handleDeleteUser(u.id)}
+                          >
+                            Eliminar
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -499,28 +414,23 @@ export default function UserManagerClient({
               </Table>
             </Card>
           </TabPanel>
-
-          {/* ROLES TAB */}
           {canManageRoles && (
             <TabPanel>
               <Card className="p-4 mt-4">
-                <div className="flex justify-between items-center mb-4">
-                  <Title className="text-base">Listado de Roles</Title>
+                <div className="flex justify-between mb-4">
+                  <Title>Roles</Title>
                   <Button
                     icon={Plus}
                     size="xs"
-                    className="bg-larioja-azul"
                     onClick={() => handleEditRole(null)}
                   >
-                    Nuevo Rol
+                    Nuevo
                   </Button>
                 </div>
-
                 <Table>
                   <TableHead>
                     <TableRow>
                       <TableHeaderCell>Nombre</TableHeaderCell>
-                      <TableHeaderCell>Descripción</TableHeaderCell>
                       <TableHeaderCell>Nivel</TableHeaderCell>
                       <TableHeaderCell className="text-right">
                         Acciones
@@ -528,28 +438,25 @@ export default function UserManagerClient({
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {roles.map((role) => (
-                      <TableRow key={role.role_id}>
-                        <TableCell className="font-bold">{role.name}</TableCell>
-                        <TableCell>{role.description}</TableCell>
+                    {roles.map((r) => (
+                      <TableRow key={r.role_id}>
+                        <TableCell className="font-bold">{r.name}</TableCell>
                         <TableCell>
-                          <Badge color="gray">{role.level}</Badge>
+                          <Badge>{r.level}</Badge>
                         </TableCell>
                         <TableCell className="text-right space-x-2">
                           <Button
                             variant="light"
-                            icon={Edit}
                             size="xs"
-                            onClick={() => handleEditRole(role)}
+                            onClick={() => handleEditRole(r)}
                           >
                             Editar
                           </Button>
                           <Button
                             variant="light"
-                            icon={Trash}
                             size="xs"
                             color="rose"
-                            onClick={() => handleDeleteRole(role.role_id)}
+                            onClick={() => handleDeleteRole(r.role_id)}
                           >
                             Eliminar
                           </Button>
@@ -564,375 +471,204 @@ export default function UserManagerClient({
         </TabPanels>
       </TabGroup>
 
-      {/* CREATE USER DIALOG */}
+      {/* DIALOGS */}
       <Dialog
         open={isCreateUserDialogOpen}
         onClose={() => setIsCreateUserDialogOpen(false)}
         static={true}
       >
         <DialogPanel className="max-w-2xl">
-          <Title className="mb-2">Nuevo Usuario</Title>
-          <Text className="mb-6">
-            Completa la información para crear el acceso y el perfil del
-            usuario.
-          </Text>
-
-          <form onSubmit={handleCreateUser} className="space-y-8">
-            {/* Section 1: Authentication */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
-                <ShieldAlert
-                  size={18}
-                  className="text-larioja-azul dark:text-larioja-amarillo"
+          <Title className="mb-4">Nuevo Usuario</Title>
+          <form onSubmit={handleCreateUser} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <TextInput
+                name="email"
+                type="email"
+                placeholder="Email"
+                required
+              />
+              <TextInput name="full_name" placeholder="Nombre" required />
+              <select
+                name="role_id"
+                className="p-2 border rounded-lg text-sm bg-white"
+                required
+              >
+                <option value="">Rol...</option>
+                {roles.map((r) => (
+                  <option key={r.role_id} value={r.role_id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <select
+                  name="phone_code"
+                  className="w-1/2 p-2 border rounded-lg text-sm"
+                  defaultValue="503"
+                  onChange={(e) => {
+                    const iso = countryCodes.find(
+                      (c) => c.phone_code === e.target.value,
+                    )?.iso2;
+                    const img = document.getElementById(
+                      "flag-preview-create",
+                    ) as HTMLImageElement;
+                    if (img && iso)
+                      img.src = `https://flagcdn.com/w40/${iso.toLowerCase()}.png`;
+                  }}
+                >
+                  {countryCodes.map((c) => (
+                    <option key={c.iso2} value={c.phone_code}>
+                      {c.name} (+{c.phone_code})
+                    </option>
+                  ))}
+                </select>
+                <TextInput
+                  name="phone_number"
+                  className="flex-1"
+                  placeholder="Teléfono"
+                  required
                 />
-                <Title className="text-sm font-bold uppercase tracking-wider text-gray-500">
-                  1. Datos de Autenticación
-                </Title>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase">
-                    Correo Institucional (Principal)
-                  </Text>
-                  <TextInput
-                    name="email"
-                    type="email"
-                    placeholder="correo@larioja.edu.ar"
-                    required
+              <div className="col-span-2 flex items-center gap-4">
+                <div className="h-8 w-12 border rounded overflow-hidden flex items-center justify-center bg-gray-50">
+                  <img
+                    id="flag-preview-create"
+                    src="https://flagcdn.com/w40/sv.png"
+                    className="object-cover w-full h-full"
+                    alt="Flag"
                   />
-                  <Text className="text-[10px] text-gray-400">
-                    Este será el correo para iniciar sesión.
-                  </Text>
                 </div>
-                <div className="bg-larioja-amarillo/10 p-4 rounded-xl border border-larioja-amarillo/20 flex flex-col justify-center">
-                  <Text className="text-xs font-bold text-larioja-azul mb-1">
-                    Contraseña Temporal
-                  </Text>
-                  <Badge color="amber">Rioja2026!</Badge>
-                  <Text className="text-[10px] text-larioja-azul/60 mt-1 italic">
-                    El usuario debe cambiarla al ingresar.
-                  </Text>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2: Profile Details */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
-                <UsersIcon
-                  size={18}
-                  className="text-larioja-azul dark:text-larioja-amarillo"
+                <input
+                  type="file"
+                  name="avatar"
+                  accept="image/*"
+                  className="text-xs"
                 />
-                <Title className="text-sm font-bold uppercase tracking-wider text-gray-500">
-                  2. Información del Perfil
-                </Title>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <Text className="text-xs font-bold uppercase">
-                      Nombre Completo
-                    </Text>
-                    <TextInput
-                      name="full_name"
-                      placeholder="Ej: Juan Pérez"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Text className="text-xs font-bold uppercase">
-                      Correo Secundario
-                    </Text>
-                    <TextInput
-                      name="secondary_email"
-                      type="email"
-                      placeholder="personal@ejemplo.com"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Text className="text-xs font-bold uppercase">
-                      Teléfono de Contacto
-                    </Text>
-                    <div className="flex gap-2">
-                      <select
-                        name="phone_code"
-                        className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                      >
-                        <option value="">Seleccionar país...</option>
-                        {countryCodes.map((c) => (
-                          <option key={c.iso2} value={c.phone_code}>
-                            {c.flag_emoji} {c.name} (+{c.phone_code})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="mt-2">
-                      <TextInput
-                        name="phone_number"
-                        className="w-full"
-                        placeholder="Número sin prefijo"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <Text className="text-xs font-bold uppercase">
-                      Rol en el Sistema
-                    </Text>
-                    <select
-                      name="role_id"
-                      className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                      required
-                    >
-                      <option value="">Seleccionar rol...</option>
-                      {roles.map((role) => (
-                        <option key={role.role_id} value={role.role_id}>
-                          {role.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Text className="text-xs font-bold uppercase">
-                      Imagen de Perfil (Avatar)
-                    </Text>
-                    <div className="flex flex-col gap-2">
-                      <input
-                        type="file"
-                        name="avatar"
-                        accept="image/*"
-                        className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 cursor-pointer"
-                      />
-                      <Text className="text-[10px] text-gray-400">
-                        Se guardará en el bucket user_avatar.
-                      </Text>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
-
-            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex justify-end gap-2">
               <Button
                 variant="secondary"
                 onClick={() => setIsCreateUserDialogOpen(false)}
-                disabled={loading}
               >
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                loading={loading}
-                className="bg-larioja-azul px-8"
-              >
-                Crear Usuario Completo
+              <Button type="submit" loading={loading}>
+                Crear
               </Button>
             </div>
           </form>
         </DialogPanel>
       </Dialog>
 
-      {/* USER DIALOG (EDIT) */}
       <Dialog
         open={isUserDialogOpen}
         onClose={() => setIsUserDialogOpen(false)}
         static={true}
       >
         <DialogPanel className="max-w-2xl">
-          <Title className="mb-2">Editar Usuario</Title>
-          <Text className="mb-6">
-            Actualiza la información de acceso y el perfil para{" "}
-            <b>{editingUser?.email}</b>.
-          </Text>
-
-          <form onSubmit={handleUpdateUser} className="space-y-8">
-            {/* Section 1: Authentication/Access */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
-                <ShieldAlert
-                  size={18}
-                  className="text-larioja-azul dark:text-larioja-amarillo"
+          <Title className="mb-4">Editar Usuario</Title>
+          <form onSubmit={handleUpdateUser} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <TextInput
+                name="full_name"
+                defaultValue={editingUser?.full_name || ""}
+                required
+              />
+              <TextInput
+                name="secondary_email"
+                defaultValue={editingUser?.secondary_email || ""}
+                placeholder="Secundario"
+              />
+              <select
+                name="role_id"
+                defaultValue={editingUser?.role_id}
+                disabled={currentUserLevel < 9}
+                className="p-2 border rounded-lg text-sm bg-white"
+              >
+                {roles.map((r) => (
+                  <option key={r.role_id} value={r.role_id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                name="status"
+                defaultValue={editingUser?.status}
+                disabled={currentUserLevel < 9}
+                className="p-2 border rounded-lg text-sm bg-white"
+              >
+                <option value="active">Activo</option>
+                <option value="inactive">Inactivo</option>
+              </select>
+              <div className="flex gap-2">
+                <select
+                  name="phone_code"
+                  className="w-1/2 p-2 border rounded-lg text-sm bg-white"
+                  defaultValue={
+                    countryCodes.find((c) =>
+                      editingUser?.phone?.startsWith(c.phone_code),
+                    )?.phone_code || "503"
+                  }
+                  onChange={(e) => {
+                    const iso = countryCodes.find(
+                      (c) => c.phone_code === e.target.value,
+                    )?.iso2;
+                    const img = document.getElementById(
+                      "flag-preview-edit",
+                    ) as HTMLImageElement;
+                    if (img && iso)
+                      img.src = `https://flagcdn.com/w40/${iso.toLowerCase()}.png`;
+                  }}
+                >
+                  {countryCodes.map((c) => (
+                    <option key={c.iso2} value={c.phone_code}>
+                      {c.name} (+{c.phone_code})
+                    </option>
+                  ))}
+                </select>
+                <TextInput
+                  name="phone_number"
+                  className="flex-1"
+                  defaultValue={
+                    editingUser?.phone
+                      ? editingUser.phone.replace(/^\d+/, "")
+                      : ""
+                  }
                 />
-                <Title className="text-sm font-bold uppercase tracking-wider text-gray-500">
-                  1. Configuración de Acceso
-                </Title>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase">
-                    Rol Global
-                  </Text>
-                  <select
-                    name="role_id"
-                    defaultValue={editingUser?.role_id}
-                    disabled={currentUserLevel < 80}
-                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm disabled:opacity-50"
-                  >
-                    {roles.map((role) => (
-                      <option key={role.role_id} value={role.role_id}>
-                        {role.name}
-                      </option>
-                    ))}
-                  </select>
+              <div className="flex items-center gap-4">
+                <div className="h-8 w-12 border rounded overflow-hidden flex items-center justify-center bg-gray-50">
+                  <img
+                    id="flag-preview-edit"
+                    src={getFlagUrl(editingUser?.phone || null)}
+                    className="object-cover w-full h-full"
+                    alt="Flag"
+                  />
                 </div>
-
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase">Estado</Text>
-                  <select
-                    name="status"
-                    defaultValue={editingUser?.status}
-                    disabled={currentUserLevel < 80}
-                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm disabled:opacity-50"
-                  >
-                    <option value="active">Activo</option>
-                    <option value="inactive">Inactivo</option>
-                  </select>
-                </div>
+                <input
+                  type="file"
+                  name="avatar"
+                  accept="image/*"
+                  className="text-xs"
+                />
               </div>
             </div>
-
-            {/* Section 2: Profile Details */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
-                <UsersIcon
-                  size={18}
-                  className="text-larioja-azul dark:text-larioja-amarillo"
-                />
-                <Title className="text-sm font-bold uppercase tracking-wider text-gray-500">
-                  2. Información del Perfil
-                </Title>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <Text className="text-xs font-bold uppercase">
-                      Nombre Completo
-                    </Text>
-                    <TextInput
-                      name="full_name"
-                      defaultValue={editingUser?.full_name || ""}
-                      placeholder="Nombre completo"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Text className="text-xs font-bold uppercase">
-                      Correo Secundario
-                    </Text>
-                    <TextInput
-                      name="secondary_email"
-                      type="email"
-                      defaultValue={editingUser?.secondary_email || ""}
-                      placeholder="personal@ejemplo.com"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Text className="text-xs font-bold uppercase">
-                      Teléfono de Contacto
-                    </Text>
-                    <div className="flex flex-col gap-2">
-                      <select
-                        name="phone_code"
-                        className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                        defaultValue={
-                          countryCodes.find((c) =>
-                            editingUser?.phone?.startsWith(c.phone_code),
-                          )?.phone_code
-                        }
-                      >
-                        <option value="">Seleccionar país...</option>
-                        {countryCodes.map((c) => (
-                          <option key={c.iso2} value={c.phone_code}>
-                            {c.flag_emoji} {c.name} (+{c.phone_code})
-                          </option>
-                        ))}
-                      </select>
-                      <TextInput
-                        name="phone_number"
-                        className="w-full"
-                        defaultValue={
-                          editingUser?.phone
-                            ? editingUser.phone.replace(
-                                countryCodes.find((c) =>
-                                  editingUser.phone?.startsWith(c.phone_code),
-                                )?.phone_code || "",
-                                "",
-                              )
-                            : ""
-                        }
-                        placeholder="Número sin prefijo"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Text className="text-xs font-bold uppercase">
-                      Imagen de Perfil (Avatar)
-                    </Text>
-                    <div className="flex flex-col gap-4">
-                      {editingUser?.avatar_url && (
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
-                          <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-white dark:border-gray-700 shadow-sm">
-                            <img
-                              src={editingUser.avatar_url}
-                              alt="Current avatar"
-                              className="object-cover h-full w-full"
-                            />
-                          </div>
-                          <Text className="text-xs italic text-gray-400">
-                            Avatar actual
-                          </Text>
-                        </div>
-                      )}
-                      <div className="space-y-2">
-                        <input
-                          type="file"
-                          name="avatar"
-                          accept="image/*"
-                          className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 cursor-pointer"
-                        />
-                        <Text className="text-[10px] text-gray-400">
-                          Formatos aceptados: JPG, PNG, WEBP.
-                        </Text>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex justify-end gap-2">
               <Button
                 variant="secondary"
                 onClick={() => setIsUserDialogOpen(false)}
-                disabled={loading}
               >
                 Cancelar
               </Button>
-              <Button
-                type="submit"
-                loading={loading}
-                className="bg-larioja-azul px-8"
-              >
-                Guardar Cambios
+              <Button type="submit" loading={loading}>
+                Guardar
               </Button>
             </div>
           </form>
         </DialogPanel>
       </Dialog>
 
-      {/* ROLE DIALOG */}
       <Dialog
         open={isRoleDialogOpen}
         onClose={() => setIsRoleDialogOpen(false)}
@@ -943,39 +679,21 @@ export default function UserManagerClient({
             {editingRole ? "Editar Rol" : "Nuevo Rol"}
           </Title>
           <form onSubmit={handleSaveRole} className="space-y-4">
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">Nombre</Text>
-              <TextInput
-                name="name"
-                defaultValue={editingRole?.name || ""}
-                placeholder="Nombre del rol"
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">Descripción</Text>
-              <TextInput
-                name="description"
-                defaultValue={editingRole?.description || ""}
-                placeholder="Descripción"
-              />
-            </div>
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">
-                Nivel (Jerarquía)
-              </Text>
-              <TextInput
-                name="level"
-                type="number"
-                defaultValue={editingRole?.level?.toString() || "1"}
-                required
-              />
-            </div>
+            <TextInput
+              name="name"
+              defaultValue={editingRole?.name || ""}
+              required
+            />
+            <TextInput
+              name="level"
+              type="number"
+              defaultValue={editingRole?.level?.toString() || "1"}
+              required
+            />
             <div className="flex justify-end gap-3 mt-6">
               <Button
                 variant="secondary"
                 onClick={() => setIsRoleDialogOpen(false)}
-                disabled={loading}
               >
                 Cancelar
               </Button>
@@ -984,51 +702,40 @@ export default function UserManagerClient({
                 loading={loading}
                 className="bg-larioja-azul"
               >
-                {editingRole ? "Actualizar" : "Crear"}
+                Guardar
               </Button>
             </div>
           </form>
         </DialogPanel>
       </Dialog>
 
-      {/* USER-COMPANY DIALOG */}
       <Dialog
         open={isCompanyDialogOpen}
         onClose={() => setIsCompanyDialogOpen(false)}
         static={true}
       >
         <DialogPanel className="max-w-2xl">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <Title>Empresas Asociadas</Title>
-              <Text className="text-xs">
-                Usuario:{" "}
-                <span className="font-bold">
-                  {selectedUserForCompanies?.email}
-                </span>
-              </Text>
-            </div>
+          <div className="flex justify-between mb-4">
+            <Title>Empresas: {selectedUserForCompanies?.email}</Title>
             <Button
               variant="light"
               icon={X}
               onClick={() => setIsCompanyDialogOpen(false)}
             />
           </div>
-
-          <Card className="p-4 bg-gray-50 dark:bg-gray-900 border-none mb-6">
-            <Title className="text-sm mb-4">Nueva Asignación</Title>
+          <Card className="p-4 bg-gray-50 border-none mb-4">
             <form
               onSubmit={handleAssignCompany}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+              className="flex gap-2 items-end"
             >
-              <div className="space-y-1">
-                <Text className="text-[10px] font-bold uppercase">Empresa</Text>
+              <div className="flex-1 text-xs font-bold">
+                EMPRESA
                 <select
                   name="company_id"
-                  className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                  className="w-full p-2 border rounded text-sm bg-white"
                   required
                 >
-                  <option value="">Seleccionar...</option>
+                  <option value="">Empresa...</option>
                   {companies.map((c) => (
                     <option key={c.company_id} value={c.company_id}>
                       {c.company_name}
@@ -1036,13 +743,11 @@ export default function UserManagerClient({
                   ))}
                 </select>
               </div>
-              <div className="space-y-1">
-                <Text className="text-[10px] font-bold uppercase">
-                  Rol en Empresa
-                </Text>
+              <div className="flex-1 text-xs font-bold">
+                ROL
                 <select
                   name="role_id"
-                  className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                  className="w-full p-2 border rounded text-sm bg-white"
                   required
                 >
                   {roles.map((r) => (
@@ -1052,19 +757,15 @@ export default function UserManagerClient({
                   ))}
                 </select>
               </div>
-              <div className="flex items-end">
-                <Button
-                  type="submit"
-                  icon={Plus}
-                  className="w-full bg-larioja-azul"
-                  loading={loading}
-                >
-                  Asignar
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                loading={loading}
+                className="bg-larioja-azul"
+              >
+                Asignar
+              </Button>
             </form>
           </Card>
-
           <Table>
             <TableHead>
               <TableRow>
@@ -1076,44 +777,24 @@ export default function UserManagerClient({
               </TableRow>
             </TableHead>
             <TableBody>
-              {loadingUserCompanies ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center italic py-8">
-                    Cargando...
+              {userCompanies.map((uc) => (
+                <TableRow key={uc.company_id}>
+                  <TableCell>{uc.company.company_name}</TableCell>
+                  <TableCell>
+                    <Badge>{uc.role_data.name}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="light"
+                      size="xs"
+                      color="rose"
+                      onClick={() => handleRemoveFromCompany(uc.company_id)}
+                    >
+                      Remover
+                    </Button>
                   </TableCell>
                 </TableRow>
-              ) : userCompanies.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="text-center italic py-8 text-gray-400"
-                  >
-                    Sin empresas asignadas
-                  </TableCell>
-                </TableRow>
-              ) : (
-                userCompanies.map((uc) => (
-                  <TableRow key={uc.company_id}>
-                    <TableCell className="font-bold">
-                      {uc.company.company_name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge color="blue">{uc.role_data.name}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="light"
-                        icon={Trash}
-                        size="xs"
-                        color="rose"
-                        onClick={() => handleRemoveFromCompany(uc.company_id)}
-                      >
-                        Remover
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
         </DialogPanel>
