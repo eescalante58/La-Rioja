@@ -383,7 +383,7 @@ export default function BingoManagerClient({
       formData,
     );
 
-    if (result.success_count > 0) {
+    if ("success_count" in result && result.success_count > 0) {
       let message = `Se cargaron exitosamente ${result.success_count} cartones.`;
       if (result.error_count > 0) {
         message +=
@@ -395,11 +395,15 @@ export default function BingoManagerClient({
       setIsUploadDialogOpen(false);
       setUploadingFiles(null);
       window.location.reload();
-    } else {
+    } else if ("errors" in result) {
       alert("Error al cargar cartones:\n" + result.errors.join("\n"));
+    } else if ("error" in result) {
+      alert("Error: " + result.error);
     }
     setLoading(false);
   };
+
+  console.log("BingoManagerClient rendered - Version check 2");
 
   return (
     <div className="space-y-6 px-6">
@@ -907,6 +911,9 @@ export default function BingoManagerClient({
             </Text>
 
             <form onSubmit={handleGenerateCards} className="space-y-4">
+              <div className="bg-red-500 text-white p-2 text-center font-bold rounded-lg mb-4">
+                MODO GENERACIÓN ACTIVO
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-gray-500">
