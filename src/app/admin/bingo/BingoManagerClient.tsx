@@ -963,20 +963,26 @@ export default function BingoManagerClient({
                 </label>
               </div>
 
-              <div className="flex justify-between items-center mt-6">
-                <Button
-                  variant="light"
-                  icon={Upload}
-                  onClick={() => {
-                    setIsGenerateDialogOpen(false);
-                    setIsUploadDialogOpen(true);
-                  }}
-                  type="button"
-                  className="text-larioja-azul"
-                >
-                  Subir PDFs
-                </Button>
-                <div className="flex gap-3">
+              <div className="flex flex-col gap-4 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex items-center justify-between">
+                  <Text className="text-sm font-medium text-gray-500">
+                    ¿Tienes los archivos PDF?
+                  </Text>
+                  <Button
+                    variant="secondary"
+                    icon={Upload}
+                    onClick={() => {
+                      setIsGenerateDialogOpen(false);
+                      setIsUploadDialogOpen(true);
+                    }}
+                    type="button"
+                    className="bg-larioja-azul text-white hover:bg-blue-800"
+                  >
+                    Subir PDFs
+                  </Button>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-2">
                   <Button
                     variant="secondary"
                     onClick={() => setIsGenerateDialogOpen(false)}
