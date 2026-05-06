@@ -51,7 +51,7 @@ export async function getCountryCodes() {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("country_codes")
-    .select("iso2, name, phone_code")
+    .select("iso2, name, phone_code, flag_emoji")
     .order("name", { ascending: true });
 
   if (error) {
@@ -59,6 +59,34 @@ export async function getCountryCodes() {
     return [];
   }
   return data;
+}
+
+/**
+ * Helper to log user activity.
+ */
+async function logActivity(
+  action: string,
+  entity: string,
+  entityId: string | null,
+  metadata: any = {},
+) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  await supabase.from("user_activity_log").insert([
+    {
+      user_id: user.id,
+      action,
+      entity,
+      entity_id: entityId,
+      metadata,
+      timestamp: new Date().toISOString(),
+    },
+  ]);
 }
 
 /**
@@ -123,6 +151,11 @@ export async function createNewUser(data: {
     return { error: profileError.message };
   }
 
+  await logActivity("CREATE", "users", authUser.user.id, {
+    email: data.email,
+    role_id: data.role_id,
+  });
+
   revalidatePath("/admin/settings/users");
   return { success: true };
 }
@@ -160,8 +193,11 @@ export async function updateUser(userId: string, data: any) {
     .from("users")
     .update({
       full_name: data.full_name,
+      secondary_email: data.secondary_email,
+      phone: data.phone,
       role_id: data.role_id,
       status: data.status,
+      avatar_url: data.avatar_url,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
@@ -169,6 +205,8 @@ export async function updateUser(userId: string, data: any) {
   if (error) {
     return { error: error.message };
   }
+
+  await logActivity("UPDATE", "users", userId, data);
 
   revalidatePath("/admin/settings/users");
   return { success: true };
@@ -187,6 +225,8 @@ export async function deleteUser(userId: string) {
     return { error: error.message };
   }
 
+  await logActivity("DELETE", "users", userId);
+
   revalidatePath("/admin/settings/users");
   return { success: true };
 }
@@ -196,11 +236,17 @@ export async function deleteUser(userId: string) {
  */
 export async function createRole(data: any) {
   const supabase = createClient();
-  const { error } = await supabase.from("roles").insert([data]);
+  const { data: newRole, error } = await supabase
+    .from("roles")
+    .insert([data])
+    .select()
+    .single();
 
   if (error) {
     return { error: error.message };
   }
+
+  await logActivity("CREATE", "roles", newRole.role_id, data);
 
   revalidatePath("/admin/settings/users");
   return { success: true };
@@ -223,6 +269,8 @@ export async function updateRole(roleId: number, data: any) {
     return { error: error.message };
   }
 
+  await logActivity("UPDATE", "roles", roleId.toString(), data);
+
   revalidatePath("/admin/settings/users");
   return { success: true };
 }
@@ -237,6 +285,8 @@ export async function deleteRole(roleId: number) {
   if (error) {
     return { error: error.message };
   }
+
+  await logActivity("DELETE", "roles", roleId.toString());
 
   revalidatePath("/admin/settings/users");
   return { success: true };
@@ -263,6 +313,11 @@ export async function assignUserToCompany(
     return { error: error.message };
   }
 
+  await logActivity("ASSIGN_COMPANY", "user_companies", userId, {
+    company_id: companyId,
+    role_id: roleId,
+  });
+
   revalidatePath("/admin/settings/users");
   return { success: true };
 }
@@ -280,6 +335,10 @@ export async function removeUserFromCompany(userId: string, companyId: number) {
   if (error) {
     return { error: error.message };
   }
+
+  await logActivity("REMOVE_COMPANY", "user_companies", userId, {
+    company_id: companyId,
+  });
 
   revalidatePath("/admin/settings/users");
   return { success: true };

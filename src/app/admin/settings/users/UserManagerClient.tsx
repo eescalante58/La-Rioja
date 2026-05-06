@@ -54,7 +54,8 @@ import {
 interface User {
   id: string;
   email: string;
-  full_name: string | null;
+  secondary_email: string | null;
+  phone: string | null;
   status: string;
   role_id: number;
   roles: { name: string } | null;
@@ -77,6 +78,7 @@ interface CountryCode {
   iso2: string;
   name: string;
   phone_code: string;
+  flag_emoji: string;
 }
 
 interface UserCompany {
@@ -139,15 +141,33 @@ export default function UserManagerClient({
 
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    const roleId = formData.get("role_id");
-    const status = formData.get("status");
-    const fullName = formData.get("full_name");
 
-    const result = await updateUser(editingUser.id, {
-      full_name: fullName as string,
-      role_id: parseInt(roleId as string),
-      status: status as string,
-    });
+    // Handle Avatar Upload if a new one is selected
+    let avatarUrl = editingUser.avatar_url || "";
+    const avatarFile = formData.get("avatar") as File;
+    if (avatarFile && avatarFile.size > 0) {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", avatarFile);
+      const uploadResult = await uploadUserAvatar(uploadFormData);
+      if (uploadResult.publicUrl) {
+        avatarUrl = uploadResult.publicUrl;
+      }
+    }
+
+    const phoneCode = formData.get("phone_code") as string;
+    const phoneNumber = formData.get("phone_number") as string;
+    const fullPhone = phoneNumber ? `${phoneCode}${phoneNumber}` : "";
+
+    const data = {
+      full_name: formData.get("full_name") as string,
+      role_id: parseInt(formData.get("role_id") as string),
+      status: formData.get("status") as string,
+      secondary_email: formData.get("secondary_email") as string,
+      phone: fullPhone,
+      avatar_url: avatarUrl,
+    };
+
+    const result = await updateUser(editingUser.id, data);
 
     if (result.success) {
       window.location.reload();
@@ -585,7 +605,7 @@ export default function UserManagerClient({
                       >
                         {countryCodes.map((c) => (
                           <option key={c.iso2} value={c.phone_code}>
-                            {c.iso2} ({c.phone_code})
+                            {c.flag_emoji} {c.iso2} ({c.phone_code})
                           </option>
                         ))}
                       </select>
@@ -657,51 +677,140 @@ export default function UserManagerClient({
         </DialogPanel>
       </Dialog>
 
-      {/* USER DIALOG */}
+      {/* USER DIALOG (EDIT) */}
       <Dialog
         open={isUserDialogOpen}
         onClose={() => setIsUserDialogOpen(false)}
         static={true}
       >
-        <DialogPanel className="max-w-md">
-          <Title className="mb-4">Editar Usuario</Title>
-          <form onSubmit={handleUpdateUser} className="space-y-4">
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">
-                Nombre Completo
-              </Text>
-              <TextInput
-                name="full_name"
-                defaultValue={editingUser?.full_name || ""}
-                placeholder="Nombre completo"
-              />
+        <DialogPanel className="max-w-2xl">
+          <Title className="mb-2">Editar Usuario</Title>
+          <Text className="mb-6">
+            Actualiza el perfil y los accesos para <b>{editingUser?.email}</b>.
+          </Text>
+
+          <form onSubmit={handleUpdateUser} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <Text className="text-xs font-bold uppercase">
+                    Nombre Completo
+                  </Text>
+                  <TextInput
+                    name="full_name"
+                    defaultValue={editingUser?.full_name || ""}
+                    placeholder="Nombre completo"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Text className="text-xs font-bold uppercase">
+                    Correo Secundario
+                  </Text>
+                  <TextInput
+                    name="secondary_email"
+                    type="email"
+                    defaultValue={editingUser?.secondary_email || ""}
+                    placeholder="personal@ejemplo.com"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Text className="text-xs font-bold uppercase">
+                    Teléfono de Contacto
+                  </Text>
+                  <div className="flex gap-2">
+                    <select
+                      name="phone_code"
+                      className="w-32 p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                      defaultValue={
+                        countryCodes.find((c) =>
+                          editingUser?.phone?.startsWith(c.phone_code),
+                        )?.phone_code
+                      }
+                    >
+                      {countryCodes.map((c) => (
+                        <option key={c.iso2} value={c.phone_code}>
+                          {c.flag_emoji} {c.iso2} ({c.phone_code})
+                        </option>
+                      ))}
+                    </select>
+                    <TextInput
+                      name="phone_number"
+                      className="flex-1"
+                      defaultValue={
+                        editingUser?.phone
+                          ? editingUser.phone.replace(
+                              countryCodes.find((c) =>
+                                editingUser.phone?.startsWith(c.phone_code),
+                              )?.phone_code || "",
+                              "",
+                            )
+                          : ""
+                      }
+                      placeholder="Número sin prefijo"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <Text className="text-xs font-bold uppercase">
+                    Rol Global
+                  </Text>
+                  <select
+                    name="role_id"
+                    defaultValue={editingUser?.role_id}
+                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                  >
+                    {roles.map((role) => (
+                      <option key={role.role_id} value={role.role_id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <Text className="text-xs font-bold uppercase">Estado</Text>
+                  <select
+                    name="status"
+                    defaultValue={editingUser?.status}
+                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                  >
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Text className="text-xs font-bold uppercase">
+                    Imagen de Perfil (Avatar)
+                  </Text>
+                  <div className="flex flex-col gap-2">
+                    {editingUser?.avatar_url && (
+                      <div className="relative h-12 w-12 rounded-full overflow-hidden border border-gray-200">
+                        <img
+                          src={editingUser.avatar_url}
+                          alt="Current avatar"
+                          className="object-cover h-full w-full"
+                        />
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      name="avatar"
+                      accept="image/*"
+                      className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">Rol Global</Text>
-              <select
-                name="role_id"
-                defaultValue={editingUser?.role_id}
-                className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-              >
-                {roles.map((role) => (
-                  <option key={role.role_id} value={role.role_id}>
-                    {role.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">Estado</Text>
-              <select
-                name="status"
-                defaultValue={editingUser?.status}
-                className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-              >
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
-              </select>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
+
+            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
               <Button
                 variant="secondary"
                 onClick={() => setIsUserDialogOpen(false)}
@@ -712,7 +821,7 @@ export default function UserManagerClient({
               <Button
                 type="submit"
                 loading={loading}
-                className="bg-larioja-azul"
+                className="bg-larioja-azul px-8"
               >
                 Guardar Cambios
               </Button>
