@@ -15,7 +15,7 @@ export async function getUsersWithRoles() {
     .select(
       `
       *,
-      roles:role_id (name)
+      roles:role_id (name, level)
     `,
     )
     .order("full_name", { ascending: true });
