@@ -1,4 +1,4 @@
-import { getUsersWithRoles, getRoles } from "./actions";
+import { getUsersWithRoles, getRoles, getCountryCodes } from "./actions";
 import { getCompanies } from "../companies/actions";
 import UserManagerClient from "./UserManagerClient";
 
@@ -7,10 +7,11 @@ import UserManagerClient from "./UserManagerClient";
  * Server component that fetches data and renders the client manager.
  */
 export default async function UsersSettingsPage() {
-  const [users, roles, companies] = await Promise.all([
+  const [users, roles, companies, countryCodes] = await Promise.all([
     getUsersWithRoles(),
     getRoles(),
     getCompanies(),
+    getCountryCodes(),
   ]);
 
   return (
@@ -18,6 +19,7 @@ export default async function UsersSettingsPage() {
       initialUsers={users}
       roles={roles}
       companies={companies}
+      countryCodes={countryCodes}
     />
   );
 }

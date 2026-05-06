@@ -48,6 +48,7 @@ import {
   removeUserFromCompany,
   updateUserCompanyRole,
   getUserCompanies,
+  uploadUserAvatar,
 } from "./actions";
 
 interface User {
@@ -72,6 +73,12 @@ interface Company {
   company_name: string;
 }
 
+interface CountryCode {
+  iso2: string;
+  name: string;
+  phone_code: string;
+}
+
 interface UserCompany {
   user_id: string;
   company_id: number;
@@ -87,10 +94,12 @@ export default function UserManagerClient({
   initialUsers,
   roles,
   companies,
+  countryCodes,
 }: {
   initialUsers: any[];
   roles: Role[];
   companies: Company[];
+  countryCodes: CountryCode[];
 }) {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [searchTerm, setSearchTerm] = useState("");
@@ -152,10 +161,30 @@ export default function UserManagerClient({
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+
+    // Handle Avatar Upload
+    let avatarUrl = "";
+    const avatarFile = formData.get("avatar") as File;
+    if (avatarFile && avatarFile.size > 0) {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", avatarFile);
+      const uploadResult = await uploadUserAvatar(uploadFormData);
+      if (uploadResult.publicUrl) {
+        avatarUrl = uploadResult.publicUrl;
+      }
+    }
+
+    const phoneCode = formData.get("phone_code") as string;
+    const phoneNumber = formData.get("phone_number") as string;
+    const fullPhone = phoneNumber ? `${phoneCode}${phoneNumber}` : "";
+
     const data = {
       email: formData.get("email") as string,
       full_name: formData.get("full_name") as string,
       role_id: parseInt(formData.get("role_id") as string),
+      secondary_email: formData.get("secondary_email") as string,
+      phone: fullPhone,
+      avatar_url: avatarUrl,
     };
 
     const result = await createNewUser(data);
@@ -463,61 +492,152 @@ export default function UserManagerClient({
         onClose={() => setIsCreateUserDialogOpen(false)}
         static={true}
       >
-        <DialogPanel className="max-w-md">
-          <Title className="mb-4">Nuevo Usuario</Title>
+        <DialogPanel className="max-w-2xl">
+          <Title className="mb-2">Nuevo Usuario</Title>
           <Text className="mb-6">
-            Crea una nueva cuenta de acceso y perfil de usuario.
+            Completa la información para crear el acceso y el perfil del
+            usuario.
           </Text>
-          <form onSubmit={handleCreateUser} className="space-y-4">
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">
-                Nombre Completo
-              </Text>
-              <TextInput
-                name="full_name"
-                placeholder="Nombre completo"
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">
-                Correo Electrónico
-              </Text>
-              <TextInput
-                name="email"
-                type="email"
-                placeholder="correo@ejemplo.com"
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">Rol Global</Text>
-              <select
-                name="role_id"
-                className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                required
-              >
-                <option value="">Seleccionar rol...</option>
-                {roles.map((role) => (
-                  <option key={role.role_id} value={role.role_id}>
-                    {role.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800 mb-6">
-              <div className="flex gap-2">
+
+          <form onSubmit={handleCreateUser} className="space-y-8">
+            {/* Section 1: Authentication */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
                 <ShieldAlert
-                  size={16}
-                  className="text-amber-600 shrink-0 mt-0.5"
+                  size={18}
+                  className="text-larioja-azul dark:text-larioja-amarillo"
                 />
-                <Text className="text-xs text-amber-800 dark:text-amber-200">
-                  La contraseña temporal será:{" "}
-                  <span className="font-bold">Rioja2026!</span>
-                </Text>
+                <Title className="text-sm font-bold uppercase tracking-wider text-gray-500">
+                  1. Datos de Autenticación
+                </Title>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Text className="text-xs font-bold uppercase">
+                    Correo Institucional (Principal)
+                  </Text>
+                  <TextInput
+                    name="email"
+                    type="email"
+                    placeholder="correo@larioja.edu.ar"
+                    required
+                  />
+                  <Text className="text-[10px] text-gray-400">
+                    Este será el correo para iniciar sesión.
+                  </Text>
+                </div>
+                <div className="bg-larioja-amarillo/10 p-4 rounded-xl border border-larioja-amarillo/20 flex flex-col justify-center">
+                  <Text className="text-xs font-bold text-larioja-azul mb-1">
+                    Contraseña Temporal
+                  </Text>
+                  <Badge color="amber">Rioja2026!</Badge>
+                  <Text className="text-[10px] text-larioja-azul/60 mt-1 italic">
+                    El usuario debe cambiarla al ingresar.
+                  </Text>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+
+            {/* Section 2: Profile Details */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <UsersIcon
+                  size={18}
+                  className="text-larioja-azul dark:text-larioja-amarillo"
+                />
+                <Title className="text-sm font-bold uppercase tracking-wider text-gray-500">
+                  2. Información del Perfil
+                </Title>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <Text className="text-xs font-bold uppercase">
+                      Nombre Completo
+                    </Text>
+                    <TextInput
+                      name="full_name"
+                      placeholder="Ej: Juan Pérez"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Text className="text-xs font-bold uppercase">
+                      Correo Secundario
+                    </Text>
+                    <TextInput
+                      name="secondary_email"
+                      type="email"
+                      placeholder="personal@ejemplo.com"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Text className="text-xs font-bold uppercase">
+                      Teléfono de Contacto
+                    </Text>
+                    <div className="flex gap-2">
+                      <select
+                        name="phone_code"
+                        className="w-32 p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                      >
+                        {countryCodes.map((c) => (
+                          <option key={c.iso2} value={c.phone_code}>
+                            {c.iso2} ({c.phone_code})
+                          </option>
+                        ))}
+                      </select>
+                      <TextInput
+                        name="phone_number"
+                        className="flex-1"
+                        placeholder="Número sin prefijo"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <Text className="text-xs font-bold uppercase">
+                      Rol en el Sistema
+                    </Text>
+                    <select
+                      name="role_id"
+                      className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                      required
+                    >
+                      <option value="">Seleccionar rol...</option>
+                      {roles.map((role) => (
+                        <option key={role.role_id} value={role.role_id}>
+                          {role.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Text className="text-xs font-bold uppercase">
+                      Imagen de Perfil (Avatar)
+                    </Text>
+                    <div className="flex flex-col gap-2">
+                      <input
+                        type="file"
+                        name="avatar"
+                        accept="image/*"
+                        className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 cursor-pointer"
+                      />
+                      <Text className="text-[10px] text-gray-400">
+                        Se guardará en el bucket user_avatar.
+                      </Text>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
               <Button
                 variant="secondary"
                 onClick={() => setIsCreateUserDialogOpen(false)}
@@ -528,9 +648,9 @@ export default function UserManagerClient({
               <Button
                 type="submit"
                 loading={loading}
-                className="bg-larioja-azul"
+                className="bg-larioja-azul px-8"
               >
-                Crear Usuario
+                Crear Usuario Completo
               </Button>
             </div>
           </form>

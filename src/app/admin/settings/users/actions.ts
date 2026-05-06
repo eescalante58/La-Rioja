@@ -45,12 +45,32 @@ export async function getRoles() {
 }
 
 /**
+ * Server action to fetch all country codes.
+ */
+export async function getCountryCodes() {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("country_codes")
+    .select("iso2, name, phone_code")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching country codes:", error);
+    return [];
+  }
+  return data;
+}
+
+/**
  * Server action to create a new user (Auth + Profile).
  */
 export async function createNewUser(data: {
   email: string;
   full_name: string;
   role_id: number;
+  secondary_email?: string;
+  phone?: string;
+  avatar_url?: string;
 }) {
   const cookieStore = cookies();
 
@@ -86,23 +106,48 @@ export async function createNewUser(data: {
     return { error: authError.message };
   }
 
-  // 2. Profile is usually created by a trigger in DB,
-  // but we ensure it has the correct role and name if not.
+  // 2. Profile update (public.users)
   const { error: profileError } = await supabaseAdmin
     .from("users")
     .update({
       full_name: data.full_name,
+      secondary_email: data.secondary_email,
+      phone: data.phone,
       role_id: data.role_id,
+      avatar_url: data.avatar_url,
       status: "active",
     })
     .eq("id", authUser.user.id);
 
   if (profileError) {
-    console.error("Error updating profile after creation:", profileError);
+    return { error: profileError.message };
   }
 
   revalidatePath("/admin/settings/users");
   return { success: true };
+}
+
+/**
+ * Server action to upload a user avatar.
+ */
+export async function uploadUserAvatar(file: FormData) {
+  const supabase = createClient();
+  const image = file.get("file") as File;
+  const fileName = `${Date.now()}-${image.name}`;
+
+  const { data, error } = await supabase.storage
+    .from("user_avatar")
+    .upload(fileName, image);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("user_avatar").getPublicUrl(fileName);
+
+  return { publicUrl };
 }
 
 /**
