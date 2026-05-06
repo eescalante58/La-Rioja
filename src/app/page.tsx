@@ -3,8 +3,6 @@ import { getSectionContent, getPageContent } from "@/services/cms";
 import { Instagram, Facebook, Twitter, MapPin } from "lucide-react";
 import { Metadata } from "next";
 
-import Image from "next/image";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Navbar } from "@/components/layout/Navbar";
 import DynamicYear from "@/components/layout/DynamicYear";
 
@@ -83,20 +81,6 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
       <Navbar />
-
-      {/* Logo (Top Left) - Adjusted for laptop overlap */}
-      <div className="fixed top-4 left-4 z-[70] p-2 transition-colors">
-        <div className="relative h-10 w-28 sm:h-12 sm:w-36 md:h-16 md:w-48 lg:h-20 lg:w-72">
-          <Image
-            src="/logo.png"
-            alt="La Rioja Logo"
-            fill
-            className="object-contain"
-            priority
-            sizes="(max-width: 640px) 112px, (max-width: 768px) 144px, (max-width: 1024px) 192px, 288px"
-          />
-        </div>
-      </div>
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center text-white bg-larioja-azul overflow-hidden pt-32 pb-20 md:pt-40">
