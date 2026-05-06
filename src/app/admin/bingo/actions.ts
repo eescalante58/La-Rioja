@@ -4,6 +4,176 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 /**
+ * Upload card images and create card records.
+ */
+export async function uploadCardImages(
+  companyId: number,
+  eventId: string,
+  cardPrice: number,
+  formData: FormData,
+) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const files = formData.getAll("files") as File[];
+  if (!files || files.length === 0) {
+    return { error: "No se seleccionaron archivos." };
+  }
+
+  const results = {
+    success_count: 0,
+    error_count: 0,
+    errors: [] as string[],
+  };
+
+  for (const file of files) {
+    const fileName = file.name;
+    // Pattern: SERIAL_ (7) + EventID (14) + _Carton_ (8) + CardNumber
+    // Example: SERIAL_20250825113902_Carton_1.pdf
+
+    try {
+      // 1. Extract info from filename
+      const match = fileName.match(/^SERIAL_(\d{14})_Carton_(\d+)\.pdf$/i);
+      if (!match) {
+        results.error_count++;
+        results.errors.push(
+          `Archivo ${fileName}: El nombre no sigue el patrón SERIAL_EventoID_Carton_Numero.pdf`,
+        );
+        continue;
+      }
+
+      const fileEventId = match[1];
+      const cardNumber = parseInt(match[2]);
+
+      // 2. Basic validations
+      if (fileEventId !== eventId) {
+        results.error_count++;
+        results.errors.push(
+          `Archivo ${fileName}: El ID de evento del archivo (${fileEventId}) no coincide con el evento seleccionado (${eventId}).`,
+        );
+        continue;
+      }
+
+      // 3. Check if card already exists in DB
+      const { data: existingCard, error: checkError } = await supabase
+        .from("cards")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("event_id", eventId)
+        .eq("card_number", cardNumber)
+        .maybeSingle();
+
+      if (checkError) {
+        results.error_count++;
+        results.errors.push(
+          `Archivo ${fileName}: Error al verificar existencia en BD.`,
+        );
+        continue;
+      }
+
+      if (existingCard) {
+        results.error_count++;
+        results.errors.push(
+          `Archivo ${fileName}: El cartón número ${cardNumber} ya existe en este evento.`,
+        );
+        continue;
+      }
+
+      // 4. Upload to Storage
+      const storagePath = `${companyId}/${eventId}/${fileName}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("cards_images")
+        .upload(storagePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        results.error_count++;
+        results.errors.push(
+          `Archivo ${fileName}: Error al subir al bucket (${uploadError.message}).`,
+        );
+        continue;
+      }
+
+      // 5. Get public URL
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("cards_images").getPublicUrl(storagePath);
+
+      // 6. Create record in DB
+      const { error: insertError } = await supabase.from("cards").insert({
+        company_id: companyId,
+        event_id: eventId,
+        card_number: cardNumber,
+        card_price: cardPrice,
+        card_type: "Virtual",
+        card_status: "Disponible",
+        image_url: publicUrl,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (insertError) {
+        // Rollback storage if DB fails
+        await supabase.storage.from("cards_images").remove([storagePath]);
+        results.error_count++;
+        results.errors.push(
+          `Archivo ${fileName}: Error al crear registro en BD (${insertError.message}).`,
+        );
+        continue;
+      }
+
+      results.success_count++;
+    } catch (err: any) {
+      results.error_count++;
+      results.errors.push(
+        `Archivo ${fileName}: Error inesperado (${err.message}).`,
+      );
+    }
+  }
+
+  // Update event cartons count if needed
+  if (results.success_count > 0) {
+    const { data: cards } = await supabase
+      .from("cards")
+      .select("card_number")
+      .eq("company_id", companyId)
+      .eq("event_id", eventId);
+
+    if (cards && cards.length > 0) {
+      const maxCardNumber = Math.max(
+        ...cards.map((c) => Number(c.card_number)),
+      );
+      await supabase
+        .from("events")
+        .update({ event_cartons_number: maxCardNumber })
+        .eq("company_id", companyId)
+        .eq("event_id", eventId);
+    }
+
+    if (user) {
+      await supabase.from("user_activity_log").insert({
+        user_id: user.id,
+        action: "UPLOAD_CARDS_IMAGES",
+        entity: "cards",
+        metadata: {
+          company_id: companyId,
+          event_id: eventId,
+          success_count: results.success_count,
+          error_count: results.error_count,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+    revalidatePath("/admin/bingo");
+  }
+
+  return { success: results.error_count === 0, ...results };
+}
+
+/**
  * Fetch all data needed for Bingo management.
  */
 export async function getBingoData() {
