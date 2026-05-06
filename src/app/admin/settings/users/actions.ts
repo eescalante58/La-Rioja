@@ -90,6 +90,26 @@ async function logActivity(
 }
 
 /**
+ * Helper to check if the current user has a specific minimum role level.
+ */
+async function checkMinLevel(minLevel: number) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("roles:role_id (level)")
+    .eq("id", user.id)
+    .single();
+
+  const level = (userData?.roles as any)?.level || 0;
+  return level >= minLevel;
+}
+
+/**
  * Server action to create a new user (Auth + Profile).
  */
 export async function createNewUser(data: {
@@ -100,6 +120,10 @@ export async function createNewUser(data: {
   phone?: string;
   avatar_url?: string;
 }) {
+  if (!(await checkMinLevel(80))) {
+    return { error: "No tienes permisos para crear usuarios." };
+  }
+
   const cookieStore = cookies();
 
   // Need a special client with Service Role Key for admin operations
@@ -188,16 +212,39 @@ export async function uploadUserAvatar(file: FormData) {
  */
 export async function updateUser(userId: string, data: any) {
   const supabase = createClient();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+
+  if (!currentUser) return { error: "No autenticado." };
+
+  // RBAC: Admins (80+) can update anyone. Others can only update themselves.
+  const isSelf = currentUser.id === userId;
+  const isAuthorized = isSelf || (await checkMinLevel(80));
+
+  if (!isAuthorized) {
+    return { error: "No tienes permisos para actualizar este perfil." };
+  }
+
+  // Security: Non-admins cannot change their own role or status
+  const finalData = { ...data };
+  if (!isSelf || (await checkMinLevel(80))) {
+    // Keep requested role/status if admin or editing someone else
+  } else {
+    // If self-editing and NOT admin, remove role_id and status from update
+    delete finalData.role_id;
+    delete finalData.status;
+  }
 
   const { error } = await supabase
     .from("users")
     .update({
-      full_name: data.full_name,
-      secondary_email: data.secondary_email,
-      phone: data.phone,
-      role_id: data.role_id,
-      status: data.status,
-      avatar_url: data.avatar_url,
+      full_name: finalData.full_name,
+      secondary_email: finalData.secondary_email,
+      phone: finalData.phone,
+      role_id: finalData.role_id,
+      status: finalData.status,
+      avatar_url: finalData.avatar_url,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
@@ -216,6 +263,12 @@ export async function updateUser(userId: string, data: any) {
  * Server action to delete a user.
  */
 export async function deleteUser(userId: string) {
+  if (!(await checkMinLevel(100))) {
+    return {
+      error: "Solo los Super Administradores pueden eliminar usuarios.",
+    };
+  }
+
   const supabase = createClient();
 
   // Note: This only deletes from our 'users' table, not Supabase Auth
@@ -235,6 +288,9 @@ export async function deleteUser(userId: string) {
  * Server action to create a new role.
  */
 export async function createRole(data: any) {
+  if (!(await checkMinLevel(100))) {
+    return { error: "Solo los Super Administradores pueden gestionar roles." };
+  }
   const supabase = createClient();
   const { data: newRole, error } = await supabase
     .from("roles")
@@ -256,6 +312,9 @@ export async function createRole(data: any) {
  * Server action to update a role.
  */
 export async function updateRole(roleId: number, data: any) {
+  if (!(await checkMinLevel(100))) {
+    return { error: "Solo los Super Administradores pueden gestionar roles." };
+  }
   const supabase = createClient();
   const { error } = await supabase
     .from("roles")
@@ -279,6 +338,9 @@ export async function updateRole(roleId: number, data: any) {
  * Server action to delete a role.
  */
 export async function deleteRole(roleId: number) {
+  if (!(await checkMinLevel(100))) {
+    return { error: "Solo los Super Administradores pueden gestionar roles." };
+  }
   const supabase = createClient();
   const { error } = await supabase.from("roles").delete().eq("role_id", roleId);
 
@@ -300,6 +362,9 @@ export async function assignUserToCompany(
   companyId: number,
   roleId: number,
 ) {
+  if (!(await checkMinLevel(80))) {
+    return { error: "No tienes permisos para gestionar empresas de usuarios." };
+  }
   const supabase = createClient();
   const { error } = await supabase.from("user_companies").insert([
     {
