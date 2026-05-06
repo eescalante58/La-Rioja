@@ -22,6 +22,57 @@ export async function uploadCardImages(
     return { error: "No se seleccionaron archivos." };
   }
 
+  const deleteExisting = formData.get("delete_existing_upload") === "on";
+
+  // If requested, delete existing cards for this event first
+  if (deleteExisting) {
+    // 1. Get cards that can be deleted (status = 'Disponible')
+    const { data: cardsToDelete, error: fetchError } = await supabase
+      .from("cards")
+      .select("card_number, image_url")
+      .eq("company_id", companyId)
+      .eq("event_id", eventId)
+      .eq("card_status", "Disponible");
+
+    if (fetchError) {
+      console.error("Error fetching cards for deletion:", fetchError);
+      return { error: "Error al buscar cartones para eliminar." };
+    }
+
+    if (cardsToDelete && cardsToDelete.length > 0) {
+      // 2. Identify files to delete in Storage
+      const filesToDelete = cardsToDelete
+        .map((c) => {
+          if (!c.image_url) return null;
+          try {
+            const url = new URL(c.image_url);
+            const pathParts = url.pathname.split("/");
+            const companyIdx = pathParts.indexOf(companyId.toString());
+            if (companyIdx !== -1) {
+              return pathParts.slice(companyIdx).join("/");
+            }
+            return null;
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter((path): path is string => path !== null);
+
+      // 3. Delete from Storage
+      if (filesToDelete.length > 0) {
+        await supabase.storage.from("cards_images").remove(filesToDelete);
+      }
+
+      // 4. Delete from Database
+      await supabase
+        .from("cards")
+        .delete()
+        .eq("company_id", companyId)
+        .eq("event_id", eventId)
+        .eq("card_status", "Disponible");
+    }
+  }
+
   const results = {
     success_count: 0,
     error_count: 0,

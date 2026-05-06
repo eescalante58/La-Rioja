@@ -366,7 +366,8 @@ export default function BingoManagerClient({
     }
 
     setLoading(true);
-    const formData = new FormData();
+    const formData = new FormData(e.currentTarget);
+    // Add files to the same formData to include the checkbox value
     for (let i = 0; i < uploadingFiles.length; i++) {
       formData.append("files", uploadingFiles[i]);
     }
@@ -375,6 +376,16 @@ export default function BingoManagerClient({
       (e.currentTarget.elements.namedItem("card_price") as HTMLInputElement)
         .value,
     );
+    const deleteExisting = formData.get("delete_existing_upload") === "on";
+
+    const confirmMessage = deleteExisting
+      ? `¿Estás seguro de ELIMINAR los cartones disponibles existentes y subir estos ${uploadingFiles.length} nuevos?`
+      : `¿Deseas subir estos ${uploadingFiles.length} cartones?`;
+
+    if (!confirm(confirmMessage)) {
+      setLoading(false);
+      return;
+    }
 
     const result = await uploadCardImages(
       selectedEventForCards.company_id,
@@ -863,6 +874,21 @@ export default function BingoManagerClient({
                       : "Haz clic o arrastra los PDFs aquí"}
                   </Text>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="delete_existing_upload"
+                  name="delete_existing_upload"
+                  className="h-4 w-4 text-larioja-azul border-gray-300 rounded focus:ring-larioja-azul"
+                />
+                <label
+                  htmlFor="delete_existing_upload"
+                  className="text-sm text-gray-600 font-medium cursor-pointer"
+                >
+                  Limpiar cartones existentes antes de subir
+                </label>
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
