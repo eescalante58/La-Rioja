@@ -372,7 +372,7 @@ export default function UserManagerClient({
           </Link>
           <div>
             <Title className="text-lg font-bold text-larioja-azul/80 dark:text-larioja-amarillo/80">
-              Usuarios, Roles y Empresas
+              Usuarios, Roles y Empresas [v2]
             </Title>
             <Text className="text-xs">
               Administra el acceso global, los roles del sistema y la
@@ -659,17 +659,20 @@ export default function UserManagerClient({
                     <div className="flex gap-2">
                       <select
                         name="phone_code"
-                        className="w-32 p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                        className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
                       >
+                        <option value="">Seleccionar país...</option>
                         {countryCodes.map((c) => (
                           <option key={c.iso2} value={c.phone_code}>
-                            {c.flag_emoji} {c.iso2} ({c.phone_code})
+                            {c.flag_emoji} {c.name} (+{c.phone_code})
                           </option>
                         ))}
                       </select>
+                    </div>
+                    <div className="mt-2">
                       <TextInput
                         name="phone_number"
-                        className="flex-1"
+                        className="w-full"
                         placeholder="Número sin prefijo"
                       />
                     </div>
@@ -744,76 +747,23 @@ export default function UserManagerClient({
         <DialogPanel className="max-w-2xl">
           <Title className="mb-2">Editar Usuario</Title>
           <Text className="mb-6">
-            Actualiza el perfil y los accesos para <b>{editingUser?.email}</b>.
+            Actualiza la información de acceso y el perfil para{" "}
+            <b>{editingUser?.email}</b>.
           </Text>
 
           <form onSubmit={handleUpdateUser} className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase">
-                    Nombre Completo
-                  </Text>
-                  <TextInput
-                    name="full_name"
-                    defaultValue={editingUser?.full_name || ""}
-                    placeholder="Nombre completo"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase">
-                    Correo Secundario
-                  </Text>
-                  <TextInput
-                    name="secondary_email"
-                    type="email"
-                    defaultValue={editingUser?.secondary_email || ""}
-                    placeholder="personal@ejemplo.com"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase">
-                    Teléfono de Contacto
-                  </Text>
-                  <div className="flex gap-2">
-                    <select
-                      name="phone_code"
-                      className="w-32 p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                      defaultValue={
-                        countryCodes.find((c) =>
-                          editingUser?.phone?.startsWith(c.phone_code),
-                        )?.phone_code
-                      }
-                    >
-                      {countryCodes.map((c) => (
-                        <option key={c.iso2} value={c.phone_code}>
-                          {c.flag_emoji} {c.iso2} ({c.phone_code})
-                        </option>
-                      ))}
-                    </select>
-                    <TextInput
-                      name="phone_number"
-                      className="flex-1"
-                      defaultValue={
-                        editingUser?.phone
-                          ? editingUser.phone.replace(
-                              countryCodes.find((c) =>
-                                editingUser.phone?.startsWith(c.phone_code),
-                              )?.phone_code || "",
-                              "",
-                            )
-                          : ""
-                      }
-                      placeholder="Número sin prefijo"
-                    />
-                  </div>
-                </div>
+            {/* Section 1: Authentication/Access */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <ShieldAlert
+                  size={18}
+                  className="text-larioja-azul dark:text-larioja-amarillo"
+                />
+                <Title className="text-sm font-bold uppercase tracking-wider text-gray-500">
+                  1. Configuración de Acceso
+                </Title>
               </div>
-
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase">
                     Rol Global
@@ -844,27 +794,119 @@ export default function UserManagerClient({
                     <option value="inactive">Inactivo</option>
                   </select>
                 </div>
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Text className="text-xs font-bold uppercase">
-                    Imagen de Perfil (Avatar)
-                  </Text>
-                  <div className="flex flex-col gap-2">
-                    {editingUser?.avatar_url && (
-                      <div className="relative h-12 w-12 rounded-full overflow-hidden border border-gray-200">
-                        <img
-                          src={editingUser.avatar_url}
-                          alt="Current avatar"
-                          className="object-cover h-full w-full"
-                        />
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      name="avatar"
-                      accept="image/*"
-                      className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 cursor-pointer"
+            {/* Section 2: Profile Details */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <UsersIcon
+                  size={18}
+                  className="text-larioja-azul dark:text-larioja-amarillo"
+                />
+                <Title className="text-sm font-bold uppercase tracking-wider text-gray-500">
+                  2. Información del Perfil
+                </Title>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <Text className="text-xs font-bold uppercase">
+                      Nombre Completo
+                    </Text>
+                    <TextInput
+                      name="full_name"
+                      defaultValue={editingUser?.full_name || ""}
+                      placeholder="Nombre completo"
+                      required
                     />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Text className="text-xs font-bold uppercase">
+                      Correo Secundario
+                    </Text>
+                    <TextInput
+                      name="secondary_email"
+                      type="email"
+                      defaultValue={editingUser?.secondary_email || ""}
+                      placeholder="personal@ejemplo.com"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Text className="text-xs font-bold uppercase">
+                      Teléfono de Contacto
+                    </Text>
+                    <div className="flex flex-col gap-2">
+                      <select
+                        name="phone_code"
+                        className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                        defaultValue={
+                          countryCodes.find((c) =>
+                            editingUser?.phone?.startsWith(c.phone_code),
+                          )?.phone_code
+                        }
+                      >
+                        <option value="">Seleccionar país...</option>
+                        {countryCodes.map((c) => (
+                          <option key={c.iso2} value={c.phone_code}>
+                            {c.flag_emoji} {c.name} (+{c.phone_code})
+                          </option>
+                        ))}
+                      </select>
+                      <TextInput
+                        name="phone_number"
+                        className="w-full"
+                        defaultValue={
+                          editingUser?.phone
+                            ? editingUser.phone.replace(
+                                countryCodes.find((c) =>
+                                  editingUser.phone?.startsWith(c.phone_code),
+                                )?.phone_code || "",
+                                "",
+                              )
+                            : ""
+                        }
+                        placeholder="Número sin prefijo"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Text className="text-xs font-bold uppercase">
+                      Imagen de Perfil (Avatar)
+                    </Text>
+                    <div className="flex flex-col gap-4">
+                      {editingUser?.avatar_url && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
+                          <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-white dark:border-gray-700 shadow-sm">
+                            <img
+                              src={editingUser.avatar_url}
+                              alt="Current avatar"
+                              className="object-cover h-full w-full"
+                            />
+                          </div>
+                          <Text className="text-xs italic text-gray-400">
+                            Avatar actual
+                          </Text>
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <input
+                          type="file"
+                          name="avatar"
+                          accept="image/*"
+                          className="text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 cursor-pointer"
+                        />
+                        <Text className="text-[10px] text-gray-400">
+                          Formatos aceptados: JPG, PNG, WEBP.
+                        </Text>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
