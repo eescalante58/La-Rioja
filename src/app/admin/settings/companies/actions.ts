@@ -96,11 +96,21 @@ export async function saveCompany(formData: FormData) {
   let finalId: string | null = id ? id.toString() : null;
 
   if (id) {
-    const { error: updateError } = await supabase
+    const { data, error: updateError } = await supabase
       .from("companies")
       .update(companyData)
-      .eq("company_id", id);
+      .eq("company_id", id)
+      .select();
+
     error = updateError;
+
+    if (!error && (!data || data.length === 0)) {
+      return {
+        error:
+          "No se encontró la empresa o no tienes permisos para actualizarla.",
+      };
+    }
+
     if (!error) await logActivity("UPDATE", "companies", finalId!, companyData);
   } else {
     const { data, error: insertError } = await supabase
