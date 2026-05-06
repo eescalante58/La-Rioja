@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -11,15 +12,38 @@ import { ThemeToggle } from "./ThemeToggle";
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
+  // Block scroll when menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   const toggleMenu = () => setIsOpen(!isOpen);
 
   return (
     <>
       {/* Desktop & Mobile Fixed Navbar container */}
-      <nav className="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+      <nav className="fixed top-0 left-0 right-0 z-[100] transition-all duration-300">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          {/* Empty div for spacing if needed, logo is absolute in page.tsx but we can move it here or keep it separate */}
-          <div className="w-40 md:w-64" /> 
+          {/* Logo */}
+          <Link href="/" className="relative z-[110] p-2 transition-colors">
+            <div className="relative h-10 w-28 sm:h-12 sm:w-36 md:h-16 md:w-48 lg:h-20 lg:w-72">
+              <Image
+                src="/logo.png"
+                alt="La Rioja Logo"
+                fill
+                className="object-contain"
+                priority
+                sizes="(max-width: 640px) 112px, (max-width: 768px) 144px, (max-width: 1024px) 192px, 288px"
+              />
+            </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
@@ -47,7 +71,7 @@ export function Navbar() {
           </div>
 
           {/* Mobile & Tablet Toggle */}
-          <div className="lg:hidden flex items-center gap-3">
+          <div className="lg:hidden flex items-center gap-3 relative z-[120]">
             <div className="bg-white/10 backdrop-blur-md rounded-full p-1 border border-white/30">
               <ThemeToggle />
             </div>
@@ -63,7 +87,7 @@ export function Navbar() {
 
         {/* Mobile Menu Overlay */}
         <div
-          className={`lg:hidden fixed inset-0 bg-larioja-azul/95 backdrop-blur-xl transition-all duration-500 z-[60] ${
+          className={`lg:hidden fixed inset-0 bg-larioja-azul/98 backdrop-blur-2xl transition-all duration-500 z-[115] ${
             isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
           }`}
         >
@@ -98,7 +122,7 @@ export function Navbar() {
                 Panel de Control
               </Link>
             </div>
-            
+
             <div className="mt-auto pb-12 text-center text-white/40 text-sm italic">
               Formando futuros, integrando vidas.
             </div>
