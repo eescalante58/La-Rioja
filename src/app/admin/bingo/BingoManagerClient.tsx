@@ -314,6 +314,7 @@ export default function BingoManagerClient({
     const start = parseInt(formData.get("start") as string);
     const end = parseInt(formData.get("end") as string);
     const price = parseFloat(formData.get("price") as string);
+    const deleteExisting = formData.get("delete_existing") === "on";
 
     if (end - start + 1 > 5000) {
       alert("Por seguridad, no puedes generar más de 5,000 cartones por lote.");
@@ -321,17 +322,18 @@ export default function BingoManagerClient({
       return;
     }
 
-    if (
-      confirm(
-        `¿Estás seguro de generar ${end - start + 1} cartones? Si ya existen en este rango, sus valores se actualizarán.`,
-      )
-    ) {
+    const message = deleteExisting
+      ? `¿Estás seguro de ELIMINAR TODOS los cartones existentes de este evento y generar ${end - start + 1} cartones nuevos? Esta acción no se puede deshacer.`
+      : `¿Estás seguro de generar ${end - start + 1} cartones? Si ya existen en este rango, sus valores se actualizarán.`;
+
+    if (confirm(message)) {
       const result = await generateCards(
         selectedEventForCards.company_id,
         selectedEventForCards.event_id,
         start,
         end,
         price,
+        deleteExisting,
       );
 
       if (result.success) {
@@ -803,6 +805,21 @@ export default function BingoManagerClient({
                   defaultValue={selectedEventForCards?.card_value?.toString()}
                   required
                 />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="delete_existing"
+                  name="delete_existing"
+                  className="h-4 w-4 text-larioja-azul border-gray-300 rounded focus:ring-larioja-azul"
+                />
+                <label
+                  htmlFor="delete_existing"
+                  className="text-sm text-gray-600 font-medium cursor-pointer"
+                >
+                  Limpiar cartones existentes antes de generar
+                </label>
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
