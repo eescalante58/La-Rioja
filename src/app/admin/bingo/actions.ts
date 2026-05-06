@@ -174,8 +174,20 @@ export async function generateCards(
   price: number,
 ) {
   const supabase = createClient();
-  const cards = [];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  if (start > end) {
+    return { error: "El número inicial no puede ser mayor al número final." };
+  }
+
+  const count = end - start + 1;
+  if (count > 5000) {
+    return { error: "No se pueden generar más de 5,000 cartones a la vez." };
+  }
+
+  const cards = [];
   for (let i = start; i <= end; i++) {
     cards.push({
       company_id: companyId,
@@ -184,11 +196,52 @@ export async function generateCards(
       card_status: "Disponible",
       card_price: price,
       card_type: "Virtual",
+      updated_at: new Date().toISOString(),
     });
   }
 
-  const { error } = await supabase.from("cards").insert(cards);
-  if (error) return { error: error.message };
+  // Use upsert to avoid failing on duplicates if some cards already exist
+  const { error } = await supabase.from("cards").upsert(cards, {
+    onConflict: "company_id,event_id,card_number",
+  });
+
+  if (error) {
+    console.error("Error generating cards:", error);
+    return { error: error.message };
+  }
+
+  // Update the event's total cartons number if it has increased
+  const { data: event } = await supabase
+    .from("events")
+    .select("event_cartons_number")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .single();
+
+  if (event && (event.event_cartons_number || 0) < end) {
+    await supabase
+      .from("events")
+      .update({ event_cartons_number: end })
+      .eq("company_id", companyId)
+      .eq("event_id", eventId);
+  }
+
+  // Log activity
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "GENERATE_CARDS",
+      entity: "cards",
+      metadata: {
+        company_id: companyId,
+        event_id: eventId,
+        range: `${start}-${end}`,
+        count: count,
+        price: price,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/admin/bingo");
   return { success: true };

@@ -315,20 +315,34 @@ export default function BingoManagerClient({
     const end = parseInt(formData.get("end") as string);
     const price = parseFloat(formData.get("price") as string);
 
-    const result = await generateCards(
-      selectedEventForCards.company_id,
-      selectedEventForCards.event_id,
-      start,
-      end,
-      price,
-    );
+    if (end - start + 1 > 5000) {
+      alert("Por seguridad, no puedes generar más de 5,000 cartones por lote.");
+      setLoading(false);
+      return;
+    }
 
-    if (result.success) {
-      alert("Cartones generados exitosamente");
-      setIsGenerateDialogOpen(false);
-      window.location.reload();
+    if (
+      confirm(
+        `¿Estás seguro de generar ${end - start + 1} cartones? Si ya existen en este rango, sus valores se actualizarán.`,
+      )
+    ) {
+      const result = await generateCards(
+        selectedEventForCards.company_id,
+        selectedEventForCards.event_id,
+        start,
+        end,
+        price,
+      );
+
+      if (result.success) {
+        alert("Cartones generados exitosamente");
+        setIsGenerateDialogOpen(false);
+        window.location.reload();
+      } else {
+        alert("Error: " + result.error);
+        setLoading(false);
+      }
     } else {
-      alert("Error: " + result.error);
       setLoading(false);
     }
   };
