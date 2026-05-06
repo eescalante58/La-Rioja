@@ -31,6 +31,7 @@ import {
   Shield,
   Plus,
   Trash,
+  X,
   Building2,
   Users as UsersIcon,
   ShieldAlert,
