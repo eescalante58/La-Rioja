@@ -29,11 +29,14 @@ export async function saveCompany(formData: FormData) {
   const name = formData.get("company_name") as string;
   const phone_code = formData.get("phone_code_area") as string;
   const phone_number = formData.get("phone_number") as string;
+  const session_timeout =
+    parseInt(formData.get("session_timeout_minutes") as string) || 30;
 
   const companyData = {
     company_name: name,
     phone_code_area: phone_code,
     phone_number: phone_number,
+    session_timeout_minutes: session_timeout,
     updated_at: new Date().toISOString(),
   };
 

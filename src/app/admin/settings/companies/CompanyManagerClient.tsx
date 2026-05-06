@@ -33,6 +33,7 @@ interface Company {
   company_name: string;
   phone_code_area: string | null;
   phone_number: string | null;
+  session_timeout_minutes: number | null;
 }
 
 /**
@@ -132,6 +133,7 @@ export default function CompanyManagerClient({
               <TableHeaderCell>Nombre</TableHeaderCell>
               <TableHeaderCell>ID</TableHeaderCell>
               <TableHeaderCell>Teléfono</TableHeaderCell>
+              <TableHeaderCell>Timeout (min)</TableHeaderCell>
               <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
             </TableRow>
           </TableHead>
@@ -153,6 +155,11 @@ export default function CompanyManagerClient({
                       ({company.phone_code_area || "---"}){" "}
                       {company.phone_number || "---"}
                     </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-xs">
+                    {company.session_timeout_minutes || 30} min
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
@@ -229,6 +236,21 @@ export default function CompanyManagerClient({
                   defaultValue={editingCompany?.phone_number || ""}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <Text className="text-xs font-bold uppercase">
+                Timeout de Sesión (Minutos)
+              </Text>
+              <TextInput
+                name="session_timeout_minutes"
+                type="number"
+                placeholder="30"
+                defaultValue={
+                  editingCompany?.session_timeout_minutes?.toString() || "30"
+                }
+                required
+              />
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
