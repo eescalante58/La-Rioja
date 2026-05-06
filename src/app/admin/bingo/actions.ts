@@ -360,17 +360,71 @@ export async function generateCards(
 
   // If requested, delete existing cards for this event first
   if (deleteExisting) {
-    const { error: deleteError } = await supabase
+    // 1. Get cards that can be deleted (status = 'Disponible')
+    const { data: cardsToDelete, error: fetchError } = await supabase
       .from("cards")
-      .delete()
+      .select("card_number, image_url")
       .eq("company_id", companyId)
-      .eq("event_id", eventId);
+      .eq("event_id", eventId)
+      .eq("card_status", "Disponible");
 
-    if (deleteError) {
-      console.error("Error deleting existing cards:", deleteError);
-      return {
-        error: "Error al eliminar cartones previos: " + deleteError.message,
-      };
+    if (fetchError) {
+      console.error("Error fetching cards for deletion:", fetchError);
+      return { error: "Error al buscar cartones para eliminar." };
+    }
+
+    if (cardsToDelete && cardsToDelete.length > 0) {
+      // 2. Identify files to delete in Storage
+      // We extract the filename from the public URL if possible
+      const filesToDelete = cardsToDelete
+        .map((c) => {
+          if (!c.image_url) return null;
+          try {
+            const url = new URL(c.image_url);
+            const pathParts = url.pathname.split("/");
+            // The path in the bucket is companyId/eventId/filename
+            // Public URL usually ends with /storage/v1/object/public/cards_images/companyId/eventId/filename
+            const companyIdx = pathParts.indexOf(companyId.toString());
+            if (companyIdx !== -1) {
+              return pathParts.slice(companyIdx).join("/");
+            }
+            return null;
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter((path): path is string => path !== null);
+
+      // 3. Delete from Storage
+      if (filesToDelete.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from("cards_images")
+          .remove(filesToDelete);
+
+        if (storageError) {
+          console.warn(
+            "Some storage files could not be deleted:",
+            storageError,
+          );
+        }
+      }
+
+      // 4. Delete from Database (only those that are 'Disponible')
+      const { error: deleteError } = await supabase
+        .from("cards")
+        .delete()
+        .eq("company_id", companyId)
+        .eq("event_id", eventId)
+        .eq("card_status", "Disponible");
+
+      if (deleteError) {
+        console.error("Error deleting cards from DB:", deleteError);
+        return {
+          error:
+            "Error al eliminar cartones de la base de datos: " +
+            deleteError.message,
+        };
+      }
     }
   }
 
