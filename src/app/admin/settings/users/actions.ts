@@ -1,7 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 /**
  * Server action to fetch all users with their roles.
@@ -40,6 +42,67 @@ export async function getRoles() {
     return [];
   }
   return data;
+}
+
+/**
+ * Server action to create a new user (Auth + Profile).
+ */
+export async function createNewUser(data: {
+  email: string;
+  full_name: string;
+  role_id: number;
+}) {
+  const cookieStore = cookies();
+
+  // Need a special client with Service Role Key for admin operations
+  const supabaseAdmin = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options: any) {
+          cookieStore.set({ name, value: "", ...options });
+        },
+      },
+    },
+  );
+
+  // 1. Create user in Supabase Auth
+  const { data: authUser, error: authError } =
+    await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: "Rioja2026!", // Temporary password
+      email_confirm: true,
+      user_metadata: { full_name: data.full_name },
+    });
+
+  if (authError) {
+    return { error: authError.message };
+  }
+
+  // 2. Profile is usually created by a trigger in DB,
+  // but we ensure it has the correct role and name if not.
+  const { error: profileError } = await supabaseAdmin
+    .from("users")
+    .update({
+      full_name: data.full_name,
+      role_id: data.role_id,
+      status: "active",
+    })
+    .eq("id", authUser.user.id);
+
+  if (profileError) {
+    console.error("Error updating profile after creation:", profileError);
+  }
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
 }
 
 /**

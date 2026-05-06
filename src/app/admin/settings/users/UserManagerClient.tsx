@@ -40,6 +40,7 @@ import Link from "next/link";
 import {
   updateUser,
   deleteUser,
+  createNewUser,
   createRole,
   updateRole,
   deleteRole,
@@ -97,6 +98,7 @@ export default function UserManagerClient({
 
   // User Dialog State
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+  const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   // Role Dialog State
@@ -137,6 +139,26 @@ export default function UserManagerClient({
       role_id: parseInt(roleId as string),
       status: status as string,
     });
+
+    if (result.success) {
+      window.location.reload();
+    } else {
+      alert("Error: " + result.error);
+      setLoading(false);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      email: formData.get("email") as string,
+      full_name: formData.get("full_name") as string,
+      role_id: parseInt(formData.get("role_id") as string),
+    };
+
+    const result = await createNewUser(data);
 
     if (result.success) {
       window.location.reload();
@@ -283,15 +305,24 @@ export default function UserManagerClient({
           {/* USERS TAB */}
           <TabPanel>
             <Card className="p-4 mt-4">
-              <div className="flex items-center gap-2 mb-4 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700">
-                <Search className="text-gray-400" size={20} />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre o email..."
-                  className="bg-transparent border-none outline-none text-sm flex-1 dark:text-white"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg border border-gray-200 dark:border-gray-700 flex-1">
+                  <Search className="text-gray-400" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre o email..."
+                    className="bg-transparent border-none outline-none text-sm flex-1 dark:text-white"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Button
+                  icon={Plus}
+                  className="bg-larioja-azul"
+                  onClick={() => setIsCreateUserDialogOpen(true)}
+                >
+                  Nuevo Usuario
+                </Button>
               </div>
 
               <Table>
@@ -425,6 +456,86 @@ export default function UserManagerClient({
           </TabPanel>
         </TabPanels>
       </TabGroup>
+
+      {/* CREATE USER DIALOG */}
+      <Dialog
+        open={isCreateUserDialogOpen}
+        onClose={() => setIsCreateUserDialogOpen(false)}
+        static={true}
+      >
+        <DialogPanel className="max-w-md">
+          <Title className="mb-4">Nuevo Usuario</Title>
+          <Text className="mb-6">
+            Crea una nueva cuenta de acceso y perfil de usuario.
+          </Text>
+          <form onSubmit={handleCreateUser} className="space-y-4">
+            <div className="space-y-1">
+              <Text className="text-xs font-bold uppercase">
+                Nombre Completo
+              </Text>
+              <TextInput
+                name="full_name"
+                placeholder="Nombre completo"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <Text className="text-xs font-bold uppercase">
+                Correo Electrónico
+              </Text>
+              <TextInput
+                name="email"
+                type="email"
+                placeholder="correo@ejemplo.com"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <Text className="text-xs font-bold uppercase">Rol Global</Text>
+              <select
+                name="role_id"
+                className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                required
+              >
+                <option value="">Seleccionar rol...</option>
+                {roles.map((role) => (
+                  <option key={role.role_id} value={role.role_id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800 mb-6">
+              <div className="flex gap-2">
+                <ShieldAlert
+                  size={16}
+                  className="text-amber-600 shrink-0 mt-0.5"
+                />
+                <Text className="text-xs text-amber-800 dark:text-amber-200">
+                  La contraseña temporal será:{" "}
+                  <span className="font-bold">Rioja2026!</span>
+                </Text>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <Button
+                variant="secondary"
+                onClick={() => setIsCreateUserDialogOpen(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                loading={loading}
+                className="bg-larioja-azul"
+              >
+                Crear Usuario
+              </Button>
+            </div>
+          </form>
+        </DialogPanel>
+      </Dialog>
 
       {/* USER DIALOG */}
       <Dialog
