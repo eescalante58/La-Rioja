@@ -570,18 +570,7 @@ export default function BingoManagerClient({
                           setIsGenerateDialogOpen(true);
                         }}
                       >
-                        Generar
-                      </Button>
-                      <Button
-                        size="xs"
-                        className="w-full bg-larioja-azul"
-                        icon={Upload}
-                        onClick={() => {
-                          setSelectedEventForCards(ev);
-                          setIsUploadDialogOpen(true);
-                        }}
-                      >
-                        Subir PDFs
+                        Cargar
                       </Button>
                     </div>
                   </Card>
@@ -974,22 +963,36 @@ export default function BingoManagerClient({
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="flex justify-between items-center mt-6">
                 <Button
-                  variant="secondary"
-                  onClick={() => setIsGenerateDialogOpen(false)}
-                  disabled={loading}
+                  variant="light"
+                  icon={Upload}
+                  onClick={() => {
+                    setIsGenerateDialogOpen(false);
+                    setIsUploadDialogOpen(true);
+                  }}
                   type="button"
+                  className="text-larioja-azul"
                 >
-                  Cancelar
+                  Subir PDFs
                 </Button>
-                <Button
-                  type="submit"
-                  loading={loading}
-                  className="bg-larioja-verde"
-                >
-                  Generar
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsGenerateDialogOpen(false)}
+                    disabled={loading}
+                    type="button"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={loading}
+                    className="bg-larioja-verde"
+                  >
+                    Generar
+                  </Button>
+                </div>
               </div>
             </form>
           </DialogPanel>
