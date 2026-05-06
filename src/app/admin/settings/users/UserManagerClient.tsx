@@ -54,6 +54,7 @@ import {
 interface User {
   id: string;
   email: string;
+  full_name: string | null;
   secondary_email: string | null;
   phone: string | null;
   status: string;
@@ -145,6 +146,20 @@ export default function UserManagerClient({
 
   const canCreateUser = currentUserLevel >= 80;
   const canManageRoles = currentUserLevel >= 100;
+
+  // Tabs for the settings page
+  const settingsTabs = [
+    <Tab key="users" icon={UsersIcon}>
+      Usuarios
+    </Tab>,
+  ];
+  if (canManageRoles) {
+    settingsTabs.push(
+      <Tab key="roles" icon={Shield}>
+        Roles del Sistema
+      </Tab>,
+    );
+  }
 
   // User Handlers
   const handleEditUser = (user: User) => {
@@ -368,10 +383,7 @@ export default function UserManagerClient({
       </div>
 
       <TabGroup>
-        <TabList className="mt-4">
-          <Tab icon={UsersIcon}>Usuarios</Tab>
-          {canManageRoles && <Tab icon={Shield}>Roles del Sistema</Tab>}
-        </TabList>
+        <TabList className="mt-4">{settingsTabs}</TabList>
         <TabPanels>
           {/* USERS TAB */}
           <TabPanel>
