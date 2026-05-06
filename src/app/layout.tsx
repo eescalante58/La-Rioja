@@ -3,6 +3,7 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
+import { SessionManager } from "@/components/auth/SessionManager";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -41,6 +42,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <SessionManager />
           {children}
         </ThemeProvider>
       </body>
