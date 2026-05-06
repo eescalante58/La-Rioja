@@ -175,10 +175,15 @@ export default function UserManagerClient({
     const phoneNumber = formData.get("phone_number") as string;
     const fullPhone = phoneNumber ? `${phoneCode}${phoneNumber}` : "";
 
+    // If role_id or status are disabled, they won't be in formData.
+    // We fall back to the existing values in editingUser.
+    const roleIdStr = formData.get("role_id") as string;
+    const statusStr = formData.get("status") as string;
+
     const data = {
-      full_name: formData.get("full_name") as string,
-      role_id: parseInt(formData.get("role_id") as string),
-      status: formData.get("status") as string,
+      full_name: (formData.get("full_name") as string) || editingUser.full_name,
+      role_id: roleIdStr ? parseInt(roleIdStr) : editingUser.role_id,
+      status: statusStr || editingUser.status,
       secondary_email: formData.get("secondary_email") as string,
       phone: fullPhone,
       avatar_url: avatarUrl,
