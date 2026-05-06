@@ -194,19 +194,19 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
               <span className="font-medium text-lg">{link.label}</span>
             </Link>
           ))}
-        </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-100 dark:border-gray-800">
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="flex items-center gap-4 px-4 py-4 w-full text-red-600 font-bold"
-            >
-              <LogOut size={24} />
-              <span className="text-lg">Cerrar Sesión</span>
-            </button>
-          </form>
-        </div>
+          <div className="pt-12 border-t border-gray-100 dark:border-gray-800 mt-6">
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="flex items-center gap-4 px-4 py-4 w-full text-red-600 font-bold hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors"
+              >
+                <LogOut size={24} />
+                <span className="text-lg">Cerrar Sesión</span>
+              </button>
+            </form>
+          </div>
+        </nav>
       </aside>
     </>
   );
