@@ -72,7 +72,7 @@ export async function getCompanies() {
  * Server action to save a company (create or update).
  */
 export async function saveCompany(formData: FormData) {
-  if (!(await checkMinLevel(80))) {
+  if (!(await checkMinLevel(9))) {
     return { error: "No tienes permisos para gestionar empresas." };
   }
 
@@ -128,7 +128,7 @@ export async function saveCompany(formData: FormData) {
  * Server action to delete a company.
  */
 export async function deleteCompany(id: number) {
-  if (!(await checkMinLevel(100))) {
+  if (!(await checkMinLevel(10))) {
     return {
       error: "Solo los Super Administradores pueden eliminar empresas.",
     };
