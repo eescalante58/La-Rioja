@@ -17,12 +17,17 @@ import { signOut } from "../auth/actions";
 
 interface AdminSidebarProps {
   companyName: string;
+  userProfile: {
+    full_name: string | null;
+    avatar_url: string | null;
+    email: string;
+  } | null;
 }
 
 /**
  * Client component for the Admin Sidebar with mobile support.
  */
-export function AdminSidebar({ companyName }: AdminSidebarProps) {
+export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -126,13 +131,47 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
           </button>
         </div>
 
+        {/* Mobile User Profile Section */}
+        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 bg-gray-50/50 dark:bg-gray-900/30">
+          <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-larioja-azul dark:border-larioja-amarillo flex items-center justify-center bg-larioja-azul text-white font-bold">
+            {userProfile?.avatar_url ? (
+              <img
+                src={userProfile.avatar_url}
+                alt={userProfile.full_name || "Profile"}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span>
+                {userProfile?.full_name
+                  ? userProfile.full_name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2)
+                  : "???"}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="font-bold text-gray-900 dark:text-white truncate">
+              {userProfile?.full_name || "Usuario"}
+            </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {userProfile?.email}
+            </span>
+          </div>
+        </div>
+
         <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
           <div className="flex items-center gap-3">
             <div className="bg-larioja-amarillo p-2 rounded-lg text-larioja-azul">
               <Building2 size={20} />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-gray-400">Empresa Actual</span>
+              <span className="text-[10px] uppercase font-bold text-gray-400">
+                Empresa Actual
+              </span>
               <span className="font-bold text-sm text-larioja-azul dark:text-larioja-amarillo truncate max-w-[180px]">
                 {companyName}
               </span>

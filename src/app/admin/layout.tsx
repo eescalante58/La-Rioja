@@ -19,7 +19,7 @@ export default async function AdminLayout({
   const selectedCompanyName =
     cookies().get("selected_company_name")?.value || "Empresa";
 
-  // Fetch current user profile for the header avatar
+  // Fetch current user profile for the header and sidebar avatar
   const {
     data: { user: authUser },
   } = await supabase.auth.getUser();
@@ -28,7 +28,7 @@ export default async function AdminLayout({
   if (authUser) {
     const { data } = await supabase
       .from("users")
-      .select("full_name, avatar_url")
+      .select("full_name, avatar_url, email")
       .eq("id", authUser.id)
       .single();
     userProfile = data;
@@ -45,7 +45,10 @@ export default async function AdminLayout({
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
-      <AdminSidebar companyName={selectedCompanyName} />
+      <AdminSidebar
+        companyName={selectedCompanyName}
+        userProfile={userProfile as any}
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
