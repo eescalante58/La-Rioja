@@ -90,19 +90,19 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
               <span>{link.label}</span>
             </Link>
           ))}
-        </nav>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="flex items-center gap-3 px-4 py-2 w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
-            >
-              <LogOut size={20} />
-              <span>Cerrar Sesión</span>
-            </button>
-          </form>
-        </div>
+          <div className="pt-8 border-t border-gray-100 dark:border-gray-800 mt-4">
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="flex items-center gap-3 px-4 py-2 w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors font-medium"
+              >
+                <LogOut size={20} />
+                <span>Cerrar Sesión</span>
+              </button>
+            </form>
+          </div>
+        </nav>
       </aside>
 
       {/* Mobile Sidebar Overlay */}
@@ -179,7 +179,7 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
           </div>
         </div>
 
-        <nav className="p-4 space-y-2">
+        <nav className="p-4 space-y-2 overflow-y-auto">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -195,7 +195,7 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
             </Link>
           ))}
 
-          <div className="pt-12 border-t border-gray-100 dark:border-gray-800 mt-6">
+          <div className="pt-20 border-t border-gray-100 dark:border-gray-800 mt-10 mb-10">
             <form action={signOut}>
               <button
                 type="submit"
