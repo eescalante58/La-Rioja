@@ -757,6 +757,9 @@ export default function BingoManagerClient({
                       <TableHeaderCell>Tipo</TableHeaderCell>
                       <TableHeaderCell>Estado</TableHeaderCell>
                       <TableHeaderCell>Vendido por</TableHeaderCell>
+                      <TableHeaderCell className="text-right">
+                        Imagen
+                      </TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -786,6 +789,23 @@ export default function BingoManagerClient({
                           <Text className="text-xs">
                             {card.sold_by || "N/A"}
                           </Text>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {card.image_url ? (
+                            <Button
+                              variant="light"
+                              icon={Eye}
+                              size="xs"
+                              onClick={() =>
+                                window.open(card.image_url, "_blank")
+                              }
+                              tooltip="Ver PDF"
+                            />
+                          ) : (
+                            <Text className="text-xs italic text-gray-400">
+                              Sin imagen
+                            </Text>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
