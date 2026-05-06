@@ -1,21 +1,47 @@
 import Link from "next/link";
-import { Building2 } from "lucide-react";
+import { Building2, User as UserIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { AdminSidebar } from "./AdminSidebar";
 import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Administrative Layout component.
  * @param {Object} props - Component props.
  * @param {React.ReactNode} props.children - Child components to render.
  */
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = createClient();
   const selectedCompanyName =
     cookies().get("selected_company_name")?.value || "Empresa";
+
+  // Fetch current user profile for the header avatar
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  let userProfile = null;
+
+  if (authUser) {
+    const { data } = await supabase
+      .from("users")
+      .select("full_name, avatar_url")
+      .eq("id", authUser.id)
+      .single();
+    userProfile = data;
+  }
+
+  const initials = userProfile?.full_name
+    ? userProfile.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "??";
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
@@ -42,8 +68,16 @@ export default function AdminLayout({
 
           <div className="flex items-center gap-4 ml-auto">
             <ThemeToggle />
-            <div className="h-8 w-8 rounded-full bg-larioja-azul text-white flex items-center justify-center font-bold text-xs">
-              AD
+            <div className="h-9 w-9 rounded-full bg-larioja-azul dark:bg-larioja-amarillo overflow-hidden flex items-center justify-center text-white dark:text-larioja-azul font-bold text-xs border-2 border-white dark:border-gray-800 shadow-sm">
+              {userProfile?.avatar_url ? (
+                <img
+                  src={userProfile.avatar_url}
+                  alt={userProfile.full_name || "Profile"}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span>{initials}</span>
+              )}
             </div>
           </div>
         </header>
