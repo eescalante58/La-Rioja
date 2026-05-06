@@ -36,6 +36,8 @@ import {
   Hash,
   DollarSign,
   Eye,
+  Upload,
+  FileIcon,
 } from "lucide-react";
 import {
   saveEvent,
@@ -46,6 +48,7 @@ import {
   saveInvoice,
   updateInvoice,
   deleteInvoice,
+  uploadCardImages,
 } from "./actions";
 
 interface Event {
@@ -102,6 +105,8 @@ export default function BingoManagerClient({
   const [selectedCompany, setSelectedCompany] = useState<string>("");
   const [isEventDialogOpen, setIsEventEventDialogOpen] = useState(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<FileList | null>(null);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [selectedEventForCards, setSelectedEventForCards] =
     useState<Event | null>(null);
@@ -349,6 +354,53 @@ export default function BingoManagerClient({
     }
   };
 
+  const handleUploadCards = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (
+      !selectedEventForCards ||
+      !uploadingFiles ||
+      uploadingFiles.length === 0
+    ) {
+      alert("Por favor selecciona los archivos PDF.");
+      return;
+    }
+
+    setLoading(true);
+    const formData = new FormData();
+    for (let i = 0; i < uploadingFiles.length; i++) {
+      formData.append("files", uploadingFiles[i]);
+    }
+
+    const price = parseFloat(
+      (e.currentTarget.elements.namedItem("card_price") as HTMLInputElement)
+        .value,
+    );
+
+    const result = await uploadCardImages(
+      selectedEventForCards.company_id,
+      selectedEventForCards.event_id,
+      price,
+      formData,
+    );
+
+    if (result.success_count > 0) {
+      let message = `Se cargaron exitosamente ${result.success_count} cartones.`;
+      if (result.error_count > 0) {
+        message +=
+          `\nHubo ${result.error_count} errores:\n` +
+          result.errors.slice(0, 5).join("\n");
+        if (result.errors.length > 5) message += "\n...";
+      }
+      alert(message);
+      setIsUploadDialogOpen(false);
+      setUploadingFiles(null);
+      window.location.reload();
+    } else {
+      alert("Error al cargar cartones:\n" + result.errors.join("\n"));
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="space-y-6 px-6">
       <div className="flex items-center justify-between">
@@ -518,7 +570,18 @@ export default function BingoManagerClient({
                           setIsGenerateDialogOpen(true);
                         }}
                       >
-                        Cargar
+                        Generar
+                      </Button>
+                      <Button
+                        size="xs"
+                        className="w-full bg-larioja-azul"
+                        icon={Upload}
+                        onClick={() => {
+                          setSelectedEventForCards(ev);
+                          setIsUploadDialogOpen(true);
+                        }}
+                      >
+                        Subir PDFs
                       </Button>
                     </div>
                   </Card>
@@ -742,6 +805,95 @@ export default function BingoManagerClient({
                 Cerrar
               </Button>
             </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Dialog: Subir Imágenes de Cartones */}
+      <Dialog
+        open={isUploadDialogOpen}
+        onClose={() => setIsUploadDialogOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
+                <Upload size={24} />
+              </div>
+              <Title>Subir Imágenes de Cartones</Title>
+            </div>
+
+            <Text className="mb-6 text-sm">
+              Evento:{" "}
+              <span className="font-bold">
+                {selectedEventForCards?.event_name}
+              </span>
+              <br />
+              <span className="text-xs text-gray-500 italic">
+                Patrón: SERIAL_{selectedEventForCards?.event_id}_Carton_#.pdf
+              </span>
+            </Text>
+
+            <form onSubmit={handleUploadCards} className="space-y-4">
+              <div className="space-y-1">
+                <Text className="text-xs font-bold uppercase text-gray-500">
+                  Precio por Cartón
+                </Text>
+                <TextInput
+                  name="card_price"
+                  type="number"
+                  step="0.01"
+                  icon={DollarSign}
+                  defaultValue={selectedEventForCards?.card_value?.toString()}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Text className="text-xs font-bold uppercase text-gray-500">
+                  Seleccionar archivos PDF
+                </Text>
+                <div className="border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-6 text-center hover:border-larioja-azul transition-colors cursor-pointer relative">
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={(e) => setUploadingFiles(e.target.files)}
+                  />
+                  <FileIcon className="mx-auto text-gray-400 mb-2" size={32} />
+                  <Text className="text-sm">
+                    {uploadingFiles
+                      ? `${uploadingFiles.length} archivos seleccionados`
+                      : "Haz clic o arrastra los PDFs aquí"}
+                  </Text>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setIsUploadDialogOpen(false);
+                    setUploadingFiles(null);
+                  }}
+                  disabled={loading}
+                  type="button"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                  disabled={!uploadingFiles || uploadingFiles.length === 0}
+                >
+                  Subir Cartones
+                </Button>
+              </div>
+            </form>
           </DialogPanel>
         </div>
       </Dialog>
