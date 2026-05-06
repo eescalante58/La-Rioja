@@ -58,7 +58,7 @@ interface User {
   phone: string | null;
   status: string;
   role_id: number;
-  roles: { name: string } | null;
+  roles: { name: string; level: number } | null;
   avatar_url: string | null;
 }
 
@@ -97,11 +97,13 @@ export default function UserManagerClient({
   roles,
   companies,
   countryCodes,
+  currentUserId,
 }: {
   initialUsers: any[];
   roles: Role[];
   companies: Company[];
   countryCodes: CountryCode[];
+  currentUserId?: string;
 }) {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,6 +130,21 @@ export default function UserManagerClient({
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  // RBAC Helper: Get current user's role level
+  const currentUser = users.find((u) => u.id === currentUserId);
+  const currentUserLevel = currentUser?.roles?.level || 0;
+
+  // Rules:
+  // - Admin (level 100) and Admin Empresa (level 80) can edit anyone.
+  // - Others (Ventas level 20, Reader level 10) can only edit themselves.
+  const canEditUser = (userId: string) => {
+    if (currentUserLevel >= 80) return true;
+    return userId === currentUserId;
+  };
+
+  const canCreateUser = currentUserLevel >= 80;
+  const canManageRoles = currentUserLevel >= 100;
 
   // User Handlers
   const handleEditUser = (user: User) => {
@@ -348,7 +365,7 @@ export default function UserManagerClient({
       <TabGroup>
         <TabList className="mt-4">
           <Tab icon={UsersIcon}>Usuarios</Tab>
-          <Tab icon={Shield}>Roles del Sistema</Tab>
+          {canManageRoles && <Tab icon={Shield}>Roles del Sistema</Tab>}
         </TabList>
         <TabPanels>
           {/* USERS TAB */}
@@ -365,13 +382,15 @@ export default function UserManagerClient({
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <Button
-                  icon={Plus}
-                  className="bg-larioja-azul"
-                  onClick={() => setIsCreateUserDialogOpen(true)}
-                >
-                  Nuevo Usuario
-                </Button>
+                {canCreateUser && (
+                  <Button
+                    icon={Plus}
+                    className="bg-larioja-azul"
+                    onClick={() => setIsCreateUserDialogOpen(true)}
+                  >
+                    Nuevo Usuario
+                  </Button>
+                )}
               </div>
 
               <Table>
@@ -390,7 +409,20 @@ export default function UserManagerClient({
                   {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium text-gray-900 dark:text-gray-100">
-                        {user.full_name || "Sin nombre"}
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
+                            {user.avatar_url ? (
+                              <img
+                                src={user.avatar_url}
+                                alt={user.full_name || "Avatar"}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <UsersIcon size={16} className="text-gray-400" />
+                            )}
+                          </div>
+                          {user.full_name || "Sin nombre"}
+                        </div>
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
@@ -410,32 +442,39 @@ export default function UserManagerClient({
                         )}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
-                        <Button
-                          variant="light"
-                          icon={Building2}
-                          size="xs"
-                          color="amber"
-                          onClick={() => handleManageCompanies(user)}
-                        >
-                          Empresas
-                        </Button>
-                        <Button
-                          variant="light"
-                          icon={Edit}
-                          size="xs"
-                          onClick={() => handleEditUser(user)}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="light"
-                          icon={Trash}
-                          size="xs"
-                          color="rose"
-                          onClick={() => handleDeleteUser(user.id)}
-                        >
-                          Eliminar
-                        </Button>
+                        {canEditUser(user.id) && (
+                          <>
+                            <Button
+                              variant="light"
+                              icon={Building2}
+                              size="xs"
+                              color="amber"
+                              onClick={() => handleManageCompanies(user)}
+                            >
+                              Empresas
+                            </Button>
+                            <Button
+                              variant="light"
+                              icon={Edit}
+                              size="xs"
+                              onClick={() => handleEditUser(user)}
+                            >
+                              Editar
+                            </Button>
+                          </>
+                        )}
+                        {currentUserLevel >= 100 &&
+                          user.id !== currentUserId && (
+                            <Button
+                              variant="light"
+                              icon={Trash}
+                              size="xs"
+                              color="rose"
+                              onClick={() => handleDeleteUser(user.id)}
+                            >
+                              Eliminar
+                            </Button>
+                          )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -445,64 +484,66 @@ export default function UserManagerClient({
           </TabPanel>
 
           {/* ROLES TAB */}
-          <TabPanel>
-            <Card className="p-4 mt-4">
-              <div className="flex justify-between items-center mb-4">
-                <Title className="text-base">Listado de Roles</Title>
-                <Button
-                  icon={Plus}
-                  size="xs"
-                  className="bg-larioja-azul"
-                  onClick={() => handleEditRole(null)}
-                >
-                  Nuevo Rol
-                </Button>
-              </div>
+          {canManageRoles && (
+            <TabPanel>
+              <Card className="p-4 mt-4">
+                <div className="flex justify-between items-center mb-4">
+                  <Title className="text-base">Listado de Roles</Title>
+                  <Button
+                    icon={Plus}
+                    size="xs"
+                    className="bg-larioja-azul"
+                    onClick={() => handleEditRole(null)}
+                  >
+                    Nuevo Rol
+                  </Button>
+                </div>
 
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>Nombre</TableHeaderCell>
-                    <TableHeaderCell>Descripción</TableHeaderCell>
-                    <TableHeaderCell>Nivel</TableHeaderCell>
-                    <TableHeaderCell className="text-right">
-                      Acciones
-                    </TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {roles.map((role) => (
-                    <TableRow key={role.role_id}>
-                      <TableCell className="font-bold">{role.name}</TableCell>
-                      <TableCell>{role.description}</TableCell>
-                      <TableCell>
-                        <Badge color="gray">{role.level}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button
-                          variant="light"
-                          icon={Edit}
-                          size="xs"
-                          onClick={() => handleEditRole(role)}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="light"
-                          icon={Trash}
-                          size="xs"
-                          color="rose"
-                          onClick={() => handleDeleteRole(role.role_id)}
-                        >
-                          Eliminar
-                        </Button>
-                      </TableCell>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Nombre</TableHeaderCell>
+                      <TableHeaderCell>Descripción</TableHeaderCell>
+                      <TableHeaderCell>Nivel</TableHeaderCell>
+                      <TableHeaderCell className="text-right">
+                        Acciones
+                      </TableHeaderCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
-          </TabPanel>
+                  </TableHead>
+                  <TableBody>
+                    {roles.map((role) => (
+                      <TableRow key={role.role_id}>
+                        <TableCell className="font-bold">{role.name}</TableCell>
+                        <TableCell>{role.description}</TableCell>
+                        <TableCell>
+                          <Badge color="gray">{role.level}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button
+                            variant="light"
+                            icon={Edit}
+                            size="xs"
+                            onClick={() => handleEditRole(role)}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="light"
+                            icon={Trash}
+                            size="xs"
+                            color="rose"
+                            onClick={() => handleDeleteRole(role.role_id)}
+                          >
+                            Eliminar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+            </TabPanel>
+          )}
         </TabPanels>
       </TabGroup>
 
@@ -763,7 +804,8 @@ export default function UserManagerClient({
                   <select
                     name="role_id"
                     defaultValue={editingUser?.role_id}
-                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                    disabled={currentUserLevel < 80}
+                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm disabled:opacity-50"
                   >
                     {roles.map((role) => (
                       <option key={role.role_id} value={role.role_id}>
@@ -778,7 +820,8 @@ export default function UserManagerClient({
                   <select
                     name="status"
                     defaultValue={editingUser?.status}
-                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                    disabled={currentUserLevel < 80}
+                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm disabled:opacity-50"
                   >
                     <option value="active">Activo</option>
                     <option value="inactive">Inactivo</option>
