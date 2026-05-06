@@ -528,22 +528,12 @@ export default function UserManagerClient({
               <div className="flex gap-2">
                 <select
                   name="phone_code"
-                  className="w-1/2 p-2 border rounded-lg text-sm"
+                  className="w-1/2 p-2 border rounded-lg text-sm bg-white"
                   defaultValue="503"
-                  onChange={(e) => {
-                    const iso = countryCodes.find(
-                      (c) => c.phone_code === e.target.value,
-                    )?.iso2;
-                    const img = document.getElementById(
-                      "flag-preview-create",
-                    ) as HTMLImageElement;
-                    if (img && iso)
-                      img.src = `https://flagcdn.com/w40/${iso.toLowerCase()}.png`;
-                  }}
                 >
                   {countryCodes.map((c) => (
                     <option key={c.iso2} value={c.phone_code}>
-                      {c.name} (+{c.phone_code})
+                      {c.flag_emoji} {c.name} (+{c.phone_code})
                     </option>
                   ))}
                 </select>
@@ -555,17 +545,6 @@ export default function UserManagerClient({
                 />
               </div>
               <div className="col-span-2 flex items-center gap-4 p-4 border rounded-lg bg-gray-50/50">
-                <div className="flex flex-col items-center gap-2">
-                  <Text className="text-xs font-bold uppercase">País</Text>
-                  <div className="h-8 w-12 border rounded overflow-hidden flex items-center justify-center bg-white shadow-sm">
-                    <img
-                      id="flag-preview-create"
-                      src="https://flagcdn.com/w40/sv.png"
-                      className="object-cover w-full h-full"
-                      alt="Flag"
-                    />
-                  </div>
-                </div>
                 <div className="flex-1 flex flex-col gap-2">
                   <Text className="text-xs font-bold uppercase">
                     Avatar / Foto de Perfil
@@ -665,20 +644,10 @@ export default function UserManagerClient({
                       editingUser?.phone?.startsWith(c.phone_code),
                     )?.phone_code || "503"
                   }
-                  onChange={(e) => {
-                    const iso = countryCodes.find(
-                      (c) => c.phone_code === e.target.value,
-                    )?.iso2;
-                    const img = document.getElementById(
-                      "flag-preview-edit",
-                    ) as HTMLImageElement;
-                    if (img && iso)
-                      img.src = `https://flagcdn.com/w40/${iso.toLowerCase()}.png`;
-                  }}
                 >
                   {countryCodes.map((c) => (
                     <option key={c.iso2} value={c.phone_code}>
-                      {c.name} (+{c.phone_code})
+                      {c.flag_emoji} {c.name} (+{c.phone_code})
                     </option>
                   ))}
                 </select>
@@ -699,17 +668,6 @@ export default function UserManagerClient({
                 />
               </div>
               <div className="col-span-2 flex items-center gap-4 p-4 border rounded-lg bg-gray-50/50">
-                <div className="flex flex-col items-center gap-2">
-                  <Text className="text-xs font-bold uppercase">País</Text>
-                  <div className="h-8 w-12 border rounded overflow-hidden flex items-center justify-center bg-white shadow-sm">
-                    <img
-                      id="flag-preview-edit"
-                      src={getFlagUrl(editingUser?.phone || null)}
-                      className="object-cover w-full h-full"
-                      alt="Flag"
-                    />
-                  </div>
-                </div>
                 <div className="flex-1 flex flex-col gap-2">
                   <Text className="text-xs font-bold uppercase">
                     Avatar / Foto de Perfil
