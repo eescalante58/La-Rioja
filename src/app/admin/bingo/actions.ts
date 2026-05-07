@@ -40,16 +40,17 @@ export async function uploadCardImages(
     }
 
     if (cardsToDelete && cardsToDelete.length > 0) {
+      console.log(
+        `Eliminando ${cardsToDelete.length} cartones previos (Upload)...`,
+      );
       // 2. Identify files to delete in Storage
       const filesToDelete = cardsToDelete
         .map((c) => {
           if (!c.image_url) return null;
           try {
-            const url = new URL(c.image_url);
-            const pathParts = url.pathname.split("/");
-            const companyIdx = pathParts.indexOf(companyId.toString());
-            if (companyIdx !== -1) {
-              return pathParts.slice(companyIdx).join("/");
+            const urlParts = c.image_url.split("/cards_images/");
+            if (urlParts.length > 1) {
+              return urlParts[1];
             }
             return null;
           } catch (e) {
@@ -58,18 +59,41 @@ export async function uploadCardImages(
         })
         .filter((path): path is string => path !== null);
 
+      console.log(
+        `Archivos a eliminar en Storage (Upload): ${filesToDelete.length}`,
+      );
+
       // 3. Delete from Storage
       if (filesToDelete.length > 0) {
-        await supabase.storage.from("cards_images").remove(filesToDelete);
+        const { data: removedFiles, error: storageError } =
+          await supabase.storage.from("cards_images").remove(filesToDelete);
+
+        if (storageError) {
+          console.warn("Error deleting files from storage:", storageError);
+        } else {
+          console.log(
+            "Archivos eliminados de Storage con éxito (Upload):",
+            removedFiles,
+          );
+        }
       }
 
       // 4. Delete from Database
-      await supabase
+      const { data: deletedRows, error: dbError } = await supabase
         .from("cards")
         .delete()
         .eq("company_id", companyId)
         .eq("event_id", eventId)
-        .eq("card_status", "Disponible");
+        .eq("card_status", "Disponible")
+        .select();
+
+      if (dbError) {
+        console.error("Error deleting rows from DB:", dbError);
+      } else {
+        console.log(
+          `Registros eliminados de BD (Upload): ${deletedRows?.length || 0}`,
+        );
+      }
     }
   }
 
@@ -214,6 +238,7 @@ export async function uploadCardImages(
           event_id: eventId,
           success_count: results.success_count,
           error_count: results.error_count,
+          deleted_previous: deleteExisting,
           timestamp: new Date().toISOString(),
         },
       });
@@ -425,19 +450,18 @@ export async function generateCards(
     }
 
     if (cardsToDelete && cardsToDelete.length > 0) {
+      console.log(`Eliminando ${cardsToDelete.length} cartones previos...`);
       // 2. Identify files to delete in Storage
       // We extract the filename from the public URL if possible
       const filesToDelete = cardsToDelete
         .map((c) => {
           if (!c.image_url) return null;
           try {
-            const url = new URL(c.image_url);
-            const pathParts = url.pathname.split("/");
-            // The path in the bucket is companyId/eventId/filename
-            // Public URL usually ends with /storage/v1/object/public/cards_images/companyId/eventId/filename
-            const companyIdx = pathParts.indexOf(companyId.toString());
-            if (companyIdx !== -1) {
-              return pathParts.slice(companyIdx).join("/");
+            // Extract the path from the URL
+            // Format: .../storage/v1/object/public/cards_images/1/20250825113902/SERIAL_...pdf
+            const urlParts = c.image_url.split("/cards_images/");
+            if (urlParts.length > 1) {
+              return urlParts[1];
             }
             return null;
           } catch (e) {
@@ -446,27 +470,34 @@ export async function generateCards(
         })
         .filter((path): path is string => path !== null);
 
+      console.log(`Archivos a eliminar en Storage: ${filesToDelete.length}`);
+
       // 3. Delete from Storage
       if (filesToDelete.length > 0) {
-        const { error: storageError } = await supabase.storage
-          .from("cards_images")
-          .remove(filesToDelete);
+        const { data: removedFiles, error: storageError } =
+          await supabase.storage.from("cards_images").remove(filesToDelete);
 
         if (storageError) {
           console.warn(
             "Some storage files could not be deleted:",
             storageError,
           );
+        } else {
+          console.log(
+            "Archivos eliminados de Storage con éxito:",
+            removedFiles,
+          );
         }
       }
 
       // 4. Delete from Database (only those that are 'Disponible')
-      const { error: deleteError } = await supabase
+      const { data: deletedRows, error: deleteError } = await supabase
         .from("cards")
         .delete()
         .eq("company_id", companyId)
         .eq("event_id", eventId)
-        .eq("card_status", "Disponible");
+        .eq("card_status", "Disponible")
+        .select();
 
       if (deleteError) {
         console.error("Error deleting cards from DB:", deleteError);
@@ -476,6 +507,7 @@ export async function generateCards(
             deleteError.message,
         };
       }
+      console.log(`Registros eliminados de BD: ${deletedRows?.length || 0}`);
     }
   }
 
