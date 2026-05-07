@@ -135,6 +135,7 @@ export default function BingoManagerClient({
   const [isWhatsAppPopupOpen, setIsWhatsAppPopupOpen] = useState(false);
   const [invoicePhoneArea, setInvoicePhoneArea] = useState("503");
   const [invoicePhoneNumber, setInvoicePhoneNumber] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [invoiceManagerName, setInvoiceManagerName] = useState("");
   const [selectedInvoiceCards, setSelectedInvoiceCards] = useState<number[]>(
     [],
@@ -264,6 +265,7 @@ export default function BingoManagerClient({
       setCardsNumber(1);
       setInvoicePhoneArea("503");
       setInvoicePhoneNumber("");
+      setWhatsappNumber("503");
       setInvoiceManagerName("");
       setSelectedInvoiceCards([]);
 
@@ -290,6 +292,7 @@ export default function BingoManagerClient({
     setCardsNumber(invoice.cards_number);
     setInvoicePhoneArea(invoice.phone_area || "503");
     setInvoicePhoneNumber(invoice.phone_number || "");
+    setWhatsappNumber(invoice.whatsapp_number || "");
     setInvoiceManagerName(invoice.manager_name || "");
 
     // For editing, we might want to see currently associated cards too
@@ -1769,9 +1772,10 @@ export default function BingoManagerClient({
                     <div className="flex gap-2">
                       <TextInput
                         name="whatsapp_number"
-                        value={`${invoicePhoneArea}${invoicePhoneNumber}`}
+                        value={whatsappNumber}
+                        onValueChange={setWhatsappNumber}
                         icon={Smartphone}
-                        readOnly
+                        placeholder="50312345678"
                       />
                       <Button
                         type="button"
@@ -2076,6 +2080,27 @@ export default function BingoManagerClient({
                           WhatsApp: +{selectedInvoice?.phone_area}{" "}
                           {selectedInvoice?.phone_number}
                         </Badge>
+                        <Button
+                          type="button"
+                          variant="light"
+                          icon={MessageCircle}
+                          size="xs"
+                          className="text-green-500"
+                          tooltip="Enviar por WhatsApp"
+                          onClick={() => {
+                            setEditingInvoice(selectedInvoice);
+                            setInvoicePhoneArea(
+                              selectedInvoice.phone_area || "503",
+                            );
+                            setInvoicePhoneNumber(
+                              selectedInvoice.phone_number || "",
+                            );
+                            setWhatsappNumber(
+                              selectedInvoice.whatsapp_number || "",
+                            );
+                            setIsWhatsAppPopupOpen(true);
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
