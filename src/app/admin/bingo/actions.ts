@@ -826,13 +826,15 @@ export async function getInvoices(companyId: number, eventId: string) {
 }
 
 /**
- * Save a new invoice.
+ * Save a new invoice and update associated cards.
  */
 export async function saveInvoice(formData: FormData) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) return { error: "No autorizado" };
 
   const company_id = parseInt(formData.get("company_id") as string);
   const event_id = formData.get("event_id") as string;
@@ -842,11 +844,44 @@ export async function saveInvoice(formData: FormData) {
   const customer_email = formData.get("customer_email") as string;
   const phone_area = formData.get("phone_area") as string;
   const phone_number = formData.get("phone_number") as string;
+  const whatsapp_number = formData.get("whatsapp_number") as string;
+  const manager_name = formData.get("manager_name") as string;
   const cards_number = parseInt(formData.get("cards_number") as string);
   const card_price = parseFloat(formData.get("card_price") as string);
   const total_amount = parseFloat(formData.get("total_amount") as string);
   const payment_method = formData.get("payment_method") as string;
   const status = formData.get("status") as string;
+  const associated_cards = JSON.parse(
+    (formData.get("associated_cards") as string) || "[]",
+  );
+  const invoice_file = formData.get("invoice_file") as File;
+
+  let url_invoice = "";
+
+  // 1. Handle File Upload if present
+  if (invoice_file && invoice_file.size > 0) {
+    const fileExt = invoice_file.name.split(".").pop();
+    const fileName = `${invoice_number}_${Date.now()}.${fileExt}`;
+    const storagePath = `${company_id}/${event_id}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("invoices_images")
+      .upload(storagePath, invoice_file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      return {
+        error: `Error al subir imagen de factura: ${uploadError.message}`,
+      };
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("invoices_images").getPublicUrl(storagePath);
+    url_invoice = publicUrl;
+  }
 
   const invoiceData = {
     company_id,
@@ -857,46 +892,78 @@ export async function saveInvoice(formData: FormData) {
     customer_email,
     phone_area,
     phone_number,
+    whatsapp_number,
+    manager_name,
     cards_number,
     card_price,
     total_amount,
     payment_method,
     status,
+    url_invoice,
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase.from("invoices").insert([invoiceData]);
+  // 2. Insert Invoice
+  const { error: invoiceError } = await supabase
+    .from("invoices")
+    .insert([invoiceData]);
 
-  if (error) return { error: error.message };
+  if (invoiceError) return { error: invoiceError.message };
 
-  // Log activity
-  if (user) {
-    await supabase.from("user_activity_log").insert({
-      user_id: user.id,
-      action: "INSERT",
-      entity: "invoices",
-      metadata: {
-        invoice_number,
-        event_id,
-        customer_name,
-        total_amount,
-        timestamp: new Date().toISOString(),
-      },
-    });
+  // 3. Update Associated Cards
+  if (associated_cards.length > 0) {
+    const { error: cardsError } = await supabase
+      .from("cards")
+      .update({
+        card_status: "Vendido",
+        invoice_number: invoice_number,
+        sales_price: card_price,
+        sold_by: manager_name,
+        player_name: customer_name,
+        player_phone_number: whatsapp_number,
+        player_email: customer_email,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("company_id", company_id)
+      .eq("event_id", event_id)
+      .in("card_number", associated_cards);
+
+    if (cardsError) {
+      return {
+        error: `Factura guardada pero error al actualizar cartones: ${cardsError.message}`,
+      };
+    }
   }
+
+  // 4. Log activity
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "INSERT",
+    entity: "invoices",
+    metadata: {
+      invoice_number,
+      event_id,
+      customer_name,
+      total_amount,
+      associated_cards,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   revalidatePath("/admin/bingo");
   return { success: true };
 }
 
 /**
- * Update an existing invoice.
+ * Update an existing invoice and associated cards.
  */
 export async function updateInvoice(formData: FormData) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) return { error: "No autorizado" };
 
   const id = formData.get("id") as string;
   const company_id = parseInt(formData.get("company_id") as string);
@@ -907,13 +974,53 @@ export async function updateInvoice(formData: FormData) {
   const customer_email = formData.get("customer_email") as string;
   const phone_area = formData.get("phone_area") as string;
   const phone_number = formData.get("phone_number") as string;
+  const whatsapp_number = formData.get("whatsapp_number") as string;
+  const manager_name = formData.get("manager_name") as string;
   const cards_number = parseInt(formData.get("cards_number") as string);
   const card_price = parseFloat(formData.get("card_price") as string);
   const total_amount = parseFloat(formData.get("total_amount") as string);
   const payment_method = formData.get("payment_method") as string;
   const status = formData.get("status") as string;
+  const associated_cards = JSON.parse(
+    (formData.get("associated_cards") as string) || "[]",
+  );
+  const invoice_file = formData.get("invoice_file") as File;
 
-  const invoiceData = {
+  // 1. Get current invoice to handle file cleanup if needed
+  const { data: currentInvoice } = await supabase
+    .from("invoices")
+    .select("url_invoice, invoice_number")
+    .eq("id", id)
+    .single();
+
+  let url_invoice = currentInvoice?.url_invoice || "";
+
+  // 2. Handle File Upload if present
+  if (invoice_file && invoice_file.size > 0) {
+    const fileExt = invoice_file.name.split(".").pop();
+    const fileName = `${invoice_number}_${Date.now()}.${fileExt}`;
+    const storagePath = `${company_id}/${event_id}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("invoices_images")
+      .upload(storagePath, invoice_file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      return {
+        error: `Error al subir imagen de factura: ${uploadError.message}`,
+      };
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("invoices_images").getPublicUrl(storagePath);
+    url_invoice = publicUrl;
+  }
+
+  const invoiceData: any = {
     company_id,
     event_id,
     invoice_number,
@@ -922,36 +1029,84 @@ export async function updateInvoice(formData: FormData) {
     customer_email,
     phone_area,
     phone_number,
+    whatsapp_number,
+    manager_name,
     cards_number,
     card_price,
     total_amount,
     payment_method,
     status,
+    url_invoice,
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase
+  // 3. Update Invoice
+  const { error: invoiceError } = await supabase
     .from("invoices")
     .update(invoiceData)
     .eq("id", id);
 
-  if (error) return { error: error.message };
+  if (invoiceError) return { error: invoiceError.message };
 
-  if (user) {
-    await supabase.from("user_activity_log").insert({
-      user_id: user.id,
-      action: "UPDATE",
-      entity: "invoices",
-      metadata: {
-        invoice_id: id,
-        invoice_number,
-        event_id,
-        customer_name,
-        total_amount,
-        timestamp: new Date().toISOString(),
-      },
-    });
+  // 4. Update Associated Cards
+  // First, clear previous cards linked to this invoice number
+  if (currentInvoice?.invoice_number) {
+    await supabase
+      .from("cards")
+      .update({
+        card_status: "Disponible",
+        invoice_number: null,
+        sales_price: null,
+        sold_by: null,
+        player_name: null,
+        player_phone_number: null,
+        player_email: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("company_id", company_id)
+      .eq("event_id", event_id)
+      .eq("invoice_number", currentInvoice.invoice_number);
   }
+
+  // Now link the new selection
+  if (associated_cards.length > 0) {
+    const { error: cardsError } = await supabase
+      .from("cards")
+      .update({
+        card_status: "Vendido",
+        invoice_number: invoice_number,
+        sales_price: card_price,
+        sold_by: manager_name,
+        player_name: customer_name,
+        player_phone_number: whatsapp_number,
+        player_email: customer_email,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("company_id", company_id)
+      .eq("event_id", event_id)
+      .in("card_number", associated_cards);
+
+    if (cardsError) {
+      return {
+        error: `Factura actualizada pero error al vincular cartones: ${cardsError.message}`,
+      };
+    }
+  }
+
+  // 5. Log activity
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "UPDATE",
+    entity: "invoices",
+    metadata: {
+      invoice_id: id,
+      invoice_number,
+      event_id,
+      customer_name,
+      associated_cards,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   revalidatePath("/admin/bingo");
   return { success: true };
