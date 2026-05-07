@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Card,
   Table,
@@ -38,6 +38,7 @@ import {
   Eye,
   Upload,
   FileIcon,
+  RefreshCw,
 } from "lucide-react";
 import {
   saveEvent,
@@ -49,6 +50,7 @@ import {
   updateInvoice,
   deleteInvoice,
   uploadCardImages,
+  updateCardType,
 } from "./actions";
 
 interface Event {
@@ -121,6 +123,20 @@ export default function BingoManagerClient({
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [isNewInvoiceDialogOpen, setIsNewInvoiceDialogOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
+  const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
+  const [selectedCardForReassign, setSelectedCardForReassign] =
+    useState<any>(null);
+  const [officialName, setOfficialName] = useState("");
+  const [selectedTab, setSelectedTab] = useState(0);
+
+  // Persistence for the selected tab
+  useEffect(() => {
+    const savedTab = sessionStorage.getItem("bingo_selected_tab");
+    if (savedTab !== null) {
+      setSelectedTab(parseInt(savedTab));
+      sessionStorage.removeItem("bingo_selected_tab");
+    }
+  }, []);
   const [cardsNumber, setCardsNumber] = useState<number>(1);
   const [cardPrice, setCardPrice] = useState<number>(0);
   const [currentEventInfo, setCurrentEventInfo] = useState<{
@@ -234,6 +250,34 @@ export default function BingoManagerClient({
     }
   };
 
+  const handleReassignType = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedCardForReassign || !selectedEventForCards) return;
+
+    setLoading(true);
+    const newType =
+      selectedCardForReassign.card_type === "Virtual" ? "Fisico" : "Virtual";
+
+    const result = await updateCardType(
+      selectedEventForCards.company_id,
+      selectedEventForCards.event_id,
+      selectedCardForReassign.card_number,
+      newType,
+      officialName,
+    );
+
+    if (result.success) {
+      alert(`Tipo de cartón cambiado a ${newType} exitosamente.`);
+      setIsReassignDialogOpen(false);
+      setOfficialName("");
+      // Refresh the card list in the details dialog
+      handleViewInventoryDetails(selectedEventForCards);
+    } else {
+      alert("Error: " + result.error);
+    }
+    setLoading(false);
+  };
+
   const handleSaveInvoice = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -344,6 +388,7 @@ export default function BingoManagerClient({
       if (result.success) {
         alert("Cartones generados exitosamente");
         setIsGenerateDialogOpen(false);
+        sessionStorage.setItem("bingo_selected_tab", "1");
         window.location.reload();
       } else {
         alert("Error: " + result.error);
@@ -400,11 +445,14 @@ export default function BingoManagerClient({
         message +=
           `\nHubo ${result.error_count} errores:\n` +
           result.errors.slice(0, 5).join("\n");
-        if (result.errors.length > 5) message += "\n...";
       }
       alert(message);
       setIsUploadDialogOpen(false);
+      setIsGenerateDialogOpen(false);
       setUploadingFiles(null);
+      // We use reload to refresh all server data, but we could also use router.refresh()
+      // To persist the tab, we can use sessionStorage
+      sessionStorage.setItem("bingo_selected_tab", "1");
       window.location.reload();
     } else if ("errors" in result) {
       alert("Error al cargar cartones:\n" + result.errors.join("\n"));
@@ -429,7 +477,7 @@ export default function BingoManagerClient({
         </div>
       </div>
 
-      <TabGroup>
+      <TabGroup index={selectedTab} onIndexChange={setSelectedTab}>
         <TabList className="mt-8">
           <Tab icon={Calendar}>Eventos</Tab>
           <Tab icon={Ticket}>Inventario de Cartones</Tab>
@@ -568,7 +616,7 @@ export default function BingoManagerClient({
                         Cartones: {ev.event_cartons_number || 0}
                       </Badge>
                     </div>
-                    <div className="mt-4 flex gap-2">
+                    <div className="mt-4 flex flex-col gap-2">
                       <Button
                         size="xs"
                         variant="secondary"
@@ -578,14 +626,14 @@ export default function BingoManagerClient({
                         Ver Detalles
                       </Button>
                       <Button
-                        size="xs"
-                        className="w-full bg-larioja-verde"
+                        size="sm"
+                        className="w-full bg-larioja-verde hover:bg-emerald-600 border-none shadow-sm"
                         onClick={() => {
                           setSelectedEventForCards(ev);
                           setIsGenerateDialogOpen(true);
                         }}
                       >
-                        Cargar
+                        Cargar Cartones
                       </Button>
                     </div>
                   </Card>
@@ -769,7 +817,26 @@ export default function BingoManagerClient({
                           {card.card_number}
                         </TableCell>
                         <TableCell>
-                          <Badge size="xs">{card.card_type}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              size="xs"
+                              color={
+                                card.card_type === "Virtual" ? "blue" : "purple"
+                              }
+                            >
+                              {card.card_type}
+                            </Badge>
+                            <Button
+                              variant="light"
+                              icon={RefreshCw}
+                              size="xs"
+                              onClick={() => {
+                                setSelectedCardForReassign(card);
+                                setIsReassignDialogOpen(true);
+                              }}
+                              tooltip={`Cambiar a ${card.card_type === "Virtual" ? "Fisico" : "Virtual"}`}
+                            />
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -829,6 +896,75 @@ export default function BingoManagerClient({
                 Cerrar
               </Button>
             </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Dialog: Reasignar Tipo de Cartón */}
+      <Dialog
+        open={isReassignDialogOpen}
+        onClose={() => setIsReassignDialogOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[60]" />
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
+                <RefreshCw size={24} />
+              </div>
+              <Title>Cambiar Tipo de Cartón</Title>
+            </div>
+
+            <Text className="mb-6 text-sm">
+              Estás por cambiar el tipo del cartón{" "}
+              <span className="font-bold">
+                #{selectedCardForReassign?.card_number}
+              </span>{" "}
+              de{" "}
+              <span className="font-bold">
+                {selectedCardForReassign?.card_type}
+              </span>{" "}
+              a{" "}
+              <span className="font-bold">
+                {selectedCardForReassign?.card_type === "Virtual"
+                  ? "Fisico"
+                  : "Virtual"}
+              </span>
+              .
+            </Text>
+
+            <form onSubmit={handleReassignType} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-gray-500">
+                  Nombre del Funcionario Solicitante
+                </label>
+                <TextInput
+                  placeholder="Ej: Juan Pérez"
+                  value={officialName}
+                  onChange={(e) => setOfficialName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsReassignDialogOpen(false)}
+                  disabled={loading}
+                  type="button"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                >
+                  Confirmar Cambio
+                </Button>
+              </div>
+            </form>
           </DialogPanel>
         </div>
       </Dialog>
