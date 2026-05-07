@@ -43,6 +43,9 @@ import {
   ExternalLink,
   MessageCircle,
   Smartphone,
+  X,
+  FileText,
+  ImageOff,
 } from "lucide-react";
 import {
   saveEvent,
