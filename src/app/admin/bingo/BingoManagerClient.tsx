@@ -39,6 +39,7 @@ import {
   Upload,
   FileIcon,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import {
   saveEvent,
@@ -51,6 +52,8 @@ import {
   deleteInvoice,
   uploadCardImages,
   updateCardType,
+  updateCardRangeType,
+  updateSingleCard,
 } from "./actions";
 
 interface Event {
@@ -128,6 +131,14 @@ export default function BingoManagerClient({
     useState<any>(null);
   const [officialName, setOfficialName] = useState("");
   const [selectedTab, setSelectedTab] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isRangeReassignDialogOpen, setIsRangeReassignDialogOpen] =
+    useState(false);
+  const [rangeStart, setRangeStart] = useState<number>(1);
+  const [rangeEnd, setRangeEnd] = useState<number>(1);
+  const [rangeNewType, setRangeNewType] = useState("Virtual");
+  const [isEditCardDialogOpen, setIsEditCardDialogOpen] = useState(false);
+  const [selectedCardForEdit, setSelectedCardForEdit] = useState<any>(null);
 
   // Persistence for the selected tab
   useEffect(() => {
@@ -137,6 +148,7 @@ export default function BingoManagerClient({
       sessionStorage.removeItem("bingo_selected_tab");
     }
   }, []);
+
   const [cardsNumber, setCardsNumber] = useState<number>(1);
   const [cardPrice, setCardPrice] = useState<number>(0);
   const [currentEventInfo, setCurrentEventInfo] = useState<{
@@ -250,6 +262,23 @@ export default function BingoManagerClient({
     }
   };
 
+  const filteredCards = useMemo(() => {
+    if (!searchQuery) return eventCards;
+    const query = searchQuery.toLowerCase();
+    return eventCards.filter((card) => {
+      const cardNum = card.card_number.toString();
+      const cardType = (card.card_type || "").toLowerCase();
+      const cardStatus = (card.card_status || "").toLowerCase();
+      const soldBy = (card.sold_by || "").toLowerCase();
+      return (
+        cardNum.includes(query) ||
+        cardType.includes(query) ||
+        cardStatus.includes(query) ||
+        soldBy.includes(query)
+      );
+    });
+  }, [eventCards, searchQuery]);
+
   const handleReassignType = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedCardForReassign || !selectedEventForCards) return;
@@ -271,6 +300,61 @@ export default function BingoManagerClient({
       setIsReassignDialogOpen(false);
       setOfficialName("");
       // Refresh the card list in the details dialog
+      handleViewInventoryDetails(selectedEventForCards);
+    } else {
+      alert("Error: " + result.error);
+    }
+    setLoading(false);
+  };
+
+  const handleRangeReassignType = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+    if (!selectedEventForCards) return;
+
+    setLoading(true);
+    const result = await updateCardRangeType(
+      selectedEventForCards.company_id,
+      selectedEventForCards.event_id,
+      rangeStart,
+      rangeEnd,
+      rangeNewType,
+      officialName,
+    );
+
+    if (result.success) {
+      alert(
+        `Se actualizaron ${result.updated_count} cartones a ${rangeNewType} exitosamente.`,
+      );
+      setIsRangeReassignDialogOpen(false);
+      setOfficialName("");
+      handleViewInventoryDetails(selectedEventForCards);
+    } else {
+      alert("Error: " + result.error);
+    }
+    setLoading(false);
+  };
+
+  const handleUpdateSingleCard = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+    if (!selectedCardForEdit || !selectedEventForCards) return;
+
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const result = await updateSingleCard(
+      selectedEventForCards.company_id,
+      selectedEventForCards.event_id,
+      selectedCardForEdit.card_number,
+      formData,
+    );
+
+    if (result.success) {
+      alert("Cartón actualizado exitosamente.");
+      setIsEditCardDialogOpen(false);
+      setSelectedCardForEdit(null);
       handleViewInventoryDetails(selectedEventForCards);
     } else {
       alert("Error: " + result.error);
@@ -777,18 +861,42 @@ export default function BingoManagerClient({
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <Title className="text-larioja-azul dark:text-larioja-amarillo">
-                  Inventario de Cartones
-                </Title>
-                <Text className="text-sm font-medium">
-                  Evento: {selectedEventForCards?.event_name}
-                </Text>
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Title className="text-larioja-azul dark:text-larioja-amarillo">
+                    Inventario de Cartones
+                  </Title>
+                  <Text className="text-sm font-medium">
+                    Evento: {selectedEventForCards?.event_name}
+                  </Text>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="xs"
+                    variant="secondary"
+                    icon={RefreshCw}
+                    onClick={() => setIsRangeReassignDialogOpen(true)}
+                  >
+                    Cambio en Rango
+                  </Button>
+                  <Badge color="blue" icon={Ticket}>
+                    {eventCards.length} Totales
+                  </Badge>
+                </div>
               </div>
-              <Badge color="blue" icon={Ticket}>
-                {eventCards.length} Totales
-              </Badge>
+
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search size={16} className="text-gray-400" />
+                </div>
+                <TextInput
+                  placeholder="Buscar por N° Cartón, Tipo, Estado o Vendedor..."
+                  className="pl-10"
+                  value={searchQuery}
+                  onValueChange={setSearchQuery}
+                />
+              </div>
             </div>
 
             {loadingEventCards ? (
@@ -796,7 +904,7 @@ export default function BingoManagerClient({
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-larioja-azul"></div>
                 <Text>Cargando inventario...</Text>
               </div>
-            ) : eventCards.length > 0 ? (
+            ) : filteredCards.length > 0 ? (
               <div className="max-h-[60vh] overflow-y-auto pr-2">
                 <Table>
                   <TableHead>
@@ -806,12 +914,12 @@ export default function BingoManagerClient({
                       <TableHeaderCell>Estado</TableHeaderCell>
                       <TableHeaderCell>Vendido por</TableHeaderCell>
                       <TableHeaderCell className="text-right">
-                        Imagen
+                        Acciones
                       </TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {eventCards.map((card, idx) => (
+                    {filteredCards.map((card, idx) => (
                       <TableRow key={idx}>
                         <TableCell className="font-bold text-larioja-azul dark:text-larioja-amarillo">
                           {card.card_number}
@@ -858,21 +966,29 @@ export default function BingoManagerClient({
                           </Text>
                         </TableCell>
                         <TableCell className="text-right">
-                          {card.image_url ? (
+                          <div className="flex justify-end gap-1">
+                            {card.image_url && (
+                              <Button
+                                variant="light"
+                                icon={Eye}
+                                size="xs"
+                                onClick={() =>
+                                  window.open(card.image_url, "_blank")
+                                }
+                                tooltip="Ver PDF"
+                              />
+                            )}
                             <Button
                               variant="light"
-                              icon={Eye}
+                              icon={Edit}
                               size="xs"
-                              onClick={() =>
-                                window.open(card.image_url, "_blank")
-                              }
-                              tooltip="Ver PDF"
+                              onClick={() => {
+                                setSelectedCardForEdit(card);
+                                setIsEditCardDialogOpen(true);
+                              }}
+                              tooltip="Editar Cartón"
                             />
-                          ) : (
-                            <Text className="text-xs italic text-gray-400">
-                              Sin imagen
-                            </Text>
-                          )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -883,7 +999,9 @@ export default function BingoManagerClient({
               <div className="py-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl">
                 <Ticket size={48} className="text-gray-200" />
                 <Text className="text-gray-400 italic">
-                  No hay cartones generados para este evento.
+                  {searchQuery
+                    ? "No se encontraron cartones que coincidan con la búsqueda."
+                    : "No hay cartones generados para este evento."}
                 </Text>
               </div>
             )}
@@ -1713,6 +1831,191 @@ export default function BingoManagerClient({
                   className="bg-larioja-azul"
                 >
                   {editingInvoice ? "Actualizar Factura" : "Guardar Factura"}
+                </Button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Dialog: Cambiar Tipo en Rango */}
+      <Dialog
+        open={isRangeReassignDialogOpen}
+        onClose={() => setIsRangeReassignDialogOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
+                <RefreshCw size={24} />
+              </div>
+              <Title>Cambio de Tipo en Rango</Title>
+            </div>
+
+            <form onSubmit={handleRangeReassignType} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-gray-500">
+                    Desde N°
+                  </label>
+                  <TextInput
+                    type="number"
+                    value={rangeStart.toString()}
+                    onValueChange={(v) => setRangeStart(parseInt(v) || 1)}
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-gray-500">
+                    Hasta N°
+                  </label>
+                  <TextInput
+                    type="number"
+                    value={rangeEnd.toString()}
+                    onValueChange={(v) => setRangeEnd(parseInt(v) || 1)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-gray-500">
+                  Nuevo Tipo
+                </label>
+                <Select value={rangeNewType} onValueChange={setRangeNewType}>
+                  <SelectItem value="Virtual">Virtual</SelectItem>
+                  <SelectItem value="Fisico">Físico</SelectItem>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-gray-500">
+                  Funcionario Solicitante
+                </label>
+                <TextInput
+                  placeholder="Ej: Juan Pérez"
+                  value={officialName}
+                  onChange={(e) => setOfficialName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsRangeReassignDialogOpen(false)}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                >
+                  Confirmar Cambio Masivo
+                </Button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Dialog: Editar Cartón Individual */}
+      <Dialog
+        open={isEditCardDialogOpen}
+        onClose={() => setIsEditCardDialogOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
+                <Edit size={24} />
+              </div>
+              <Title>Editar Cartón #{selectedCardForEdit?.card_number}</Title>
+            </div>
+
+            <form onSubmit={handleUpdateSingleCard} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-gray-500">
+                    Tipo
+                  </label>
+                  <Select
+                    name="card_type"
+                    defaultValue={selectedCardForEdit?.card_type || "Virtual"}
+                  >
+                    <SelectItem value="Virtual">Virtual</SelectItem>
+                    <SelectItem value="Fisico">Físico</SelectItem>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-gray-500">
+                    Estado
+                  </label>
+                  <Select
+                    name="card_status"
+                    defaultValue={
+                      selectedCardForEdit?.card_status || "Disponible"
+                    }
+                  >
+                    <SelectItem value="Disponible">Disponible</SelectItem>
+                    <SelectItem value="Vendido">Vendido</SelectItem>
+                    <SelectItem value="Asignado">Asignado</SelectItem>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-gray-500">
+                  Precio
+                </label>
+                <TextInput
+                  name="card_price"
+                  type="number"
+                  step="0.01"
+                  defaultValue={selectedCardForEdit?.card_price || 0}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-gray-500">
+                  Imagen PDF (Opcional)
+                </label>
+                <div className="mt-1 flex items-center gap-2">
+                  <input
+                    type="file"
+                    name="file"
+                    accept=".pdf"
+                    className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul/10 file:text-larioja-azul hover:file:bg-larioja-azul/20"
+                  />
+                </div>
+                {selectedCardForEdit?.image_url && (
+                  <Text className="text-[10px] text-gray-400 mt-1">
+                    Ya tiene una imagen cargada. Subir una nueva la reemplazará.
+                  </Text>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsEditCardDialogOpen(false)}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                >
+                  Actualizar Cartón
                 </Button>
               </div>
             </form>

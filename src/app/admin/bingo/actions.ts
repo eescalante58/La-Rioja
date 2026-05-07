@@ -637,6 +637,162 @@ export async function updateCardType(
   revalidatePath("/admin/bingo");
   return { success: true };
 }
+/**
+ * Reassign card type for a range of cards and log activity.
+ */
+export async function updateCardRangeType(
+  companyId: number,
+  eventId: string,
+  start: number,
+  end: number,
+  newType: string,
+  officialName: string,
+) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "No autorizado" };
+
+  if (start > end) {
+    return { error: "El rango inicial no puede ser mayor al final." };
+  }
+
+  // 1. Update card type in range
+  const { error: updateError, data: updatedCards } = await supabase
+    .from("cards")
+    .update({
+      card_type: newType,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .gte("card_number", start)
+    .lte("card_number", end)
+    .select("card_number");
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  // 2. Log activity
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "REASSIGN_CARD_RANGE_TYPE",
+    entity: "cards",
+    metadata: {
+      company_id: companyId,
+      event_id: eventId,
+      range: `${start}-${end}`,
+      new_type: newType,
+      requested_by: officialName,
+      updated_count: updatedCards?.length || 0,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
+  revalidatePath("/admin/bingo");
+  return { success: true, updated_count: updatedCards?.length || 0 };
+}
+
+/**
+ * Update a single card's details and optionally its PDF image.
+ */
+export async function updateSingleCard(
+  companyId: number,
+  eventId: string,
+  cardNumber: number,
+  formData: FormData,
+) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "No autorizado" };
+
+  const newType = formData.get("card_type") as string;
+  const newStatus = formData.get("card_status") as string;
+  const newPrice = parseFloat(formData.get("card_price") as string);
+  const file = formData.get("file") as File;
+
+  // 1. Get current data for comparison and potential file cleanup
+  const { data: currentCard, error: fetchError } = await supabase
+    .from("cards")
+    .select("*")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .eq("card_number", cardNumber)
+    .single();
+
+  if (fetchError || !currentCard) {
+    return { error: "No se encontró el cartón original." };
+  }
+
+  const updates: any = {
+    card_type: newType,
+    card_status: newStatus,
+    card_price: newPrice,
+    updated_at: new Date().toISOString(),
+  };
+
+  // 2. Handle File Upload if present
+  if (file && file.size > 0) {
+    // Determine fileName (use original format)
+    const fileName = `SERIAL_${eventId}_Carton_${cardNumber}.pdf`;
+    const storagePath = `${companyId}/${eventId}/${fileName}`;
+
+    // Upload/Replace in Storage
+    const { error: uploadError } = await supabase.storage
+      .from("cards_images")
+      .upload(storagePath, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      return { error: `Error al subir PDF: ${uploadError.message}` };
+    }
+
+    // Get new public URL
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("cards_images").getPublicUrl(storagePath);
+
+    updates.image_url = publicUrl;
+  }
+
+  // 3. Update DB record
+  const { error: updateError } = await supabase
+    .from("cards")
+    .update(updates)
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .eq("card_number", cardNumber);
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  // 4. Log activity
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "UPDATE_SINGLE_CARD",
+    entity: "cards",
+    metadata: {
+      company_id: companyId,
+      event_id: eventId,
+      card_number: cardNumber,
+      changes: updates,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
+  revalidatePath("/admin/bingo");
+  return { success: true };
+}
+
 export async function getInvoices(companyId: number, eventId: string) {
   const supabase = createClient();
 
