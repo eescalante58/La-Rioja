@@ -2055,27 +2055,39 @@ export default function BingoManagerClient({
                       <div className="flex gap-2">
                         <TextInput
                           name="invoice_number"
+                          id="edit_card_invoice_number"
                           placeholder="N° Factura"
                           defaultValue={selectedCardForEdit?.invoice_number}
                           className="flex-1"
                         />
-                        {selectedCardForEdit?.invoice_number && (
+                        {(selectedCardForEdit?.invoice_number || true) && (
                           <Button
                             type="button"
                             variant="light"
                             icon={ExternalLink}
                             tooltip="Ver Factura"
                             onClick={() => {
+                              const currentInvoiceNum = (
+                                document.getElementById(
+                                  "edit_card_invoice_number",
+                                ) as HTMLInputElement
+                              )?.value;
+                              if (!currentInvoiceNum) {
+                                alert(
+                                  "Por favor ingresa un número de factura.",
+                                );
+                                return;
+                              }
                               const inv = invoices.find(
                                 (i) =>
-                                  i.invoice_number ===
-                                  selectedCardForEdit.invoice_number,
+                                  String(i.invoice_number).trim() ===
+                                  String(currentInvoiceNum).trim(),
                               );
                               if (inv) {
                                 handleViewInvoiceDetails(inv);
                               } else {
                                 alert(
-                                  "No se encontró la factura en los registros actuales de este evento.",
+                                  `No se encontró la factura "${currentInvoiceNum}" en los registros de este evento.`,
                                 );
                               }
                             }}
