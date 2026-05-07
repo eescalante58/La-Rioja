@@ -2077,8 +2077,10 @@ export default function BingoManagerClient({
                       </p>
                       <div className="mt-2 flex items-center gap-2">
                         <Badge size="xs" color="emerald">
-                          WhatsApp: +{selectedInvoice?.phone_area}{" "}
-                          {selectedInvoice?.phone_number}
+                          WhatsApp:{" "}
+                          {selectedInvoice?.whatsapp_number
+                            ? `+${selectedInvoice.whatsapp_number}`
+                            : `+${selectedInvoice?.phone_area} ${selectedInvoice?.phone_number}`}
                         </Badge>
                         <Button
                           type="button"
