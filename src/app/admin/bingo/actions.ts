@@ -715,6 +715,15 @@ export async function updateSingleCard(
   const newType = formData.get("card_type") as string;
   const newStatus = formData.get("card_status") as string;
   const newPrice = parseFloat(formData.get("card_price") as string);
+  const salesPrice = formData.get("sales_price")
+    ? parseFloat(formData.get("sales_price") as string)
+    : null;
+  const soldBy = formData.get("sold_by") as string;
+  const playerName = formData.get("player_name") as string;
+  const playerPhone = formData.get("player_phone_number") as string;
+  const playerEmail = formData.get("player_email") as string;
+  const prize = formData.get("prize") as string;
+  const comment = formData.get("comment") as string;
   const file = formData.get("file") as File;
 
   // 1. Get current data for comparison and potential file cleanup
@@ -734,6 +743,13 @@ export async function updateSingleCard(
     card_type: newType,
     card_status: newStatus,
     card_price: newPrice,
+    sales_price: salesPrice,
+    sold_by: soldBy,
+    player_name: playerName,
+    player_phone_number: playerPhone,
+    player_email: playerEmail,
+    prize: prize,
+    comment: comment,
     updated_at: new Date().toISOString(),
   };
 

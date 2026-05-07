@@ -40,6 +40,7 @@ import {
   FileIcon,
   RefreshCw,
   Search,
+  ExternalLink,
 } from "lucide-react";
 import {
   saveEvent,
@@ -139,6 +140,8 @@ export default function BingoManagerClient({
   const [rangeNewType, setRangeNewType] = useState("Virtual");
   const [isEditCardDialogOpen, setIsEditCardDialogOpen] = useState(false);
   const [selectedCardForEdit, setSelectedCardForEdit] = useState<any>(null);
+  const [editCardPhoneArea, setEditCardPhoneArea] = useState("+503");
+  const [editCardPhoneNumber, setEditCardPhoneNumber] = useState("");
 
   // Persistence for the selected tab
   useEffect(() => {
@@ -980,6 +983,18 @@ export default function BingoManagerClient({
                               size="xs"
                               onClick={() => {
                                 setSelectedCardForEdit(card);
+                                const existingArea = countries.find((c) =>
+                                  card.player_phone_number?.startsWith(
+                                    c.phone_code,
+                                  ),
+                                )?.phone_code;
+                                const area = existingArea || "+503";
+                                setEditCardPhoneArea(area);
+                                setEditCardPhoneNumber(
+                                  card.player_phone_number
+                                    ? card.player_phone_number.replace(area, "")
+                                    : "",
+                                );
                                 setIsEditCardDialogOpen(true);
                               }}
                               tooltip="Editar Cartón"
@@ -1930,91 +1945,291 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
-                <Edit size={24} />
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.04] via-larioja-verde/[0.04] to-larioja-amarillo/[0.08] hover:shadow-lg transition-all duration-300 overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
+                  <Edit size={24} />
+                </div>
+                <div>
+                  <Title className="text-larioja-azul">
+                    Editar Cartón #{selectedCardForEdit?.card_number}
+                  </Title>
+                  <Text className="text-xs">
+                    ID Evento: {selectedEventForCards?.event_id} (No editable)
+                  </Text>
+                </div>
               </div>
-              <Title>Editar Cartón #{selectedCardForEdit?.card_number}</Title>
+              <Badge color="blue" icon={Ticket}>
+                Cartón #{selectedCardForEdit?.card_number}
+              </Badge>
             </div>
 
-            <form onSubmit={handleUpdateSingleCard} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">
-                    Tipo
-                  </label>
-                  <Select
-                    name="card_type"
-                    defaultValue={selectedCardForEdit?.card_type || "Virtual"}
-                  >
-                    <SelectItem value="Virtual">Virtual</SelectItem>
-                    <SelectItem value="Fisico">Físico</SelectItem>
-                  </Select>
+            <form onSubmit={handleUpdateSingleCard} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Primera Columna */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        Tipo
+                      </label>
+                      <Select
+                        name="card_type"
+                        defaultValue={
+                          selectedCardForEdit?.card_type || "Virtual"
+                        }
+                      >
+                        <SelectItem value="Virtual">Virtual</SelectItem>
+                        <SelectItem value="Fisico">Físico</SelectItem>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        Estado
+                      </label>
+                      <Select
+                        name="card_status"
+                        defaultValue={
+                          selectedCardForEdit?.card_status || "Disponible"
+                        }
+                      >
+                        <SelectItem value="Disponible">Disponible</SelectItem>
+                        <SelectItem value="Vendido">Vendido</SelectItem>
+                        <SelectItem value="Asignado">Asignado</SelectItem>
+                        <SelectItem value="Cancelado">Cancelado</SelectItem>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        Precio Base
+                      </label>
+                      <TextInput
+                        name="card_price"
+                        icon={DollarSign}
+                        placeholder="0.00"
+                        defaultValue={selectedCardForEdit?.card_price?.toString()}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        Precio Venta
+                      </label>
+                      <TextInput
+                        name="sales_price"
+                        icon={DollarSign}
+                        placeholder="0.00"
+                        defaultValue={selectedCardForEdit?.sales_price?.toString()}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Vendido por
+                    </label>
+                    <TextInput
+                      name="sold_by"
+                      placeholder="Nombre del vendedor"
+                      defaultValue={selectedCardForEdit?.sold_by}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Factura Relacionada
+                    </label>
+                    <div className="flex gap-2">
+                      <TextInput
+                        name="invoice_number"
+                        placeholder="N° Factura"
+                        defaultValue={selectedCardForEdit?.invoice_number}
+                        className="flex-1"
+                      />
+                      {selectedCardForEdit?.invoice_number && (
+                        <Button
+                          type="button"
+                          variant="light"
+                          icon={ExternalLink}
+                          tooltip="Ver Factura"
+                          onClick={() => {
+                            const inv = invoices.find(
+                              (i) =>
+                                i.invoice_number ===
+                                selectedCardForEdit.invoice_number,
+                            );
+                            if (inv) {
+                              handleViewInvoiceDetails(inv);
+                            } else {
+                              alert(
+                                "No se encontró la factura en los registros actuales de este evento.",
+                              );
+                            }
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Imagen / PDF
+                    </label>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          name="file"
+                          accept=".pdf"
+                          className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul/10 file:text-larioja-azul hover:file:bg-larioja-azul/20"
+                        />
+                        {selectedCardForEdit?.image_url && (
+                          <Button
+                            type="button"
+                            variant="light"
+                            icon={Eye}
+                            onClick={() =>
+                              window.open(
+                                selectedCardForEdit.image_url,
+                                "_blank",
+                              )
+                            }
+                            tooltip="Ver actual"
+                          />
+                        )}
+                      </div>
+                      {selectedCardForEdit?.image_url && (
+                        <Text className="text-[10px] text-gray-400">
+                          Ya existe un archivo cargado. Subir uno nuevo lo
+                          reemplazará.
+                        </Text>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold uppercase text-gray-500">
-                    Estado
-                  </label>
-                  <Select
-                    name="card_status"
-                    defaultValue={
-                      selectedCardForEdit?.card_status || "Disponible"
-                    }
-                  >
-                    <SelectItem value="Disponible">Disponible</SelectItem>
-                    <SelectItem value="Vendido">Vendido</SelectItem>
-                    <SelectItem value="Asignado">Asignado</SelectItem>
-                  </Select>
+
+                {/* Segunda Columna */}
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Nombre del Jugador
+                    </label>
+                    <TextInput
+                      name="player_name"
+                      placeholder="Nombre completo"
+                      defaultValue={selectedCardForEdit?.player_name}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Teléfono del Jugador
+                    </label>
+                    <div className="flex gap-2">
+                      <Select
+                        className="w-32"
+                        value={editCardPhoneArea}
+                        onValueChange={setEditCardPhoneArea}
+                      >
+                        {countries.map((c) => (
+                          <SelectItem key={c.iso2} value={c.phone_code}>
+                            {c.flag_emoji} {c.phone_code}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                      <TextInput
+                        name="player_phone_number_only"
+                        placeholder="7000-0000"
+                        value={editCardPhoneNumber}
+                        onValueChange={setEditCardPhoneNumber}
+                      />
+                      <input
+                        type="hidden"
+                        name="player_phone_number"
+                        value={`${editCardPhoneArea}${editCardPhoneNumber}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Email del Jugador
+                    </label>
+                    <TextInput
+                      name="player_email"
+                      type="email"
+                      placeholder="correo@ejemplo.com"
+                      defaultValue={selectedCardForEdit?.player_email}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Premio
+                    </label>
+                    <TextInput
+                      name="prize"
+                      placeholder="Descripción del premio"
+                      defaultValue={selectedCardForEdit?.prize}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Observaciones
+                    </label>
+                    <textarea
+                      name="comment"
+                      className="w-full text-sm border-gray-300 rounded-lg focus:ring-larioja-azul focus:border-larioja-azul dark:bg-gray-800 dark:border-gray-700 p-2 h-20"
+                      placeholder="Añadir notas..."
+                      defaultValue={selectedCardForEdit?.comment}
+                    ></textarea>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-400">
+                    <div>
+                      <span className="font-bold uppercase">Creado:</span>
+                      <p>
+                        {selectedCardForEdit?.created_at
+                          ? new Date(
+                              selectedCardForEdit.created_at,
+                            ).toLocaleString()
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-bold uppercase">Actualizado:</span>
+                      <p>
+                        {selectedCardForEdit?.updated_at
+                          ? new Date(
+                              selectedCardForEdit.updated_at,
+                            ).toLocaleString()
+                          : "N/A"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-gray-500">
-                  Precio
-                </label>
-                <TextInput
-                  name="card_price"
-                  type="number"
-                  step="0.01"
-                  defaultValue={selectedCardForEdit?.card_price || 0}
-                  required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase text-gray-500">
-                  Imagen PDF (Opcional)
-                </label>
-                <div className="mt-1 flex items-center gap-2">
-                  <input
-                    type="file"
-                    name="file"
-                    accept=".pdf"
-                    className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul/10 file:text-larioja-azul hover:file:bg-larioja-azul/20"
-                  />
-                </div>
-                {selectedCardForEdit?.image_url && (
-                  <Text className="text-[10px] text-gray-400 mt-1">
-                    Ya tiene una imagen cargada. Subir una nueva la reemplazará.
-                  </Text>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
                 <Button
                   variant="secondary"
                   onClick={() => setIsEditCardDialogOpen(false)}
                   disabled={loading}
+                  type="button"
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
                   loading={loading}
-                  className="bg-larioja-azul"
+                  className="bg-larioja-azul hover:bg-larioja-azul/90"
                 >
-                  Actualizar Cartón
+                  Guardar Cambios
                 </Button>
               </div>
             </form>
