@@ -685,9 +685,7 @@ export default function BingoManagerClient({
                 {events.map((ev) => (
                   <Card
                     key={ev.id}
-                    decoration="top"
-                    decorationColor="blue"
-                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.15] border-gray-100 dark:border-gray-800"
                   >
                     <div className="flex justify-between items-start">
                       <div>
