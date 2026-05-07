@@ -132,6 +132,7 @@ export default function BingoManagerClient({
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [isNewInvoiceDialogOpen, setIsNewInvoiceDialogOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
+  const [isWhatsAppPopupOpen, setIsWhatsAppPopupOpen] = useState(false);
   const [invoicePhoneArea, setInvoicePhoneArea] = useState("503");
   const [invoicePhoneNumber, setInvoicePhoneNumber] = useState("");
   const [invoiceManagerName, setInvoiceManagerName] = useState("");
@@ -936,6 +937,34 @@ export default function BingoManagerClient({
           </TabPanel>
         </TabPanels>
       </TabGroup>
+
+      {/* Dialog: Formulario WhatsApp (Emergente) */}
+      <Dialog
+        open={isWhatsAppPopupOpen}
+        onClose={() => setIsWhatsAppPopupOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[60]" />
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6">
+            <Title className="text-larioja-azul mb-4">
+              Enviar por WhatsApp
+            </Title>
+            <Text className="mb-6">
+              Próximamente: Aquí se configurará el mensaje de WhatsApp para
+              enviar la factura y los cartones.
+            </Text>
+            <div className="flex justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => setIsWhatsAppPopupOpen(false)}
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
 
       {/* Dialog: Detalles de Inventario */}
       <Dialog
@@ -1749,20 +1778,8 @@ export default function BingoManagerClient({
                         variant="light"
                         icon={MessageCircle}
                         className="text-green-500"
-                        onClick={() => {
-                          const number = `${invoicePhoneArea}${invoicePhoneNumber}`;
-                          const cardsText =
-                            selectedInvoiceCards.length > 0
-                              ? `\nCartones: ${selectedInvoiceCards.join(", ")}`
-                              : "";
-                          const text = encodeURIComponent(
-                            `Hola ${editingInvoice?.customer_name || "Cliente"}, adjuntamos tu factura N° ${editingInvoice?.invoice_number || ""}${cardsText}`,
-                          );
-                          window.open(
-                            `https://wa.me/${number}?text=${text}`,
-                            "_blank",
-                          );
-                        }}
+                        tooltip="Enviar por WhatsApp"
+                        onClick={() => setIsWhatsAppPopupOpen(true)}
                       />
                     </div>
                   </div>
