@@ -855,7 +855,10 @@ export default function BingoManagerClient({
       {/* Dialog: Detalles de Inventario */}
       <Dialog
         open={isInventoryDetailsDialogOpen}
-        onClose={() => setIsInventoryDetailsDialogOpen(false)}
+        onClose={() => {
+          setIsInventoryDetailsDialogOpen(false);
+          setSearchQuery("");
+        }}
         static={true}
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
@@ -886,17 +889,12 @@ export default function BingoManagerClient({
                 </div>
               </div>
 
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size={16} className="text-gray-400" />
-                </div>
-                <TextInput
-                  placeholder="Buscar por N° Cartón, Tipo, Estado o Vendedor..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onValueChange={setSearchQuery}
-                />
-              </div>
+              <TextInput
+                placeholder="Buscar por N° Cartón, Tipo, Estado o Vendedor..."
+                icon={Search}
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+              />
             </div>
 
             {loadingEventCards ? (
@@ -1009,7 +1007,10 @@ export default function BingoManagerClient({
             <div className="flex justify-end mt-8">
               <Button
                 variant="secondary"
-                onClick={() => setIsInventoryDetailsDialogOpen(false)}
+                onClick={() => {
+                  setIsInventoryDetailsDialogOpen(false);
+                  setSearchQuery("");
+                }}
               >
                 Cerrar
               </Button>
