@@ -32,7 +32,14 @@ export default function LoginPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Basic format validation: characters before @, domain, and TLD
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    if (!email) {
+      setEmailError(null);
+      return true; // Don't show error if empty, 'required' handles it
+    }
+
     if (!re.test(email)) {
       setEmailError("Formato de correo electrónico no válido");
       return false;
@@ -42,6 +49,10 @@ export default function LoginPage() {
   };
 
   const validatePassword = (password: string) => {
+    if (!password) {
+      setPasswordError(null);
+      return true; // Don't show error if empty, 'required' handles it
+    }
     // 8 characters min
     if (password.length < 8) {
       setPasswordError("La contraseña debe tener al menos 8 caracteres");
@@ -52,9 +63,9 @@ export default function LoginPage() {
       setPasswordError("Debe incluir al menos una letra mayúscula");
       return false;
     }
-    // Digits 0-8 (exactly as requested: digits but 0 to 8)
-    if (!/[0-8]/.test(password)) {
-      setPasswordError("Debe incluir al menos un dígito entre 0 y 8");
+    // Digits 0-9
+    if (!/[0-9]/.test(password)) {
+      setPasswordError("Debe incluir al menos un dígito (0-9)");
       return false;
     }
     // Special character
@@ -159,6 +170,9 @@ export default function LoginPage() {
                   type="email"
                   placeholder="ejemplo@correo.com"
                   required
+                  onChange={(e) => {
+                    if (emailError) validateEmail(e.target.value);
+                  }}
                   onBlur={(e) => validateEmail(e.target.value)}
                   aria-invalid={!!emailError}
                   aria-describedby={emailError ? "email-error" : undefined}

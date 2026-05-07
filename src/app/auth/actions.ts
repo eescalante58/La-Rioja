@@ -14,13 +14,27 @@ export async function login(formData: FormData) {
   const password = formData.get("password") as string;
   const supabase = createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Log activity
+  if (data.user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: data.user.id,
+      action: "LOGIN",
+      entity: "users",
+      metadata: {
+        email: data.user.email,
+        method: "password",
+        timestamp: new Date().toISOString(),
+      },
+    });
   }
 
   revalidatePath("/", "layout");
@@ -32,6 +46,22 @@ export async function login(formData: FormData) {
  */
 export async function signOut() {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "LOGOUT",
+      entity: "users",
+      metadata: {
+        email: user.email,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
   await supabase.auth.signOut();
 
   // Clear company cookies

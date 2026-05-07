@@ -14,6 +14,24 @@ export function useAutoLogout(timeoutMinutes: number = 30) {
   const logout = useCallback(async () => {
     console.log("Sesión expirada por inactividad. Disparando alerta...");
 
+    // Log the auto-logout event before signing out
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      await supabase.from("user_activity_log").insert({
+        user_id: user.id,
+        action: "AUTO_LOGOUT",
+        entity: "users",
+        metadata: {
+          reason: "inactivity",
+          timeout_minutes: timeoutMinutes,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
     // Cerrar sesión en Supabase
     await supabase.auth.signOut();
 
