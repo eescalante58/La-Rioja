@@ -1,6 +1,8 @@
 ### Tabla: `public.companies`
 
-**Descripción:** Empresas/tenants. Contiene la configuración base por empresa.
+**Descripción:** Empresas/tenants. Contiene la configuración base por empresa.Fondo Desvanecido: Se ha añadido un gradiente lineal (bg-gradient-to-br) que utiliza los tres colores institucionales: Azul La Rioja, Verde La Rioja y Amarillo La Rioja.
+Opacidad Suave: Las intensidades se ajustaron para que el fondo sea sutil (faded), permitiendo que el texto siga siendo perfectamente legible.
+Efectos Visuales: Se mejoró la sombra al pasar el mouse (hover:shadow-lg) y se añadió una transición suave para una mejor experiencia de usuario.
 
 | Columna           | Tipo de Datos              | Comentario                                            |
 | :---------------- | :------------------------- | ----------------------------------------------------- |
@@ -106,3 +108,58 @@
 
 - **Relaciones:** Permite que un usuario pertenezca a múltiples empresas con roles potencialmente diferentes.
 - **Seguridad:** Es la base para el filtrado por RLS en todo el sistema.
+
+### Tabla: `public.cards`
+
+**Descripción:** Tabla de cartones de bingo asociados a eventos.
+
+| Columna               | Tipo de Datos              | Comentario                                     |
+| :-------------------- | :------------------------- | :--------------------------------------------- |
+| `id`                  | `bigint`                   | Identificador único del cartón (PK).           |
+| `company_id`          | `bigint`                   | ID de la empresa a la que pertenece el cartón. |
+| `event_id`            | `citext`                   | ID del evento asociado.                        |
+| `card_number`         | `bigint`                   | Número impreso en el cartón.                   |
+| `card_type`           | `card_type_enum`           | Tipo de cartón (Físico, Virtual).              |
+| `card_status`         | `card_status_enum`         | Estado (Disponible, Asignado, Vendido, etc).   |
+| `card_price`          | `numeric`                  | Precio base o costo del cartón.                |
+| `sales_price`         | `numeric`                  | Precio de venta final.                         |
+| `image_url`           | `text`                     | URL del PDF o imagen del cartón.               |
+| `invoice_number`      | `citext`                   | Número de factura relacionada.                 |
+| `sold_by`             | `text`                     | Nombre de quién realizó la venta.              |
+| `player_name`         | `text`                     | Nombre del jugador/comprador.                  |
+| `player_phone_number` | `text`                     | Teléfono del jugador.                          |
+| `player_email`        | `text`                     | Email del jugador.                             |
+| `prize`               | `text`                     | Descripción del premio si resultó ganador.     |
+| `comment`             | `text`                     | Observaciones adicionales.                     |
+| `created_at`          | `timestamp with time zone` | Fecha de creación.                             |
+| `updated_at`          | `timestamp with time zone` | Fecha de última actualización.                 |
+
+**Notas adicionales:**
+
+- **Relaciones:** Vinculada a `events` y `invoices`.
+
+### Tabla: `public.invoices`
+
+**Descripción:** Facturas/comprobantes de venta de cartones.
+
+| Columna                 | Tipo de Datos              | Comentario                                |
+| :---------------------- | :------------------------- | :---------------------------------------- |
+| `id`                    | `uuid`                     | Identificador único de la factura (PK).   |
+| `company_id`            | `bigint`                   | ID de la empresa.                         |
+| `invoice_number`        | `citext`                   | Número correlativo de factura.            |
+| `invoice_date`          | `date`                     | Fecha de emisión.                         |
+| `customer_name`         | `text`                     | Nombre del cliente.                       |
+| `phone_area`            | `text`                     | Código de área telefónica.                |
+| `phone_number`          | `text`                     | Número de teléfono.                       |
+| `whatsapp_number`       | `text`                     | Número de WhatsApp.                       |
+| `customer_email`        | `text`                     | Correo electrónico del cliente.           |
+| `cards_number`          | `integer`                  | Cantidad de cartones comprados.           |
+| `card_price`            | `numeric`                  | Precio por cartón en esta venta.          |
+| `total_amount`          | `numeric`                  | Monto total de la factura.                |
+| `event_id`              | `citext`                   | ID del evento asociado.                   |
+| `payment_method`        | `payment_method_enum`      | Método de pago utilizado.                 |
+| `status`                | `invoice_status_enum`      | Estado (pendiente, pagada, etc).          |
+| `manager_name`          | `text`                     | Nombre del administrador que la generó.   |
+| `send_whatsapp_message` | `text`                     | Estado/Log del último envío por WhatsApp. |
+| `created_at`            | `timestamp with time zone` | Fecha de creación.                        |
+| `updated_at`            | `timestamp with time zone` | Fecha de última actualización.            |
