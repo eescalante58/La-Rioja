@@ -58,6 +58,7 @@ import {
   deleteInvoice,
   uploadCardImages,
   updateCardType,
+  updateCardRangeType,
   updateSingleCard,
   updateInvoiceWhatsAppStatus,
   getWhatsAppMessageTemplate,
@@ -144,6 +145,7 @@ export default function BingoManagerClient({
   const [whatsappImage, setWhatsappImage] = useState("");
   const [invoiceImages, setInvoiceImages] = useState<string[]>([]);
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const [isWhatsAppPopupOpen, setIsWhatsAppPopupOpen] = useState(false);
   const [invoicePhoneArea, setInvoicePhoneArea] = useState("503");
   const [invoicePhoneNumber, setInvoicePhoneNumber] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
@@ -353,6 +355,98 @@ export default function BingoManagerClient({
         alert("Error: " + result.error);
       }
       setLoading(false);
+    }
+  };
+
+  const handleOpenWhatsAppPopup = async (invoice: any) => {
+    setLoading(true);
+    try {
+      const templateResult = await getWhatsAppMessageTemplate();
+      if (templateResult.success && templateResult.data) {
+        const template = templateResult.data;
+        setWhatsappTemplate(template);
+
+        let message = template.description || "";
+        message = message.replace(
+          "[customer_name]",
+          invoice.customer_name || "",
+        );
+        message = message.replace(
+          "[cards_number]",
+          (invoice.cards_number || 0).toString(),
+        );
+
+        setWhatsappMessage(message);
+        setWhatsappImage(template.image_url || "");
+      }
+
+      const cardsResult = await getCardsForInvoice(
+        invoice.company_id,
+        invoice.event_id,
+        invoice.invoice_number,
+      );
+      if (cardsResult.success) {
+        const images = cardsResult.data
+          .map((c: any) => c.image_url)
+          .filter((url: string) => !!url);
+
+        const allImages = [];
+        if (invoice.url_invoice) allImages.push(invoice.url_invoice);
+        allImages.push(...images);
+
+        setInvoiceImages(allImages);
+      }
+
+      setEditingInvoice(invoice);
+      setWhatsappNumber(
+        invoice.whatsapp_number ||
+          `${invoice.phone_area}${invoice.phone_number}`,
+      );
+      setIsWhatsAppPopupOpen(true);
+    } catch (error) {
+      console.error("Error opening WhatsApp popup:", error);
+      alert("Error al cargar la información para WhatsApp.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendWhatsApp = async () => {
+    if (!editingInvoice) return;
+    setSendingWhatsApp(true);
+
+    try {
+      const cleanNumber = whatsappNumber.replace(/\+/g, "").replace(/\s/g, "");
+
+      // Construir el mensaje para WhatsApp Web
+      const encodedMessage = encodeURIComponent(whatsappMessage);
+      const whatsappUrl = `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${encodedMessage}`;
+
+      // Abrir WhatsApp Web
+      window.open(whatsappUrl, "_blank");
+
+      // Registrar éxito (asumimos éxito al abrir la ventana, ya que no podemos saber si se envió realmente desde el navegador)
+      const now = new Date();
+      const statusMessage = `Enviado exitosamente el ${now.toLocaleDateString()} a las ${now.toLocaleTimeString()}`;
+
+      const result = await updateInvoiceWhatsAppStatus(
+        editingInvoice.id,
+        statusMessage,
+      );
+
+      if (result.success) {
+        alert(
+          "Mensaje preparado en WhatsApp Web. El estado ha sido registrado.",
+        );
+        setIsWhatsAppPopupOpen(false);
+      } else {
+        alert("Error al registrar el estado del envío: " + result.error);
+      }
+    } catch (error) {
+      console.error("Error sending WhatsApp:", error);
+      alert("Error al procesar el envío de WhatsApp.");
+    } finally {
+      setSendingWhatsApp(false);
     }
   };
 
