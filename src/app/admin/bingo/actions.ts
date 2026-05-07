@@ -864,11 +864,15 @@ export async function saveInvoice(formData: FormData) {
     const fileName = `${invoice_number}_${Date.now()}.${fileExt}`;
     const storagePath = `${company_id}/${event_id}/${fileName}`;
 
+    // Convert File to ArrayBuffer for Supabase Storage in Node.js environment
+    const arrayBuffer = await invoice_file.arrayBuffer();
+
     const { error: uploadError } = await supabase.storage
       .from("invoices_images")
-      .upload(storagePath, invoice_file, {
+      .upload(storagePath, arrayBuffer, {
         cacheControl: "3600",
         upsert: true,
+        contentType: invoice_file.type,
       });
 
     if (uploadError) {
@@ -1001,11 +1005,15 @@ export async function updateInvoice(formData: FormData) {
     const fileName = `${invoice_number}_${Date.now()}.${fileExt}`;
     const storagePath = `${company_id}/${event_id}/${fileName}`;
 
+    // Convert File to ArrayBuffer for Supabase Storage in Node.js environment
+    const arrayBuffer = await invoice_file.arrayBuffer();
+
     const { error: uploadError } = await supabase.storage
       .from("invoices_images")
-      .upload(storagePath, invoice_file, {
+      .upload(storagePath, arrayBuffer, {
         cacheControl: "3600",
         upsert: true,
+        contentType: invoice_file.type,
       });
 
     if (uploadError) {
