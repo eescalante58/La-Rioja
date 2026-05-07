@@ -214,11 +214,16 @@ export default function BingoManagerClient({
     setIsInventoryDetailsDialogOpen(true);
     setLoadingEventCards(true);
     try {
-      const result = await getEventCards(event.company_id, event.event_id);
-      if (typeof result === "object" && "data" in result) {
-        setEventCards(result.data || []);
-      } else if (typeof result === "object" && "error" in result) {
-        alert("Error: " + result.error);
+      // Load both cards and invoices for this event
+      const [cardsResult] = await Promise.all([
+        getEventCards(event.company_id, event.event_id),
+        handleFetchInvoices(event.company_id, event.event_id),
+      ]);
+
+      if (typeof cardsResult === "object" && "data" in cardsResult) {
+        setEventCards(cardsResult.data || []);
+      } else if (typeof cardsResult === "object" && "error" in cardsResult) {
+        alert("Error: " + cardsResult.error);
       }
     } catch (error) {
       console.error("Error loading inventory:", error);
