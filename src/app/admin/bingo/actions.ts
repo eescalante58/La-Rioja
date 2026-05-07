@@ -1156,3 +1156,58 @@ export async function deleteInvoice(id: string) {
   revalidatePath("/admin/bingo");
   return { success: true };
 }
+
+/**
+ * Update the WhatsApp sending status for an invoice.
+ */
+export async function updateInvoiceWhatsAppStatus(id: string, status: string) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("invoices")
+    .update({
+      send_whatsapp_message: status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/admin/bingo");
+  return { success: true };
+}
+
+/**
+ * Fetch the WhatsApp message template from site_content.
+ */
+export async function getWhatsAppMessageTemplate() {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("site_content")
+    .select("*")
+    .eq("page", "whatsapp message")
+    .eq("section_key", "cartones")
+    .eq("is_active", true)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+/**
+ * Fetch cards associated with a specific invoice.
+ */
+export async function getCardsForInvoice(
+  companyId: number,
+  eventId: string,
+  invoiceNumber: string,
+) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("cards")
+    .select("*")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .eq("invoice_number", invoiceNumber);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}

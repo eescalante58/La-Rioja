@@ -58,8 +58,10 @@ import {
   deleteInvoice,
   uploadCardImages,
   updateCardType,
-  updateCardRangeType,
   updateSingleCard,
+  updateInvoiceWhatsAppStatus,
+  getWhatsAppMessageTemplate,
+  getCardsForInvoice,
 } from "./actions";
 
 interface Event {
@@ -132,7 +134,16 @@ export default function BingoManagerClient({
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [isNewInvoiceDialogOpen, setIsNewInvoiceDialogOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
-  const [isWhatsAppPopupOpen, setIsWhatsAppPopupOpen] = useState(false);
+  const [whatsappTemplate, setWhatsappTemplate] = useState<{
+    id: string;
+    title: string;
+    description: string;
+    image_url: string;
+  } | null>(null);
+  const [whatsappMessage, setWhatsappMessage] = useState("");
+  const [whatsappImage, setWhatsappImage] = useState("");
+  const [invoiceImages, setInvoiceImages] = useState<string[]>([]);
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const [invoicePhoneArea, setInvoicePhoneArea] = useState("503");
   const [invoicePhoneNumber, setInvoicePhoneNumber] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
@@ -949,20 +960,128 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[60]" />
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 p-6">
-            <Title className="text-larioja-azul mb-4">
-              Enviar por WhatsApp
-            </Title>
-            <Text className="mb-6">
-              Próximamente: Aquí se configurará el mensaje de WhatsApp para
-              enviar la factura y los cartones.
-            </Text>
-            <div className="flex justify-end">
+          <DialogPanel className="max-w-xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-azul/5">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-500/10 p-2 rounded-lg text-green-600">
+                  <MessageCircle size={24} />
+                </div>
+                <Title className="text-larioja-azul">Enviar por WhatsApp</Title>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  Número de WhatsApp
+                </label>
+                <TextInput
+                  value={whatsappNumber}
+                  onValueChange={setWhatsappNumber}
+                  icon={Smartphone}
+                  placeholder="Ej: 50370000000"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  Mensaje
+                </label>
+                <textarea
+                  className="w-full h-32 p-3 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul resize-none"
+                  value={whatsappMessage}
+                  onChange={(e) => setWhatsappMessage(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  Archivos a enviar ({invoiceImages.length})
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {invoiceImages.map((url, i) => (
+                    <div
+                      key={i}
+                      className="relative aspect-square rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 flex items-center justify-center"
+                    >
+                      {url.toLowerCase().endsWith(".pdf") ? (
+                        <FileText size={24} className="text-red-500" />
+                      ) : (
+                        <img
+                          src={url}
+                          alt={`Adjunto ${i + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <Text className="text-[10px] text-gray-400 italic">
+                  * Las imágenes se abrirán en WhatsApp Web para su envío.
+                </Text>
+              </div>
+
+              {whatsappTemplate?.image_url && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Imagen de Plantilla
+                  </label>
+                  <div className="relative group">
+                    <img
+                      src={whatsappImage}
+                      alt="Plantilla"
+                      className="w-full h-auto rounded-lg border border-gray-100 dark:border-gray-800"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <input
+                        type="file"
+                        id="change_template_img"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              setWhatsappImage(ev.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        icon={Upload}
+                        onClick={() =>
+                          document
+                            .getElementById("change_template_img")
+                            ?.click()
+                        }
+                      >
+                        Cambiar Imagen
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 bg-gray-50/50">
               <Button
                 variant="secondary"
                 onClick={() => setIsWhatsAppPopupOpen(false)}
+                disabled={sendingWhatsApp}
               >
                 Cerrar
+              </Button>
+              <Button
+                className="bg-green-600 hover:bg-green-700"
+                icon={MessageCircle}
+                onClick={handleSendWhatsApp}
+                loading={sendingWhatsApp}
+              >
+                Enviar a WhatsApp
               </Button>
             </div>
           </DialogPanel>
@@ -1783,7 +1902,11 @@ export default function BingoManagerClient({
                         icon={MessageCircle}
                         className="text-green-500"
                         tooltip="Enviar por WhatsApp"
-                        onClick={() => setIsWhatsAppPopupOpen(true)}
+                        onClick={() =>
+                          handleOpenWhatsAppPopup(
+                            editingInvoice || selectedInvoice,
+                          )
+                        }
                       />
                     </div>
                   </div>
@@ -2089,19 +2212,9 @@ export default function BingoManagerClient({
                           size="xs"
                           className="text-green-500"
                           tooltip="Enviar por WhatsApp"
-                          onClick={() => {
-                            setEditingInvoice(selectedInvoice);
-                            setInvoicePhoneArea(
-                              selectedInvoice.phone_area || "503",
-                            );
-                            setInvoicePhoneNumber(
-                              selectedInvoice.phone_number || "",
-                            );
-                            setWhatsappNumber(
-                              selectedInvoice.whatsapp_number || "",
-                            );
-                            setIsWhatsAppPopupOpen(true);
-                          }}
+                          onClick={() =>
+                            handleOpenWhatsAppPopup(selectedInvoice)
+                          }
                         />
                       </div>
                     </div>
