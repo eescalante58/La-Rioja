@@ -202,14 +202,23 @@ export default function BingoManagerClient({
   const handleFetchInvoices = async (companyId: number, eventId: string) => {
     setLoadingInvoices(true);
     try {
-      const result = await getInvoices(companyId, eventId);
-      if (result.success) {
-        setInvoices(result.data || []);
+      // Cargar tanto facturas como cartones para que los detalles estén listos
+      const [invResult, cardsResult] = await Promise.all([
+        getInvoices(companyId, eventId),
+        getEventCards(companyId, eventId),
+      ]);
+
+      if (invResult.success) {
+        setInvoices(invResult.data || []);
       } else {
-        console.error("Error fetching invoices:", result.error);
+        console.error("Error fetching invoices:", invResult.error);
+      }
+
+      if (typeof cardsResult === "object" && "data" in cardsResult) {
+        setEventCards(cardsResult.data || []);
       }
     } catch (error) {
-      console.error("Error fetching invoices:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoadingInvoices(false);
     }
@@ -893,7 +902,15 @@ export default function BingoManagerClient({
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="light" icon={Eye} size="xs" />
+                            <Button
+                              variant="light"
+                              icon={Eye}
+                              size="xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewInvoiceDetails(inv);
+                              }}
+                            />
                           </TableCell>
                         </TableRow>
                       ))}
@@ -1595,8 +1612,8 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col max-h-[95vh]">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
               <Title className="text-larioja-azul dark:text-larioja-amarillo">
                 {editingInvoice ? "Editar Factura" : "Nueva Factura"}
               </Title>
@@ -1608,6 +1625,7 @@ export default function BingoManagerClient({
             <form
               onSubmit={handleSaveInvoice}
               className="flex flex-col flex-grow overflow-hidden"
+              encType="multipart/form-data"
             >
               <div className="p-6 overflow-y-auto space-y-6">
                 {editingInvoice && (
@@ -1966,6 +1984,244 @@ export default function BingoManagerClient({
                 </Button>
               </div>
             </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Dialog: Detalle de Factura */}
+      <Dialog
+        open={isInvoiceDialogOpen}
+        onClose={() => setIsInvoiceDialogOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col max-h-[95vh] bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
+                  <TrendingUp size={24} />
+                </div>
+                <div>
+                  <Title className="text-larioja-azul dark:text-larioja-amarillo">
+                    Factura {selectedInvoice?.invoice_number}
+                  </Title>
+                  <Text className="text-xs">
+                    Evento: {selectedInvoice?.event_id}
+                  </Text>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  icon={Edit}
+                  onClick={() => handleEditInvoice(selectedInvoice)}
+                >
+                  Editar
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  icon={Trash2}
+                  className="text-red-500"
+                  onClick={() => handleDeleteInvoice(selectedInvoice.id)}
+                >
+                  Eliminar
+                </Button>
+                <Button
+                  variant="light"
+                  icon={X}
+                  onClick={() => setIsInvoiceDialogOpen(false)}
+                />
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Información del Cliente
+                    </Text>
+                    <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-800">
+                      <p className="font-bold text-gray-900 dark:text-white">
+                        {selectedInvoice?.customer_name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {selectedInvoice?.customer_email}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge size="xs" color="emerald">
+                          WhatsApp: +{selectedInvoice?.phone_area}{" "}
+                          {selectedInvoice?.phone_number}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        Fecha Emisión
+                      </Text>
+                      <p className="text-sm font-medium mt-1">
+                        {selectedInvoice?.invoice_date &&
+                          new Date(
+                            selectedInvoice.invoice_date,
+                          ).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        Estado
+                      </Text>
+                      <Badge
+                        color={
+                          selectedInvoice?.status === "pagada"
+                            ? "emerald"
+                            : "amber"
+                        }
+                        size="xs"
+                        className="mt-1 capitalize"
+                      >
+                        {selectedInvoice?.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        Método de Pago
+                      </Text>
+                      <p className="text-sm font-medium mt-1 capitalize">
+                        {selectedInvoice?.payment_method}
+                      </p>
+                    </div>
+                    <div>
+                      <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        Vendido por
+                      </Text>
+                      <p className="text-sm font-medium mt-1">
+                        {selectedInvoice?.manager_name || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-larioja-azul/5 rounded-xl border border-larioja-azul/10">
+                    <div className="flex justify-between items-center mb-2">
+                      <Text className="text-xs">Cant. Cartones</Text>
+                      <Text className="font-bold">
+                        {selectedInvoice?.cards_number}
+                      </Text>
+                    </div>
+                    <div className="flex justify-between items-center mb-2">
+                      <Text className="text-xs">Precio unitario</Text>
+                      <Text className="font-bold">
+                        {formatCurrency(selectedInvoice?.card_price || 0)}
+                      </Text>
+                    </div>
+                    <div className="h-px bg-gray-200 dark:bg-gray-700 my-2" />
+                    <div className="flex justify-between items-center">
+                      <Text className="text-sm font-bold text-larioja-azul">
+                        Total
+                      </Text>
+                      <Text className="text-lg font-bold text-larioja-azul">
+                        {formatCurrency(selectedInvoice?.total_amount || 0)}
+                      </Text>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider mb-2">
+                      Cartones Asociados
+                    </Text>
+                    <div className="flex flex-wrap gap-2">
+                      {eventCards
+                        .filter(
+                          (c) =>
+                            c.invoice_number ===
+                            selectedInvoice?.invoice_number,
+                        )
+                        .map((c) => (
+                          <Badge key={c.card_number} size="xs" color="blue">
+                            #{c.card_number}
+                          </Badge>
+                        ))}
+                      {eventCards.filter(
+                        (c) =>
+                          c.invoice_number === selectedInvoice?.invoice_number,
+                      ).length === 0 && (
+                        <Text className="text-xs text-gray-400 italic">
+                          No hay cartones vinculados en la vista actual.
+                        </Text>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Imagen / Comprobante
+                  </Text>
+                  {selectedInvoice?.url_invoice ? (
+                    <div className="relative group rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm">
+                      {selectedInvoice.url_invoice
+                        .toLowerCase()
+                        .endsWith(".pdf") ? (
+                        <div className="flex flex-col items-center justify-center py-12 bg-gray-50 dark:bg-gray-800/50">
+                          <FileText size={48} className="text-red-500 mb-2" />
+                          <Text>Documento PDF</Text>
+                          <Button
+                            variant="primary"
+                            size="xs"
+                            className="mt-4"
+                            onClick={() =>
+                              window.open(selectedInvoice.url_invoice, "_blank")
+                            }
+                          >
+                            Ver PDF
+                          </Button>
+                        </div>
+                      ) : (
+                        <img
+                          src={selectedInvoice.url_invoice}
+                          alt="Comprobante"
+                          className="w-full h-auto object-contain max-h-[400px]"
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button
+                          variant="secondary"
+                          size="xs"
+                          icon={Eye}
+                          onClick={() =>
+                            window.open(selectedInvoice.url_invoice, "_blank")
+                          }
+                        >
+                          Ver Original
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+                      <ImageOff size={48} className="text-gray-300 mb-2" />
+                      <Text className="text-gray-400">Sin imagen adjunta</Text>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-shrink-0">
+              <Button
+                variant="secondary"
+                onClick={() => setIsInvoiceDialogOpen(false)}
+              >
+                Cerrar
+              </Button>
+            </div>
           </DialogPanel>
         </div>
       </Dialog>
