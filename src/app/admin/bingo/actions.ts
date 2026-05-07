@@ -25,6 +25,7 @@ export async function uploadCardImages(
   const deleteExisting = formData.get("delete_existing_upload") === "on";
 
   // If requested, delete existing cards for this event first
+  let deletedCount = 0;
   if (deleteExisting) {
     // 1. Get cards that can be deleted (status = 'Disponible')
     const { data: cardsToDelete, error: fetchError } = await supabase
@@ -90,9 +91,8 @@ export async function uploadCardImages(
       if (dbError) {
         console.error("Error deleting rows from DB:", dbError);
       } else {
-        console.log(
-          `Registros eliminados de BD (Upload): ${deletedRows?.length || 0}`,
-        );
+        deletedCount = deletedRows?.length || 0;
+        console.log(`Registros eliminados de BD (Upload): ${deletedCount}`);
       }
     }
   }
@@ -239,6 +239,7 @@ export async function uploadCardImages(
           success_count: results.success_count,
           error_count: results.error_count,
           deleted_previous: deleteExisting,
+          deleted_count: deletedCount,
           timestamp: new Date().toISOString(),
         },
       });
@@ -573,8 +574,69 @@ export async function generateCards(
 }
 
 /**
- * Fetch invoices for a specific event.
+ * Reassign card type (Virtual/Fisico) and log activity.
  */
+export async function updateCardType(
+  companyId: number,
+  eventId: string,
+  cardNumber: number,
+  newType: string,
+  officialName: string,
+) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "No autorizado" };
+
+  // 1. Get current card data for logging
+  const { data: card, error: fetchError } = await supabase
+    .from("cards")
+    .select("card_type, card_status")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .eq("card_number", cardNumber)
+    .single();
+
+  if (fetchError || !card) {
+    return { error: "No se encontró el cartón." };
+  }
+
+  // 2. Update card type
+  const { error: updateError } = await supabase
+    .from("cards")
+    .update({
+      card_type: newType,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .eq("card_number", cardNumber);
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  // 3. Log activity
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "REASSIGN_CARD_TYPE",
+    entity: "cards",
+    metadata: {
+      company_id: companyId,
+      event_id: eventId,
+      card_number: cardNumber,
+      old_type: card.card_type,
+      new_type: newType,
+      requested_by: officialName,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
+  revalidatePath("/admin/bingo");
+  return { success: true };
+}
 export async function getInvoices(companyId: number, eventId: string) {
   const supabase = createClient();
 
