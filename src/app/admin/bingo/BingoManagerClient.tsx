@@ -1945,8 +1945,8 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.04] via-larioja-verde/[0.04] to-larioja-amarillo/[0.08] hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="flex items-center justify-between mb-6">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.04] via-larioja-verde/[0.04] to-larioja-amarillo/[0.08] hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
                   <Edit size={24} />
@@ -1965,11 +1965,12 @@ export default function BingoManagerClient({
               </Badge>
             </div>
 
-            <form onSubmit={handleUpdateSingleCard} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Primera Columna */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleUpdateSingleCard} className="flex flex-col flex-grow overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Primera Columna */}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                         Tipo
@@ -2215,7 +2216,7 @@ export default function BingoManagerClient({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+              <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-shrink-0">
                 <Button
                   variant="secondary"
                   onClick={() => setIsEditCardDialogOpen(false)}

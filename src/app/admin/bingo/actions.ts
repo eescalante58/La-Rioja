@@ -724,6 +724,7 @@ export async function updateSingleCard(
   const playerEmail = formData.get("player_email") as string;
   const prize = formData.get("prize") as string;
   const comment = formData.get("comment") as string;
+  const invoiceNumber = formData.get("invoice_number") as string;
   const file = formData.get("file") as File;
 
   // 1. Get current data for comparison and potential file cleanup
@@ -750,6 +751,7 @@ export async function updateSingleCard(
     player_email: playerEmail,
     prize: prize,
     comment: comment,
+    invoice_number: invoiceNumber,
     updated_at: new Date().toISOString(),
   };
 
