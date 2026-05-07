@@ -41,6 +41,8 @@ import {
   RefreshCw,
   Search,
   ExternalLink,
+  MessageCircle,
+  Smartphone,
 } from "lucide-react";
 import {
   saveEvent,
@@ -127,6 +129,15 @@ export default function BingoManagerClient({
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [isNewInvoiceDialogOpen, setIsNewInvoiceDialogOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<any>(null);
+  const [invoicePhoneArea, setInvoicePhoneArea] = useState("503");
+  const [invoicePhoneNumber, setInvoicePhoneNumber] = useState("");
+  const [invoiceManagerName, setInvoiceManagerName] = useState("");
+  const [selectedInvoiceCards, setSelectedInvoiceCards] = useState<number[]>(
+    [],
+  );
+  const [availableCardsForInvoice, setAvailableCardsForInvoice] = useState<
+    any[]
+  >([]);
   const [isReassignDialogOpen, setIsReassignDialogOpen] = useState(false);
   const [selectedCardForReassign, setSelectedCardForReassign] =
     useState<any>(null);
@@ -233,19 +244,67 @@ export default function BingoManagerClient({
     }
   };
 
-  const handleOpenNewInvoice = () => {
+  const handleOpenNewInvoice = async () => {
     setEditingInvoice(null);
     if (currentEventInfo) {
       setCardPrice(currentEventInfo.cardValue);
       setCardsNumber(1);
+      setInvoicePhoneArea("503");
+      setInvoicePhoneNumber("");
+      setInvoiceManagerName("");
+      setSelectedInvoiceCards([]);
+
+      // Fetch available cards for the event
+      const result = await getEventCards(
+        currentEventInfo.companyId,
+        currentEventInfo.eventId,
+      );
+      if (typeof result === "object" && "data" in result) {
+        // Filter cards that are "Disponible"
+        setAvailableCardsForInvoice(
+          (result.data || []).filter(
+            (c: any) => c.card_status === "Disponible",
+          ),
+        );
+      }
     }
     setIsNewInvoiceDialogOpen(true);
   };
 
-  const handleEditInvoice = (invoice: any) => {
+  const handleEditInvoice = async (invoice: any) => {
     setEditingInvoice(invoice);
     setCardPrice(invoice.card_price);
     setCardsNumber(invoice.cards_number);
+    setInvoicePhoneArea(invoice.phone_area || "503");
+    setInvoicePhoneNumber(invoice.phone_number || "");
+    setInvoiceManagerName(invoice.manager_name || "");
+
+    // For editing, we might want to see currently associated cards too
+    // But for now, let's focus on the "New Invoice" requirements first
+    // If it's an existing invoice, we'd need to fetch which cards are linked to it
+    setSelectedInvoiceCards([]);
+
+    if (currentEventInfo) {
+      const result = await getEventCards(
+        currentEventInfo.companyId,
+        currentEventInfo.eventId,
+      );
+      if (typeof result === "object" && "data" in result) {
+        setAvailableCardsForInvoice(
+          (result.data || []).filter(
+            (c: any) =>
+              c.card_status === "Disponible" ||
+              c.invoice_number === invoice.invoice_number,
+          ),
+        );
+        // Pre-select cards already linked to this invoice
+        const linked = (result.data || [])
+          .filter((c: any) => c.invoice_number === invoice.invoice_number)
+          .map((c: any) => c.card_number);
+        setSelectedInvoiceCards(linked);
+      }
+    }
+
     setIsInvoiceDialogOpen(false);
     setIsNewInvoiceDialogOpen(true);
   };
@@ -1528,115 +1587,6 @@ export default function BingoManagerClient({
         </div>
       </Dialog>
 
-      {/* Dialog: Detalle de Factura */}
-      <Dialog
-        open={isInvoiceDialogOpen}
-        onClose={() => setIsInvoiceDialogOpen(false)}
-        static={true}
-      >
-        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
-            <Title className="mb-6 text-larioja-azul dark:text-larioja-amarillo">
-              Detalle de Factura
-            </Title>
-
-            {selectedInvoice && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <Text className="text-[10px] font-bold uppercase text-gray-400">
-                      N° Factura
-                    </Text>
-                    <Text className="font-bold text-larioja-azul">
-                      {selectedInvoice.invoice_number}
-                    </Text>
-                  </div>
-                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <Text className="text-[10px] font-bold uppercase text-gray-400">
-                      Fecha
-                    </Text>
-                    <Text className="font-medium">
-                      {new Date(
-                        selectedInvoice.invoice_date,
-                      ).toLocaleDateString()}
-                    </Text>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-3">
-                  <div>
-                    <Text className="text-[10px] font-bold uppercase text-gray-400">
-                      Cliente
-                    </Text>
-                    <Text className="font-bold">
-                      {selectedInvoice.customer_name}
-                    </Text>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Text className="text-[10px] font-bold uppercase text-gray-400">
-                        Teléfono
-                      </Text>
-                      <Text className="text-sm">
-                        {selectedInvoice.phone_area
-                          ? `(${selectedInvoice.phone_area}) `
-                          : ""}
-                        {selectedInvoice.phone_number || "N/A"}
-                      </Text>
-                    </div>
-                    <div>
-                      <Text className="text-[10px] font-bold uppercase text-gray-400">
-                        Email
-                      </Text>
-                      <Text className="text-sm truncate">
-                        {selectedInvoice.customer_email || "N/A"}
-                      </Text>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-larioja-azul dark:bg-blue-900 rounded-xl text-white flex justify-between items-center shadow-lg">
-                  <div className="flex items-center gap-2">
-                    <DollarSign size={20} />
-                    <span className="font-bold">Total Facturado</span>
-                  </div>
-                  <span className="text-2xl font-black">
-                    {formatCurrency(selectedInvoice.total_amount)}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center mt-6">
-                  <div className="flex gap-3">
-                    <Button
-                      variant="secondary"
-                      icon={Edit}
-                      onClick={() => handleEditInvoice(selectedInvoice)}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="light"
-                      color="rose"
-                      icon={Trash2}
-                      onClick={() => handleDeleteInvoice(selectedInvoice.id)}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setIsInvoiceDialogOpen(false)}
-                  >
-                    Cerrar
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogPanel>
-        </div>
-      </Dialog>
-
       {/* Dialog: Nueva Factura */}
       <Dialog
         open={isNewInvoiceDialogOpen}
@@ -1645,194 +1595,356 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
-            <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
-              {editingInvoice ? "Editar Factura" : "Nueva Factura"}
-            </Title>
-            <form onSubmit={handleSaveInvoice} className="space-y-4">
-              {editingInvoice && (
-                <input type="hidden" name="id" value={editingInvoice.id} />
-              )}
-              <input
-                type="hidden"
-                name="company_id"
-                value={currentEventInfo?.companyId}
-              />
-              <input
-                type="hidden"
-                name="event_id"
-                value={currentEventInfo?.eventId}
-              />
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0">
+              <Title className="text-larioja-azul dark:text-larioja-amarillo">
+                {editingInvoice ? "Editar Factura" : "Nueva Factura"}
+              </Title>
+              <div className="text-xs font-bold text-gray-500">
+                EVENTO: {currentEventInfo?.eventId}
+              </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
+            <form
+              onSubmit={handleSaveInvoice}
+              className="flex flex-col flex-grow overflow-hidden"
+            >
+              <div className="p-6 overflow-y-auto space-y-6">
+                {editingInvoice && (
+                  <input type="hidden" name="id" value={editingInvoice.id} />
+                )}
+                <input
+                  type="hidden"
+                  name="company_id"
+                  value={currentEventInfo?.companyId}
+                />
+                <input
+                  type="hidden"
+                  name="event_id"
+                  value={currentEventInfo?.eventId}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      N° Factura
+                    </Text>
+                    <TextInput
+                      name="invoice_number"
+                      placeholder="F001-000001"
+                      defaultValue={editingInvoice?.invoice_number}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Fecha
+                    </Text>
+                    <input
+                      name="invoice_date"
+                      type="date"
+                      defaultValue={editingInvoice?.invoice_date}
+                      required
+                      className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Nombre del Cliente
+                    </Text>
+                    <TextInput
+                      name="customer_name"
+                      placeholder="Juan Pérez"
+                      defaultValue={editingInvoice?.customer_name}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Email del Cliente
+                    </Text>
+                    <TextInput
+                      name="customer_email"
+                      type="email"
+                      placeholder="juan@ejemplo.com"
+                      defaultValue={editingInvoice?.customer_email}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Área
+                    </Text>
+                    <Select
+                      name="phone_area"
+                      value={invoicePhoneArea}
+                      onValueChange={setInvoicePhoneArea}
+                      enableClear={false}
+                    >
+                      {countries.map((country) => (
+                        <SelectItem
+                          key={`${country.name}-${country.phone_code}`}
+                          value={country.phone_code}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">
+                              {country.flag_emoji}
+                            </span>
+                            <span>+{country.phone_code}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Teléfono
+                    </Text>
+                    <TextInput
+                      name="phone_number"
+                      placeholder="1234567"
+                      value={invoicePhoneNumber}
+                      onValueChange={setInvoicePhoneNumber}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      WhatsApp
+                    </Text>
+                    <div className="flex gap-2">
+                      <TextInput
+                        name="whatsapp_number"
+                        value={`${invoicePhoneArea}${invoicePhoneNumber}`}
+                        icon={Smartphone}
+                        readOnly
+                      />
+                      <Button
+                        type="button"
+                        variant="light"
+                        icon={MessageCircle}
+                        className="text-green-500"
+                        onClick={() => {
+                          const number = `${invoicePhoneArea}${invoicePhoneNumber}`;
+                          const cardsText =
+                            selectedInvoiceCards.length > 0
+                              ? `\nCartones: ${selectedInvoiceCards.join(", ")}`
+                              : "";
+                          const text = encodeURIComponent(
+                            `Hola ${editingInvoice?.customer_name || "Cliente"}, adjuntamos tu factura N° ${editingInvoice?.invoice_number || ""}${cardsText}`,
+                          );
+                          window.open(
+                            `https://wa.me/${number}?text=${text}`,
+                            "_blank",
+                          );
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase text-gray-500">
-                    N° Factura
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Vendido por (Manager)
                   </Text>
                   <TextInput
-                    name="invoice_number"
-                    placeholder="F001-000001"
-                    defaultValue={editingInvoice?.invoice_number}
+                    name="manager_name"
+                    placeholder="Nombre del vendedor"
+                    value={invoiceManagerName}
+                    onValueChange={setInvoiceManagerName}
                     required
                   />
                 </div>
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase text-gray-500">
-                    Fecha
-                  </Text>
-                  <input
-                    name="invoice_date"
-                    type="date"
-                    defaultValue={editingInvoice?.invoice_date}
-                    required
-                    className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Imagen de Factura
+                    </Text>
+                    <input
+                      type="file"
+                      name="invoice_file"
+                      accept="image/*,.pdf"
+                      className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul/10 file:text-larioja-azul hover:file:bg-larioja-azul/20"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Estado
+                    </Text>
+                    <Select
+                      name="status"
+                      defaultValue={editingInvoice?.status || "pagada"}
+                      enableClear={false}
+                    >
+                      <SelectItem value="pagada">Pagada</SelectItem>
+                      <SelectItem value="pendiente">Pendiente</SelectItem>
+                    </Select>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">
-                  Nombre del Cliente
-                </Text>
-                <TextInput
-                  name="customer_name"
-                  placeholder="Juan Pérez"
-                  defaultValue={editingInvoice?.customer_name}
-                  required
-                />
-              </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Número de Cartones
+                    </Text>
+                    <TextInput
+                      name="cards_number"
+                      type="number"
+                      value={cardsNumber.toString()}
+                      onValueChange={(v) => setCardsNumber(parseInt(v) || 0)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Valor por Cartón
+                    </Text>
+                    <TextInput
+                      name="card_price"
+                      type="number"
+                      step="0.01"
+                      icon={DollarSign}
+                      value={cardPrice.toString()}
+                      onValueChange={(v) => setCardPrice(parseFloat(v) || 0)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Monto Total
+                    </Text>
+                    <TextInput
+                      name="total_amount_display"
+                      icon={DollarSign}
+                      value={formatCurrency(cardsNumber * cardPrice)}
+                      disabled
+                    />
+                    <input
+                      type="hidden"
+                      name="total_amount"
+                      value={cardsNumber * cardPrice}
+                    />
+                  </div>
+                </div>
 
-              <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">
-                  Email del Cliente
-                </Text>
-                <TextInput
-                  name="customer_email"
-                  type="email"
-                  placeholder="juan@ejemplo.com"
-                  defaultValue={editingInvoice?.customer_email}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase text-gray-500">
-                    Área
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Asociar Cartones ({selectedInvoiceCards.length} de{" "}
+                    {cardsNumber})
                   </Text>
-                  <Select
-                    name="phone_area"
-                    defaultValue={editingInvoice?.phone_area || "503"}
-                    enableClear={false}
-                  >
-                    {countries.map((country) => (
-                      <SelectItem
-                        key={`${country.name}-${country.phone_code}`}
-                        value={country.phone_code}
-                      >
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={`https://flagcdn.com/w20/${country.iso2.toLowerCase()}.png`}
-                            width="20"
-                            alt={country.name}
-                            className="rounded-sm"
-                          />
-                          <span>
-                            {country.name} (+{country.phone_code})
+                  <div className="flex gap-2 mb-2">
+                    <TextInput
+                      id="manual_card_number"
+                      placeholder="Buscar o agregar N° de cartón..."
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const val = parseInt(
+                            (e.target as HTMLInputElement).value,
+                          );
+                          if (val && !selectedInvoiceCards.includes(val)) {
+                            const found = availableCardsForInvoice.find(
+                              (c) => c.card_number === val,
+                            );
+                            if (found) {
+                              if (selectedInvoiceCards.length < cardsNumber) {
+                                setSelectedInvoiceCards(
+                                  [...selectedInvoiceCards, val].sort(
+                                    (a, b) => a - b,
+                                  ),
+                                );
+                                (e.target as HTMLInputElement).value = "";
+                              } else {
+                                alert(
+                                  `Solo puedes seleccionar ${cardsNumber} cartones.`,
+                                );
+                              }
+                            } else {
+                              alert(
+                                `El cartón #${val} no está disponible para este evento.`,
+                              );
+                            }
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
+                    <div className="grid grid-cols-4 gap-2">
+                      {availableCardsForInvoice.map((card) => (
+                        <div
+                          key={card.card_number}
+                          className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                            selectedInvoiceCards.includes(card.card_number)
+                              ? "bg-larioja-azul text-white border-larioja-azul"
+                              : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-larioja-azul"
+                          }`}
+                          onClick={() => {
+                            if (
+                              selectedInvoiceCards.includes(card.card_number)
+                            ) {
+                              setSelectedInvoiceCards(
+                                selectedInvoiceCards.filter(
+                                  (n) => n !== card.card_number,
+                                ),
+                              );
+                            } else {
+                              if (selectedInvoiceCards.length < cardsNumber) {
+                                setSelectedInvoiceCards(
+                                  [
+                                    ...selectedInvoiceCards,
+                                    card.card_number,
+                                  ].sort((a, b) => a - b),
+                                );
+                              } else {
+                                alert(
+                                  `Solo puedes seleccionar ${cardsNumber} cartones.`,
+                                );
+                              }
+                            }
+                          }}
+                        >
+                          <span className="text-xs font-bold">
+                            #{card.card_number}
                           </span>
                         </div>
-                      </SelectItem>
-                    ))}
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase text-gray-500">
-                    Teléfono
-                  </Text>
-                  <TextInput
-                    name="phone_number"
-                    placeholder="1234567"
-                    defaultValue={editingInvoice?.phone_number}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase text-gray-500">
-                    Número de Cartones
-                  </Text>
-                  <TextInput
-                    name="cards_number"
-                    type="number"
-                    value={cardsNumber.toString()}
-                    onValueChange={(v) => setCardsNumber(parseInt(v) || 0)}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase text-gray-500">
-                    Valor por Cartón
-                  </Text>
-                  <TextInput
-                    name="card_price"
-                    type="number"
-                    step="0.01"
-                    icon={DollarSign}
-                    value={cardPrice.toString()}
-                    onValueChange={(v) => setCardPrice(parseFloat(v) || 0)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase text-gray-500">
-                    Monto Total
-                  </Text>
-                  <TextInput
-                    name="total_amount_display"
-                    icon={DollarSign}
-                    value={formatCurrency(cardsNumber * cardPrice)}
-                    disabled
-                  />
+                      ))}
+                    </div>
+                  </div>
                   <input
                     type="hidden"
-                    name="total_amount"
-                    value={cardsNumber * cardPrice}
+                    name="associated_cards"
+                    value={JSON.stringify(selectedInvoiceCards)}
                   />
+                  {selectedInvoiceCards.length !== cardsNumber && (
+                    <Text className="text-[10px] text-red-500 italic mt-1">
+                      * Debes asociar exactamente {cardsNumber} cartones.
+                    </Text>
+                  )}
                 </div>
+
                 <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase text-gray-500">
-                    Estado
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Método de Pago
                   </Text>
                   <Select
-                    name="status"
-                    defaultValue={editingInvoice?.status || "pagada"}
+                    name="payment_method"
+                    defaultValue={editingInvoice?.payment_method || "efectivo"}
                     enableClear={false}
                   >
-                    <SelectItem value="pagada">Pagada</SelectItem>
-                    <SelectItem value="pendiente">Pendiente</SelectItem>
+                    <SelectItem value="efectivo">Efectivo</SelectItem>
+                    <SelectItem value="transferencia">Transferencia</SelectItem>
+                    <SelectItem value="tarjeta">Tarjeta</SelectItem>
                   </Select>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">
-                  Método de Pago
-                </Text>
-                <Select
-                  name="payment_method"
-                  defaultValue={editingInvoice?.payment_method || "efectivo"}
-                  enableClear={false}
-                >
-                  <SelectItem value="efectivo">Efectivo</SelectItem>
-                  <SelectItem value="transferencia">Transferencia</SelectItem>
-                  <SelectItem value="tarjeta">Tarjeta</SelectItem>
-                </Select>
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6">
+              <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-shrink-0">
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -1847,6 +1959,7 @@ export default function BingoManagerClient({
                 <Button
                   type="submit"
                   loading={loading}
+                  disabled={selectedInvoiceCards.length !== cardsNumber}
                   className="bg-larioja-azul"
                 >
                   {editingInvoice ? "Actualizar Factura" : "Guardar Factura"}
