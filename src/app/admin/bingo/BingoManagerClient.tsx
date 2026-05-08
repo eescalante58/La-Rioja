@@ -1249,9 +1249,10 @@ export default function BingoManagerClient({
                   </div>
                 )}
                 <Text className="text-[10px] text-gray-400 italic">
-                  * Importante: El sistema abrirá WhatsApp Web con el mensaje.
-                  Deberás adjuntar manualmente la factura y los cartones desde
-                  la carpeta de descargas o el link proporcionado.
+                  * Importante: En caso el envio automático falle, El sistema
+                  abrirá WhatsApp Web con el mensaje. Deberás adjuntar
+                  manualmente la factura y los cartones desde la carpeta de
+                  descargas o el link proporcionado.
                 </Text>
               </div>
             </div>
