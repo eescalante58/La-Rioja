@@ -153,6 +153,17 @@ export default function BingoManagerClient({
   const [invoicePhoneNumber, setInvoicePhoneNumber] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [invoiceManagerName, setInvoiceManagerName] = useState("");
+
+  // Auto-generate WhatsApp number when area or phone changes
+  useEffect(() => {
+    if (!editingInvoice) {
+      const area = invoicePhoneArea.replace(/\+/g, "");
+      const phone = invoicePhoneNumber.replace(/\D/g, "");
+      if (area || phone) {
+        setWhatsappNumber(`${area}${phone}`);
+      }
+    }
+  }, [invoicePhoneArea, invoicePhoneNumber, editingInvoice]);
   const [sellers, setSellers] = useState<string[]>([]);
   const [selectedInvoiceCards, setSelectedInvoiceCards] = useState<number[]>(
     [],
@@ -2138,13 +2149,14 @@ export default function BingoManagerClient({
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                     Vendido por (Manager)
                   </Text>
-                  <TextInput
+                  <input
                     name="manager_name"
                     placeholder="Nombre del vendedor"
                     value={invoiceManagerName}
-                    onValueChange={setInvoiceManagerName}
+                    onChange={(e) => setInvoiceManagerName(e.target.value)}
                     required
                     list="sellers-list"
+                    className="w-full text-sm border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2"
                   />
                   <datalist id="sellers-list">
                     {sellers.map((seller) => (
