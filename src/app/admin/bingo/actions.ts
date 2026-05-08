@@ -1025,6 +1025,24 @@ export async function updateInvoice(formData: FormData) {
     const {
       data: { publicUrl },
     } = supabase.storage.from("invoices_images").getPublicUrl(storagePath);
+
+    // Cleanup: Delete old file from Storage if it exists
+    if (currentInvoice?.url_invoice) {
+      try {
+        const oldUrlParts =
+          currentInvoice.url_invoice.split("/invoices_images/");
+        if (oldUrlParts.length > 1) {
+          const oldStoragePath = oldUrlParts[1];
+          await supabase.storage
+            .from("invoices_images")
+            .remove([oldStoragePath]);
+          console.log(`Factura antigua eliminada: ${oldStoragePath}`);
+        }
+      } catch (cleanupError) {
+        console.warn("Error cleaning up old invoice:", cleanupError);
+      }
+    }
+
     url_invoice = publicUrl;
   }
 
