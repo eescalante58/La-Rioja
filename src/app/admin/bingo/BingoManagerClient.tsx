@@ -385,10 +385,10 @@ export default function BingoManagerClient({
         invoice.event_id,
         invoice.invoice_number,
       );
-      if (cardsResult.success) {
+      if (cardsResult.success && cardsResult.data) {
         const images = cardsResult.data
           .map((c: any) => c.image_url)
-          .filter((url: string) => !!url);
+          .filter((url: string | null) => !!url);
 
         const allImages = [];
         if (invoice.url_invoice) allImages.push(invoice.url_invoice);
