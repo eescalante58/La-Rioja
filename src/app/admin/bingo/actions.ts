@@ -1211,3 +1211,94 @@ export async function getCardsForInvoice(
   if (error) return { success: false, error: error.message };
   return { success: true, data };
 }
+
+/**
+ * Send automated WhatsApp messages and documents via Ultramsg.
+ */
+export async function sendWhatsAppAutomation(payload: {
+  to: string;
+  message: string;
+  templateImage?: string;
+  invoiceUrl?: string;
+  cardUrls: string[];
+}) {
+  const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
+  const token = process.env.ULTRAMSG_TOKEN;
+
+  if (!instanceId || !token) {
+    return { success: false, error: "Ultramsg credentials not configured." };
+  }
+
+  const baseUrl = `https://api.ultramsg.com/${instanceId}/messages`;
+
+  try {
+    const results = [];
+
+    // 1. Send Text Message
+    const textRes = await fetch(`${baseUrl}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        token,
+        to: payload.to,
+        body: payload.message,
+        priority: "10",
+      }),
+    });
+    results.push({ step: "text", status: textRes.status });
+
+    // 2. Send Template Image (if provided)
+    if (payload.templateImage) {
+      const imgRes = await fetch(`${baseUrl}/image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          token,
+          to: payload.to,
+          image: payload.templateImage,
+          caption: "Bingo La Rioja",
+          priority: "10",
+        }),
+      });
+      results.push({ step: "template_image", status: imgRes.status });
+    }
+
+    // 3. Send Invoice PDF (if provided)
+    if (payload.invoiceUrl) {
+      const invRes = await fetch(`${baseUrl}/document`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          token,
+          to: payload.to,
+          document: payload.invoiceUrl,
+          filename: "Factura_Bingo.pdf",
+          caption: "Factura de Compra",
+          priority: "10",
+        }),
+      });
+      results.push({ step: "invoice_pdf", status: invRes.status });
+    }
+
+    // 4. Send Card PDFs
+    for (const [index, cardUrl] of payload.cardUrls.entries()) {
+      const cardRes = await fetch(`${baseUrl}/document`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          token,
+          to: payload.to,
+          document: cardUrl,
+          filename: `Carton_Bingo_${index + 1}.pdf`,
+          caption: `Cartón de Bingo #${index + 1}`,
+          priority: "10",
+        }),
+      });
+      results.push({ step: `card_pdf_${index + 1}`, status: cardRes.status });
+    }
+
+    return { success: true, results };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

@@ -63,6 +63,7 @@ import {
   updateInvoiceWhatsAppStatus,
   getWhatsAppMessageTemplate,
   getCardsForInvoice,
+  sendWhatsAppAutomation,
 } from "./actions";
 
 interface Event {
@@ -423,7 +424,30 @@ export default function BingoManagerClient({
       const encodedMessage = encodeURIComponent(whatsappMessage);
       const whatsappUrl = `https://web.whatsapp.com/send?phone=${cleanNumber}&text=${encodedMessage}`;
 
-      // Abrir WhatsApp Web
+      // 1. Intentar automatización con Ultramsg
+      const automationResult = await sendWhatsAppAutomation({
+        to: cleanNumber,
+        message: whatsappMessage,
+        templateImage: whatsappImage || undefined,
+        invoiceUrl: invoiceFileUrl || undefined,
+        cardUrls: cardImagesUrls,
+      });
+
+      if (automationResult.success) {
+        const now = new Date();
+        const statusMessage = `Enviado Automáticamente vía Ultramsg el ${now.toLocaleDateString()} a las ${now.toLocaleTimeString()}`;
+
+        await updateInvoiceWhatsAppStatus(editingInvoice.id, statusMessage);
+        alert("¡Envío automático completado con éxito a través de Ultramsg!");
+        setIsWhatsAppPopupOpen(false);
+        return;
+      }
+
+      // 2. Fallback: Abrir WhatsApp Web si la automatización falla o no está configurada
+      console.warn(
+        "Ultramsg automation failed, falling back to manual:",
+        automationResult.error,
+      );
       window.open(whatsappUrl, "_blank");
 
       // Registrar éxito (asumimos éxito al abrir la ventana, ya que no podemos saber si se envió realmente desde el navegador)
@@ -1240,7 +1264,7 @@ export default function BingoManagerClient({
                 onClick={handleSendWhatsApp}
                 loading={sendingWhatsApp}
               >
-                Enviar a WhatsApp
+                Enviar Automático (Ultramsg)
               </Button>
             </div>
           </DialogPanel>
