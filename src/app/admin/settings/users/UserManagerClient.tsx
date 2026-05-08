@@ -493,101 +493,106 @@ export default function UserManagerClient({
         }}
         static={true}
       >
-        <DialogPanel className="max-w-2xl">
-          <Title className="mb-4">Nuevo Usuario</Title>
-          <form onSubmit={handleCreateUser} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <TextInput
-                name="email"
-                type="email"
-                placeholder="Email Principal"
-                required
-              />
-              <TextInput
-                name="secondary_email"
-                type="email"
-                placeholder="Email Secundario (Opcional)"
-              />
-              <TextInput
-                name="full_name"
-                placeholder="Nombre Completo"
-                required
-              />
-              <select
-                name="role_id"
-                className="p-2 border rounded-lg text-sm bg-white"
-                required
-              >
-                <option value="">Rol...</option>
-                {roles.map((r) => (
-                  <option key={r.role_id} value={r.role_id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-              <div className="flex gap-2">
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+            <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
+              Nuevo Usuario
+            </Title>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <TextInput
+                  name="email"
+                  type="email"
+                  placeholder="Email Principal"
+                  required
+                />
+                <TextInput
+                  name="secondary_email"
+                  type="email"
+                  placeholder="Email Secundario (Opcional)"
+                />
+                <TextInput
+                  name="full_name"
+                  placeholder="Nombre Completo"
+                  required
+                />
                 <select
-                  name="phone_code"
-                  className="w-1/2 p-2 border rounded-lg text-sm bg-white"
-                  defaultValue="503"
+                  name="role_id"
+                  className="p-2 border rounded-lg text-sm bg-white"
+                  required
                 >
-                  {countryCodes.map((c) => (
-                    <option key={c.iso2} value={c.phone_code}>
-                      {c.flag_emoji} {c.name} (+{c.phone_code})
+                  <option value="">Rol...</option>
+                  {roles.map((r) => (
+                    <option key={r.role_id} value={r.role_id}>
+                      {r.name}
                     </option>
                   ))}
                 </select>
-                <TextInput
-                  name="phone_number"
-                  className="flex-1"
-                  placeholder="Teléfono"
-                  required
-                />
-              </div>
-              <div className="col-span-2 flex items-center gap-4 p-4 border rounded-lg bg-gray-50/50">
-                <div className="flex-1 flex flex-col gap-2">
-                  <Text className="text-xs font-bold uppercase">
-                    Avatar / Foto de Perfil
-                  </Text>
-                  <div className="flex items-center gap-4">
-                    {avatarPreview && (
-                      <img
-                        src={avatarPreview}
-                        className="h-12 w-12 rounded-full object-cover border-2 border-larioja-azul"
-                        alt="Preview"
+                <div className="flex gap-2">
+                  <select
+                    name="phone_code"
+                    className="w-1/2 p-2 border rounded-lg text-sm bg-white"
+                    defaultValue="503"
+                  >
+                    {countryCodes.map((c) => (
+                      <option key={c.iso2} value={c.phone_code}>
+                        {c.flag_emoji} {c.name} (+{c.phone_code})
+                      </option>
+                    ))}
+                  </select>
+                  <TextInput
+                    name="phone_number"
+                    className="flex-1"
+                    placeholder="Teléfono"
+                    required
+                  />
+                </div>
+                <div className="col-span-2 flex items-center gap-4 p-4 border rounded-lg bg-gray-50/50">
+                  <div className="flex-1 flex flex-col gap-2">
+                    <Text className="text-xs font-bold uppercase">
+                      Avatar / Foto de Perfil
+                    </Text>
+                    <div className="flex items-center gap-4">
+                      {avatarPreview && (
+                        <img
+                          src={avatarPreview}
+                          className="h-12 w-12 rounded-full object-cover border-2 border-larioja-azul"
+                          alt="Preview"
+                        />
+                      )}
+                      <input
+                        type="file"
+                        name="avatar"
+                        accept="image/*"
+                        className="text-xs flex-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 transition-all"
+                        onChange={handleAvatarChange}
                       />
-                    )}
-                    <input
-                      type="file"
-                      name="avatar"
-                      accept="image/*"
-                      className="text-xs flex-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 transition-all"
-                      onChange={handleAvatarChange}
-                    />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setIsCreateUserDialogOpen(false);
-                  setAvatarPreview(null);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                loading={loading}
-                className="bg-larioja-azul"
-              >
-                Crear Usuario
-              </Button>
-            </div>
-          </form>
-        </DialogPanel>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setIsCreateUserDialogOpen(false);
+                    setAvatarPreview(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                >
+                  Crear Usuario
+                </Button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
       </Dialog>
 
       <Dialog
@@ -598,201 +603,31 @@ export default function UserManagerClient({
         }}
         static={true}
       >
-        <DialogPanel className="max-w-2xl">
-          <Title className="mb-4">Editar Usuario</Title>
-          <form onSubmit={handleUpdateUser} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <TextInput
-                name="full_name"
-                defaultValue={editingUser?.full_name || ""}
-                placeholder="Nombre Completo"
-                required
-              />
-              <TextInput
-                name="secondary_email"
-                type="email"
-                defaultValue={editingUser?.secondary_email || ""}
-                placeholder="Email Secundario (Opcional)"
-              />
-              <select
-                name="role_id"
-                defaultValue={editingUser?.role_id}
-                disabled={currentUserLevel < 9}
-                className="p-2 border rounded-lg text-sm bg-white"
-              >
-                {roles.map((r) => (
-                  <option key={r.role_id} value={r.role_id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                name="status"
-                defaultValue={editingUser?.status}
-                disabled={currentUserLevel < 9}
-                className="p-2 border rounded-lg text-sm bg-white"
-              >
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
-              </select>
-              <div className="flex gap-2">
-                <select
-                  name="phone_code"
-                  className="w-1/2 p-2 border rounded-lg text-sm bg-white"
-                  defaultValue={
-                    countryCodes.find((c) =>
-                      editingUser?.phone?.startsWith(c.phone_code),
-                    )?.phone_code || "503"
-                  }
-                >
-                  {countryCodes.map((c) => (
-                    <option key={c.iso2} value={c.phone_code}>
-                      {c.flag_emoji} {c.name} (+{c.phone_code})
-                    </option>
-                  ))}
-                </select>
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+            <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
+              Editar Usuario
+            </Title>
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <TextInput
-                  name="phone_number"
-                  className="flex-1"
-                  defaultValue={
-                    editingUser?.phone
-                      ? editingUser.phone.replace(
-                          countryCodes.find((c) =>
-                            editingUser?.phone?.startsWith(c.phone_code),
-                          )?.phone_code || "",
-                          "",
-                        )
-                      : ""
-                  }
-                  placeholder="Teléfono"
-                />
-              </div>
-              <div className="col-span-2 flex items-center gap-4 p-4 border rounded-lg bg-gray-50/50">
-                <div className="flex-1 flex flex-col gap-2">
-                  <Text className="text-xs font-bold uppercase">
-                    Avatar / Foto de Perfil
-                  </Text>
-                  <div className="flex items-center gap-4">
-                    {avatarPreview && (
-                      <img
-                        src={avatarPreview}
-                        className="h-12 w-12 rounded-full object-cover border-2 border-larioja-azul"
-                        alt="Preview"
-                      />
-                    )}
-                    <input
-                      type="file"
-                      name="avatar"
-                      accept="image/*"
-                      className="text-xs flex-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 transition-all"
-                      onChange={handleAvatarChange}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setIsUserDialogOpen(false);
-                  setAvatarPreview(null);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                loading={loading}
-                className="bg-larioja-azul"
-              >
-                Guardar Cambios
-              </Button>
-            </div>
-          </form>
-        </DialogPanel>
-      </Dialog>
-
-      <Dialog
-        open={isRoleDialogOpen}
-        onClose={() => setIsRoleDialogOpen(false)}
-        static={true}
-      >
-        <DialogPanel className="max-w-md">
-          <Title className="mb-4">
-            {editingRole ? "Editar Rol" : "Nuevo Rol"}
-          </Title>
-          <form onSubmit={handleSaveRole} className="space-y-4">
-            <TextInput
-              name="name"
-              defaultValue={editingRole?.name || ""}
-              required
-            />
-            <TextInput
-              name="level"
-              type="number"
-              defaultValue={editingRole?.level?.toString() || "1"}
-              required
-            />
-            <div className="flex justify-end gap-3 mt-6">
-              <Button
-                variant="secondary"
-                onClick={() => setIsRoleDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                loading={loading}
-                className="bg-larioja-azul"
-              >
-                Guardar
-              </Button>
-            </div>
-          </form>
-        </DialogPanel>
-      </Dialog>
-
-      <Dialog
-        open={isCompanyDialogOpen}
-        onClose={() => setIsCompanyDialogOpen(false)}
-        static={true}
-      >
-        <DialogPanel className="max-w-2xl">
-          <div className="flex justify-between mb-4">
-            <Title>Empresas: {selectedUserForCompanies?.email}</Title>
-            <Button
-              variant="light"
-              icon={X}
-              onClick={() => setIsCompanyDialogOpen(false)}
-            />
-          </div>
-          <Card className="p-4 bg-gray-50 border-none mb-4">
-            <form
-              onSubmit={handleAssignCompany}
-              className="flex gap-2 items-end"
-            >
-              <div className="flex-1 text-xs font-bold">
-                EMPRESA
-                <select
-                  name="company_id"
-                  className="w-full p-2 border rounded text-sm bg-white"
+                  name="full_name"
+                  defaultValue={editingUser?.full_name || ""}
+                  placeholder="Nombre Completo"
                   required
-                >
-                  <option value="">Empresa...</option>
-                  {companies.map((c) => (
-                    <option key={c.company_id} value={c.company_id}>
-                      {c.company_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex-1 text-xs font-bold">
-                ROL
+                />
+                <TextInput
+                  name="secondary_email"
+                  type="email"
+                  defaultValue={editingUser?.secondary_email || ""}
+                  placeholder="Email Secundario (Opcional)"
+                />
                 <select
                   name="role_id"
-                  className="w-full p-2 border rounded text-sm bg-white"
-                  required
+                  defaultValue={editingUser?.role_id}
+                  disabled={currentUserLevel < 9}
+                  className="p-2 border rounded-lg text-sm bg-white"
                 >
                   {roles.map((r) => (
                     <option key={r.role_id} value={r.role_id}>
@@ -800,48 +635,231 @@ export default function UserManagerClient({
                     </option>
                   ))}
                 </select>
+                <select
+                  name="status"
+                  defaultValue={editingUser?.status}
+                  disabled={currentUserLevel < 9}
+                  className="p-2 border rounded-lg text-sm bg-white"
+                >
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
+                <div className="flex gap-2">
+                  <select
+                    name="phone_code"
+                    className="w-1/2 p-2 border rounded-lg text-sm bg-white"
+                    defaultValue={
+                      countryCodes.find((c) =>
+                        editingUser?.phone?.startsWith(c.phone_code),
+                      )?.phone_code || "503"
+                    }
+                  >
+                    {countryCodes.map((c) => (
+                      <option key={c.iso2} value={c.phone_code}>
+                        {c.flag_emoji} {c.name} (+{c.phone_code})
+                      </option>
+                    ))}
+                  </select>
+                  <TextInput
+                    name="phone_number"
+                    className="flex-1"
+                    defaultValue={
+                      editingUser?.phone
+                        ? editingUser.phone.replace(
+                            countryCodes.find((c) =>
+                              editingUser?.phone?.startsWith(c.phone_code),
+                            )?.phone_code || "",
+                            "",
+                          )
+                        : ""
+                    }
+                    placeholder="Teléfono"
+                  />
+                </div>
+                <div className="col-span-2 flex items-center gap-4 p-4 border rounded-lg bg-gray-50/50">
+                  <div className="flex-1 flex flex-col gap-2">
+                    <Text className="text-xs font-bold uppercase">
+                      Avatar / Foto de Perfil
+                    </Text>
+                    <div className="flex items-center gap-4">
+                      {avatarPreview && (
+                        <img
+                          src={avatarPreview}
+                          className="h-12 w-12 rounded-full object-cover border-2 border-larioja-azul"
+                          alt="Preview"
+                        />
+                      )}
+                      <input
+                        type="file"
+                        name="avatar"
+                        accept="image/*"
+                        className="text-xs flex-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-larioja-azul file:text-white hover:file:bg-blue-700 transition-all"
+                        onChange={handleAvatarChange}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <Button
-                type="submit"
-                loading={loading}
-                className="bg-larioja-azul"
-              >
-                Asignar
-              </Button>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setIsUserDialogOpen(false);
+                    setAvatarPreview(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                >
+                  Guardar Cambios
+                </Button>
+              </div>
             </form>
-          </Card>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Empresa</TableHeaderCell>
-                <TableHeaderCell>Rol</TableHeaderCell>
-                <TableHeaderCell className="text-right">
-                  Acciones
-                </TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {userCompanies.map((uc) => (
-                <TableRow key={uc.company_id}>
-                  <TableCell>{uc.company.company_name}</TableCell>
-                  <TableCell>
-                    <Badge>{uc.role_data.name}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="light"
-                      size="xs"
-                      color="rose"
-                      onClick={() => handleRemoveFromCompany(uc.company_id)}
-                    >
-                      Remover
-                    </Button>
-                  </TableCell>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={isRoleDialogOpen}
+        onClose={() => setIsRoleDialogOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+            <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
+              {editingRole ? "Editar Rol" : "Nuevo Rol"}
+            </Title>
+            <form onSubmit={handleSaveRole} className="space-y-4">
+              <TextInput
+                name="name"
+                defaultValue={editingRole?.name || ""}
+                required
+              />
+              <TextInput
+                name="level"
+                type="number"
+                defaultValue={editingRole?.level?.toString() || "1"}
+                required
+              />
+              <div className="flex justify-end gap-3 mt-6">
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsRoleDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                >
+                  Guardar
+                </Button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={isCompanyDialogOpen}
+        onClose={() => setIsCompanyDialogOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+            <div className="flex justify-between mb-4">
+              <Title className="text-larioja-azul dark:text-larioja-amarillo">
+                Empresas: {selectedUserForCompanies?.email}
+              </Title>
+              <Button
+                variant="light"
+                icon={X}
+                onClick={() => setIsCompanyDialogOpen(false)}
+              />
+            </div>
+            <Card className="p-4 bg-gray-50 border-none mb-4">
+              <form
+                onSubmit={handleAssignCompany}
+                className="flex gap-2 items-end"
+              >
+                <div className="flex-1 text-xs font-bold">
+                  EMPRESA
+                  <select
+                    name="company_id"
+                    className="w-full p-2 border rounded text-sm bg-white"
+                    required
+                  >
+                    <option value="">Empresa...</option>
+                    {companies.map((c) => (
+                      <option key={c.company_id} value={c.company_id}>
+                        {c.company_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1 text-xs font-bold">
+                  ROL
+                  <select
+                    name="role_id"
+                    className="w-full p-2 border rounded text-sm bg-white"
+                    required
+                  >
+                    {roles.map((r) => (
+                      <option key={r.role_id} value={r.role_id}>
+                        {r.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                >
+                  Asignar
+                </Button>
+              </form>
+            </Card>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeaderCell>Empresa</TableHeaderCell>
+                  <TableHeaderCell>Rol</TableHeaderCell>
+                  <TableHeaderCell className="text-right">
+                    Acciones
+                  </TableHeaderCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DialogPanel>
+              </TableHead>
+              <TableBody>
+                {userCompanies.map((uc) => (
+                  <TableRow key={uc.company_id}>
+                    <TableCell>{uc.company.company_name}</TableCell>
+                    <TableCell>
+                      <Badge>{uc.role_data.name}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="light"
+                        size="xs"
+                        color="rose"
+                        onClick={() => handleRemoveFromCompany(uc.company_id)}
+                      >
+                        Remover
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </DialogPanel>
+        </div>
       </Dialog>
     </div>
   );

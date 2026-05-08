@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "dsznajder.es7-react-js-snippets",
+    "ms-ceintl.vscode-language-pack-es",
+    "ms-vscode.vscode-typescript-next",
+    "pkief.material-icon-theme",
+    "davidanson.vscode-markdownlint"
+  ]
+}
