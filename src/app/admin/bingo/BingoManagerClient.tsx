@@ -214,6 +214,23 @@ export default function BingoManagerClient({
   const [editCardPhoneArea, setEditCardPhoneArea] = useState("+503");
   const [editCardPhoneNumber, setEditCardPhoneNumber] = useState("");
 
+  const [cardsNumber, setCardsNumber] = useState<number>(1);
+  const [cardPrice, setCardPrice] = useState<number>(0);
+  const [currentEventInfo, setCurrentEventInfo] = useState<{
+    companyId: number;
+    eventId: string;
+    cardValue: number;
+  } | null>(null);
+
+  // Persistence for the selected tab
+  useEffect(() => {
+    const savedTab = sessionStorage.getItem("bingo_selected_tab");
+    if (savedTab !== null) {
+      setSelectedTab(parseInt(savedTab));
+      sessionStorage.removeItem("bingo_selected_tab");
+    }
+  }, []);
+
   // Promotional Messages state
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
@@ -231,23 +248,6 @@ export default function BingoManagerClient({
   const [batchLogs, setBatchLogs] = useState<any[]>([]);
   const [selectedBatchDetails, setSelectedBatchDetails] = useState<any[]>([]);
   const [isBatchDetailsOpen, setIsBatchDetailsOpen] = useState(false);
-
-  // Persistence for the selected tab
-  useEffect(() => {
-    const savedTab = sessionStorage.getItem("bingo_selected_tab");
-    if (savedTab !== null) {
-      setSelectedTab(parseInt(savedTab));
-      sessionStorage.removeItem("bingo_selected_tab");
-    }
-  }, []);
-
-  const [cardsNumber, setCardsNumber] = useState<number>(1);
-  const [cardPrice, setCardPrice] = useState<number>(0);
-  const [currentEventInfo, setCurrentEventInfo] = useState<{
-    companyId: number;
-    eventId: string;
-    cardValue: number;
-  } | null>(null);
 
   // Load sellers automatically when event changes
   const loadSellers = useCallback(
@@ -269,14 +269,23 @@ export default function BingoManagerClient({
     [],
   );
 
+  // Load templates on mount
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
+  // Load data based on selected company/event
   useEffect(() => {
     if (currentEventInfo) {
       loadSellers(currentEventInfo.companyId, currentEventInfo.eventId);
       loadCustomers(currentEventInfo.companyId);
-      loadTemplates();
       loadBatchLogs(currentEventInfo.companyId);
+    } else if (companies.length > 0) {
+      // Si no hay evento seleccionado, pero hay compañías, cargamos clientes de la primera
+      loadCustomers(companies[0].company_id);
+      loadBatchLogs(companies[0].company_id);
     }
-  }, [currentEventInfo, loadSellers]);
+  }, [currentEventInfo, loadSellers, companies]);
 
   const loadBatchLogs = async (companyId: number) => {
     const result = await getBatchLogs(companyId);
@@ -332,16 +341,22 @@ export default function BingoManagerClient({
   };
 
   const handleSyncCustomers = async () => {
-    if (!currentEventInfo) return;
-    setLoading(true);
+    // Si no hay evento, intentamos usar la primera compañía
+    const companyId = currentEventInfo?.companyId || companies[0]?.company_id;
+    if (!companyId) {
+      alert("No se ha podido identificar la compañía para sincronizar.");
+      return;
+    }
+
+    setLoadingCustomers(true);
     const result = await syncCustomers();
     if (result.success) {
-      loadCustomers(currentEventInfo.companyId);
+      await loadCustomers(companyId);
       alert("Sincronización completada.");
     } else {
       alert("Error: " + result.error);
     }
-    setLoading(false);
+    setLoadingCustomers(false);
   };
 
   const handleSendBulkPromo = async () => {
