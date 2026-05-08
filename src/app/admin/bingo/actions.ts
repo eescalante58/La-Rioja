@@ -1349,9 +1349,15 @@ export async function getPromoTemplates() {
     .from("site_content")
     .select("*")
     .eq("page", "whatsapp message")
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .order("content_order");
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.error("Error fetching promo templates:", error);
+    return { success: false, error: error.message };
+  }
+
+  console.log("Promo templates found:", data?.length);
   return { success: true, data };
 }
 
