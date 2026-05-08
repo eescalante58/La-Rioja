@@ -46,6 +46,10 @@ import {
   X,
   FileText,
   ImageOff,
+  Users,
+  Send,
+  UserPlus,
+  Trash,
 } from "lucide-react";
 import {
   saveEvent,
@@ -65,6 +69,11 @@ import {
   getCardsForInvoice,
   getSellersFromView,
   sendWhatsAppAutomation,
+  getCustomers,
+  saveCustomer,
+  deleteCustomer,
+  getPromoTemplates,
+  syncCustomers,
 } from "./actions";
 
 interface Event {
@@ -91,6 +100,20 @@ interface Country {
   phone_code: string;
   flag_emoji: string;
   iso2: string;
+}
+
+interface Customer {
+  id: number;
+  company_id: number;
+  customer_name: string;
+  phone_number: string;
+}
+
+interface PromoTemplate {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
 }
 
 /**
@@ -188,6 +211,21 @@ export default function BingoManagerClient({
   const [editCardPhoneArea, setEditCardPhoneArea] = useState("+503");
   const [editCardPhoneNumber, setEditCardPhoneNumber] = useState("");
 
+  // Promotional Messages state
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [promoTemplates, setPromoTemplates] = useState<PromoTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<PromoTemplate | null>(null);
+  const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [promoMessage, setPromoMessage] = useState("");
+  const [promoImage, setPromoImage] = useState("");
+  const [sendingBulk, setSendingBulk] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ sent: 0, total: 0 });
+  const [isBulkSummaryOpen, setIsBulkSummaryOpen] = useState(false);
+  const [bulkResults, setBulkResults] = useState<any[]>([]);
+
   // Persistence for the selected tab
   useEffect(() => {
     const savedTab = sessionStorage.getItem("bingo_selected_tab");
@@ -228,8 +266,104 @@ export default function BingoManagerClient({
   useEffect(() => {
     if (currentEventInfo) {
       loadSellers(currentEventInfo.companyId, currentEventInfo.eventId);
+      loadCustomers(currentEventInfo.companyId);
+      loadTemplates();
     }
   }, [currentEventInfo, loadSellers]);
+
+  const loadCustomers = async (companyId: number) => {
+    setLoadingCustomers(true);
+    const result = await getCustomers(companyId);
+    if (result.success && result.data) {
+      setCustomers(result.data);
+    }
+    setLoadingCustomers(false);
+  };
+
+  const loadTemplates = async () => {
+    const result = await getPromoTemplates();
+    if (result.success && result.data) {
+      setPromoTemplates(result.data);
+    }
+  };
+
+  const handleSaveCustomer = async (formData: FormData) => {
+    if (!currentEventInfo) return;
+    setLoading(true);
+    const payload = {
+      id: editingCustomer?.id,
+      company_id: currentEventInfo.companyId,
+      customer_name: formData.get("customer_name") as string,
+      phone_number: formData.get("phone_number") as string,
+    };
+    const result = await saveCustomer(payload);
+    if (result.success) {
+      loadCustomers(currentEventInfo.companyId);
+      setIsCustomerDialogOpen(false);
+      setEditingCustomer(null);
+    } else {
+      alert("Error: " + result.error);
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteCustomer = async (id: number) => {
+    if (!currentEventInfo || !confirm("¿Eliminar este cliente?")) return;
+    const result = await deleteCustomer(id);
+    if (result.success) {
+      loadCustomers(currentEventInfo.companyId);
+    } else {
+      alert("Error: " + result.error);
+    }
+  };
+
+  const handleSyncCustomers = async () => {
+    if (!currentEventInfo) return;
+    setLoading(true);
+    const result = await syncCustomers();
+    if (result.success) {
+      loadCustomers(currentEventInfo.companyId);
+      alert("Sincronización completada.");
+    } else {
+      alert("Error: " + result.error);
+    }
+    setLoading(false);
+  };
+
+  const handleSendBulkPromo = async () => {
+    if (!customers.length || !promoMessage) return;
+    setSendingBulk(true);
+    setBulkProgress({ sent: 0, total: customers.length });
+    const results = [];
+
+    for (let i = 0; i < customers.length; i++) {
+      const customer = customers[i];
+      let personalizedMessage = promoMessage.replace(
+        "[customer_name]",
+        customer.customer_name,
+      );
+
+      const res = await sendWhatsAppAutomation({
+        to: customer.phone_number,
+        message: personalizedMessage,
+        templateImage: promoImage || undefined,
+        cardUrls: [],
+      });
+
+      results.push({
+        customer: customer.customer_name,
+        phone: customer.phone_number,
+        success: res.success,
+        error: res.error,
+      });
+
+      setBulkProgress({ sent: i + 1, total: customers.length });
+    }
+
+    setBulkResults(results);
+    setIsBulkSummaryOpen(true);
+    setSendingBulk(false);
+  };
 
   // Formatting helpers for inputs
   const [cardValueStr, setCardValueStr] = useState("");
@@ -833,6 +967,7 @@ export default function BingoManagerClient({
           <Tab icon={Calendar}>Eventos</Tab>
           <Tab icon={Ticket}>Inventario de Cartones</Tab>
           <Tab icon={TrendingUp}>Ventas y Facturación</Tab>
+          <Tab icon={Users}>Mensajes Promocionales</Tab>
         </TabList>
         <TabPanels>
           {/* Tab 1: Eventos */}
@@ -1121,6 +1256,289 @@ export default function BingoManagerClient({
                 )}
               </div>
             </Card>
+          </TabPanel>
+
+          {/* Tab 4: Mensajes Promocionales */}
+          <TabPanel>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+              {/* Columna Izquierda: Gestión de Clientes */}
+              <Card className="lg:col-span-1 flex flex-col h-[700px]">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <Title className="text-larioja-azul flex items-center gap-2">
+                      <Users size={20} />
+                      Clientes
+                    </Title>
+                    <Text className="text-xs">
+                      {customers.length} contactos registrados
+                    </Text>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="light"
+                      icon={RefreshCw}
+                      size="xs"
+                      onClick={handleSyncCustomers}
+                      tooltip="Sincronizar desde Ventas"
+                    />
+                    <Button
+                      variant="light"
+                      icon={UserPlus}
+                      size="xs"
+                      onClick={() => {
+                        setEditingCustomer(null);
+                        setIsCustomerDialogOpen(true);
+                      }}
+                      tooltip="Añadir Cliente"
+                    />
+                  </div>
+                </div>
+
+                <div className="relative mb-4">
+                  <TextInput
+                    icon={Search}
+                    placeholder="Buscar por nombre o teléfono..."
+                    value={searchQuery}
+                    onValueChange={setSearchQuery}
+                  />
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                  {loadingCustomers ? (
+                    <div className="flex flex-col items-center justify-center h-full opacity-50">
+                      <RefreshCw className="animate-spin mb-2" size={24} />
+                      <Text>Cargando clientes...</Text>
+                    </div>
+                  ) : customers.length > 0 ? (
+                    customers
+                      .filter(
+                        (c) =>
+                          c.customer_name
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase()) ||
+                          c.phone_number.includes(searchQuery),
+                      )
+                      .map((customer) => (
+                        <div
+                          key={customer.id}
+                          className="p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex justify-between items-center hover:shadow-md transition-all group"
+                        >
+                          <div className="flex flex-col">
+                            <Text className="font-bold text-sm">
+                              {customer.customer_name}
+                            </Text>
+                            <Text className="text-xs opacity-60 flex items-center gap-1">
+                              <Smartphone size={10} />
+                              {customer.phone_number}
+                            </Text>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="light"
+                              icon={Edit}
+                              size="xs"
+                              onClick={() => {
+                                setEditingCustomer(customer);
+                                setIsCustomerDialogOpen(true);
+                              }}
+                            />
+                            <Button
+                              variant="light"
+                              icon={Trash}
+                              size="xs"
+                              color="rose"
+                              onClick={() => handleDeleteCustomer(customer.id)}
+                            />
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center opacity-40 px-4">
+                      <Users size={40} className="mb-2" />
+                      <Text className="text-xs">
+                        No hay clientes registrados. Usa el botón de
+                        sincronización para importar desde ventas.
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              {/* Columna Derecha: Envío de Mensajes */}
+              <Card className="lg:col-span-2 flex flex-col h-[700px] bg-gradient-to-br from-larioja-azul/[0.05] to-larioja-verde/[0.05]">
+                <div className="flex justify-between items-center mb-6">
+                  <Title className="text-larioja-azul flex items-center gap-2">
+                    <Send size={20} />
+                    Envío Masivo Promocional
+                  </Title>
+                  <Button
+                    icon={Send}
+                    className="bg-larioja-azul"
+                    onClick={handleSendBulkPromo}
+                    disabled={sendingBulk || !customers.length || !promoMessage}
+                    loading={sendingBulk}
+                  >
+                    {sendingBulk
+                      ? `Enviando ${bulkProgress.sent}/${bulkProgress.total}...`
+                      : "Enviar a todos los clientes"}
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 overflow-hidden">
+                  {/* Selector y Preview */}
+                  <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-1">
+                      <Text className="text-[10px] font-bold uppercase text-gray-500">
+                        Seleccionar Plantilla
+                      </Text>
+                      <Select
+                        placeholder="Elige una plantilla promocional..."
+                        value={selectedTemplate?.id || ""}
+                        onValueChange={(val) => {
+                          const template = promoTemplates.find(
+                            (t) => t.id === val,
+                          );
+                          if (template) {
+                            setSelectedTemplate(template);
+                            setPromoMessage(template.description);
+                            setPromoImage(template.image_url);
+                          }
+                        }}
+                      >
+                        {promoTemplates.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            {t.title}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Text className="text-[10px] font-bold uppercase text-gray-500">
+                        Imagen del Mensaje
+                      </Text>
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 group">
+                        {promoImage ? (
+                          <>
+                            <img
+                              src={promoImage}
+                              alt="Promo"
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Button
+                                size="xs"
+                                variant="secondary"
+                                onClick={() => {
+                                  const url = prompt(
+                                    "URL de la nueva imagen:",
+                                    promoImage,
+                                  );
+                                  if (url) setPromoImage(url);
+                                }}
+                              >
+                                Cambiar URL
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                            <ImageOff size={40} className="mb-2" />
+                            <Text className="text-xs">
+                              Sin imagen seleccionada
+                            </Text>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Text className="text-[10px] font-bold uppercase text-gray-500">
+                        Mensaje (Usa [customer_name] para personalizar)
+                      </Text>
+                      <textarea
+                        className="w-full h-40 text-sm p-3 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 outline-none transition-all resize-none"
+                        value={promoMessage}
+                        onChange={(e) => setPromoMessage(e.target.value)}
+                        placeholder="Escribe el mensaje promocional aquí..."
+                      />
+                    </div>
+                  </div>
+
+                  {/* WhatsApp Canvas Simulator */}
+                  <div className="bg-[#E5DDD5] dark:bg-gray-950 rounded-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden shadow-inner">
+                    <div className="bg-[#075E54] p-3 flex items-center gap-3 text-white">
+                      <div className="bg-white/20 p-2 rounded-full">
+                        <Users size={18} />
+                      </div>
+                      <div>
+                        <Text className="text-white font-bold leading-none">
+                          Grupo Promocional (Simulado)
+                        </Text>
+                        <Text className="text-white/70 text-[10px]">
+                          {customers.length} participantes
+                        </Text>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-repeat">
+                      <div className="flex flex-col items-center mb-6">
+                        <Badge color="amber" className="text-[10px] opacity-80">
+                          Los mensajes a estos números están cifrados de extremo
+                          a extremo.
+                        </Badge>
+                      </div>
+
+                      {customers.slice(0, 10).map((c, i) => (
+                        <div
+                          key={c.id}
+                          className={`max-w-[85%] rounded-lg p-3 shadow-sm relative ${
+                            i % 2 === 0
+                              ? "bg-white dark:bg-gray-800 self-start rounded-tl-none"
+                              : "bg-[#DCF8C6] dark:bg-emerald-950 self-end rounded-tr-none"
+                          }`}
+                        >
+                          <Text className="text-[10px] font-bold text-larioja-azul mb-1">
+                            {c.customer_name}
+                          </Text>
+                          {promoImage && (
+                            <img
+                              src={promoImage}
+                              className="rounded-lg mb-2 w-full h-auto"
+                              alt="Promo Preview"
+                            />
+                          )}
+                          <Text className="text-xs">
+                            {promoMessage
+                              .replace("[customer_name]", c.customer_name)
+                              .split("\n")
+                              .map((line, key) => (
+                                <span key={key}>
+                                  {line}
+                                  <br />
+                                </span>
+                              ))}
+                          </Text>
+                          <div className="flex justify-end mt-1">
+                            <Text className="text-[9px] opacity-40 italic">
+                              Vista Previa
+                            </Text>
+                          </div>
+                        </div>
+                      ))}
+
+                      {customers.length > 10 && (
+                        <div className="text-center py-4">
+                          <Badge color="gray">
+                            Y {customers.length - 10} clientes más...
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </TabPanel>
         </TabPanels>
       </TabGroup>
@@ -3061,6 +3479,177 @@ export default function BingoManagerClient({
                 </Button>
               </div>
             </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
+      {/* Dialog: Nuevo/Editar Cliente */}
+      <Dialog
+        open={isCustomerDialogOpen}
+        onClose={() => setIsCustomerDialogOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12]">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-azul/5">
+              <div className="flex items-center gap-3">
+                <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
+                  <UserPlus size={24} />
+                </div>
+                <Title className="text-larioja-azul">
+                  {editingCustomer ? "Editar Cliente" : "Nuevo Cliente"}
+                </Title>
+              </div>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveCustomer(new FormData(e.currentTarget));
+              }}
+              className="p-6 space-y-4"
+            >
+              <div className="space-y-1">
+                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  Nombre Completo
+                </Text>
+                <TextInput
+                  name="customer_name"
+                  placeholder="Ej: Juan Pérez"
+                  defaultValue={editingCustomer?.customer_name}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  Número de Teléfono (con código de país)
+                </Text>
+                <TextInput
+                  name="phone_number"
+                  placeholder="Ej: 50312345678"
+                  defaultValue={editingCustomer?.phone_number}
+                  required
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsCustomerDialogOpen(false)}
+                  type="button"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                >
+                  Guardar Cliente
+                </Button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Dialog: Resumen de Envío Masivo */}
+      <Dialog
+        open={isBulkSummaryOpen}
+        onClose={() => setIsBulkSummaryOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[80]" />
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-verde/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-larioja-verde/20 p-2 rounded-lg text-larioja-verde">
+                    <CheckCircle size={24} />
+                  </div>
+                  <Title className="text-larioja-verde">
+                    Resumen de Envío Masivo
+                  </Title>
+                </div>
+                <Button
+                  variant="light"
+                  icon={X}
+                  onClick={() => setIsBulkSummaryOpen(false)}
+                />
+              </div>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto">
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <Card className="p-3 text-center border-emerald-100 bg-emerald-50 dark:bg-emerald-950/20">
+                  <Text className="text-[10px] font-bold uppercase text-emerald-600">
+                    Total
+                  </Text>
+                  <Title className="text-emerald-700">
+                    {bulkResults.length}
+                  </Title>
+                </Card>
+                <Card className="p-3 text-center border-blue-100 bg-blue-50 dark:bg-blue-950/20">
+                  <Text className="text-[10px] font-bold uppercase text-blue-600">
+                    Exitosos
+                  </Text>
+                  <Title className="text-blue-700">
+                    {bulkResults.filter((r) => r.success).length}
+                  </Title>
+                </Card>
+                <Card className="p-3 text-center border-rose-100 bg-rose-50 dark:bg-rose-950/20">
+                  <Text className="text-[10px] font-bold uppercase text-rose-600">
+                    Fallidos
+                  </Text>
+                  <Title className="text-rose-700">
+                    {bulkResults.filter((r) => !r.success).length}
+                  </Title>
+                </Card>
+              </div>
+
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Cliente</TableHeaderCell>
+                    <TableHeaderCell>Teléfono</TableHeaderCell>
+                    <TableHeaderCell>Resultado</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {bulkResults.map((result, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>
+                        <Text className="font-medium text-sm">
+                          {result.customer}
+                        </Text>
+                      </TableCell>
+                      <TableCell>
+                        <Text className="text-xs">{result.phone}</Text>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          color={result.success ? "emerald" : "rose"}
+                          size="xs"
+                        >
+                          {result.success ? "Enviado" : "Error"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+              <Button
+                variant="primary"
+                className="bg-larioja-azul"
+                onClick={() => setIsBulkSummaryOpen(false)}
+              >
+                Cerrar Resumen
+              </Button>
+            </div>
           </DialogPanel>
         </div>
       </Dialog>

@@ -1300,6 +1300,70 @@ export async function getSellersFromView(companyId: number, eventId: string) {
 }
 
 /**
+ * Customers and Promotional Messages actions
+ */
+
+export async function getCustomers(companyId: number) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("customer_phone_number")
+    .select("*")
+    .eq("company_id", companyId)
+    .order("customer_name");
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function saveCustomer(payload: {
+  id?: number;
+  company_id: number;
+  customer_name: string;
+  phone_number: string;
+}) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("customer_phone_number")
+    .upsert(payload)
+    .select()
+    .single();
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function deleteCustomer(id: number) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("customer_phone_number")
+    .delete()
+    .eq("id", id);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function getPromoTemplates() {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("site_content")
+    .select("*")
+    .eq("page", "whatsapp message")
+    .not("section_key", "eq", "cartones")
+    .eq("is_active", true);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function syncCustomers() {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("sync_customers_from_cards");
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+/**
  * Send automated WhatsApp messages and documents via Ultramsg.
  */
 export async function sendWhatsAppAutomation(payload: {
