@@ -143,7 +143,8 @@ export default function BingoManagerClient({
   } | null>(null);
   const [whatsappMessage, setWhatsappMessage] = useState("");
   const [whatsappImage, setWhatsappImage] = useState("");
-  const [invoiceImages, setInvoiceImages] = useState<string[]>([]);
+  const [invoiceFileUrl, setInvoiceFileUrl] = useState<string | null>(null);
+  const [cardImagesUrls, setCardImagesUrls] = useState<string[]>([]);
   const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const [isWhatsAppPopupOpen, setIsWhatsAppPopupOpen] = useState(false);
   const [invoicePhoneArea, setInvoicePhoneArea] = useState("503");
@@ -390,11 +391,11 @@ export default function BingoManagerClient({
           .map((c: any) => c.image_url)
           .filter((url: string | null) => !!url);
 
-        const allImages = [];
-        if (invoice.url_invoice) allImages.push(invoice.url_invoice);
-        allImages.push(...images);
-
-        setInvoiceImages(allImages);
+        setInvoiceFileUrl(invoice.url_invoice || null);
+        setCardImagesUrls(images);
+      } else {
+        setInvoiceFileUrl(invoice.url_invoice || null);
+        setCardImagesUrls([]);
       }
 
       setEditingInvoice(invoice);
@@ -1077,48 +1078,11 @@ export default function BingoManagerClient({
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                  Mensaje
-                </label>
-                <textarea
-                  className="w-full h-32 p-3 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul resize-none"
-                  value={whatsappMessage}
-                  onChange={(e) => setWhatsappMessage(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                  Archivos a enviar ({invoiceImages.length})
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {invoiceImages.map((url, i) => (
-                    <div
-                      key={i}
-                      className="relative aspect-square rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 flex items-center justify-center"
-                    >
-                      {url.toLowerCase().endsWith(".pdf") ? (
-                        <FileText size={24} className="text-red-500" />
-                      ) : (
-                        <img
-                          src={url}
-                          alt={`Adjunto ${i + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <Text className="text-[10px] text-gray-400 italic">
-                  * Las imágenes se abrirán en WhatsApp Web para su envío.
-                </Text>
-              </div>
-
+              {/* 1. Imagen de Plantilla */}
               {whatsappTemplate?.image_url && (
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                    Imagen de Plantilla
+                    1. Imagen de Plantilla
                   </label>
                   <div className="relative group">
                     <img
@@ -1159,6 +1123,107 @@ export default function BingoManagerClient({
                   </div>
                 </div>
               )}
+
+              {/* 2. Mensaje */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  2. Mensaje
+                </label>
+                <textarea
+                  className="w-full h-32 p-3 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul resize-none"
+                  value={whatsappMessage}
+                  onChange={(e) => setWhatsappMessage(e.target.value)}
+                />
+              </div>
+
+              {/* 3. Factura */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  3. Factura
+                </label>
+                {invoiceFileUrl ? (
+                  <div className="relative aspect-[4/3] w-1/2 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 flex items-center justify-center group">
+                    {invoiceFileUrl.toLowerCase().endsWith(".pdf") ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <FileText size={48} className="text-red-500" />
+                        <Text className="text-[10px]">PDF Factura</Text>
+                      </div>
+                    ) : (
+                      <img
+                        src={invoiceFileUrl}
+                        alt="Factura"
+                        className="w-full h-full object-contain"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        icon={ExternalLink}
+                        onClick={() => window.open(invoiceFileUrl, "_blank")}
+                      >
+                        Ver Factura
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 border border-dashed border-gray-200 rounded-lg text-center">
+                    <Text className="text-xs text-gray-400">
+                      Sin factura adjunta
+                    </Text>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Imagen de los Cartones */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  4. Imagen de los Cartones ({cardImagesUrls.length})
+                </label>
+                {cardImagesUrls.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {cardImagesUrls.map((url, i) => (
+                      <div
+                        key={i}
+                        className="relative aspect-square rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 flex items-center justify-center group"
+                      >
+                        {url.toLowerCase().endsWith(".pdf") ? (
+                          <div className="flex flex-col items-center gap-1">
+                            <FileText size={24} className="text-red-500" />
+                            <Text className="text-[8px]">PDF Cartón</Text>
+                          </div>
+                        ) : (
+                          <img
+                            src={url}
+                            alt={`Cartón ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="xs"
+                            variant="secondary"
+                            onClick={() => window.open(url, "_blank")}
+                          >
+                            Ver
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 border border-dashed border-gray-200 rounded-lg text-center">
+                    <Text className="text-xs text-gray-400">
+                      Sin cartones adjuntos
+                    </Text>
+                  </div>
+                )}
+                <Text className="text-[10px] text-gray-400 italic">
+                  * Importante: El sistema abrirá WhatsApp Web con el mensaje.
+                  Deberás adjuntar manualmente la factura y los cartones desde
+                  la carpeta de descargas o el link proporcionado.
+                </Text>
+              </div>
             </div>
 
             <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 bg-gray-50/50">
