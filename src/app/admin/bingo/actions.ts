@@ -1262,17 +1262,41 @@ export async function getCardsForInvoice(
 
 /**
  * Fetch the list of sellers (sold_by) from the v_sold_by view.
+ * Fallback to invoices table if view fails.
  */
 export async function getSellersFromView(companyId: number, eventId: string) {
   const supabase = createClient();
-  const { data, error } = await supabase
+
+  // Try view first
+  const { data: viewData, error: viewError } = await supabase
     .from("v_sold_by")
     .select("sold_by")
     .eq("company_id", companyId)
     .eq("event_id", eventId);
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data };
+  if (!viewError && viewData) {
+    return { success: true, data: viewData };
+  }
+
+  // Fallback to direct table query
+  console.warn(
+    "View v_sold_by failed or empty, trying fallback to invoices:",
+    viewError?.message,
+  );
+  const { data: invData, error: invError } = await supabase
+    .from("invoices")
+    .select("manager_name")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .not("manager_name", "is", null);
+
+  if (invError) return { success: false, error: invError.message };
+
+  // Map manager_name to sold_by for consistency
+  return {
+    success: true,
+    data: invData.map((i) => ({ sold_by: i.manager_name })),
+  };
 }
 
 /**
