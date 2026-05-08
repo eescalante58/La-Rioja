@@ -1349,8 +1349,47 @@ export async function getPromoTemplates() {
     .from("site_content")
     .select("*")
     .eq("page", "whatsapp message")
-    .not("section_key", "eq", "cartones")
     .eq("is_active", true);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function logPromoMessage(payload: {
+  batch_id: string;
+  company_id: number;
+  customer_name: string;
+  phone_number: string;
+  message_body: string;
+  image_url?: string;
+  status: string;
+  error_message?: string;
+}) {
+  const supabase = createClient();
+  const { error } = await supabase.from("whatsapp_promo_logs").insert(payload);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+export async function getBatchLogs(companyId: number) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("v_promo_batch_summary")
+    .select("*")
+    .eq("company_id", companyId)
+    .order("started_at", { ascending: false });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+export async function getBatchDetails(batchId: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("whatsapp_promo_logs")
+    .select("*")
+    .eq("batch_id", batchId)
+    .order("created_at");
 
   if (error) return { success: false, error: error.message };
   return { success: true, data };
