@@ -190,87 +190,90 @@ export default function CompanyManagerClient({
         onClose={() => setIsDialogOpen(false)}
         static={true}
       >
-        <DialogPanel className="max-w-md">
-          <Title className="mb-4">
-            {editingCompany ? "Editar Empresa" : "Nueva Empresa"}
-          </Title>
-          <form onSubmit={handleSave} className="space-y-4">
-            {editingCompany && (
-              <input
-                type="hidden"
-                name="id"
-                value={editingCompany.company_id}
-              />
-            )}
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+            <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
+              {editingCompany ? "Editar Empresa" : "Nueva Empresa"}
+            </Title>
+            <form onSubmit={handleSave} className="space-y-4">
+              {editingCompany && (
+                <input
+                  type="hidden"
+                  name="id"
+                  value={editingCompany.company_id}
+                />
+              )}
 
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">
-                Nombre de la Empresa
-              </Text>
-              <TextInput
-                name="company_name"
-                placeholder="La Rioja S.A."
-                defaultValue={editingCompany?.company_name}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-nowrap">
-                  Cód. Área
-                </Text>
-                <TextInput
-                  name="phone_code_area"
-                  placeholder="380"
-                  defaultValue={editingCompany?.phone_code_area || ""}
-                />
-              </div>
-              <div className="col-span-2 space-y-1">
                 <Text className="text-xs font-bold uppercase">
-                  Número de Teléfono
+                  Nombre de la Empresa
                 </Text>
                 <TextInput
-                  name="phone_number"
-                  placeholder="44556677"
-                  defaultValue={editingCompany?.phone_number || ""}
+                  name="company_name"
+                  placeholder="La Rioja S.A."
+                  defaultValue={editingCompany?.company_name}
+                  required
                 />
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase">
-                Timeout de Sesión (Minutos)
-              </Text>
-              <TextInput
-                name="session_timeout_minutes"
-                type="number"
-                placeholder="30"
-                defaultValue={
-                  editingCompany?.session_timeout_minutes?.toString() || "30"
-                }
-                required
-              />
-            </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <Text className="text-xs font-bold uppercase text-nowrap">
+                    Cód. Área
+                  </Text>
+                  <TextInput
+                    name="phone_code_area"
+                    placeholder="380"
+                    defaultValue={editingCompany?.phone_code_area || ""}
+                  />
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Text className="text-xs font-bold uppercase">
+                    Número de Teléfono
+                  </Text>
+                  <TextInput
+                    name="phone_number"
+                    placeholder="44556677"
+                    defaultValue={editingCompany?.phone_number || ""}
+                  />
+                </div>
+              </div>
 
-            <div className="flex justify-end gap-3 mt-6">
-              <Button
-                variant="secondary"
-                onClick={() => setIsDialogOpen(false)}
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                loading={loading}
-                className="bg-larioja-azul"
-              >
-                Guardar
-              </Button>
-            </div>
-          </form>
-        </DialogPanel>
+              <div className="space-y-1">
+                <Text className="text-xs font-bold uppercase">
+                  Timeout de Sesión (Minutos)
+                </Text>
+                <TextInput
+                  name="session_timeout_minutes"
+                  type="number"
+                  placeholder="30"
+                  defaultValue={
+                    editingCompany?.session_timeout_minutes?.toString() || "30"
+                  }
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsDialogOpen(false)}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  className="bg-larioja-azul"
+                >
+                  Guardar
+                </Button>
+              </div>
+            </form>
+          </DialogPanel>
+        </div>
       </Dialog>
     </div>
   );
