@@ -1234,20 +1234,7 @@ export async function sendWhatsAppAutomation(payload: {
   try {
     const results = [];
 
-    // 1. Send Text Message
-    const textRes = await fetch(`${baseUrl}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        token,
-        to: payload.to,
-        body: payload.message,
-        priority: "10",
-      }),
-    });
-    results.push({ step: "text", status: textRes.status });
-
-    // 2. Send Template Image (if provided)
+    // 1. Send Template Image (if provided)
     if (payload.templateImage) {
       const imgRes = await fetch(`${baseUrl}/image`, {
         method: "POST",
@@ -1262,6 +1249,19 @@ export async function sendWhatsAppAutomation(payload: {
       });
       results.push({ step: "template_image", status: imgRes.status });
     }
+
+    // 2. Send Text Message
+    const textRes = await fetch(`${baseUrl}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        token,
+        to: payload.to,
+        body: payload.message,
+        priority: "10",
+      }),
+    });
+    results.push({ step: "text", status: textRes.status });
 
     // 3. Send Invoice PDF (if provided)
     if (payload.invoiceUrl) {
@@ -1281,7 +1281,8 @@ export async function sendWhatsAppAutomation(payload: {
     }
 
     // 4. Send Card PDFs
-    for (const [index, cardUrl] of payload.cardUrls.entries()) {
+    for (let index = 0; index < payload.cardUrls.length; index++) {
+      const cardUrl = payload.cardUrls[index];
       const cardRes = await fetch(`${baseUrl}/document`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
