@@ -1162,6 +1162,18 @@ export async function deleteInvoice(id: string) {
  */
 export async function updateInvoiceWhatsAppStatus(id: string, status: string) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // 1. Get invoice details for logging
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("invoice_number, event_id, customer_name")
+    .eq("id", id)
+    .single();
+
+  // 2. Update the invoice status
   const { error } = await supabase
     .from("invoices")
     .update({
@@ -1171,6 +1183,24 @@ export async function updateInvoiceWhatsAppStatus(id: string, status: string) {
     .eq("id", id);
 
   if (error) return { success: false, error: error.message };
+
+  // 3. Log activity for audit
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "SEND_WHATSAPP",
+      entity: "invoices",
+      metadata: {
+        invoice_id: id,
+        invoice_number: invoice?.invoice_number,
+        event_id: invoice?.event_id,
+        customer_name: invoice?.customer_name,
+        status: status,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
   revalidatePath("/admin/bingo");
   return { success: true };
 }
