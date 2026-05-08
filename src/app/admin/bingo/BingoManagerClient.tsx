@@ -2151,16 +2151,19 @@ export default function BingoManagerClient({
                   </Text>
                   <input
                     name="manager_name"
-                    placeholder="Nombre del vendedor"
+                    placeholder="Nombre del vendedor..."
                     value={invoiceManagerName}
                     onChange={(e) => setInvoiceManagerName(e.target.value)}
                     required
                     list="sellers-list"
-                    className="w-full text-sm border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2"
+                    autoComplete="off"
+                    className="w-full text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2 text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
                   />
                   <datalist id="sellers-list">
                     {sellers.map((seller) => (
-                      <option key={seller} value={seller} />
+                      <option key={seller} value={seller}>
+                        {seller}
+                      </option>
                     ))}
                   </datalist>
                 </div>
