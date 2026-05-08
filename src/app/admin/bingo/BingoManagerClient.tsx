@@ -74,6 +74,9 @@ import {
   deleteCustomer,
   getPromoTemplates,
   syncCustomers,
+  logPromoMessage,
+  getBatchLogs,
+  getBatchDetails,
 } from "./actions";
 
 interface Event {
@@ -225,6 +228,9 @@ export default function BingoManagerClient({
   const [bulkProgress, setBulkProgress] = useState({ sent: 0, total: 0 });
   const [isBulkSummaryOpen, setIsBulkSummaryOpen] = useState(false);
   const [bulkResults, setBulkResults] = useState<any[]>([]);
+  const [batchLogs, setBatchLogs] = useState<any[]>([]);
+  const [selectedBatchDetails, setSelectedBatchDetails] = useState<any[]>([]);
+  const [isBatchDetailsOpen, setIsBatchDetailsOpen] = useState(false);
 
   // Persistence for the selected tab
   useEffect(() => {
@@ -268,8 +274,16 @@ export default function BingoManagerClient({
       loadSellers(currentEventInfo.companyId, currentEventInfo.eventId);
       loadCustomers(currentEventInfo.companyId);
       loadTemplates();
+      loadBatchLogs(currentEventInfo.companyId);
     }
   }, [currentEventInfo, loadSellers]);
+
+  const loadBatchLogs = async (companyId: number) => {
+    const result = await getBatchLogs(companyId);
+    if (result.success && result.data) {
+      setBatchLogs(result.data);
+    }
+  };
 
   const loadCustomers = async (companyId: number) => {
     setLoadingCustomers(true);
@@ -331,10 +345,11 @@ export default function BingoManagerClient({
   };
 
   const handleSendBulkPromo = async () => {
-    if (!customers.length || !promoMessage) return;
+    if (!customers.length || !promoMessage || !currentEventInfo) return;
     setSendingBulk(true);
     setBulkProgress({ sent: 0, total: customers.length });
     const results = [];
+    const batchId = crypto.randomUUID();
 
     for (let i = 0; i < customers.length; i++) {
       const customer = customers[i];
@@ -350,6 +365,18 @@ export default function BingoManagerClient({
         cardUrls: [],
       });
 
+      // Log to database
+      await logPromoMessage({
+        batch_id: batchId,
+        company_id: currentEventInfo.companyId,
+        customer_name: customer.customer_name,
+        phone_number: customer.phone_number,
+        message_body: personalizedMessage,
+        image_url: promoImage || undefined,
+        status: res.success ? "success" : "error",
+        error_message: res.error || undefined,
+      });
+
       results.push({
         customer: customer.customer_name,
         phone: customer.phone_number,
@@ -363,6 +390,7 @@ export default function BingoManagerClient({
     setBulkResults(results);
     setIsBulkSummaryOpen(true);
     setSendingBulk(false);
+    loadBatchLogs(currentEventInfo.companyId);
   };
 
   // Formatting helpers for inputs
@@ -1535,6 +1563,92 @@ export default function BingoManagerClient({
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                {/* Sección de Historial de Lotes */}
+                <div className="mt-6 border-t border-gray-100 dark:border-gray-800 pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FileText size={18} className="text-larioja-azul" />
+                    <Title className="text-sm">
+                      Historial de Envíos Masivos
+                    </Title>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableHeaderCell className="text-[10px]">
+                            Fecha/Hora
+                          </TableHeaderCell>
+                          <TableHeaderCell className="text-[10px]">
+                            Total
+                          </TableHeaderCell>
+                          <TableHeaderCell className="text-[10px]">
+                            Éxito
+                          </TableHeaderCell>
+                          <TableHeaderCell className="text-[10px]">
+                            Error
+                          </TableHeaderCell>
+                          <TableHeaderCell className="text-[10px] text-right">
+                            Detalles
+                          </TableHeaderCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {batchLogs.length > 0 ? (
+                          batchLogs.map((batch) => (
+                            <TableRow key={batch.batch_id}>
+                              <TableCell className="py-2">
+                                <Text className="text-[11px]">
+                                  {new Date(batch.started_at).toLocaleString()}
+                                </Text>
+                              </TableCell>
+                              <TableCell className="py-2 text-center">
+                                <Badge color="gray" size="xs">
+                                  {batch.total_messages}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="py-2 text-center">
+                                <Badge color="emerald" size="xs">
+                                  {batch.success_count}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="py-2 text-center">
+                                <Badge color="rose" size="xs">
+                                  {batch.error_count}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="py-2 text-right">
+                                <Button
+                                  variant="light"
+                                  icon={Eye}
+                                  size="xs"
+                                  onClick={async () => {
+                                    const res = await getBatchDetails(
+                                      batch.batch_id,
+                                    );
+                                    if (res.success && res.data) {
+                                      setSelectedBatchDetails(res.data);
+                                      setIsBatchDetailsOpen(true);
+                                    }
+                                  }}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-4">
+                              <Text className="text-xs opacity-40">
+                                No hay envíos registrados.
+                              </Text>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               </Card>
@@ -3648,6 +3762,99 @@ export default function BingoManagerClient({
                 onClick={() => setIsBulkSummaryOpen(false)}
               >
                 Cerrar Resumen
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+      {/* Dialog: Detalles de Lote */}
+      <Dialog
+        open={isBatchDetailsOpen}
+        onClose={() => setIsBatchDetailsOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[90]" />
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+          <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[85vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-azul/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
+                    <FileText size={24} />
+                  </div>
+                  <Title className="text-larioja-azul">
+                    Detalles del Lote de Envío
+                  </Title>
+                </div>
+                <Button
+                  variant="light"
+                  icon={X}
+                  onClick={() => setIsBatchDetailsOpen(false)}
+                />
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Cliente</TableHeaderCell>
+                    <TableHeaderCell>Teléfono</TableHeaderCell>
+                    <TableHeaderCell>Estado</TableHeaderCell>
+                    <TableHeaderCell>Error (si aplica)</TableHeaderCell>
+                    <TableHeaderCell>Mensaje Enviado</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {selectedBatchDetails.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>
+                        <Text className="font-bold text-xs">
+                          {log.customer_name}
+                        </Text>
+                      </TableCell>
+                      <TableCell>
+                        <Text className="text-xs">{log.phone_number}</Text>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          color={log.status === "success" ? "emerald" : "rose"}
+                          size="xs"
+                        >
+                          {log.status === "success" ? "Éxito" : "Fallido"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Text
+                          className="text-[10px] text-rose-500 italic max-w-[150px] truncate"
+                          title={log.error_message}
+                        >
+                          {log.error_message || "-"}
+                        </Text>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[250px]">
+                          <Text
+                            className="text-[10px] line-clamp-2"
+                            title={log.message_body}
+                          >
+                            {log.message_body}
+                          </Text>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+              <Button
+                variant="primary"
+                className="bg-larioja-azul"
+                onClick={() => setIsBatchDetailsOpen(false)}
+              >
+                Cerrar Detalles
               </Button>
             </div>
           </DialogPanel>
