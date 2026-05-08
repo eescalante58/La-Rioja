@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Card,
   Table,
@@ -176,6 +176,7 @@ export default function BingoManagerClient({
     useState<any>(null);
   const [officialName, setOfficialName] = useState("");
   const [selectedTab, setSelectedTab] = useState(0);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isRangeReassignDialogOpen, setIsRangeReassignDialogOpen] =
     useState(false);
@@ -203,6 +204,32 @@ export default function BingoManagerClient({
     eventId: string;
     cardValue: number;
   } | null>(null);
+
+  // Load sellers automatically when event changes
+  const loadSellers = useCallback(
+    async (companyId: number, eventId: string) => {
+      console.log("Loading sellers for:", { companyId, eventId });
+      const result = await getSellersFromView(companyId, eventId);
+      console.log("Sellers result:", result);
+      if (result.success && result.data) {
+        // Usamos un Set para asegurar nombres únicos y filtramos valores nulos o vacíos
+        const uniqueSellers = Array.from(
+          new Set(result.data.map((s: any) => s.sold_by).filter(Boolean)),
+        ) as string[];
+        console.log("Unique sellers found:", uniqueSellers);
+        setSellers(uniqueSellers.sort());
+      } else if (!result.success) {
+        console.error("Error loading sellers:", result.error);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (currentEventInfo) {
+      loadSellers(currentEventInfo.companyId, currentEventInfo.eventId);
+    }
+  }, [currentEventInfo, loadSellers]);
 
   // Formatting helpers for inputs
   const [cardValueStr, setCardValueStr] = useState("");
@@ -283,17 +310,6 @@ export default function BingoManagerClient({
       alert("Error al cargar el inventario.");
     } finally {
       setLoadingEventCards(false);
-    }
-  };
-
-  const loadSellers = async (companyId: number, eventId: string) => {
-    const result = await getSellersFromView(companyId, eventId);
-    if (result.success && result.data) {
-      // Usamos un Set para asegurar nombres únicos y filtramos valores nulos o vacíos
-      const uniqueSellers = Array.from(
-        new Set(result.data.map((s: any) => s.sold_by).filter(Boolean)),
-      ) as string[];
-      setSellers(uniqueSellers.sort());
     }
   };
 
@@ -2146,24 +2162,29 @@ export default function BingoManagerClient({
                 </div>
 
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                    Vendido por (Manager)
-                  </Text>
+                  <div className="flex justify-between items-center">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Vendido por (Manager)
+                    </Text>
+                    {sellers.length > 0 && (
+                      <span className="text-[9px] text-larioja-verde font-bold animate-pulse">
+                        {sellers.length} sugerencias listas
+                      </span>
+                    )}
+                  </div>
                   <input
                     name="manager_name"
                     placeholder="Nombre del vendedor..."
                     value={invoiceManagerName}
                     onChange={(e) => setInvoiceManagerName(e.target.value)}
                     required
-                    list="sellers-list"
+                    list="sellers-list-final"
                     autoComplete="off"
                     className="w-full text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2 text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
                   />
-                  <datalist id="sellers-list">
+                  <datalist id="sellers-list-final">
                     {sellers.map((seller) => (
-                      <option key={seller} value={seller}>
-                        {seller}
-                      </option>
+                      <option key={seller} value={seller} />
                     ))}
                   </datalist>
                 </div>
