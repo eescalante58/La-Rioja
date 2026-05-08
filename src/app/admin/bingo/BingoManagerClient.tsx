@@ -311,17 +311,19 @@ export default function BingoManagerClient({
   };
 
   const handleSaveCustomer = async (formData: FormData) => {
-    if (!currentEventInfo) return;
+    const companyId = currentEventInfo?.companyId || companies[0]?.company_id;
+    if (!companyId) return;
+
     setLoading(true);
     const payload = {
       id: editingCustomer?.id,
-      company_id: currentEventInfo.companyId,
+      company_id: companyId,
       customer_name: formData.get("customer_name") as string,
       phone_number: formData.get("phone_number") as string,
     };
     const result = await saveCustomer(payload);
     if (result.success) {
-      loadCustomers(currentEventInfo.companyId);
+      loadCustomers(companyId);
       setIsCustomerDialogOpen(false);
       setEditingCustomer(null);
     } else {
@@ -331,10 +333,12 @@ export default function BingoManagerClient({
   };
 
   const handleDeleteCustomer = async (id: number) => {
-    if (!currentEventInfo || !confirm("¿Eliminar este cliente?")) return;
+    const companyId = currentEventInfo?.companyId || companies[0]?.company_id;
+    if (!companyId || !confirm("¿Eliminar este cliente?")) return;
+
     const result = await deleteCustomer(id);
     if (result.success) {
-      loadCustomers(currentEventInfo.companyId);
+      loadCustomers(companyId);
     } else {
       alert("Error: " + result.error);
     }
