@@ -24,14 +24,14 @@ ULTRAMSG_TOKEN=tu_token
 
 Se debe modificar la función en `actions.ts` para que realice peticiones `POST` a la API de Ultramsg.
 
-### Ejemplo de flujo para una factura:
+### Ejemplo de flujo para una factura
 
-1. **Enviar Mensaje de Texto**: Con el saludo y detalles de la compra.
-2. **Enviar Imagen de Plantilla**: Imagen institucional del Bingo.
+1. **Enviar Imagen de Plantilla**: Imagen institucional del Bingo.
+2. **Enviar Mensaje de Texto**: Con el saludo y detalles de la compra.
 3. **Enviar PDF de Factura**: Link directo desde Supabase Storage.
 4. **Enviar PDFs de Cartones**: Un mensaje por cada cartón asociado.
 
-### Código de ejemplo (Conceptuall):
+### Código de ejemplo (Conceptual)
 
 ```typescript
 const url = `https://api.ultramsg.com/${INSTANCE_ID}/messages/document`;
