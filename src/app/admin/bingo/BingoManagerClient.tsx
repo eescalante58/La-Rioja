@@ -435,7 +435,10 @@ export default function BingoManagerClient({
 
       if (automationResult.success) {
         const now = new Date();
-        const statusMessage = `Enviado Automáticamente vía Ultramsg el ${now.toLocaleDateString()} a las ${now.toLocaleTimeString()}`;
+        const dateStr = now.toLocaleDateString();
+        const timeStr = now.toLocaleTimeString();
+        const cardCount = cardImagesUrls.length;
+        const statusMessage = `Enviado Automáticamente vía Ultramsg el ${dateStr} a las ${timeStr}. Incluyó factura y ${cardCount} cartones.`;
 
         await updateInvoiceWhatsAppStatus(editingInvoice.id, statusMessage);
         alert("¡Envío automático completado con éxito a través de Ultramsg!");
@@ -452,7 +455,10 @@ export default function BingoManagerClient({
 
       // Registrar éxito (asumimos éxito al abrir la ventana, ya que no podemos saber si se envió realmente desde el navegador)
       const now = new Date();
-      const statusMessage = `Enviado exitosamente el ${now.toLocaleDateString()} a las ${now.toLocaleTimeString()}`;
+      const dateStr = now.toLocaleDateString();
+      const timeStr = now.toLocaleTimeString();
+      const cardCount = cardImagesUrls.length;
+      const statusMessage = `Enviado exitosamente el ${dateStr} a las ${timeStr}. Incluyó factura y ${cardCount} cartones.`;
 
       const result = await updateInvoiceWhatsAppStatus(
         editingInvoice.id,
@@ -1079,8 +1085,8 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[60]" />
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-azul/5">
+          <DialogPanel className="max-w-xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh] overflow-hidden bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-azul/5 backdrop-blur-sm">
               <div className="flex items-center gap-3">
                 <div className="bg-green-500/10 p-2 rounded-lg text-green-600">
                   <MessageCircle size={24} />
@@ -1282,7 +1288,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -1458,7 +1464,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[60]" />
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
                 <RefreshCw size={24} />
@@ -1527,7 +1533,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
                 <Upload size={24} />
@@ -1631,7 +1637,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
             <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
               Generar Cartones
             </Title>
@@ -1750,7 +1756,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
             <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
               {editingEvent ? "Editar Evento" : "Nuevo Evento de Bingo"}
             </Title>
@@ -2004,6 +2010,17 @@ export default function BingoManagerClient({
                     />
                   </div>
                 </div>
+
+                {editingInvoice?.send_whatsapp_message && (
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/30 rounded-lg">
+                    <Text className="text-[10px] font-bold uppercase text-green-600 dark:text-green-400 tracking-wider mb-1 flex items-center gap-1">
+                      <CheckCircle size={12} /> Registro de envío WhatsApp
+                    </Text>
+                    <p className="text-xs text-green-700 dark:text-green-300 italic">
+                      {editingInvoice.send_whatsapp_message}
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -2370,6 +2387,17 @@ export default function BingoManagerClient({
             <div className="p-6 overflow-y-auto space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
+                  {selectedInvoice?.send_whatsapp_message && (
+                    <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/30 rounded-lg">
+                      <Text className="text-[10px] font-bold uppercase text-green-600 dark:text-green-400 tracking-wider mb-1 flex items-center gap-1">
+                        <CheckCircle size={12} /> Último envío WhatsApp
+                      </Text>
+                      <p className="text-xs text-green-700 dark:text-green-300 italic">
+                        {selectedInvoice.send_whatsapp_message}
+                      </p>
+                    </div>
+                  )}
+
                   <div>
                     <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                       Información del Cliente
@@ -2577,7 +2605,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
                 <RefreshCw size={24} />
@@ -2662,7 +2690,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.04] via-larioja-verde/[0.04] to-larioja-amarillo/[0.08] hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col max-h-[95vh]">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
