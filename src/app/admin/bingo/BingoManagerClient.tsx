@@ -63,6 +63,7 @@ import {
   updateInvoiceWhatsAppStatus,
   getWhatsAppMessageTemplate,
   getCardsForInvoice,
+  getSellersFromView,
   sendWhatsAppAutomation,
 } from "./actions";
 
@@ -152,6 +153,7 @@ export default function BingoManagerClient({
   const [invoicePhoneNumber, setInvoicePhoneNumber] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [invoiceManagerName, setInvoiceManagerName] = useState("");
+  const [sellers, setSellers] = useState<string[]>([]);
   const [selectedInvoiceCards, setSelectedInvoiceCards] = useState<number[]>(
     [],
   );
@@ -273,6 +275,17 @@ export default function BingoManagerClient({
     }
   };
 
+  const loadSellers = async (companyId: number, eventId: string) => {
+    const result = await getSellersFromView(companyId, eventId);
+    if (result.success && result.data) {
+      // Usamos un Set para asegurar nombres únicos y filtramos valores nulos o vacíos
+      const uniqueSellers = Array.from(
+        new Set(result.data.map((s: any) => s.sold_by).filter(Boolean)),
+      ) as string[];
+      setSellers(uniqueSellers.sort());
+    }
+  };
+
   const handleOpenNewInvoice = async () => {
     setEditingInvoice(null);
     if (currentEventInfo) {
@@ -280,11 +293,14 @@ export default function BingoManagerClient({
       setCardsNumber(1);
       setInvoicePhoneArea("503");
       setInvoicePhoneNumber("");
-      setWhatsappNumber("503");
-      setInvoiceManagerName("");
+      setWhatsappNumber("");
+      setInvoiceManagerName(officialName || "");
       setSelectedInvoiceCards([]);
 
-      // Fetch available cards for the event
+      // Cargar lista de vendedores
+      loadSellers(currentEventInfo.companyId, currentEventInfo.eventId);
+
+      // We load available cards for this event
       const result = await getEventCards(
         currentEventInfo.companyId,
         currentEventInfo.eventId,
@@ -309,6 +325,11 @@ export default function BingoManagerClient({
     setInvoicePhoneNumber(invoice.phone_number || "");
     setWhatsappNumber(invoice.whatsapp_number || "");
     setInvoiceManagerName(invoice.manager_name || "");
+
+    // Cargar lista de vendedores
+    if (currentEventInfo) {
+      loadSellers(currentEventInfo.companyId, currentEventInfo.eventId);
+    }
 
     // For editing, we might want to see currently associated cards too
     // But for now, let's focus on the "New Invoice" requirements first
@@ -2123,7 +2144,13 @@ export default function BingoManagerClient({
                     value={invoiceManagerName}
                     onValueChange={setInvoiceManagerName}
                     required
+                    list="sellers-list"
                   />
+                  <datalist id="sellers-list">
+                    {sellers.map((seller) => (
+                      <option key={seller} value={seller} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
