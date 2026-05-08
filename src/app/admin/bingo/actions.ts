@@ -1261,6 +1261,21 @@ export async function getCardsForInvoice(
 }
 
 /**
+ * Fetch the list of sellers (sold_by) from the v_sold_by view.
+ */
+export async function getSellersFromView(companyId: number, eventId: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("v_sold_by")
+    .select("sold_by")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+/**
  * Send automated WhatsApp messages and documents via Ultramsg.
  */
 export async function sendWhatsAppAutomation(payload: {
