@@ -44,7 +44,7 @@ export default async function AdminLayout({
     : "??";
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+    <div className="flex h-screen bg-gray-50 dark:bg-black transition-colors">
       <AdminSidebar
         companyName={selectedCompanyName}
         userProfile={userProfile as any}
@@ -53,7 +53,7 @@ export default async function AdminLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 transition-colors">
+        <header className="h-16 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 transition-colors">
           <div className="flex items-center gap-3">
             <Link
               href="/"
@@ -61,9 +61,9 @@ export default async function AdminLayout({
             >
               <Building2
                 size={22}
-                className="text-larioja-azul dark:text-larioja-amarillo group-hover:scale-110 transition-transform"
+                className="text-larioja-azul dark:text-slate-200 group-hover:scale-110 transition-transform"
               />
-              <span className="text-lg md:text-xl font-black tracking-tight text-larioja-azul dark:text-larioja-amarillo truncate max-w-[150px] sm:max-w-none">
+              <span className="text-lg md:text-xl font-bold tracking-tight text-larioja-azul dark:text-white truncate max-w-[150px] sm:max-w-none">
                 {selectedCompanyName}
               </span>
             </Link>
@@ -71,7 +71,7 @@ export default async function AdminLayout({
 
           <div className="flex items-center gap-4 ml-auto">
             <ThemeToggle />
-            <div className="h-9 w-9 rounded-full bg-larioja-azul dark:bg-larioja-amarillo overflow-hidden flex items-center justify-center text-white dark:text-larioja-azul font-bold text-xs border-2 border-white dark:border-gray-800 shadow-sm">
+            <div className="h-9 w-9 rounded-full bg-larioja-azul dark:bg-slate-800 overflow-hidden flex items-center justify-center text-white dark:text-white font-bold text-xs border-2 border-white dark:border-gray-800 shadow-sm">
               {userProfile?.avatar_url ? (
                 <img
                   src={userProfile.avatar_url}

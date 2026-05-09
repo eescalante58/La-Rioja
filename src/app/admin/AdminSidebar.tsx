@@ -66,10 +66,10 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
       </button>
 
       {/* Desktop Sidebar (Permanent) */}
-      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-colors">
+      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-black border-r border-gray-200 dark:border-gray-800 transition-colors">
         <div className="p-6">
           <Link href="/admin" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-larioja-azul dark:text-larioja-amarillo">
+            <span className="text-xl font-bold text-larioja-azul dark:text-white">
               La Rioja Admin
             </span>
           </Link>
@@ -80,13 +80,13 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
                 pathname === link.href
-                  ? "bg-larioja-azul text-white dark:bg-larioja-amarillo dark:text-larioja-azul"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
               }`}
             >
-              <link.icon size={20} />
+              <link.icon size={18} />
               <span>{link.label}</span>
             </Link>
           ))}
@@ -115,12 +115,12 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
 
       {/* Mobile Sidebar Content */}
       <aside
-        className={`md:hidden fixed inset-y-0 left-0 w-72 bg-white dark:bg-gray-950 z-[110] transition-transform duration-300 transform ${
+        className={`md:hidden fixed inset-y-0 left-0 w-72 bg-white dark:bg-black z-[110] transition-transform duration-300 transform ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="p-6 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
-          <span className="text-xl font-bold text-larioja-azul dark:text-larioja-amarillo">
+          <span className="text-xl font-bold text-larioja-azul dark:text-white">
             Menú Admin
           </span>
           <button
@@ -132,8 +132,8 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
         </div>
 
         {/* Mobile User Profile Section */}
-        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 bg-gray-50/50 dark:bg-gray-900/30">
-          <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-larioja-azul dark:border-larioja-amarillo flex items-center justify-center bg-larioja-azul text-white font-bold">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 bg-gray-50/50 dark:bg-slate-900/30">
+          <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-larioja-azul dark:border-slate-800 flex items-center justify-center bg-larioja-azul text-white font-bold">
             {userProfile?.avatar_url ? (
               <img
                 src={userProfile.avatar_url}
@@ -163,16 +163,16 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
           </div>
         </div>
 
-        <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-900/50">
           <div className="flex items-center gap-3">
-            <div className="bg-larioja-amarillo p-2 rounded-lg text-larioja-azul">
+            <div className="bg-larioja-azul dark:bg-slate-800 p-2 rounded-lg text-white">
               <Building2 size={20} />
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] uppercase font-bold text-gray-400">
                 Empresa Actual
               </span>
-              <span className="font-bold text-sm text-larioja-azul dark:text-larioja-amarillo truncate max-w-[180px]">
+              <span className="font-bold text-sm text-larioja-azul dark:text-white truncate max-w-[180px]">
                 {companyName}
               </span>
             </div>
@@ -186,11 +186,11 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
               href={link.href}
               className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-colors ${
                 pathname === link.href
-                  ? "bg-larioja-azul text-white shadow-lg shadow-larioja-azul/20"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-lg shadow-larioja-azul/10"
+                  : "text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
               }`}
             >
-              <link.icon size={24} />
+              <link.icon size={22} />
               <span className="font-medium text-lg">{link.label}</span>
             </Link>
           ))}

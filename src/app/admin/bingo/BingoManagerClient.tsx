@@ -50,6 +50,8 @@ import {
   Send,
   UserPlus,
   Trash,
+  Check,
+  Square,
 } from "lucide-react";
 import {
   saveEvent,
@@ -77,6 +79,7 @@ import {
   logPromoMessage,
   getBatchLogs,
   getBatchDetails,
+  uploadPromoImage,
 } from "./actions";
 
 interface Event {
@@ -142,6 +145,12 @@ export default function BingoManagerClient({
   companies: Company[];
   countries: Country[];
 }) {
+  console.log(
+    "BingoManagerClient mounted. Companies:",
+    companies?.length,
+    "Events:",
+    initialEvents?.length,
+  );
   const [events, setEvents] = useState(initialEvents);
   const [statusValue, setStatusValue] = useState<string>("Inactivo");
   const [selectedCompany, setSelectedCompany] = useState<string>("");
@@ -239,6 +248,8 @@ export default function BingoManagerClient({
     useState<PromoTemplate | null>(null);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [customerFormName, setCustomerFormName] = useState("");
+  const [customerFormPhone, setCustomerFormPhone] = useState("");
   const [promoMessage, setPromoMessage] = useState("");
   const [promoImage, setPromoImage] = useState("");
   const [sendingBulk, setSendingBulk] = useState(false);
@@ -248,6 +259,11 @@ export default function BingoManagerClient({
   const [batchLogs, setBatchLogs] = useState<any[]>([]);
   const [selectedBatchDetails, setSelectedBatchDetails] = useState<any[]>([]);
   const [isBatchDetailsOpen, setIsBatchDetailsOpen] = useState(false);
+  const [currentBatchId, setCurrentBatchId] = useState<string | null>(null);
+
+  // Selection states for Bulk Promo
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([]);
+  const [isUploadingPromoImage, setIsUploadingPromoImage] = useState(false);
 
   // Load sellers automatically when event changes
   const loadSellers = useCallback(
@@ -295,83 +311,276 @@ export default function BingoManagerClient({
   };
 
   const loadCustomers = async (companyId: number) => {
+    console.log("loadCustomers called for companyId:", companyId);
     setLoadingCustomers(true);
-    const result = await getCustomers(companyId);
-    if (result.success && result.data) {
-      setCustomers(result.data);
+    try {
+      const result = await getCustomers(companyId);
+      console.log("getCustomers result:", result);
+      if (result.success && result.data) {
+        setCustomers(result.data);
+        // By default, select all customers when loading
+        setSelectedCustomerIds(result.data.map((c: any) => c.id));
+      } else if (!result.success) {
+        console.error("Error in getCustomers:", result.error);
+      }
+    } catch (error) {
+      console.error("Exception in loadCustomers:", error);
+    } finally {
+      setLoadingCustomers(false);
     }
-    setLoadingCustomers(false);
   };
+
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
 
   const loadTemplates = async () => {
-    const result = await getPromoTemplates();
-    if (result.success && result.data) {
-      setPromoTemplates(result.data);
+    console.log("loadTemplates called");
+    setLoadingTemplates(true);
+    try {
+      const result = await getPromoTemplates();
+      console.log("getPromoTemplates result:", result);
+      if (result.success && result.data) {
+        setPromoTemplates(result.data);
+      } else {
+        console.error("Error loading templates:", result.error);
+      }
+    } catch (error) {
+      console.error("Exception in loadTemplates:", error);
+    } finally {
+      setLoadingTemplates(false);
     }
   };
 
-  const handleSaveCustomer = async (formData: FormData) => {
+  const handleSaveCustomer = async () => {
     const companyId = currentEventInfo?.companyId || companies[0]?.company_id;
-    if (!companyId) return;
+    console.log(
+      "handleSaveCustomer. Company ID:",
+      companyId,
+      "Editing ID:",
+      editingCustomer?.id,
+    );
+
+    if (!companyId) {
+      alert(
+        "Error: No se pudo identificar la compañía para guardar el cliente.",
+      );
+      return;
+    }
+
+    if (!customerFormName.trim() || !customerFormPhone.trim()) {
+      alert("Error: Nombre y teléfono son obligatorios.");
+      return;
+    }
 
     setLoading(true);
     const payload = {
       id: editingCustomer?.id,
       company_id: companyId,
-      customer_name: formData.get("customer_name") as string,
-      phone_number: formData.get("phone_number") as string,
+      customer_name: customerFormName.trim(),
+      phone_number: customerFormPhone.trim(),
     };
-    const result = await saveCustomer(payload);
-    if (result.success) {
-      loadCustomers(companyId);
-      setIsCustomerDialogOpen(false);
-      setEditingCustomer(null);
-    } else {
-      alert("Error: " + result.error);
+
+    console.log("Saving customer with payload:", payload);
+
+    try {
+      const result = await saveCustomer(payload);
+      if (result.success) {
+        console.log("Customer saved successfully:", result.data);
+        await loadCustomers(companyId);
+        setIsCustomerDialogOpen(false);
+        setEditingCustomer(null);
+        setCustomerFormName("");
+        setCustomerFormPhone("");
+      } else {
+        console.error("Error saving customer:", result.error);
+        alert(
+          "Error al guardar cliente: " + (result.error || "Error desconocido"),
+        );
+      }
+    } catch (error: any) {
+      console.error("Exception saving customer:", error);
+      alert(
+        "Error inesperado al guardar: " +
+          (error.message || "Error de red o servidor"),
+      );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleDeleteCustomer = async (id: number) => {
     const companyId = currentEventInfo?.companyId || companies[0]?.company_id;
-    if (!companyId || !confirm("¿Eliminar este cliente?")) return;
+    console.log("handleDeleteCustomer. ID:", id, "Company ID:", companyId);
 
-    const result = await deleteCustomer(id);
-    if (result.success) {
-      loadCustomers(companyId);
-    } else {
-      alert("Error: " + result.error);
+    if (!companyId) {
+      alert("Error: No se pudo identificar la compañía para eliminar.");
+      return;
+    }
+
+    if (
+      !confirm(
+        "¿Estás seguro de que deseas eliminar este cliente de forma permanente de tu base de datos promocional?",
+      )
+    ) {
+      return;
+    }
+
+    setLoadingCustomers(true);
+    try {
+      const result = await deleteCustomer(id);
+      if (result.success) {
+        console.log("Customer deleted successfully");
+        await loadCustomers(companyId);
+      } else {
+        console.error("Error deleting customer:", result.error);
+        alert(
+          "Error al eliminar cliente: " +
+            (result.error || "Error de permisos o base de datos"),
+        );
+      }
+    } catch (error: any) {
+      console.error("Exception deleting customer:", error);
+      alert(
+        "Error inesperado al eliminar: " + (error.message || "Error de red"),
+      );
+    } finally {
+      setLoadingCustomers(false);
     }
   };
 
   const handleSyncCustomers = async () => {
     // Si no hay evento, intentamos usar la primera compañía
     const companyId = currentEventInfo?.companyId || companies[0]?.company_id;
+    console.log("handleSyncCustomers. Company ID:", companyId);
+
     if (!companyId) {
       alert("No se ha podido identificar la compañía para sincronizar.");
       return;
     }
 
     setLoadingCustomers(true);
-    const result = await syncCustomers();
-    if (result.success) {
-      await loadCustomers(companyId);
-      alert("Sincronización completada.");
-    } else {
-      alert("Error: " + result.error);
+    try {
+      const initialCount = customers.length;
+      const result = await syncCustomers();
+      if (result.success) {
+        await loadCustomers(companyId);
+        // El count se actualizará tras loadCustomers
+        alert("Sincronización completada con éxito.");
+      } else {
+        console.error("Error in syncCustomers:", result.error);
+        alert(
+          "Error en la sincronización: " +
+            (result.error || "Error desconocido"),
+        );
+      }
+    } catch (error: any) {
+      console.error("Exception in handleSyncCustomers:", error);
+      alert(
+        "Error inesperado en la sincronización: " +
+          (error.message || "Error de red"),
+      );
+    } finally {
+      setLoadingCustomers(false);
     }
-    setLoadingCustomers(false);
+  };
+
+  const toggleCustomerSelection = (id: number) => {
+    setSelectedCustomerIds((prev) =>
+      prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id],
+    );
+  };
+
+  const toggleSelectAllCustomers = () => {
+    if (selectedCustomerIds.length === customers.length) {
+      setSelectedCustomerIds([]);
+    } else {
+      setSelectedCustomerIds(customers.map((c) => c.id));
+    }
+  };
+
+  const handlePromoImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    console.log("handlePromoImageUpload triggered");
+    const file = e.target.files?.[0];
+    const companyId = currentEventInfo?.companyId || companies[0]?.company_id;
+
+    console.log(
+      "File selected:",
+      file?.name,
+      "Size:",
+      file?.size,
+      "CompanyId:",
+      companyId,
+    );
+
+    if (!file) {
+      console.log("No file selected, exiting");
+      return;
+    }
+
+    if (!companyId) {
+      alert("Error: No se ha podido identificar la compañía para el upload.");
+      return;
+    }
+
+    setIsUploadingPromoImage(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("company_id", companyId.toString());
+
+    try {
+      console.log("Calling uploadPromoImage action...");
+      const result = await uploadPromoImage(formData);
+      console.log("uploadPromoImage result:", result);
+
+      if (result.success && result.url) {
+        setPromoImage(result.url);
+        console.log("Promo image uploaded and state set:", result.url);
+        // Reset the input value so the same file can be selected again if needed
+        e.target.value = "";
+      } else {
+        alert("Error al subir imagen: " + result.error);
+      }
+    } catch (error: any) {
+      console.error("Error in handlePromoImageUpload catch block:", error);
+      alert(
+        "Error inesperado al subir imagen: " +
+          (error.message || "Error desconocido"),
+      );
+    } finally {
+      setIsUploadingPromoImage(false);
+    }
   };
 
   const handleSendBulkPromo = async () => {
-    if (!customers.length || !promoMessage || !currentEventInfo) return;
+    const selectedCustomers = customers.filter((c) =>
+      selectedCustomerIds.includes(c.id),
+    );
+    const companyId = currentEventInfo?.companyId || companies[0]?.company_id;
+
+    if (!selectedCustomers.length || !promoMessage || !companyId) {
+      alert(
+        "Debes seleccionar al menos un cliente y tener un mensaje configurado.",
+      );
+      return;
+    }
+
+    if (
+      !confirm(
+        `¿Estás seguro de que deseas enviar este mensaje a ${selectedCustomers.length} clientes?`,
+      )
+    ) {
+      return;
+    }
+
     setSendingBulk(true);
-    setBulkProgress({ sent: 0, total: customers.length });
+    setBulkProgress({ sent: 0, total: selectedCustomers.length });
     const results = [];
     const batchId = crypto.randomUUID();
+    setCurrentBatchId(batchId);
 
-    for (let i = 0; i < customers.length; i++) {
-      const customer = customers[i];
+    for (let i = 0; i < selectedCustomers.length; i++) {
+      const customer = selectedCustomers[i];
       let personalizedMessage = promoMessage.replace(
         "[customer_name]",
         customer.customer_name,
@@ -387,7 +596,7 @@ export default function BingoManagerClient({
       // Log to database
       await logPromoMessage({
         batch_id: batchId,
-        company_id: currentEventInfo.companyId,
+        company_id: companyId,
         customer_name: customer.customer_name,
         phone_number: customer.phone_number,
         message_body: personalizedMessage,
@@ -403,13 +612,13 @@ export default function BingoManagerClient({
         error: res.error,
       });
 
-      setBulkProgress({ sent: i + 1, total: customers.length });
+      setBulkProgress({ sent: i + 1, total: selectedCustomers.length });
     }
 
     setBulkResults(results);
     setIsBulkSummaryOpen(true);
     setSendingBulk(false);
-    loadBatchLogs(currentEventInfo.companyId);
+    loadBatchLogs(companyId);
   };
 
   // Formatting helpers for inputs
@@ -1316,9 +1525,29 @@ export default function BingoManagerClient({
                       <Users size={20} />
                       Clientes
                     </Title>
-                    <Text className="text-xs">
-                      {customers.length} contactos registrados
-                    </Text>
+                    <div className="flex items-center gap-2 mt-1">
+                      <button
+                        onClick={toggleSelectAllCustomers}
+                        className="flex items-center gap-1 text-[10px] font-bold uppercase text-larioja-azul hover:opacity-70 transition-opacity"
+                      >
+                        {selectedCustomerIds.length === customers.length ? (
+                          <>
+                            <Check size={12} />
+                            Desmarcar Todos
+                          </>
+                        ) : (
+                          <>
+                            <Square size={12} />
+                            Marcar Todos
+                          </>
+                        )}
+                      </button>
+                      <span className="text-[10px] text-gray-400">|</span>
+                      <Text className="text-[10px]">
+                        {selectedCustomerIds.length} seleccionados de{" "}
+                        {customers.length}
+                      </Text>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -1326,6 +1555,7 @@ export default function BingoManagerClient({
                       icon={RefreshCw}
                       size="xs"
                       onClick={handleSyncCustomers}
+                      loading={loadingCustomers}
                       tooltip="Sincronizar desde Ventas"
                     />
                     <Button
@@ -1334,6 +1564,8 @@ export default function BingoManagerClient({
                       size="xs"
                       onClick={() => {
                         setEditingCustomer(null);
+                        setCustomerFormName("");
+                        setCustomerFormPhone("");
                         setIsCustomerDialogOpen(true);
                       }}
                       tooltip="Añadir Cliente"
@@ -1368,16 +1600,38 @@ export default function BingoManagerClient({
                       .map((customer) => (
                         <div
                           key={customer.id}
-                          className="p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex justify-between items-center hover:shadow-md transition-all group"
+                          className={`p-3 rounded-xl border flex justify-between items-center hover:shadow-md transition-all group ${
+                            selectedCustomerIds.includes(customer.id)
+                              ? "bg-larioja-azul/[0.03] border-larioja-azul/20"
+                              : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800"
+                          }`}
                         >
-                          <div className="flex flex-col">
-                            <Text className="font-bold text-sm">
-                              {customer.customer_name}
-                            </Text>
-                            <Text className="text-xs opacity-60 flex items-center gap-1">
-                              <Smartphone size={10} />
-                              {customer.phone_number}
-                            </Text>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() =>
+                                toggleCustomerSelection(customer.id)
+                              }
+                              className={`transition-colors ${
+                                selectedCustomerIds.includes(customer.id)
+                                  ? "text-larioja-azul"
+                                  : "text-gray-300 hover:text-gray-400"
+                              }`}
+                            >
+                              {selectedCustomerIds.includes(customer.id) ? (
+                                <CheckCircle size={20} />
+                              ) : (
+                                <Square size={20} />
+                              )}
+                            </button>
+                            <div className="flex flex-col">
+                              <Text className="font-bold text-sm">
+                                {customer.customer_name}
+                              </Text>
+                              <Text className="text-xs opacity-60 flex items-center gap-1">
+                                <Smartphone size={10} />
+                                {customer.phone_number}
+                              </Text>
+                            </div>
                           </div>
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button
@@ -1386,6 +1640,8 @@ export default function BingoManagerClient({
                               size="xs"
                               onClick={() => {
                                 setEditingCustomer(customer);
+                                setCustomerFormName(customer.customer_name);
+                                setCustomerFormPhone(customer.phone_number);
                                 setIsCustomerDialogOpen(true);
                               }}
                             />
@@ -1422,12 +1678,16 @@ export default function BingoManagerClient({
                     icon={Send}
                     className="bg-larioja-azul"
                     onClick={handleSendBulkPromo}
-                    disabled={sendingBulk || !customers.length || !promoMessage}
+                    disabled={
+                      sendingBulk ||
+                      !selectedCustomerIds.length ||
+                      !promoMessage
+                    }
                     loading={sendingBulk}
                   >
                     {sendingBulk
                       ? `Enviando ${bulkProgress.sent}/${bulkProgress.total}...`
-                      : "Enviar a todos los clientes"}
+                      : "Enviar mensaje"}
                   </Button>
                 </div>
 
@@ -1435,11 +1695,29 @@ export default function BingoManagerClient({
                   {/* Selector y Preview */}
                   <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
                     <div className="space-y-1">
-                      <Text className="text-[10px] font-bold uppercase text-gray-500">
-                        Seleccionar Plantilla
-                      </Text>
+                      <div className="flex justify-between items-center">
+                        <Text className="text-[10px] font-bold uppercase text-gray-500">
+                          Seleccionar Plantilla
+                        </Text>
+                        <Button
+                          variant="light"
+                          icon={RefreshCw}
+                          size="xs"
+                          onClick={loadTemplates}
+                          tooltip="Recargar plantillas"
+                        />
+                      </div>
                       <Select
-                        placeholder="Elige una plantilla promocional..."
+                        placeholder={
+                          loadingTemplates
+                            ? "Cargando plantillas..."
+                            : promoTemplates.length > 0
+                              ? "Elige una plantilla promocional..."
+                              : "No hay plantillas disponibles"
+                        }
+                        disabled={
+                          loadingTemplates || promoTemplates.length === 0
+                        }
                         value={selectedTemplate?.id || ""}
                         onValueChange={(val) => {
                           const template = promoTemplates.find(
@@ -1461,9 +1739,32 @@ export default function BingoManagerClient({
                     </div>
 
                     <div className="space-y-1">
-                      <Text className="text-[10px] font-bold uppercase text-gray-500">
-                        Imagen del Mensaje
-                      </Text>
+                      <div className="flex justify-between items-center">
+                        <Text className="text-[10px] font-bold uppercase text-gray-500">
+                          Imagen del Mensaje
+                        </Text>
+                        <div className="flex gap-2">
+                          <input
+                            type="file"
+                            id="promo-image-upload"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handlePromoImageUpload}
+                          />
+                          <Button
+                            variant="light"
+                            icon={Upload}
+                            size="xs"
+                            onClick={() =>
+                              document
+                                .getElementById("promo-image-upload")
+                                ?.click()
+                            }
+                            loading={isUploadingPromoImage}
+                            tooltip="Subir nueva imagen"
+                          />
+                        </div>
+                      </div>
                       <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 group">
                         {promoImage ? (
                           <>
@@ -1472,10 +1773,23 @@ export default function BingoManagerClient({
                               alt="Promo"
                               className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                               <Button
                                 size="xs"
                                 variant="secondary"
+                                icon={Upload}
+                                onClick={() =>
+                                  document
+                                    .getElementById("promo-image-upload")
+                                    ?.click()
+                                }
+                              >
+                                Subir Nueva
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="light"
+                                className="text-white hover:text-white/80"
                                 onClick={() => {
                                   const url = prompt(
                                     "URL de la nueva imagen:",
@@ -1484,16 +1798,39 @@ export default function BingoManagerClient({
                                   if (url) setPromoImage(url);
                                 }}
                               >
-                                Cambiar URL
+                                Pegar URL
                               </Button>
                             </div>
                           </>
                         ) : (
                           <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                            <ImageOff size={40} className="mb-2" />
+                            {isUploadingPromoImage ? (
+                              <RefreshCw
+                                className="animate-spin mb-2"
+                                size={40}
+                              />
+                            ) : (
+                              <ImageOff size={40} className="mb-2" />
+                            )}
                             <Text className="text-xs">
-                              Sin imagen seleccionada
+                              {isUploadingPromoImage
+                                ? "Subiendo..."
+                                : "Sin imagen seleccionada"}
                             </Text>
+                            {!isUploadingPromoImage && (
+                              <Button
+                                variant="light"
+                                size="xs"
+                                className="mt-2"
+                                onClick={() =>
+                                  document
+                                    .getElementById("promo-image-upload")
+                                    ?.click()
+                                }
+                              >
+                                Seleccionar archivo
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1523,7 +1860,7 @@ export default function BingoManagerClient({
                           Grupo Promocional (Simulado)
                         </Text>
                         <Text className="text-white/70 text-[10px]">
-                          {customers.length} participantes
+                          {selectedCustomerIds.length} participantes
                         </Text>
                       </div>
                     </div>
@@ -1536,48 +1873,51 @@ export default function BingoManagerClient({
                         </Badge>
                       </div>
 
-                      {customers.slice(0, 10).map((c, i) => (
-                        <div
-                          key={c.id}
-                          className={`max-w-[85%] rounded-lg p-3 shadow-sm relative ${
-                            i % 2 === 0
-                              ? "bg-white dark:bg-gray-800 self-start rounded-tl-none"
-                              : "bg-[#DCF8C6] dark:bg-emerald-950 self-end rounded-tr-none"
-                          }`}
-                        >
-                          <Text className="text-[10px] font-bold text-larioja-azul mb-1">
-                            {c.customer_name}
-                          </Text>
-                          {promoImage && (
-                            <img
-                              src={promoImage}
-                              className="rounded-lg mb-2 w-full h-auto"
-                              alt="Promo Preview"
-                            />
-                          )}
-                          <Text className="text-xs">
-                            {promoMessage
-                              .replace("[customer_name]", c.customer_name)
-                              .split("\n")
-                              .map((line, key) => (
-                                <span key={key}>
-                                  {line}
-                                  <br />
-                                </span>
-                              ))}
-                          </Text>
-                          <div className="flex justify-end mt-1">
-                            <Text className="text-[9px] opacity-40 italic">
-                              Vista Previa
+                      {customers
+                        .filter((c) => selectedCustomerIds.includes(c.id))
+                        .slice(0, 10)
+                        .map((c, i) => (
+                          <div
+                            key={c.id}
+                            className={`max-w-[85%] rounded-lg p-3 shadow-sm relative ${
+                              i % 2 === 0
+                                ? "bg-white dark:bg-gray-800 self-start rounded-tl-none"
+                                : "bg-[#DCF8C6] dark:bg-emerald-950 self-end rounded-tr-none"
+                            }`}
+                          >
+                            <Text className="text-[10px] font-bold text-larioja-azul mb-1">
+                              {c.customer_name}
                             </Text>
+                            {promoImage && (
+                              <img
+                                src={promoImage}
+                                className="rounded-lg mb-2 w-full h-auto"
+                                alt="Promo Preview"
+                              />
+                            )}
+                            <Text className="text-xs">
+                              {promoMessage
+                                .replace("[customer_name]", c.customer_name)
+                                .split("\n")
+                                .map((line, key) => (
+                                  <span key={key}>
+                                    {line}
+                                    <br />
+                                  </span>
+                                ))}
+                            </Text>
+                            <div className="flex justify-end mt-1">
+                              <Text className="text-[9px] opacity-40 italic">
+                                Vista Previa
+                              </Text>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
 
-                      {customers.length > 10 && (
+                      {selectedCustomerIds.length > 10 && (
                         <div className="text-center py-4">
                           <Badge color="gray">
-                            Y {customers.length - 10} clientes más...
+                            Y {selectedCustomerIds.length - 10} clientes más...
                           </Badge>
                         </div>
                       )}
@@ -3617,6 +3957,7 @@ export default function BingoManagerClient({
       </Dialog>
       {/* Dialog: Nuevo/Editar Cliente */}
       <Dialog
+        key={editingCustomer?.id || "new-customer"}
         open={isCustomerDialogOpen}
         onClose={() => setIsCustomerDialogOpen(false)}
         static={true}
@@ -3638,7 +3979,7 @@ export default function BingoManagerClient({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                handleSaveCustomer(new FormData(e.currentTarget));
+                handleSaveCustomer();
               }}
               className="p-6 space-y-4"
             >
@@ -3647,9 +3988,9 @@ export default function BingoManagerClient({
                   Nombre Completo
                 </Text>
                 <TextInput
-                  name="customer_name"
                   placeholder="Ej: Juan Pérez"
-                  defaultValue={editingCustomer?.customer_name}
+                  value={customerFormName}
+                  onValueChange={setCustomerFormName}
                   required
                 />
               </div>
@@ -3658,9 +3999,9 @@ export default function BingoManagerClient({
                   Número de Teléfono (con código de país)
                 </Text>
                 <TextInput
-                  name="phone_number"
                   placeholder="Ej: 50312345678"
-                  defaultValue={editingCustomer?.phone_number}
+                  value={customerFormPhone}
+                  onValueChange={setCustomerFormPhone}
                   required
                 />
               </div>
@@ -3774,7 +4115,30 @@ export default function BingoManagerClient({
               </Table>
             </div>
 
-            <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-950/50">
+              {currentBatchId && (
+                <Button
+                  variant="light"
+                  icon={FileText}
+                  onClick={async () => {
+                    const res = await getBatchDetails(currentBatchId);
+                    if (res.success && res.data && res.data.length > 0) {
+                      setSelectedBatchDetails(res.data);
+                      setIsBatchDetailsOpen(true);
+                      setIsBulkSummaryOpen(false);
+                    } else {
+                      alert(
+                        "No se pudieron cargar los detalles del lote: " +
+                          (res.error ||
+                            "Aún no hay registros en la base de datos para este envío. Intenta recargar el historial en unos segundos."),
+                      );
+                    }
+                  }}
+                  className="text-larioja-azul font-bold"
+                >
+                  Ver registros detallados
+                </Button>
+              )}
               <Button
                 variant="primary"
                 className="bg-larioja-azul"

@@ -1372,8 +1372,16 @@ export async function logPromoMessage(payload: {
   error_message?: string;
 }) {
   const supabase = createClient();
-  const { error } = await supabase.from("whatsapp_promo_logs").insert(payload);
-  if (error) return { success: false, error: error.message };
+  console.log("Attempting to log promo message to DB:", payload);
+  const { data, error } = await supabase
+    .from("whatsapp_promo_logs")
+    .insert(payload)
+    .select();
+  if (error) {
+    console.error("DB Error logging promo message:", error);
+    return { success: false, error: error.message };
+  }
+  console.log("DB Success logging promo message:", data);
   return { success: true };
 }
 
@@ -1406,6 +1414,41 @@ export async function syncCustomers() {
   const { error } = await supabase.rpc("sync_customers_from_cards");
   if (error) return { success: false, error: error.message };
   return { success: true };
+}
+
+/**
+ * Upload a promotional image to storage and return its public URL.
+ */
+export async function uploadPromoImage(formData: FormData) {
+  const supabase = createClient();
+  const file = formData.get("file") as File;
+  const companyId = formData.get("company_id");
+
+  if (!file)
+    return { success: false, error: "No se proporcionó ningún archivo." };
+
+  const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+  const storagePath = `promos/${companyId}/${fileName}`;
+
+  try {
+    const { data, error: uploadError } = await supabase.storage
+      .from("cms_images")
+      .upload(storagePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("cms_images").getPublicUrl(storagePath);
+
+    return { success: true, url: publicUrl };
+  } catch (error: any) {
+    console.error("Error uploading promo image:", error);
+    return { success: false, error: error.message };
+  }
 }
 
 /**
