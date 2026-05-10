@@ -6,25 +6,189 @@ import { revalidatePath } from "next/cache";
 /**
  * Updates a section of content in the CMS.
  * @param {string} id - The ID of the content to update.
- * @param {Object} formData - The updated data.
+ * @param {FormData} formData - The updated data as FormData.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function updateCMSContent(id: string, formData: any) {
+export async function updateCMSContent(id: string, formData: FormData) {
   const supabase = createClient();
+
+  // Extraer datos de FormData
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const is_active = formData.get("is_active") === "true";
+  const content_order = parseInt(formData.get("content_order") as string) || 0;
+  const metadataStr = formData.get("metadata") as string;
+  const section_key = formData.get("section_key") as string;
+  const old_image_url = formData.get("old_image_url") as string;
+  const file = formData.get("file") as File | null;
+
+  let metadata = {};
+  try {
+    metadata = JSON.parse(metadataStr || "{}");
+  } catch (e) {
+    console.error("Metadata parse error:", e);
+  }
+
+  let image_url = old_image_url;
+
+  // 1. Handle File Upload if present
+  if (file && file instanceof File && file.size > 0) {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${section_key || id}_${Date.now()}.${fileExt}`;
+    const storagePath = `cms/${fileName}`;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+
+      const { error: uploadError } = await supabase.storage
+        .from("cms_images")
+        .upload(storagePath, arrayBuffer, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir imagen: ${uploadError.message}`);
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("cms_images").getPublicUrl(storagePath);
+
+      // Cleanup: Delete old file
+      if (old_image_url && old_image_url.includes("/cms_images/")) {
+        const oldUrlParts = old_image_url.split("/cms_images/");
+        if (oldUrlParts.length > 1) {
+          const oldStoragePath = oldUrlParts[1];
+          await supabase.storage.from("cms_images").remove([oldStoragePath]);
+        }
+      }
+
+      image_url = publicUrl;
+    } catch (uploadErr: any) {
+      console.error("Upload error:", uploadErr);
+      return { success: false, error: uploadErr.message };
+    }
+  }
 
   const { error } = await supabase
     .from("site_content")
     .update({
-      title: formData.title,
-      description: formData.description,
-      is_active: formData.is_active,
-      content_order: parseInt(formData.content_order) || 0,
+      title,
+      description,
+      image_url,
+      is_active,
+      content_order,
+      metadata,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
 
   if (error) {
-    console.error("Error updating CMS content:", error);
+    console.error("Database error:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Creates a new section of content in the CMS.
+ * @param {FormData} formData - The new section data as FormData.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function createCMSContent(formData: FormData) {
+  const supabase = createClient();
+
+  const page = formData.get("page") as string;
+  const section_key = formData.get("section_key") as string;
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const is_active = formData.get("is_active") === "true";
+  const content_order = parseInt(formData.get("content_order") as string) || 0;
+  const metadataStr = formData.get("metadata") as string;
+  const file = formData.get("file") as File | null;
+
+  let metadata = {};
+  try {
+    metadata = JSON.parse(metadataStr || "{}");
+  } catch (e) {
+    console.error("Metadata parse error:", e);
+  }
+
+  let image_url = "";
+
+  // 1. Handle File Upload if present
+  if (file && file instanceof File && file.size > 0) {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${section_key}_${Date.now()}.${fileExt}`;
+    const storagePath = `cms/${fileName}`;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+
+      const { error: uploadError } = await supabase.storage
+        .from("cms_images")
+        .upload(storagePath, arrayBuffer, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        throw new Error(`Error al subir imagen: ${uploadError.message}`);
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("cms_images").getPublicUrl(storagePath);
+      image_url = publicUrl;
+    } catch (uploadErr: any) {
+      console.error("Upload error:", uploadErr);
+      return { success: false, error: uploadErr.message };
+    }
+  }
+
+  const { error } = await supabase.from("site_content").insert([
+    {
+      page,
+      section_key,
+      title,
+      description,
+      image_url,
+      is_active,
+      content_order,
+      metadata,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ]);
+
+  if (error) {
+    console.error("Database error:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Deletes a section of content in the CMS.
+ * @param {string} id - The ID of the content to delete.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function deleteCMSContent(id: string) {
+  const supabase = createClient();
+
+  const { error } = await supabase.from("site_content").delete().eq("id", id);
+
+  if (error) {
+    console.error("Error deleting CMS content:", error);
     return { success: false, error: error.message };
   }
 
