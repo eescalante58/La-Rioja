@@ -96,6 +96,95 @@ export async function updateCMSContent(id: string, formData: FormData) {
 }
 
 /**
+ * Updates a FAQ entry.
+ * @param {string} id - The ID of the FAQ to update.
+ * @param {FormData} formData - The updated FAQ data.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function updateFAQ(id: string, formData: FormData) {
+  const supabase = createClient();
+
+  const question = formData.get("question") as string;
+  const answer = formData.get("answer") as string;
+  const is_active = formData.get("is_active") === "true";
+  const content_order = parseInt(formData.get("content_order") as string) || 0;
+
+  const { error } = await supabase
+    .from("faqs")
+    .update({
+      question,
+      answer,
+      is_active,
+      content_order,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Database error (FAQ update):", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Creates a new FAQ entry.
+ * @param {FormData} formData - The FAQ data.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function createFAQ(formData: FormData) {
+  const supabase = createClient();
+
+  const question = formData.get("question") as string;
+  const answer = formData.get("answer") as string;
+  const is_active = formData.get("is_active") === "true";
+  const content_order = parseInt(formData.get("content_order") as string) || 0;
+
+  const { error } = await supabase.from("faqs").insert([
+    {
+      question,
+      answer,
+      is_active,
+      content_order,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ]);
+
+  if (error) {
+    console.error("Database error (FAQ creation):", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Deletes a FAQ entry.
+ * @param {string} id - The ID of the FAQ to delete.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function deleteFAQ(id: string) {
+  const supabase = createClient();
+
+  const { error } = await supabase.from("faqs").delete().eq("id", id);
+
+  if (error) {
+    console.error("Error deleting FAQ:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
  * Creates a new section of content in the CMS.
  * @param {FormData} formData - The new section data as FormData.
  * @returns {Promise<{success: boolean, error?: string}>}
