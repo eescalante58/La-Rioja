@@ -6,17 +6,7 @@ import { Metadata } from "next";
 import { Navbar } from "@/components/layout/Navbar";
 import DynamicYear from "@/components/layout/DynamicYear";
 
-export const metadata: Metadata = {
-  title: "La Rioja - Entidad de Formación Laboral",
-  description:
-    "Formando futuros, integrando vidas. Centro especializado en la formación laboral para personas con discapacidad intelectual.",
-  openGraph: {
-    title: "La Rioja",
-    description:
-      "Entidad de formación laboral para personas con discapacidad intelectual.",
-    images: ["/logo.png"],
-  },
-};
+// Metadatos eliminados aquí para usar los globales definidos en layout.tsx
 
 /**
  * WhatsApp Icon component (Custom SVG for better fidelity)
