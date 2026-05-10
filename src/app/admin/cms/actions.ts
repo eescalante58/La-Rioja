@@ -106,6 +106,7 @@ export async function updateFAQ(id: string, formData: FormData) {
 
   const question = formData.get("question") as string;
   const answer = formData.get("answer") as string;
+  const section_id = formData.get("section_id") as string | null;
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
 
@@ -114,6 +115,7 @@ export async function updateFAQ(id: string, formData: FormData) {
     .update({
       question,
       answer,
+      section_id: section_id || null,
       is_active,
       content_order,
       updated_at: new Date().toISOString(),
@@ -140,6 +142,7 @@ export async function createFAQ(formData: FormData) {
 
   const question = formData.get("question") as string;
   const answer = formData.get("answer") as string;
+  const section_id = formData.get("section_id") as string | null;
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
 
@@ -147,6 +150,7 @@ export async function createFAQ(formData: FormData) {
     {
       question,
       answer,
+      section_id: section_id || null,
       is_active,
       content_order,
       created_at: new Date().toISOString(),
@@ -176,6 +180,95 @@ export async function deleteFAQ(id: string) {
 
   if (error) {
     console.error("Error deleting FAQ:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Updates a FAQ section.
+ * @param {string} id - The ID of the section to update.
+ * @param {FormData} formData - The updated section data.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function updateFAQSection(id: string, formData: FormData) {
+  const supabase = createClient();
+
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const is_active = formData.get("is_active") === "true";
+  const content_order = parseInt(formData.get("content_order") as string) || 0;
+
+  const { error } = await supabase
+    .from("faq_sections")
+    .update({
+      title,
+      description,
+      is_active,
+      content_order,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Database error (FAQ section update):", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Creates a new FAQ section.
+ * @param {FormData} formData - The section data.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function createFAQSection(formData: FormData) {
+  const supabase = createClient();
+
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const is_active = formData.get("is_active") === "true";
+  const content_order = parseInt(formData.get("content_order") as string) || 0;
+
+  const { error } = await supabase.from("faq_sections").insert([
+    {
+      title,
+      description,
+      is_active,
+      content_order,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  ]);
+
+  if (error) {
+    console.error("Database error (FAQ section creation):", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * Deletes a FAQ section.
+ * @param {string} id - The ID of the section to delete.
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function deleteFAQSection(id: string) {
+  const supabase = createClient();
+
+  const { error } = await supabase.from("faq_sections").delete().eq("id", id);
+
+  if (error) {
+    console.error("Error deleting FAQ section:", error);
     return { success: false, error: error.message };
   }
 
