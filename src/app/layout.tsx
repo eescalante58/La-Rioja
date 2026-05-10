@@ -30,7 +30,7 @@ export const metadata: Metadata = {
       "Formando futuros e integrando vidas: Centro especializado en la formación laboral y el desarrollo integral para personas con discapacidad intelectual en El Salvador.",
     images: [
       {
-        url: "/logo.png",
+        url: "/LogoLaRioja.webp",
         width: 1200,
         height: 630,
         alt: "La Rioja - Institución de Formación Laboral",
@@ -43,14 +43,14 @@ export const metadata: Metadata = {
       "La Rioja - Formación Laboral para Personas con Discapacidad Intelectual",
     description:
       "Formando futuros e integrando vidas: Centro especializado en la formación laboral y el desarrollo integral para personas con discapacidad intelectual en El Salvador.",
-    images: ["/logo.png"],
+    images: ["/LogoLaRioja.webp"],
   },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "32x32" },
-      { url: "/logo.png", sizes: "192x192", type: "image/png" },
+      { url: "/LogoLaRioja.webp", sizes: "192x192", type: "image/webp" },
     ],
-    apple: [{ url: "/logo.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/LogoLaRioja.webp", sizes: "180x180", type: "image/webp" }],
   },
 };
 
