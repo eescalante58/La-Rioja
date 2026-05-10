@@ -13,33 +13,36 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   metadataBase: new URL("https://la-rioja.vercel.app"),
   title: {
-    default: "La Rioja - Institución de Formación Laboral",
+    default:
+      "La Rioja - Formación Laboral para Personas con Discapacidad Intelectual",
     template: "%s | La Rioja",
   },
   description:
-    "Formación laboral para personas con discapacidad intelectual. Sistema de Gestión de Bingo.",
+    "Formando futuros e integrando vidas: Centro especializado en la formación laboral y el desarrollo integral para personas con discapacidad intelectual en El Salvador.",
   openGraph: {
     type: "website",
     locale: "es_SV",
     url: "https://la-rioja.vercel.app",
     siteName: "La Rioja",
-    title: "La Rioja - Entidad de Formación Laboral",
+    title:
+      "La Rioja - Formación Laboral para Personas con Discapacidad Intelectual",
     description:
-      "Formando futuros, integrando vidas. Centro especializado en la formación laboral para personas con discapacidad intelectual.",
+      "Formando futuros e integrando vidas: Centro especializado en la formación laboral y el desarrollo integral para personas con discapacidad intelectual en El Salvador.",
     images: [
       {
         url: "/logo.png",
-        width: 800,
-        height: 600,
-        alt: "La Rioja Logo",
+        width: 1200,
+        height: 630,
+        alt: "La Rioja - Institución de Formación Laboral",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "La Rioja - Entidad de Formación Laboral",
+    title:
+      "La Rioja - Formación Laboral para Personas con Discapacidad Intelectual",
     description:
-      "Formando futuros, integrando vidas. Centro especializado en la formación laboral para personas con discapacidad intelectual.",
+      "Formando futuros e integrando vidas: Centro especializado en la formación laboral y el desarrollo integral para personas con discapacidad intelectual en El Salvador.",
     images: ["/logo.png"],
   },
   icons: {
