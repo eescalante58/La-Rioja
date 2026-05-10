@@ -34,7 +34,7 @@ export default function DailySalesChart({
       textStyle: { color: "#fff" },
       formatter: (params: any) => {
         const item = params[0];
-        return `${item.name}<br/><span style="color:#60a5fa;font-weight:bold;">${formatCurrency(item.value)}</span>`;
+        return `${item.name}<br/><span style="color:#1E9922;font-weight:bold;">${formatCurrency(item.value)}</span>`;
       },
     },
     grid: {
@@ -81,8 +81,8 @@ export default function DailySalesChart({
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: "#3b82f6" }, // blue-500
-              { offset: 1, color: "#012060" }, // larioja-azul
+              { offset: 0, color: "#22c55e" }, // green-500
+              { offset: 1, color: "#1E9922" }, // larioja-verde
             ],
           },
           borderRadius: [4, 4, 0, 0],

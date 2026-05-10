@@ -46,6 +46,19 @@ interface CMSManagerClientProps {
 export default function CMSManagerClient({
   initialContent,
 }: CMSManagerClientProps) {
+  // Ordenar el contenido por Page, section_key y content_order
+  const sortedContent = [...(initialContent || [])].sort((a, b) => {
+    const pageCompare = (a.page || "").localeCompare(b.page || "");
+    if (pageCompare !== 0) return pageCompare;
+
+    const sectionCompare = (a.section_key || "").localeCompare(
+      b.section_key || "",
+    );
+    if (sectionCompare !== 0) return sectionCompare;
+
+    return (a.content_order || 0) - (b.content_order || 0);
+  });
+
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -205,92 +218,108 @@ export default function CMSManagerClient({
         </Button>
       </div>
 
-      <Card className="p-0 overflow-hidden">
-        <Table>
-          <TableHead className="bg-gray-50 dark:bg-gray-900">
-            <TableRow>
-              <TableHeaderCell>Página</TableHeaderCell>
-              <TableHeaderCell>Sección</TableHeaderCell>
-              <TableHeaderCell>Metadata (JSON)</TableHeaderCell>
-              <TableHeaderCell>Título / Descripción</TableHeaderCell>
-              <TableHeaderCell>Estado</TableHeaderCell>
-              <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {initialContent?.map((item) => (
-              <TableRow
-                key={item.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-              >
-                <TableCell>
-                  <Badge color="gray" size="xs" className="uppercase">
-                    {item.page}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Text className="font-mono text-xs">{item.section_key}</Text>
-                </TableCell>
-                <TableCell>
-                  {item.metadata && Object.keys(item.metadata).length > 0 ? (
-                    <div className="flex gap-1 flex-wrap max-w-[200px]">
-                      {Object.keys(item.metadata).map((key) => (
-                        <Badge key={key} size="xs" color="blue">
-                          {key}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <Text className="text-xs italic text-gray-400">
-                      Ninguno
-                    </Text>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-md">
-                    <Text className="font-medium truncate">
-                      {item.title || "Sin título"}
-                    </Text>
-                    <Text className="text-xs truncate text-gray-400">
-                      {item.description || "Sin descripción"}
-                    </Text>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge color={item.is_active ? "emerald" : "rose"}>
-                    {item.is_active ? "Activo" : "Inactivo"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="light"
-                      icon={Eye}
-                      size="xs"
-                      color="gray"
-                      onClick={() => handleView(item)}
-                    />
-                    <Link href={`/admin/cms/${item.id}`}>
-                      <Button
-                        variant="light"
-                        icon={Edit2}
-                        size="xs"
-                        color="blue"
-                      />
-                    </Link>
-                    <Button
-                      variant="light"
-                      icon={Trash2}
-                      size="xs"
-                      color="rose"
-                      onClick={() => confirmDelete(item)}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <Card className="p-0 overflow-hidden shadow-xl border-gray-200 dark:border-gray-800">
+        {/* Barra de desplazamiento superior (Trick: transform rotate) */}
+        <div style={{ transform: "rotateX(180deg)", overflowX: "auto" }}>
+          <div style={{ transform: "rotateX(180deg)" }}>
+            <Table>
+              <TableHead className="bg-gray-50 dark:bg-gray-900">
+                <TableRow>
+                  <TableHeaderCell>Página</TableHeaderCell>
+                  <TableHeaderCell>Sección</TableHeaderCell>
+                  <TableHeaderCell>Orden</TableHeaderCell>
+                  <TableHeaderCell>Metadata (JSON)</TableHeaderCell>
+                  <TableHeaderCell>Título / Descripción</TableHeaderCell>
+                  <TableHeaderCell>Estado</TableHeaderCell>
+                  <TableHeaderCell className="text-right">
+                    Acciones
+                  </TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {sortedContent?.map((item) => (
+                  <TableRow
+                    key={item.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  >
+                    <TableCell>
+                      <Badge color="gray" size="xs" className="uppercase">
+                        {item.page}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Text className="font-mono text-xs">
+                        {item.section_key}
+                      </Text>
+                    </TableCell>
+                    <TableCell>
+                      <Badge color="amber" size="xs">
+                        {item.content_order}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {item.metadata &&
+                      Object.keys(item.metadata).length > 0 ? (
+                        <div className="flex gap-1 flex-wrap max-w-[200px]">
+                          {Object.keys(item.metadata).map((key) => (
+                            <Badge key={key} size="xs" color="blue">
+                              {key}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <Text className="text-xs italic text-gray-400">
+                          Ninguno
+                        </Text>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-md">
+                        <Text className="font-medium truncate">
+                          {item.title || "Sin título"}
+                        </Text>
+                        <Text className="text-xs truncate text-gray-400">
+                          {item.description || "Sin descripción"}
+                        </Text>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge color={item.is_active ? "emerald" : "rose"}>
+                        {item.is_active ? "Activo" : "Inactivo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="light"
+                          icon={Eye}
+                          size="xs"
+                          color="gray"
+                          onClick={() => handleView(item)}
+                        />
+                        <Link href={`/admin/cms/${item.id}`}>
+                          <Button
+                            variant="light"
+                            icon={Edit2}
+                            size="xs"
+                            color="blue"
+                          />
+                        </Link>
+                        <Button
+                          variant="light"
+                          icon={Trash2}
+                          size="xs"
+                          color="rose"
+                          onClick={() => confirmDelete(item)}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </Card>
 
       {/* Modal de Vista Detallada */}
