@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import CMSManagerClient from "./CMSManagerClient";
+import { Tabs, TabsList, Tab, TabPanels, TabPanel } from "@tremor/react";
+import { List, HelpCircle } from "lucide-react";
+import FAQManager from "@/components/admin/FAQManager";
 
 /**
  * CMS Management page for administrators.
@@ -22,5 +25,35 @@ export default async function CMSManager() {
     );
   }
 
-  return <CMSManagerClient initialContent={content || []} />;
+  const { data: faqs } = await supabase
+    .from("faqs")
+    .select("*")
+    .order("content_order", { ascending: true });
+
+  return (
+    <div className="space-y-6">
+      <Tabs defaultValue="1">
+        <TabsList variant="line" color="blue">
+          <Tab value="1" icon={List}>
+            Contenido General
+          </Tab>
+          <Tab value="2" icon={HelpCircle}>
+            Preguntas Frecuentes (FAQ)
+          </Tab>
+        </TabsList>
+        <TabPanels>
+          <TabPanel>
+            <div className="mt-6">
+              <CMSManagerClient initialContent={content || []} />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div className="mt-6">
+              <FAQManager initialFaqs={faqs || []} />
+            </div>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
+    </div>
+  );
 }
