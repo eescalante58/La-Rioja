@@ -27,6 +27,11 @@ export default async function CMSManager() {
 
   const { data: faqs } = await supabase
     .from("faqs")
+    .select("*, faq_sections(title)")
+    .order("content_order", { ascending: true });
+
+  const { data: faqSections } = await supabase
+    .from("faq_sections")
     .select("*")
     .order("content_order", { ascending: true });
 
@@ -49,7 +54,10 @@ export default async function CMSManager() {
           </TabPanel>
           <TabPanel>
             <div className="mt-6">
-              <FAQManager initialFaqs={faqs || []} />
+              <FAQManager
+                initialFaqs={faqs || []}
+                faqSections={faqSections || []}
+              />
             </div>
           </TabPanel>
         </TabPanels>
