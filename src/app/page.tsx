@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getSectionContent, getPageContent } from "@/services/cms";
 import { Instagram, Facebook, Twitter, MapPin } from "lucide-react";
 import { Metadata } from "next";
@@ -79,6 +80,19 @@ export default async function Home() {
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 animate-fade-in tracking-tight leading-[1.1] drop-shadow-sm">
             {heroContent?.title || "Bienvenidos a La Rioja"}
           </h1>
+
+          {heroContent?.image_url && (
+            <div className="relative w-full max-w-2xl mx-auto h-48 sm:h-64 md:h-80 lg:h-96 mb-8 rounded-3xl overflow-hidden shadow-2xl animate-fade-in">
+              <Image
+                src={heroContent.image_url}
+                alt={heroContent.title || "Hero Image"}
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
+          )}
+
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-10 sm:mb-12 max-w-3xl mx-auto font-light leading-relaxed opacity-90 px-4">
             {heroContent?.description ||
               "Entidad de formación laboral para personas con discapacidad intelectual."}
