@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import CMSManagerClient from "./CMSManagerClient";
-import { Tabs, TabsList, Tab, TabPanels, TabPanel } from "@tremor/react";
+import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
 import { List, HelpCircle } from "lucide-react";
 import FAQManager from "@/components/admin/FAQManager";
 
@@ -37,15 +37,15 @@ export default async function CMSManager() {
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="1">
-        <TabsList variant="line" color="blue">
+      <TabGroup defaultValue="1">
+        <TabList variant="line" color="blue">
           <Tab value="1" icon={List}>
             Contenido General
           </Tab>
           <Tab value="2" icon={HelpCircle}>
             Preguntas Frecuentes (FAQ)
           </Tab>
-        </TabsList>
+        </TabList>
         <TabPanels>
           <TabPanel>
             <div className="mt-6">
@@ -61,7 +61,7 @@ export default async function CMSManager() {
             </div>
           </TabPanel>
         </TabPanels>
-      </Tabs>
+      </TabGroup>
     </div>
   );
 }
