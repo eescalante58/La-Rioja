@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Building2, User as UserIcon } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { AdminSidebar } from "./AdminSidebar";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import UserNav from "@/components/layout/UserNav";
 
 /**
  * Administrative Layout component.
@@ -15,40 +15,12 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
   const selectedCompanyName =
     cookies().get("selected_company_name")?.value || "Empresa";
 
-  // Fetch current user profile for the header and sidebar avatar
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-  let userProfile = null;
-
-  if (authUser) {
-    const { data } = await supabase
-      .from("users")
-      .select("full_name, avatar_url, email")
-      .eq("id", authUser.id)
-      .single();
-    userProfile = data;
-  }
-
-  const initials = userProfile?.full_name
-    ? userProfile.full_name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "??";
-
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-black transition-colors">
-      <AdminSidebar
-        companyName={selectedCompanyName}
-        userProfile={userProfile as any}
-      />
+      <AdminSidebar companyName={selectedCompanyName} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -71,17 +43,7 @@ export default async function AdminLayout({
 
           <div className="flex items-center gap-4 ml-auto">
             <ThemeToggle />
-            <div className="h-9 w-9 rounded-full bg-larioja-azul dark:bg-slate-800 overflow-hidden flex items-center justify-center text-white dark:text-white font-bold text-xs border-2 border-white dark:border-gray-800 shadow-sm">
-              {userProfile?.avatar_url ? (
-                <img
-                  src={userProfile.avatar_url}
-                  alt={userProfile.full_name || "Profile"}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span>{initials}</span>
-              )}
-            </div>
+            <UserNav />
           </div>
         </header>
 

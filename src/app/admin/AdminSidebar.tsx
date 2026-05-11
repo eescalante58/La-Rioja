@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import {
   LayoutDashboard,
   FileText,
@@ -13,23 +14,38 @@ import {
   Menu as MenuIcon,
   Building2,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { signOut } from "../auth/actions";
 
 interface AdminSidebarProps {
   companyName: string;
-  userProfile: {
-    full_name: string | null;
-    avatar_url: string | null;
-    email: string;
-  } | null;
 }
 
 /**
  * Client component for the Admin Sidebar with mobile support.
  */
-export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
+export function AdminSidebar({ companyName }: AdminSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("users")
+          .select("full_name, avatar_url, email")
+          .eq("id", user.id)
+          .single();
+        setUserProfile(data);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   // Close sidebar on route change
   useEffect(() => {
@@ -135,22 +151,15 @@ export function AdminSidebar({ companyName, userProfile }: AdminSidebarProps) {
         <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 bg-gray-50/50 dark:bg-slate-900/30">
           <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-larioja-azul dark:border-slate-800 flex items-center justify-center bg-larioja-azul text-white font-bold">
             {userProfile?.avatar_url ? (
-              <img
+              <Image
                 src={userProfile.avatar_url}
                 alt={userProfile.full_name || "Profile"}
+                width={48}
+                height={48}
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span>
-                {userProfile?.full_name
-                  ? userProfile.full_name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 2)
-                  : "???"}
-              </span>
+              <span>{initials}</span>
             )}
           </div>
           <div className="flex flex-col min-w-0">
