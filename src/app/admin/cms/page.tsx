@@ -4,6 +4,9 @@ import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
 import { List, HelpCircle } from "lucide-react";
 import FAQManager from "@/components/admin/FAQManager";
 
+// Force dynamic rendering to avoid build-time RLS issues
+export const dynamic = "force-dynamic";
+
 /**
  * CMS Management page for administrators.
  * @returns {Promise<JSX.Element>} The CMS management interface.
