@@ -137,6 +137,32 @@ export default async function Home() {
               <p className="opacity-70 mb-4">
                 Formando futuros, integrando vidas.
               </p>
+              <div className="flex flex-col gap-2 mb-6">
+                <Link
+                  href="/"
+                  className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
+                >
+                  Inicio
+                </Link>
+                <Link
+                  href="/about"
+                  className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
+                >
+                  Nosotros
+                </Link>
+                <Link
+                  href="/faq"
+                  className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
+                >
+                  Preguntas Frecuentes
+                </Link>
+                <Link
+                  href="/bingo"
+                  className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
+                >
+                  Bingo
+                </Link>
+              </div>
               <a
                 href={getSocialLink("google maps")}
                 target="_blank"
