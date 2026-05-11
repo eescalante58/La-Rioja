@@ -1,21 +1,53 @@
 "use client";
 
-import { Menu, Transition } from "@headlessui/react";
-import { Fragment } from "react";
+import { useState, useEffect, Fragment } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Menu, Transition } from "@headlessui/react";
 import { LogOut, User as UserIcon, ChevronDown } from "lucide-react";
+import { createClient } from "@/lib/supabase/client"; // Cliente del lado del cliente
 import { signOut } from "@/app/auth/actions";
 
-interface UserNavProps {
-  userProfile: {
-    full_name: string | null;
-    email: string;
-    avatar_url: string | null;
-  };
+interface UserProfile {
+  full_name: string | null;
+  email: string;
+  avatar_url: string | null;
 }
 
-export default function UserNav({ userProfile }: UserNavProps) {
+export default function UserNav() {
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("full_name, email, avatar_url")
+          .eq("id", user.id)
+          .single();
+        setUserProfile(profile as UserProfile);
+      }
+      setLoading(false);
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+    );
+  }
+
+  if (!userProfile) {
+    return null; // O un botón de login si el usuario no está autenticado
+  }
+
   const initials = userProfile.full_name
     ? userProfile.full_name
         .split(" ")
