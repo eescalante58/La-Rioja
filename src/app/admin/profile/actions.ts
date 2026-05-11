@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 
 export async function updateMyProfile(formData: FormData) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return { success: false, error: "Usuario no autenticado." };
@@ -56,5 +58,9 @@ export async function updateMyProfile(formData: FormData) {
 
   revalidatePath("/admin/profile");
   revalidatePath("/admin"); // Revalidar layout para actualizar el avatar en el header
-  return { success: true, message: "Perfil actualizado con éxito." };
+  return {
+    success: true,
+    message: "Perfil actualizado con éxito.",
+    newAvatarUrl: avatar_url,
+  };
 }
