@@ -54,6 +54,12 @@ export function Navbar() {
               Nosotros
             </Link>
             <Link
+              href="/faq"
+              className="text-white hover:text-larioja-amarillo font-bold text-sm transition-all"
+            >
+              Preguntas
+            </Link>
+            <Link
               href="/bingo"
               className="text-white hover:text-larioja-verde font-bold text-sm transition-all"
             >
@@ -106,6 +112,13 @@ export function Navbar() {
                 className="text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-4 border-b border-white/10"
               >
                 Nosotros
+              </Link>
+              <Link
+                href="/faq"
+                onClick={() => setIsOpen(false)}
+                className="text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-4 border-b border-white/10"
+              >
+                Preguntas
               </Link>
               <Link
                 href="/bingo"
