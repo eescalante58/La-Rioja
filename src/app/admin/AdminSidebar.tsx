@@ -71,6 +71,15 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
     { href: "/admin/bingo", label: "Gestión Bingo", icon: Ticket },
   ];
 
+  const initials = userProfile?.full_name
+    ? userProfile.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "??";
+
   return (
     <>
       {/* Mobile Header Toggle */}
