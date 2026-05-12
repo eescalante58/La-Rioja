@@ -56,8 +56,11 @@ export function ContactModal({
       } else {
         setError(result.error || "Ocurrió un error al enviar el mensaje.");
       }
-    } catch (err) {
-      setError("Error de conexión. Por favor intente de nuevo.");
+    } catch (err: any) {
+      console.error("Client-side submission error:", err);
+      setError(
+        `Error de envío: ${err.message || "Por favor intente de nuevo."}`,
+      );
     } finally {
       setIsSubmitting(false);
     }
