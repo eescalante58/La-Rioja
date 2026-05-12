@@ -209,7 +209,7 @@ export default function CMSManagerClient({
         </div>
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition-all active:scale-95"
+          className="flex items-center gap-2 bg-larioja-verde hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition-all active:scale-95"
         >
           <Plus size={18} />
           Nueva Sección
