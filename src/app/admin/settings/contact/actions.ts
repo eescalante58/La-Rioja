@@ -11,21 +11,39 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  */
 export async function getContactSubmissions(searchQuery?: string) {
   const supabase = createClient();
-  
+
+  // Verificar sesión
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return {
+      success: false,
+      error: "No autorizado. Por favor inicia sesión de nuevo.",
+    };
+  }
+
   let query = supabase
     .from("contact_submissions")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (searchQuery) {
-    query = query.or(`email.ilike.%${searchQuery}%,name.ilike.%${searchQuery}%,message.ilike.%${searchQuery}%`);
+    query = query.or(
+      `email.ilike.%${searchQuery}%,name.ilike.%${searchQuery}%,message.ilike.%${searchQuery}%`,
+    );
   }
 
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching contact submissions:", error);
-    return { success: false, error: error.message };
+    console.error("DEBUG: Error al obtener mensajes de contacto:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    return { success: false, error: `${error.message} (${error.code})` };
   }
 
   return { success: true, data };
@@ -36,7 +54,15 @@ export async function getContactSubmissions(searchQuery?: string) {
  */
 export async function deleteContactSubmission(id: string) {
   const supabase = createClient();
-  
+
+  // Verificar sesión
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: "No autorizado." };
+  }
+
   const { error } = await supabase
     .from("contact_submissions")
     .delete()
@@ -56,7 +82,15 @@ export async function deleteContactSubmission(id: string) {
  */
 export async function resendContactEmail(id: string) {
   const supabase = createClient();
-  
+
+  // Verificar sesión
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: "No autorizado." };
+  }
+
   const { data, error: fetchError } = await supabase
     .from("contact_submissions")
     .select("*")
