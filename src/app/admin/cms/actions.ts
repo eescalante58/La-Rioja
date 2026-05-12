@@ -61,12 +61,23 @@ export async function updateCMSContent(id: string, formData: FormData) {
         data: { publicUrl },
       } = supabase.storage.from("cms_images").getPublicUrl(storagePath);
 
-      // Cleanup: Delete old file
-      if (old_image_url && old_image_url.includes("/cms_images/")) {
-        const oldUrlParts = old_image_url.split("/cms_images/");
-        if (oldUrlParts.length > 1) {
-          const oldStoragePath = oldUrlParts[1];
-          await supabase.storage.from("cms_images").remove([oldStoragePath]);
+      // Cleanup: Delete old file if it exists and is different from the new one
+      if (
+        old_image_url &&
+        old_image_url !== publicUrl &&
+        old_image_url.includes("/cms_images/")
+      ) {
+        try {
+          // Extraer la ruta del objeto del URL (todo lo después de /cms_images/)
+          const oldUrlParts = old_image_url.split("/cms_images/");
+          if (oldUrlParts.length > 1) {
+            // Limpiar posibles parámetros de búsqueda (query params)
+            const oldStoragePath = oldUrlParts[1].split("?")[0];
+            await supabase.storage.from("cms_images").remove([oldStoragePath]);
+          }
+        } catch (cleanupErr) {
+          console.error("Error cleaning up old image:", cleanupErr);
+          // No bloqueamos el proceso principal si falla la limpieza
         }
       }
 
@@ -536,6 +547,28 @@ export async function deleteCMSContent(id: string) {
   } = await supabase.auth.getUser();
 
   if (!user) return { success: false, error: "No autorizado" };
+
+  // 1. Obtener la información del registro antes de borrarlo para limpiar el storage
+  const { data: item } = await supabase
+    .from("site_content")
+    .select("image_url")
+    .eq("id", id)
+    .single();
+
+  if (item?.image_url && item.image_url.includes("/cms_images/")) {
+    try {
+      const oldUrlParts = item.image_url.split("/cms_images/");
+      if (oldUrlParts.length > 1) {
+        const oldStoragePath = oldUrlParts[1].split("?")[0];
+        await supabase.storage.from("cms_images").remove([oldStoragePath]);
+      }
+    } catch (err) {
+      console.error(
+        "Error deleting image from storage during record deletion:",
+        err,
+      );
+    }
+  }
 
   const { error } = await supabase.from("site_content").delete().eq("id", id);
 

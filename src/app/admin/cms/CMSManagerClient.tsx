@@ -518,7 +518,7 @@ export default function CMSManagerClient({
                     <img
                       src={newPreviewUrl}
                       alt="Vista previa"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                       <button
