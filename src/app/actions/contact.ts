@@ -18,7 +18,18 @@ interface ContactData {
  */
 export async function submitContactForm(data: ContactData) {
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!apiKey) {
+      console.error("DEBUG: RESEND_API_KEY no encontrada en process.env");
+      return {
+        success: false,
+        error:
+          "Configuración incompleta: La clave RESEND_API_KEY no está configurada en el servidor.",
+      };
+    }
+
+    const resend = new Resend(apiKey);
     const supabase = createClient();
 
     // 1. Save to Supabase (Ecosystem Option B)
@@ -47,15 +58,6 @@ export async function submitContactForm(data: ContactData) {
     }
 
     // 2. Send Email via Resend
-    if (!process.env.RESEND_API_KEY) {
-      console.warn("RESEND_API_KEY is not set. Email not sent.");
-      return {
-        success: true,
-        warning:
-          "El mensaje se guardó pero no se pudo enviar el correo (falta configuración).",
-      };
-    }
-
     const { error: mailError } = await resend.emails.send({
       from: "La Rioja Contacto <onboarding@resend.dev>", // Replace with your verified domain
       to: [data.targetEmail],
