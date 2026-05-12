@@ -197,7 +197,7 @@ export default async function Home() {
                               src={service.image_url}
                               alt={service.title}
                               fill
-                              className="object-cover"
+                              className="object-contain bg-gray-50 dark:bg-gray-900/50"
                             />
                           </div>
                         ) : (
@@ -246,12 +246,12 @@ export default async function Home() {
                   className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group"
                 >
                   {service.image_url && (
-                    <div className="relative h-52 w-full overflow-hidden">
+                    <div className="relative h-52 w-full overflow-hidden bg-gray-50 dark:bg-gray-900/50">
                       <Image
                         src={service.image_url}
                         alt={service.title}
                         fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="object-contain transition-transform duration-700 group-hover:scale-105"
                       />
                     </div>
                   )}
