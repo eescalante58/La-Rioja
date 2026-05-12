@@ -67,18 +67,18 @@ export function Navbar() {
             </Link>
             <Link
               href="/admin"
-              className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/30 font-bold py-2 px-6 rounded-full text-xs transition-all"
+              className="text-white hover:text-larioja-amarillo font-bold py-2 px-6 rounded-full text-xs transition-all"
             >
               Panel de Control
             </Link>
-            <div className="bg-white/10 backdrop-blur-md rounded-full p-1 border border-white/30">
+            <div className="">
               <ThemeToggle />
             </div>
           </div>
 
           {/* Mobile & Tablet Toggle */}
           <div className="lg:hidden flex items-center gap-3 relative z-[120]">
-            <div className="bg-white/10 backdrop-blur-md rounded-full p-1 border border-white/30">
+            <div className="">
               <ThemeToggle />
             </div>
             <button
