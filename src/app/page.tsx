@@ -178,7 +178,7 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
             {displayServices.map((service: any, i: number) => {
               const isFlip = service.metadata?.variant === "flip";
 
@@ -186,39 +186,52 @@ export default async function Home() {
                 return (
                   <div
                     key={service.id || i}
-                    className="group h-[350px] [perspective:1000px]"
+                    className="group h-[450px] [perspective:1000px]"
                   >
-                    <div className="relative h-full w-full rounded-3xl transition-all duration-500 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] shadow-lg">
+                    <div className="relative h-full w-full rounded-3xl transition-all duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] shadow-xl">
                       {/* Front Side */}
-                      <div className="absolute inset-0 h-full w-full rounded-3xl bg-white dark:bg-gray-800 p-8 [backface-visibility:hidden] flex flex-col items-center justify-center text-center">
-                        <div className="w-16 h-16 bg-larioja-azul/10 dark:bg-larioja-amarillo/10 rounded-2xl flex items-center justify-center mb-6">
-                          <DynamicIcon
-                            name={service.metadata?.icon}
-                            className="w-8 h-8 text-larioja-azul dark:text-larioja-amarillo"
-                          />
+                      <div className="absolute inset-0 h-full w-full rounded-3xl bg-white dark:bg-gray-800 [backface-visibility:hidden] overflow-hidden flex flex-col">
+                        {service.image_url ? (
+                          <div className="relative h-48 w-full">
+                            <Image
+                              src={service.image_url}
+                              alt={service.title}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-48 w-full bg-larioja-azul/5 flex items-center justify-center">
+                            <DynamicIcon
+                              name={service.metadata?.icon}
+                              className="w-12 h-12 text-larioja-azul/20"
+                            />
+                          </div>
+                        )}
+                        <div className="p-6 text-center flex-1 flex flex-col justify-center">
+                          <h3 className="text-xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-2">
+                            {service.title}
+                          </h3>
+                          <p className="text-xs uppercase font-bold text-larioja-verde">
+                            Toca para más info
+                          </p>
                         </div>
-                        <h3 className="text-xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-3">
-                          {service.title}
-                        </h3>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">
-                          Pasa el cursor para saber más
-                        </p>
                       </div>
 
                       {/* Back Side */}
                       <div className="absolute inset-0 h-full w-full rounded-3xl bg-larioja-azul dark:bg-larioja-amarillo p-8 text-white dark:text-larioja-azul [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center text-center">
-                        <h3 className="text-xl font-bold mb-4">
+                        <h3 className="text-2xl font-bold mb-4">
                           {service.title}
                         </h3>
-                        <p className="text-sm opacity-90 leading-relaxed mb-6">
+                        <p className="text-sm opacity-90 leading-relaxed mb-8">
                           {service.description || service.desc}
                         </p>
                         {service.metadata?.link && (
                           <Link
                             href={service.metadata.link}
-                            className="bg-white dark:bg-larioja-azul text-larioja-azul dark:text-white px-6 py-2 rounded-full font-bold text-sm hover:scale-105 transition-transform"
+                            className="bg-white dark:bg-larioja-azul text-larioja-azul dark:text-white px-8 py-3 rounded-full font-black text-sm hover:scale-105 transition-transform shadow-lg"
                           >
-                            {service.metadata?.buttonText || "Saber más"}
+                            {service.metadata?.buttonText || "SABER MÁS"}
                           </Link>
                         )}
                       </div>
@@ -230,20 +243,32 @@ export default async function Home() {
               return (
                 <div
                   key={service.id || i}
-                  className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 group"
+                  className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group"
                 >
-                  <div className="w-16 h-16 bg-larioja-azul/10 dark:bg-larioja-amarillo/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-larioja-azul dark:group-hover:bg-larioja-amarillo transition-colors duration-300">
-                    <DynamicIcon
-                      name={service.metadata?.icon}
-                      className="w-8 h-8 text-larioja-azul dark:text-larioja-amarillo group-hover:text-white dark:group-hover:text-larioja-azul transition-colors duration-300"
-                    />
+                  {service.image_url && (
+                    <div className="relative h-52 w-full overflow-hidden">
+                      <Image
+                        src={service.image_url}
+                        alt={service.title}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                    </div>
+                  )}
+                  <div className="p-8">
+                    <div className="w-14 h-14 bg-larioja-azul/10 dark:bg-larioja-amarillo/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-larioja-azul dark:group-hover:bg-larioja-amarillo transition-colors duration-300">
+                      <DynamicIcon
+                        name={service.metadata?.icon}
+                        className="w-7 h-7 text-larioja-azul dark:text-larioja-amarillo group-hover:text-white dark:group-hover:text-larioja-azul transition-colors duration-300"
+                      />
+                    </div>
+                    <h3 className="text-xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-3">
+                      {service.title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
+                      {service.description || service.desc}
+                    </p>
                   </div>
-                  <h3 className="text-xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-3">
-                    {service.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {service.description || service.desc}
-                  </p>
                 </div>
               );
             })}
