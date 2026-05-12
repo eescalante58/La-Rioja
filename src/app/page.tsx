@@ -73,6 +73,7 @@ export default async function Home() {
   const results = await Promise.allSettled([
     getSectionContent("home", "hero_main"),
     getSectionContent("home", "services_intro"),
+    getSectionContent("home", "contact_card"),
     getPageContent("services"),
     getPageContent("social media"),
   ]);
@@ -81,9 +82,11 @@ export default async function Home() {
     results[0].status === "fulfilled" ? results[0].value : null;
   const servicesIntro =
     results[1].status === "fulfilled" ? results[1].value : null;
+  const contactCard =
+    results[2].status === "fulfilled" ? results[2].value : null;
   const servicesItems =
-    results[2].status === "fulfilled" ? results[2].value : [];
-  const socialLinks = results[3].status === "fulfilled" ? results[3].value : [];
+    results[3].status === "fulfilled" ? results[3].value : [];
+  const socialLinks = results[4].status === "fulfilled" ? results[4].value : [];
 
   const getSocialLink = (key: string) => {
     if (!Array.isArray(socialLinks)) return "#";
@@ -278,6 +281,28 @@ export default async function Home() {
                   Bingo
                 </Link>
               </div>
+
+              {contactCard && contactCard.is_active && (
+                <div className="mb-8 p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 max-w-sm">
+                  <h4 className="text-larioja-amarillo font-bold mb-2">
+                    {contactCard.title}
+                  </h4>
+                  <p className="text-sm opacity-80 leading-relaxed mb-4">
+                    {contactCard.description}
+                  </p>
+                  {contactCard.image_url && (
+                    <div className="relative h-32 w-full rounded-xl overflow-hidden mb-4">
+                      <Image
+                        src={contactCard.image_url}
+                        alt={contactCard.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
               <a
                 href={getSocialLink("google maps")}
                 target="_blank"
