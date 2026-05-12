@@ -30,7 +30,7 @@ export function Navbar() {
     <>
       {/* Desktop & Mobile Fixed Navbar container */}
       <nav className="fixed top-0 left-0 right-0 z-[100] transition-all duration-300">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 py-4 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="relative z-[110] p-2 transition-colors">
             <div className="relative h-10 w-28 sm:h-12 sm:w-36 md:h-16 md:w-48 lg:h-20 lg:w-72">
