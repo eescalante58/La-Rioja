@@ -118,7 +118,18 @@ export default async function Home() {
             <h2 className="text-4xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-4">
               {servicesIntro?.title || "Nuestros Servicios"}
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            {servicesIntro?.image_url && (
+              <div className="relative w-full max-w-3xl mx-auto h-64 md:h-96 mb-10 rounded-3xl overflow-hidden shadow-2xl animate-fade-in group">
+                <Image
+                  src={servicesIntro.image_url}
+                  alt={servicesIntro.title || "Nuestros Servicios"}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              </div>
+            )}
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
               {servicesIntro?.description ||
                 "Ofrecemos programas de formación adaptados para potenciar las habilidades de nuestros participantes."}
             </p>
