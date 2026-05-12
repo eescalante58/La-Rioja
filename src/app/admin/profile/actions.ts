@@ -19,6 +19,7 @@ export async function updateMyProfile(formData: FormData) {
   const avatarFile = formData.get("avatar_url") as File;
 
   let avatar_url = formData.get("current_avatar_url") as string;
+  const oldAvatarUrl = avatar_url;
 
   // Subir nueva imagen si se proporcionó una
   if (avatarFile && avatarFile.size > 0) {
@@ -38,6 +39,21 @@ export async function updateMyProfile(formData: FormData) {
       .getPublicUrl(fileName);
 
     avatar_url = publicUrlData.publicUrl;
+
+    // Eliminar avatar anterior si existe
+    if (oldAvatarUrl && oldAvatarUrl.includes("user_avatar")) {
+      try {
+        const url = new URL(oldAvatarUrl);
+        const path = url.pathname.split("user_avatar/")[1];
+        if (path) {
+          await supabase.storage
+            .from("user_avatar")
+            .remove([decodeURIComponent(path)]);
+        }
+      } catch (e) {
+        console.error("Error eliminando avatar anterior:", e);
+      }
+    }
   }
 
   // Actualizar el perfil del usuario en la tabla public.users
@@ -55,6 +71,20 @@ export async function updateMyProfile(formData: FormData) {
     console.error("Error actualizando perfil:", updateError);
     return { success: false, error: "No se pudo actualizar el perfil." };
   }
+
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "UPDATE_PROFILE",
+    entity: "users",
+    metadata: {
+      full_name: fullName,
+      phone: phone,
+      secondary_email: secondaryEmail,
+      avatar_updated: avatar_url !== oldAvatarUrl,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   revalidatePath("/admin/profile");
   revalidatePath("/admin"); // Revalidar layout para actualizar el avatar en el header
