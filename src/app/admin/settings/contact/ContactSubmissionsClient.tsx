@@ -41,7 +41,10 @@ export default function ContactSubmissionsClient() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const loadSubmissions = useCallback(async () => {
     setLoading(true);
@@ -49,7 +52,10 @@ export default function ContactSubmissionsClient() {
     if (result.success) {
       setSubmissions(result.data || []);
     } else {
-      setFeedback({ type: "error", message: "Error al cargar los mensajes." });
+      setFeedback({
+        type: "error",
+        message: `Error al cargar los mensajes: ${result.error || "Error desconocido"}`,
+      });
     }
     setLoading(false);
   }, [searchQuery]);
@@ -62,15 +68,26 @@ export default function ContactSubmissionsClient() {
   }, [loadSubmissions]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Estás seguro de eliminar este mensaje? Esta acción no se puede deshacer.")) return;
+    if (
+      !confirm(
+        "¿Estás seguro de eliminar este mensaje? Esta acción no se puede deshacer.",
+      )
+    )
+      return;
 
     setActionLoading(id);
     const result = await deleteContactSubmission(id);
     if (result.success) {
-      setFeedback({ type: "success", message: "Mensaje eliminado correctamente." });
+      setFeedback({
+        type: "success",
+        message: "Mensaje eliminado correctamente.",
+      });
       loadSubmissions();
     } else {
-      setFeedback({ type: "error", message: "Error al eliminar el mensaje." });
+      setFeedback({
+        type: "error",
+        message: `Error al eliminar el mensaje: ${result.error || ""}`,
+      });
     }
     setActionLoading(null);
   };
@@ -79,9 +96,15 @@ export default function ContactSubmissionsClient() {
     setActionLoading(id);
     const result = await resendContactEmail(id);
     if (result.success) {
-      setFeedback({ type: "success", message: "Correo reenviado correctamente." });
+      setFeedback({
+        type: "success",
+        message: "Correo reenviado correctamente.",
+      });
     } else {
-      setFeedback({ type: "error", message: result.error || "Error al reenviar el correo." });
+      setFeedback({
+        type: "error",
+        message: result.error || "Error al reenviar el correo.",
+      });
     }
     setActionLoading(null);
   };
@@ -91,7 +114,7 @@ export default function ContactSubmissionsClient() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <Title className="text-2xl font-bold text-larioja-azul dark:text-larioja-amarillo">
-            Mensajes de Contacto
+            Mensajes de contacto Sitio Web La Rioja
           </Title>
           <Text className="text-gray-500 dark:text-gray-400">
             Consulta y gestiona las solicitudes recibidas desde la landing page.
@@ -130,7 +153,9 @@ export default function ContactSubmissionsClient() {
                 <TableHeaderCell>Usuario</TableHeaderCell>
                 <TableHeaderCell>Tipo/Destino</TableHeaderCell>
                 <TableHeaderCell>Mensaje</TableHeaderCell>
-                <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
+                <TableHeaderCell className="text-right">
+                  Acciones
+                </TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -151,7 +176,10 @@ export default function ContactSubmissionsClient() {
                 </TableRow>
               ) : (
                 submissions.map((item) => (
-                  <TableRow key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                  <TableRow
+                    key={item.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+                  >
                     <TableCell>
                       <div className="flex flex-col">
                         <Text className="font-medium flex items-center gap-1.5">
@@ -159,7 +187,10 @@ export default function ContactSubmissionsClient() {
                           {new Date(item.created_at).toLocaleDateString()}
                         </Text>
                         <Text className="text-xs text-gray-400">
-                          {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(item.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </Text>
                       </div>
                     </TableCell>
