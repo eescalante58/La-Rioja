@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getSectionContent, getPageContent } from "@/services/cms";
@@ -100,20 +101,28 @@ export default async function Home() {
   const renderDescription = (text: string) => {
     if (!text) return null;
     const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
-    const parts = text.split(emailRegex);
-    return parts.map((part, index) =>
-      emailRegex.test(part) ? (
-        <a
-          key={index}
-          href={`mailto:${part}`}
-          className="text-larioja-amarillo hover:underline font-medium"
-        >
-          {part}
-        </a>
-      ) : (
-        part
-      ),
-    );
+
+    // Split by new lines first
+    const lines = text.split("\n");
+
+    return lines.map((line, lineIndex) => (
+      <React.Fragment key={lineIndex}>
+        {line.split(emailRegex).map((part, index) =>
+          emailRegex.test(part) ? (
+            <a
+              key={index}
+              href={`mailto:${part}`}
+              className="text-larioja-amarillo hover:underline font-medium"
+            >
+              {part}
+            </a>
+          ) : (
+            part
+          ),
+        )}
+        {lineIndex < lines.length - 1 && <br />}
+      </React.Fragment>
+    ));
   };
 
   // Fallback services if CMS doesn't have them
