@@ -54,12 +54,12 @@ export function ContactModal({
           onClose();
         }, 2500);
       } else {
-        setError(result.error || "Ocurrió un error al enviar el mensaje.");
+        setError(result.error || "El servidor rechazó el envío del mensaje.");
       }
     } catch (err: any) {
-      console.error("Client-side submission error:", err);
+      console.error("DEBUG: Error capturado en el modal:", err);
       setError(
-        `Error de envío: ${err.message || "Por favor intente de nuevo."}`,
+        `[CLIENTE] Fallo al conectar con el servidor: ${err.message || "Error desconocido"}`,
       );
     } finally {
       setIsSubmitting(false);
