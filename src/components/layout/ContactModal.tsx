@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Send, CheckCircle2 } from "lucide-react";
+import { X, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { submitContactForm } from "@/app/actions/contact";
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -9,9 +10,14 @@ interface ContactModalProps {
   targetEmail: string;
 }
 
-export function ContactModal({ isOpen, onClose, targetEmail }: ContactModalProps) {
+export function ContactModal({
+  isOpen,
+  onClose,
+  targetEmail,
+}: ContactModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,43 +31,59 @@ export function ContactModal({ isOpen, onClose, targetEmail }: ContactModalProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    console.log("Form submitted to:", targetEmail, formData);
-    setIsSubmitting(false);
-    setIsSuccess(true);
-    
-    // Reset and close after a delay
-    setTimeout(() => {
-      setIsSuccess(false);
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        type: "Consulta General",
-        message: "",
+    setError(null);
+
+    try {
+      const result = await submitContactForm({
+        ...formData,
+        targetEmail,
       });
-      onClose();
-    }, 2000);
+
+      if (result.success) {
+        setIsSuccess(true);
+        // Reset and close after a delay
+        setTimeout(() => {
+          setIsSuccess(false);
+          setFormData({
+            name: "",
+            email: "",
+            phone: "",
+            type: "Consulta General",
+            message: "",
+          });
+          onClose();
+        }, 2500);
+      } else {
+        setError(result.error || "Ocurrió un error al enviar el mensaje.");
+      }
+    } catch (err) {
+      setError("Error de conexión. Por favor intente de nuevo.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div 
-        className="bg-[#f8f9fa] w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-scale-in"
+      <div
+        className="bg-[#f8f9fa] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-8 pt-8 pb-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-larioja-azul">Formulario de Contacto</h2>
-          <button 
+          <h2 className="text-2xl font-bold text-larioja-azul">
+            Formulario de Contacto
+          </h2>
+          <button
             onClick={onClose}
             className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
           >
@@ -72,11 +94,22 @@ export function ContactModal({ isOpen, onClose, targetEmail }: ContactModalProps
         {isSuccess ? (
           <div className="p-12 text-center flex flex-col items-center gap-4 animate-fade-in">
             <CheckCircle2 size={64} className="text-larioja-verde" />
-            <h3 className="text-xl font-bold text-larioja-azul">¡Mensaje Enviado!</h3>
-            <p className="text-gray-600">Gracias por contactarnos. Te responderemos pronto.</p>
+            <h3 className="text-xl font-bold text-larioja-azul">
+              ¡Mensaje Enviado!
+            </h3>
+            <p className="text-gray-600">
+              Gracias por contactarnos. Te responderemos pronto a tu correo.
+            </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-8 pt-4 space-y-5">
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-600 text-sm animate-fade-in">
+                <AlertCircle size={20} />
+                <span>{error}</span>
+              </div>
+            )}
+
             {/* Nombre Completo */}
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-gray-700 block">
