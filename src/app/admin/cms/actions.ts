@@ -11,6 +11,11 @@ import { revalidatePath } from "next/cache";
  */
 export async function updateCMSContent(id: string, formData: FormData) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autorizado" };
 
   // Extraer datos de FormData
   const title = formData.get("title") as string;
@@ -90,6 +95,20 @@ export async function updateCMSContent(id: string, formData: FormData) {
     return { success: false, error: error.message };
   }
 
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "UPDATE_CMS_CONTENT",
+    entity: "site_content",
+    metadata: {
+      id,
+      section_key,
+      title,
+      image_updated: image_url !== old_image_url,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
   revalidatePath("/admin/cms");
   revalidatePath("/");
   return { success: true };
@@ -103,6 +122,11 @@ export async function updateCMSContent(id: string, formData: FormData) {
  */
 export async function updateFAQ(id: string, formData: FormData) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autorizado" };
 
   const question = formData.get("question") as string;
   const answer = formData.get("answer") as string;
@@ -127,6 +151,18 @@ export async function updateFAQ(id: string, formData: FormData) {
     return { success: false, error: error.message };
   }
 
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "UPDATE_FAQ",
+    entity: "faqs",
+    metadata: {
+      id,
+      question: question.substring(0, 100),
+      timestamp: new Date().toISOString(),
+    },
+  });
+
   revalidatePath("/admin/cms");
   revalidatePath("/");
   return { success: true };
@@ -139,6 +175,11 @@ export async function updateFAQ(id: string, formData: FormData) {
  */
 export async function createFAQ(formData: FormData) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autorizado" };
 
   const question = formData.get("question") as string;
   const answer = formData.get("answer") as string;
@@ -146,22 +187,38 @@ export async function createFAQ(formData: FormData) {
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
 
-  const { error } = await supabase.from("faqs").insert([
-    {
-      question,
-      answer,
-      section_id: section_id || null,
-      is_active,
-      content_order,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ]);
+  const { data, error } = await supabase
+    .from("faqs")
+    .insert([
+      {
+        question,
+        answer,
+        section_id: section_id || null,
+        is_active,
+        content_order,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ])
+    .select()
+    .single();
 
   if (error) {
     console.error("Database error (FAQ creation):", error);
     return { success: false, error: error.message };
   }
+
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "CREATE_FAQ",
+    entity: "faqs",
+    metadata: {
+      id: data.id,
+      question: question.substring(0, 100),
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -175,6 +232,11 @@ export async function createFAQ(formData: FormData) {
  */
 export async function deleteFAQ(id: string) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autorizado" };
 
   const { error } = await supabase.from("faqs").delete().eq("id", id);
 
@@ -182,6 +244,17 @@ export async function deleteFAQ(id: string) {
     console.error("Error deleting FAQ:", error);
     return { success: false, error: error.message };
   }
+
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "DELETE_FAQ",
+    entity: "faqs",
+    metadata: {
+      id,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -196,6 +269,11 @@ export async function deleteFAQ(id: string) {
  */
 export async function updateFAQSection(id: string, formData: FormData) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autorizado" };
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -218,6 +296,18 @@ export async function updateFAQSection(id: string, formData: FormData) {
     return { success: false, error: error.message };
   }
 
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "UPDATE_FAQ_SECTION",
+    entity: "faq_sections",
+    metadata: {
+      id,
+      title,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
   revalidatePath("/admin/cms");
   revalidatePath("/");
   return { success: true };
@@ -230,27 +320,48 @@ export async function updateFAQSection(id: string, formData: FormData) {
  */
 export async function createFAQSection(formData: FormData) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autorizado" };
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
 
-  const { error } = await supabase.from("faq_sections").insert([
-    {
-      title,
-      description,
-      is_active,
-      content_order,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ]);
+  const { data, error } = await supabase
+    .from("faq_sections")
+    .insert([
+      {
+        title,
+        description,
+        is_active,
+        content_order,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ])
+    .select()
+    .single();
 
   if (error) {
     console.error("Database error (FAQ section creation):", error);
     return { success: false, error: error.message };
   }
+
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "CREATE_FAQ_SECTION",
+    entity: "faq_sections",
+    metadata: {
+      id: data.id,
+      title,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -264,6 +375,11 @@ export async function createFAQSection(formData: FormData) {
  */
 export async function deleteFAQSection(id: string) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autorizado" };
 
   const { error } = await supabase.from("faq_sections").delete().eq("id", id);
 
@@ -271,6 +387,17 @@ export async function deleteFAQSection(id: string) {
     console.error("Error deleting FAQ section:", error);
     return { success: false, error: error.message };
   }
+
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "DELETE_FAQ_SECTION",
+    entity: "faq_sections",
+    metadata: {
+      id,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -284,6 +411,11 @@ export async function deleteFAQSection(id: string) {
  */
 export async function createCMSContent(formData: FormData) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autorizado" };
 
   const page = formData.get("page") as string;
   const section_key = formData.get("section_key") as string;
@@ -293,6 +425,20 @@ export async function createCMSContent(formData: FormData) {
   const content_order = parseInt(formData.get("content_order") as string) || 0;
   const metadataStr = formData.get("metadata") as string;
   const file = formData.get("file") as File | null;
+
+  // Check uniqueness of section_key
+  const { data: existing } = await supabase
+    .from("site_content")
+    .select("id")
+    .eq("section_key", section_key)
+    .single();
+
+  if (existing) {
+    return {
+      success: false,
+      error: `La clave de sección "${section_key}" ya existe.`,
+    };
+  }
 
   let metadata = {};
   try {
@@ -334,25 +480,42 @@ export async function createCMSContent(formData: FormData) {
     }
   }
 
-  const { error } = await supabase.from("site_content").insert([
-    {
-      page,
-      section_key,
-      title,
-      description,
-      image_url,
-      is_active,
-      content_order,
-      metadata,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ]);
+  const { data, error } = await supabase
+    .from("site_content")
+    .insert([
+      {
+        page,
+        section_key,
+        title,
+        description,
+        image_url,
+        is_active,
+        content_order,
+        metadata,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ])
+    .select()
+    .single();
 
   if (error) {
     console.error("Database error:", error);
     return { success: false, error: error.message };
   }
+
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "CREATE_CMS_CONTENT",
+    entity: "site_content",
+    metadata: {
+      id: data.id,
+      section_key,
+      title,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -366,6 +529,11 @@ export async function createCMSContent(formData: FormData) {
  */
 export async function deleteCMSContent(id: string) {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autorizado" };
 
   const { error } = await supabase.from("site_content").delete().eq("id", id);
 
@@ -373,6 +541,17 @@ export async function deleteCMSContent(id: string) {
     console.error("Error deleting CMS content:", error);
     return { success: false, error: error.message };
   }
+
+  // Registro de auditoría
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "DELETE_CMS_CONTENT",
+    entity: "site_content",
+    metadata: {
+      id,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   revalidatePath("/");
   revalidatePath("/admin/cms");

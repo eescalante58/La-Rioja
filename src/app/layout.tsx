@@ -19,6 +19,24 @@ export const metadata: Metadata = {
   },
   description:
     "Formando futuros e integrando vidas: Centro especializado en la formación laboral y el desarrollo integral para personas con discapacidad intelectual en El Salvador.",
+  keywords: [
+    "discapacidad intelectual",
+    "formación laboral",
+    "El Salvador",
+    "inclusión social",
+    "centro de formación",
+    "La Rioja",
+    "desarrollo integral",
+    "educación especial",
+  ],
+  authors: [{ name: "La Rioja" }],
+  creator: "La Rioja",
+  publisher: "La Rioja",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   openGraph: {
     type: "website",
     locale: "es_SV",
@@ -52,6 +70,13 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/LogoLaRioja.webp", sizes: "180x180", type: "image/webp" }],
   },
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  themeColor: "#0056b3",
+  width: "device-width",
+  initialScale: 1,
 };
 
 /**
