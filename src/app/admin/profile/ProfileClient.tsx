@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef } from 'react';
-import Image from 'next/image';
-import { Card, Title, Text, TextInput, Button, Callout } from '@tremor/react';
-import { User, Mail, Phone, Camera, Save } from 'lucide-react';
-import { updateMyProfile } from './actions';
+import { useState, useRef } from "react";
+import Image from "next/image";
+import { Card, Title, Text, TextInput, Button, Callout } from "@tremor/react";
+import { User, Mail, Phone, Camera, Save } from "lucide-react";
+import { updateMyProfile } from "./actions";
+import { useUser } from "@/providers/UserProvider";
 
 interface ProfileClientProps {
   userProfile: {
@@ -17,14 +18,20 @@ interface ProfileClientProps {
 }
 
 export default function ProfileClient({ userProfile }: ProfileClientProps) {
-  const [fullName, setFullName] = useState(userProfile.full_name || '');
-  const [email, setEmail] = useState(userProfile.email || '');
-  const [phone, setPhone] = useState(userProfile.phone || '');
-  const [avatarUrl, setAvatarUrl] = useState(userProfile.avatar_url || '');
+  const { refreshProfile } = useUser();
+  const [fullName, setFullName] = useState(userProfile.full_name || "");
+  const [email, setEmail] = useState(userProfile.email || "");
+  const [phone, setPhone] = useState(userProfile.phone || "");
+  const [avatarUrl, setAvatarUrl] = useState(userProfile.avatar_url || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(userProfile.avatar_url);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    userProfile.avatar_url,
+  );
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,21 +52,25 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
     setMessage(null);
 
     const formData = new FormData();
-    formData.append('full_name', fullName);
-    formData.append('email', email);
-    formData.append('phone', phone);
-    formData.append('current_avatar_url', avatarUrl);
+    formData.append("full_name", fullName);
+    formData.append("email", email);
+    formData.append("phone", phone);
+    formData.append("current_avatar_url", avatarUrl);
     if (avatarFile) {
-      formData.append('avatar_url', avatarFile);
+      formData.append("avatar_url", avatarFile);
     }
 
     const result = await updateMyProfile(formData);
 
     if (result.success) {
-      setMessage({ type: 'success', text: result.message || 'Perfil actualizado con éxito.' });
-      if(result.newAvatarUrl) setAvatarUrl(result.newAvatarUrl);
+      await refreshProfile(); // Actualizar el contexto global
+      setMessage({
+        type: "success",
+        text: result.message || "Perfil actualizado con éxito.",
+      });
+      if (result.newAvatarUrl) setAvatarUrl(result.newAvatarUrl);
     } else {
-      setMessage({ type: 'error', text: result.error || 'Ocurrió un error.' });
+      setMessage({ type: "error", text: result.error || "Ocurrió un error." });
     }
 
     setIsSaving(false);
@@ -67,8 +78,12 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Title className="text-2xl font-bold text-larioja-azul dark:text-larioja-amarillo">Mi Perfil</Title>
-      <Text className="mb-6">Actualiza tu información personal y foto de perfil.</Text>
+      <Title className="text-2xl font-bold text-larioja-azul dark:text-larioja-amarillo">
+        Mi Perfil
+      </Title>
+      <Text className="mb-6">
+        Actualiza tu información personal y foto de perfil.
+      </Text>
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -76,7 +91,12 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
             <div className="relative">
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
                 {previewUrl ? (
-                  <Image src={previewUrl} alt="Avatar" layout="fill" objectFit="cover" />
+                  <Image
+                    src={previewUrl}
+                    alt="Avatar"
+                    layout="fill"
+                    objectFit="cover"
+                  />
                 ) : (
                   <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                     <User className="w-16 h-16 text-gray-400" />
@@ -101,21 +121,38 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
             <div className="flex-1 w-full space-y-4">
               <div>
                 <Text>Nombre Completo</Text>
-                <TextInput icon={User} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                <TextInput
+                  icon={User}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
               </div>
               <div>
                 <Text>Correo Secundario</Text>
-                <TextInput icon={Mail} value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
+                <TextInput
+                  icon={Mail}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                />
               </div>
               <div>
                 <Text>Teléfono de Contacto</Text>
-                <TextInput icon={Phone} value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <TextInput
+                  icon={Phone}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
               </div>
             </div>
           </div>
 
           {message && (
-            <Callout title={message.type === 'success' ? 'Éxito' : 'Error'} color={message.type === 'success' ? 'teal' : 'rose'}>
+            <Callout
+              title={message.type === "success" ? "Éxito" : "Error"}
+              color={message.type === "success" ? "teal" : "rose"}
+            >
               {message.text}
             </Callout>
           )}
