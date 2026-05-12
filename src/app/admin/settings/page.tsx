@@ -8,6 +8,7 @@ import {
   GraduationCap,
   ShieldCheck,
   History,
+  MessageSquare,
 } from "lucide-react";
 import { Card, Title, Text, Grid, Icon } from "@tremor/react";
 
@@ -58,6 +59,14 @@ export default function SettingsPage() {
       icon: History,
       href: "/admin/settings/logs",
       color: "gray",
+    },
+    {
+      title: "Mensajes de Contacto",
+      description:
+        "Gestiona las solicitudes recibidas desde el formulario web.",
+      icon: MessageSquare,
+      href: "/admin/settings/contact",
+      color: "cyan",
     },
   ];
 
