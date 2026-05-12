@@ -3,8 +3,6 @@
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface ContactData {
   name: string;
   email: string;
@@ -20,6 +18,7 @@ interface ContactData {
  */
 export async function submitContactForm(data: ContactData) {
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const supabase = createClient();
 
     // 1. Save to Supabase (Ecosystem Option B)
@@ -38,8 +37,13 @@ export async function submitContactForm(data: ContactData) {
       ]);
 
     if (dbError) {
-      console.error("Database Error:", dbError);
-      // We continue even if DB fails, or we could return error
+      console.error("Supabase Database Error:", dbError);
+      // Si el error es de permisos (RLS), lo registramos pero continuamos con el envío del email
+      if (dbError.code === "42501") {
+        console.warn(
+          "Permiso denegado en Supabase (RLS). Verifica que la tabla contact_submissions permita inserciones públicas.",
+        );
+      }
     }
 
     // 2. Send Email via Resend
