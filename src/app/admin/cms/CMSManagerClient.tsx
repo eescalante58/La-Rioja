@@ -466,7 +466,7 @@ export default function CMSManagerClient({
                 <Select
                   value={newFormData.page}
                   onValueChange={(val) =>
-                    setNewFormData({ ...newFormData, page: val })
+                    setNewFormData({ ...newFormData, page: val as CMSPage })
                   }
                 >
                   {CMS_PAGES.map((p) => (
