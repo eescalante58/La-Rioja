@@ -20,6 +20,8 @@ import { Metadata } from "next";
 
 import { Navbar } from "@/components/layout/Navbar";
 import DynamicYear from "@/components/layout/DynamicYear";
+import { ParallaxHero } from "@/components/layout/ParallaxHero";
+import { ScrollReveal } from "@/components/layout/ScrollReveal";
 
 // Mapping of icon names to components
 const IconMap: Record<string, any> = {
@@ -116,53 +118,18 @@ export default async function Home() {
     <main className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center text-white bg-larioja-azul overflow-hidden pt-32 pb-20 md:pt-40">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-larioja-azul/20 z-10" />
-        <div className="container mx-auto px-4 sm:px-6 relative z-20 text-center max-w-5xl mt-12 md:mt-0">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 animate-fade-in tracking-tight leading-[1.1] drop-shadow-sm text-[#FFFF00]">
-            {heroContent?.title || "Bienvenidos a La Rioja"}
-          </h1>
-
-          {heroContent?.image_url && (
-            <div className="relative w-full max-w-2xl mx-auto h-48 sm:h-64 md:h-80 lg:h-96 mb-8 rounded-3xl overflow-hidden shadow-2xl animate-fade-in">
-              <Image
-                src={heroContent.image_url}
-                alt={heroContent.title || "Hero Image"}
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
-          )}
-
-          <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-10 sm:mb-12 max-w-3xl mx-auto font-light leading-relaxed opacity-90 px-4">
-            {heroContent?.description ||
-              "Entidad de formación laboral para personas con discapacidad intelectual."}
-          </p>
-          <div className="flex justify-center gap-4">
-            <Link
-              href="/bingo"
-              className="bg-larioja-amarillo hover:bg-yellow-400 text-larioja-azul font-bold py-2.5 px-6 sm:py-3 sm:px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl shadow-larioja-amarillo/20 text-sm sm:text-base"
-            >
-              Jugar Bingo
-            </Link>
-          </div>
-        </div>
-        {/* Subtle decorative elements */}
-        <div className="absolute -bottom-12 -left-12 sm:-bottom-24 sm:-left-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-verde/20 rounded-full blur-2xl sm:blur-3xl z-0" />
-        <div className="absolute -top-12 -right-12 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-amarillo/10 rounded-full blur-2xl sm:blur-3xl z-0" />
-      </section>
+      {/* Hero Section with Parallax */}
+      <ParallaxHero heroContent={heroContent} />
 
       {/* Services Section */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-900 transition-colors">
+      <section className="py-24 bg-gray-50 dark:bg-gray-900 transition-colors relative z-30">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-4">
+          <ScrollReveal className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-4">
               {servicesIntro?.title || "Nuestros Servicios"}
             </h2>
             {servicesIntro?.image_url && (
-              <div className="relative w-full max-w-3xl mx-auto h-64 md:h-96 mb-10 rounded-3xl overflow-hidden shadow-2xl animate-fade-in group">
+              <div className="relative w-full max-w-4xl mx-auto h-64 md:h-96 mb-10 rounded-3xl overflow-hidden shadow-2xl group">
                 <Image
                   src={servicesIntro.image_url}
                   alt={servicesIntro.title || "Nuestros Servicios"}
@@ -176,7 +143,7 @@ export default async function Home() {
               {servicesIntro?.description ||
                 "Ofrecemos programas de formación adaptados para potenciar las habilidades de nuestros participantes."}
             </p>
-          </div>
+          </ScrollReveal>
 
           <div className="flex flex-wrap justify-center gap-8 items-stretch">
             {displayServices.map((service: any, i: number) => {
@@ -184,11 +151,12 @@ export default async function Home() {
 
               if (isFlip) {
                 return (
-                  <div
+                  <ScrollReveal
                     key={service.id || i}
-                    className="group h-[450px] [perspective:1000px] w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-[400px] flex-grow-0 flex-shrink-0"
+                    delay={i * 100}
+                    className="h-[450px] [perspective:1000px] w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-[400px] flex-grow-0 flex-shrink-0"
                   >
-                    <div className="relative h-full w-full rounded-3xl transition-all duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] shadow-xl">
+                    <div className="group relative h-full w-full rounded-3xl transition-all duration-700 [transform-style:preserve-3d] hover:[transform:rotateY(180deg)] shadow-xl">
                       {/* Front Side */}
                       <div className="absolute inset-0 h-full w-full rounded-3xl bg-white dark:bg-gray-800 [backface-visibility:hidden] overflow-hidden flex flex-col">
                         {service.image_url ? (
@@ -236,40 +204,43 @@ export default async function Home() {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </ScrollReveal>
                 );
               }
 
               return (
-                <div
+                <ScrollReveal
                   key={service.id || i}
-                  className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-[400px] flex-grow-0 flex-shrink-0"
+                  delay={i * 100}
+                  className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-[400px] flex-grow-0 flex-shrink-0"
                 >
-                  {service.image_url && (
-                    <div className="relative h-52 w-full overflow-hidden bg-gray-50 dark:bg-gray-900/50">
-                      <Image
-                        src={service.image_url}
-                        alt={service.title}
-                        fill
-                        className="object-contain transition-transform duration-700 group-hover:scale-105"
-                      />
+                  <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group h-full">
+                    {service.image_url && (
+                      <div className="relative h-52 w-full overflow-hidden bg-gray-50 dark:bg-gray-900/50">
+                        <Image
+                          src={service.image_url}
+                          alt={service.title}
+                          fill
+                          className="object-contain transition-transform duration-700 group-hover:scale-105"
+                        />
+                      </div>
+                    )}
+                    <div className="p-8">
+                      <div className="w-14 h-14 bg-larioja-azul/10 dark:bg-larioja-amarillo/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-larioja-azul dark:group-hover:bg-larioja-amarillo transition-colors duration-300">
+                        <DynamicIcon
+                          name={service.metadata?.icon}
+                          className="w-7 h-7 text-larioja-azul dark:text-larioja-amarillo group-hover:text-white dark:group-hover:text-larioja-azul transition-colors duration-300"
+                        />
+                      </div>
+                      <h3 className="text-xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-3">
+                        {service.title}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
+                        {service.description || service.desc}
+                      </p>
                     </div>
-                  )}
-                  <div className="p-8">
-                    <div className="w-14 h-14 bg-larioja-azul/10 dark:bg-larioja-amarillo/10 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-larioja-azul dark:group-hover:bg-larioja-amarillo transition-colors duration-300">
-                      <DynamicIcon
-                        name={service.metadata?.icon}
-                        className="w-7 h-7 text-larioja-azul dark:text-larioja-amarillo group-hover:text-white dark:group-hover:text-larioja-azul transition-colors duration-300"
-                      />
-                    </div>
-                    <h3 className="text-xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-3">
-                      {service.title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
-                      {service.description || service.desc}
-                    </p>
                   </div>
-                </div>
+                </ScrollReveal>
               );
             })}
           </div>
@@ -277,9 +248,9 @@ export default async function Home() {
       </section>
 
       {/* Social Media & Footer */}
-      <footer className="bg-larioja-azul dark:bg-gray-950 text-white py-12 transition-colors">
+      <footer className="bg-larioja-azul dark:bg-gray-950 text-white py-16 transition-colors relative z-30">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+          <ScrollReveal className="flex flex-col md:flex-row justify-between items-center gap-12 mb-12">
             <div className="text-center md:text-left">
               <h3 className="text-2xl font-bold mb-2">La Rioja</h3>
               <p className="opacity-70 mb-4">

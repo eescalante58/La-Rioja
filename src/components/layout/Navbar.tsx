@@ -11,6 +11,16 @@ import { ThemeToggle } from "./ThemeToggle";
  */
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Handle scroll for sticky effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Block scroll when menu is open
   useEffect(() => {
@@ -29,11 +39,23 @@ export function Navbar() {
   return (
     <>
       {/* Desktop & Mobile Fixed Navbar container */}
-      <nav className="fixed top-0 left-0 right-0 z-[100] transition-all duration-300">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 py-4 flex items-center justify-between">
+      <nav
+        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${
+          isScrolled
+            ? "bg-white/80 dark:bg-larioja-azul/80 backdrop-blur-lg shadow-lg py-1"
+            : "bg-transparent py-4"
+        }`}
+      >
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="relative z-[110] p-2 transition-colors">
-            <div className="relative h-10 w-28 sm:h-12 sm:w-36 md:h-16 md:w-48 lg:h-20 lg:w-72">
+            <div
+              className={`relative transition-all duration-500 ${
+                isScrolled
+                  ? "h-8 w-24 sm:h-10 sm:w-32 md:h-12 md:w-36 lg:h-14 lg:w-56"
+                  : "h-10 w-28 sm:h-12 sm:w-36 md:h-16 md:w-48 lg:h-20 lg:w-72"
+              }`}
+            >
               <Image
                 src="/logo.png"
                 alt="La Rioja Logo"
@@ -49,25 +71,41 @@ export function Navbar() {
           <div className="hidden lg:flex items-center gap-8">
             <Link
               href="/about"
-              className="text-white hover:text-larioja-amarillo font-bold text-sm transition-all"
+              className={`font-bold text-sm transition-all ${
+                isScrolled
+                  ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
+                  : "text-white hover:text-larioja-amarillo"
+              }`}
             >
               Nosotros
             </Link>
             <Link
               href="/faq"
-              className="text-white hover:text-larioja-amarillo font-bold text-sm transition-all"
+              className={`font-bold text-sm transition-all ${
+                isScrolled
+                  ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
+                  : "text-white hover:text-larioja-amarillo"
+              }`}
             >
               Preguntas
             </Link>
             <Link
               href="/bingo"
-              className="text-white hover:text-larioja-verde font-bold text-sm transition-all"
+              className={`font-bold text-sm transition-all ${
+                isScrolled
+                  ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
+                  : "text-white hover:text-larioja-verde"
+              }`}
             >
               Bingo
             </Link>
             <Link
               href="/admin"
-              className="text-white hover:text-larioja-amarillo font-bold py-2 px-6 rounded-full text-xs transition-all"
+              className={`font-bold py-2 px-6 rounded-full text-xs transition-all ${
+                isScrolled
+                  ? "bg-larioja-azul text-white hover:bg-larioja-azul/90"
+                  : "text-white hover:text-larioja-amarillo"
+              }`}
             >
               Panel de Control
             </Link>
@@ -83,7 +121,11 @@ export function Navbar() {
             </div>
             <button
               onClick={toggleMenu}
-              className="p-2 bg-white/10 backdrop-blur-md rounded-lg border border-white/30 text-white hover:bg-white/20 transition-all"
+              className={`p-2 rounded-lg transition-all border ${
+                isScrolled
+                  ? "bg-larioja-azul text-white border-larioja-azul shadow-md"
+                  : "bg-white/10 backdrop-blur-md border-white/30 text-white"
+              }`}
               aria-label="Menu"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
