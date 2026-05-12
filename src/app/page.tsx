@@ -23,6 +23,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import DynamicYear from "@/components/layout/DynamicYear";
 import { ParallaxHero } from "@/components/layout/ParallaxHero";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
+import { ContactDescription } from "@/components/layout/ContactDescription";
 
 // Mapping of icon names to components
 const IconMap: Record<string, any> = {
@@ -93,36 +94,6 @@ export default async function Home() {
     if (!Array.isArray(socialLinks)) return "#";
     const link = socialLinks.find((l: any) => l.section_key === key);
     return link?.description ?? "#";
-  };
-
-  /**
-   * Helper to format text with email links
-   */
-  const renderDescription = (text: string) => {
-    if (!text) return null;
-    const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
-
-    // Split by new lines first
-    const lines = text.split("\n");
-
-    return lines.map((line, lineIndex) => (
-      <React.Fragment key={lineIndex}>
-        {line.split(emailRegex).map((part, index) =>
-          emailRegex.test(part) ? (
-            <a
-              key={index}
-              href={`mailto:${part}`}
-              className="text-larioja-amarillo hover:underline font-medium"
-            >
-              {part}
-            </a>
-          ) : (
-            part
-          ),
-        )}
-        {lineIndex < lines.length - 1 && <br />}
-      </React.Fragment>
-    ));
   };
 
   // Fallback services if CMS doesn't have them
@@ -318,9 +289,7 @@ export default async function Home() {
                   <h4 className="text-larioja-amarillo font-bold mb-2">
                     {contactCard.title}
                   </h4>
-                  <p className="text-sm opacity-80 leading-relaxed mb-4">
-                    {renderDescription(contactCard.description)}
-                  </p>
+                  <ContactDescription description={contactCard.description} />
                   {contactCard.image_url && (
                     <div className="relative h-32 w-full rounded-xl overflow-hidden mb-4">
                       <Image
