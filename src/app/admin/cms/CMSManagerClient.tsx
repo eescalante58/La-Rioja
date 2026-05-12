@@ -213,6 +213,7 @@ export default function CMSManagerClient({
           color="blue"
           size="sm"
           onClick={() => setIsCreateOpen(true)}
+          className="text-white"
         >
           Nueva Sección
         </Button>
@@ -461,6 +462,7 @@ export default function CMSManagerClient({
                 >
                   <SelectItem value="home">Home</SelectItem>
                   <SelectItem value="about">About</SelectItem>
+                  <SelectItem value="services">Services (Cards)</SelectItem>
                   <SelectItem value="contact">Contact</SelectItem>
                   <SelectItem value="global">Global</SelectItem>
                   <SelectItem value="social media">Social Media</SelectItem>
