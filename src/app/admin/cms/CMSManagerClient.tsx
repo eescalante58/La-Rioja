@@ -34,6 +34,18 @@ import {
 } from "lucide-react";
 import { deleteCMSContent, createCMSContent } from "./actions";
 
+const CMS_PAGES = [
+  { value: "home", label: "Home" },
+  { value: "about", label: "About" },
+  { value: "services", label: "Services (Cards)" },
+  { value: "contact", label: "Contact" },
+  { value: "global", label: "Global" },
+  { value: "social media", label: "Social Media" },
+  { value: "whatsapp message", label: "WhatsApp Message" },
+] as const;
+
+type CMSPage = (typeof CMS_PAGES)[number]["value"];
+
 interface CMSManagerClientProps {
   initialContent: any[];
 }
@@ -67,7 +79,7 @@ export default function CMSManagerClient({
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newFormData, setNewFormData] = useState({
-    page: "home",
+    page: "home" as CMSPage,
     section_key: "",
     title: "",
     description: "",
@@ -457,15 +469,11 @@ export default function CMSManagerClient({
                     setNewFormData({ ...newFormData, page: val })
                   }
                 >
-                  <SelectItem value="home">Home</SelectItem>
-                  <SelectItem value="about">About</SelectItem>
-                  <SelectItem value="services">Services (Cards)</SelectItem>
-                  <SelectItem value="contact">Contact</SelectItem>
-                  <SelectItem value="global">Global</SelectItem>
-                  <SelectItem value="social media">Social Media</SelectItem>
-                  <SelectItem value="whatsapp message">
-                    WhatsApp Message
-                  </SelectItem>
+                  {CMS_PAGES.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
                 </Select>
               </div>
               <div className="space-y-1">
