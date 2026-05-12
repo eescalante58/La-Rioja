@@ -117,11 +117,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
       <Navbar />
-
-      {/* Hero Section with Parallax */}
       <ParallaxHero heroContent={heroContent} />
-
-      {/* Services Section */}
       <section className="py-24 bg-gray-50 dark:bg-gray-900 transition-colors relative z-30">
         <div className="container mx-auto px-6">
           <ScrollReveal className="text-center mb-16">
@@ -314,7 +310,7 @@ export default async function Home() {
                 <WhatsAppIcon className="w-7 h-7" />
               </SocialIcon>
             </div>
-          </div>
+          </ScrollReveal>
           <div className="mt-12 pt-8 border-t border-white/10 text-center opacity-50 text-sm">
             <span>
               &copy; <DynamicYear /> La Rioja. Todos los derechos reservados.

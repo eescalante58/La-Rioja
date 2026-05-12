@@ -65,7 +65,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.ico", sizes: "60x60" },
       { url: "/LogoLaRioja.webp", sizes: "192x192", type: "image/webp" },
     ],
     apple: [{ url: "/LogoLaRioja.webp", sizes: "180x180", type: "image/webp" }],
