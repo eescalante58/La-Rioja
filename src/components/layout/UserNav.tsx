@@ -1,42 +1,15 @@
 "use client";
 
-import { useState, useEffect, Fragment } from "react";
+import { Fragment } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, Transition } from "@headlessui/react";
 import { LogOut, User as UserIcon, ChevronDown } from "lucide-react";
-import { createClient } from "@/lib/supabase/client"; // Cliente del lado del cliente
+import { useUser } from "@/providers/UserProvider";
 import { signOut } from "@/app/auth/actions";
 
-interface UserProfile {
-  full_name: string | null;
-  email: string;
-  avatar_url: string | null;
-}
-
 export default function UserNav() {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("users")
-          .select("full_name, email, avatar_url")
-          .eq("id", user.id)
-          .single();
-        setUserProfile(profile as UserProfile);
-      }
-      setLoading(false);
-    };
-
-    fetchUserProfile();
-  }, []);
+  const { userProfile, loading } = useUser();
 
   if (loading) {
     return (

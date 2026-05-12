@@ -14,7 +14,7 @@ import {
   Menu as MenuIcon,
   Building2,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useUser } from "@/providers/UserProvider";
 import { signOut } from "../auth/actions";
 
 interface AdminSidebarProps {
@@ -26,26 +26,8 @@ interface AdminSidebarProps {
  */
 export function AdminSidebar({ companyName }: AdminSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const { userProfile } = useUser();
   const pathname = usePathname();
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from("users")
-          .select("full_name, avatar_url, email")
-          .eq("id", user.id)
-          .single();
-        setUserProfile(data);
-      }
-    };
-    fetchProfile();
-  }, []);
 
   // Close sidebar on route change
   useEffect(() => {
