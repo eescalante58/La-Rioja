@@ -94,6 +94,28 @@ export default async function Home() {
     return link?.description ?? "#";
   };
 
+  /**
+   * Helper to format text with email links
+   */
+  const renderDescription = (text: string) => {
+    if (!text) return null;
+    const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
+    const parts = text.split(emailRegex);
+    return parts.map((part, index) =>
+      emailRegex.test(part) ? (
+        <a
+          key={index}
+          href={`mailto:${part}`}
+          className="text-larioja-amarillo hover:underline font-medium"
+        >
+          {part}
+        </a>
+      ) : (
+        part
+      ),
+    );
+  };
+
   // Fallback services if CMS doesn't have them
   const displayServices =
     servicesItems.length > 0
@@ -288,7 +310,7 @@ export default async function Home() {
                     {contactCard.title}
                   </h4>
                   <p className="text-sm opacity-80 leading-relaxed mb-4">
-                    {contactCard.description}
+                    {renderDescription(contactCard.description)}
                   </p>
                   {contactCard.image_url && (
                     <div className="relative h-32 w-full rounded-xl overflow-hidden mb-4">
