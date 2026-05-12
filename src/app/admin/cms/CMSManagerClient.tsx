@@ -51,12 +51,11 @@ export default function CMSManagerClient({
     const pageCompare = (a.page || "").localeCompare(b.page || "");
     if (pageCompare !== 0) return pageCompare;
 
-    const sectionCompare = (a.section_key || "").localeCompare(
-      b.section_key || "",
-    );
-    if (sectionCompare !== 0) return sectionCompare;
+    // Priorizar content_order sobre section_key para que el usuario pueda organizar visualmente
+    const orderCompare = (a.content_order || 0) - (b.content_order || 0);
+    if (orderCompare !== 0) return orderCompare;
 
-    return (a.content_order || 0) - (b.content_order || 0);
+    return (a.section_key || "").localeCompare(b.section_key || "");
   });
 
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -208,15 +207,13 @@ export default function CMSManagerClient({
             Administra el contenido dinámico de la landing page y secciones.
           </Text>
         </div>
-        <Button
-          icon={Plus}
-          color="blue"
-          size="sm"
+        <button
           onClick={() => setIsCreateOpen(true)}
-          className="text-white !text-white hover:text-white"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition-all active:scale-95"
         >
+          <Plus size={18} />
           Nueva Sección
-        </Button>
+        </button>
       </div>
 
       <Card className="p-0 overflow-hidden shadow-xl border-gray-200 dark:border-gray-800">
