@@ -213,7 +213,7 @@ export default function CMSManagerClient({
           color="blue"
           size="sm"
           onClick={() => setIsCreateOpen(true)}
-          className="text-white"
+          className="text-white !text-white hover:text-white"
         >
           Nueva Sección
         </Button>
