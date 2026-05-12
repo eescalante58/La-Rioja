@@ -45,9 +45,10 @@ export async function submitContactForm(data: ContactData) {
     // 2. Send Email via Resend
     if (!process.env.RESEND_API_KEY) {
       console.warn("RESEND_API_KEY is not set. Email not sent.");
-      return { 
-        success: true, 
-        warning: "El mensaje se guardó pero no se pudo enviar el correo (falta configuración)." 
+      return {
+        success: true,
+        warning:
+          "El mensaje se guardó pero no se pudo enviar el correo (falta configuración).",
       };
     }
 
@@ -63,11 +64,11 @@ export async function submitContactForm(data: ContactData) {
           <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
           <p><strong>Nombre:</strong> ${data.name}</p>
           <p><strong>Email:</strong> ${data.email}</p>
-          <p><strong>Teléfono:</strong> ${data.phone || 'No proporcionado'}</p>
+          <p><strong>Teléfono:</strong> ${data.phone || "No proporcionado"}</p>
           <p><strong>Tipo de Consulta:</strong> ${data.type}</p>
           <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 10px;">
             <p><strong>Mensaje:</strong></p>
-            <p>${data.message.replace(/\n/g, '<br>')}</p>
+            <p>${data.message.replace(/\n/g, "<br>")}</p>
           </div>
           <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
           <p style="font-size: 12px; color: #888;">Este es un mensaje automático enviado desde el sitio web de La Rioja.</p>
@@ -77,12 +78,22 @@ export async function submitContactForm(data: ContactData) {
 
     if (mailError) {
       console.error("Mail Error:", mailError);
-      return { success: false, error: "Error al enviar el correo electrónico." };
+      return {
+        success: false,
+        error: "Error al enviar el correo electrónico.",
+      };
     }
 
     return { success: true };
-  } catch (error) {
-    console.error("Submission Error:", error);
-    return { success: false, error: "Ocurrió un error inesperado." };
+  } catch (error: any) {
+    console.error("Submission Error Details:", {
+      message: error.message,
+      stack: error.stack,
+      data: data,
+    });
+    return {
+      success: false,
+      error: `Error al procesar el envío: ${error.message || "Ocurrió un error inesperado."}`,
+    };
   }
 }
