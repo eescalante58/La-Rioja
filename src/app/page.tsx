@@ -178,7 +178,7 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div className="flex flex-wrap justify-center gap-8 items-stretch">
             {displayServices.map((service: any, i: number) => {
               const isFlip = service.metadata?.variant === "flip";
 
@@ -186,7 +186,7 @@ export default async function Home() {
                 return (
                   <div
                     key={service.id || i}
-                    className="group h-[450px] [perspective:1000px]"
+                    className="group h-[450px] [perspective:1000px] w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-[400px] flex-grow-0 flex-shrink-0"
                   >
                     <div className="relative h-full w-full rounded-3xl transition-all duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] shadow-xl">
                       {/* Front Side */}
@@ -243,7 +243,7 @@ export default async function Home() {
               return (
                 <div
                   key={service.id || i}
-                  className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group"
+                  className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-[400px] flex-grow-0 flex-shrink-0"
                 >
                   {service.image_url && (
                     <div className="relative h-52 w-full overflow-hidden bg-gray-50 dark:bg-gray-900/50">
