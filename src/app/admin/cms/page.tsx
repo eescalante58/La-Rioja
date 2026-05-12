@@ -18,6 +18,7 @@ export default async function CMSManager() {
     .from("site_content")
     .select("*")
     .order("page", { ascending: true })
+    .order("section_key", { ascending: true })
     .order("content_order", { ascending: true });
 
   if (error) {

@@ -426,17 +426,19 @@ export async function createCMSContent(formData: FormData) {
   const metadataStr = formData.get("metadata") as string;
   const file = formData.get("file") as File | null;
 
-  // Check uniqueness of section_key
+  // Check uniqueness of combination (page, section_key, content_order)
   const { data: existing } = await supabase
     .from("site_content")
     .select("id")
+    .eq("page", page)
     .eq("section_key", section_key)
-    .single();
+    .eq("content_order", content_order)
+    .maybeSingle();
 
   if (existing) {
     return {
       success: false,
-      error: `La clave de sección "${section_key}" ya existe.`,
+      error: `Ya existe un registro con la misma clave "${section_key}" y orden "${content_order}" en la página "${page}".`,
     };
   }
 
