@@ -101,6 +101,7 @@ export default async function AboutPage() {
   const mission = getSection("about_mission");
   const vision = getSection("about_vision");
   const values = getSection("about_values");
+  const background = getSection("about_background");
   const structure = getSection("about_structure");
   const timeline = getSection("about_timeline");
   const stats = getSection("about_stats");
@@ -276,6 +277,45 @@ export default async function AboutPage() {
           </div>
         </div>
       </section>
+
+      {/* Background Section (Dynamic) */}
+      {background && (
+        <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
+          <div className="container mx-auto px-6">
+            <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+              <ScrollReveal direction="left">
+                <div>
+                  <h2 className="text-4xl md:text-5xl font-bold mb-8 text-larioja-azul dark:text-white tracking-tight">
+                    <HighlightedTitle title={background.title} />
+                  </h2>
+                  <div
+                    className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        background.description?.replace(/\n/g, "<br/>") || "",
+                    }}
+                  />
+                </div>
+              </ScrollReveal>
+
+              {background.image_url && (
+                <ScrollReveal direction="right">
+                  <div className="relative group">
+                    <div className="aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 transition-transform duration-500 group-hover:scale-[1.02]">
+                      <Image
+                        src={background.image_url}
+                        alt={background.title}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    </div>
+                  </div>
+                </ScrollReveal>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Organizational Structure Section */}
       <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
