@@ -194,21 +194,43 @@ export default async function ProgramsPage() {
 
             <ScrollReveal direction="right">
               <div className="relative">
-                <div
-                  className={`aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 ${intro?.metadata?.image_animation === "popIn" ? "animate-pop-in" : ""}`}
-                >
-                  <Image
-                    src={
-                      intro?.image_url ||
-                      intro?.metadata?.image_url ||
-                      "https://images.unsplash.com/photo-1544928147-79a2dbc1f389?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                    }
-                    alt={intro?.title || "Estudiantes trabajando"}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="absolute -bottom-6 -left-6 bg-larioja-amarillo p-6 rounded-3xl shadow-xl hidden md:block">
+                {intro?.metadata?.image_style === "circle" ? (
+                  <div className="circle-effect-container">
+                    <div className="circle-decoration-blob blob-purple animate-pulse" />
+                    <div className="circle-decoration-blob blob-blue animate-pulse delay-700" />
+                    <div
+                      className={`circle-image-wrapper ${intro?.metadata?.image_animation === "popIn" ? "animate-pop-in" : ""}`}
+                    >
+                      <Image
+                        src={
+                          intro?.image_url ||
+                          intro?.metadata?.image_url ||
+                          "https://images.unsplash.com/photo-1544928147-79a2dbc1f389?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                        }
+                        alt={intro?.title || "Estudiantes trabajando"}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 ${intro?.metadata?.image_animation === "popIn" ? "animate-pop-in" : ""}`}
+                  >
+                    <Image
+                      src={
+                        intro?.image_url ||
+                        intro?.metadata?.image_url ||
+                        "https://images.unsplash.com/photo-1544928147-79a2dbc1f389?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                      }
+                      alt={intro?.title || "Estudiantes trabajando"}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+
+                <div className="absolute -bottom-6 -left-6 bg-larioja-amarillo p-6 rounded-3xl shadow-xl hidden md:block z-20">
                   <Star className="text-larioja-azul w-8 h-8 mb-2" />
                   <p className="text-larioja-azul font-bold text-sm leading-tight">
                     Excelencia en
