@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
-import DynamicYear from "@/components/layout/DynamicYear";
+import { Footer } from "@/components/layout/Footer";
 import {
   Accordion,
   AccordionContent,
@@ -156,16 +156,7 @@ export default async function FAQPage() {
         </div>
       </section>
 
-      {/* Simple Footer */}
-      <footer className="bg-larioja-azul text-white py-12">
-        <div className="container mx-auto px-6 text-center">
-          <p className="opacity-70 mb-4 font-bold">La Rioja</p>
-          <p className="opacity-50 text-sm">
-            &copy; <DynamicYear /> Centro de Formación Laboral La Rioja. Todos
-            los derechos reservados.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }

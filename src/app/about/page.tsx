@@ -1,6 +1,7 @@
 import React from "react";
 import { Metadata } from "next";
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { getPageContent } from "@/services/cms";
 import {
@@ -383,24 +384,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      {/* Footer minimalista */}
-      <footer className="py-12 border-t border-gray-100 dark:border-white/5 bg-white dark:bg-larioja-azul">
-        <div className="container mx-auto px-6 text-center">
-          <div className="mb-8">
-            <Image
-              src="/logo.png"
-              alt="La Rioja Logo"
-              width={180}
-              height={50}
-              className="mx-auto brightness-0 dark:invert opacity-50"
-            />
-          </div>
-          <p className="text-gray-400 text-sm">
-            © <DynamicYear /> Centro de Formación Laboral La Rioja. Formando
-            futuros, integrando vidas.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }
