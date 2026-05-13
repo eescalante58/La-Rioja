@@ -199,6 +199,7 @@ export default async function ProgramsPage() {
                 >
                   <Image
                     src={
+                      intro?.image_url ||
                       intro?.metadata?.image_url ||
                       "https://images.unsplash.com/photo-1544928147-79a2dbc1f389?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
                     }
