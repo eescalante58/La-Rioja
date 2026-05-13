@@ -194,7 +194,9 @@ export default async function ProgramsPage() {
 
             <ScrollReveal direction="right">
               <div className="relative">
-                <div className="aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800">
+                <div
+                  className={`aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 ${intro?.metadata?.image_animation === "popIn" ? "animate-pop-in" : ""}`}
+                >
                   <Image
                     src={
                       intro?.metadata?.image_url ||
