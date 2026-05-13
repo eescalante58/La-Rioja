@@ -89,6 +89,8 @@ export const metadata: Metadata = {
     "Conoce nuestra historia, misión, visión y el equipo profesional que hace posible la formación laboral de calidad en El Salvador.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AboutPage() {
   const content = await getPageContent("about");
 
@@ -158,10 +160,14 @@ export default async function AboutPage() {
                   <div className="w-16 h-16 bg-blue-100 dark:bg-blue-500/20 rounded-2xl flex items-center justify-center text-larioja-azul dark:text-larioja-amarillo mb-8">
                     <Target size={32} />
                   </div>
-                  <h2 className="text-3xl font-bold mb-6 text-larioja-azul dark:text-white">
+                  <h2
+                    className={`font-bold mb-6 ${mission?.metadata?.title_font_size || "text-3xl"} ${mission?.metadata?.title_font_color || "text-larioja-azul dark:text-white"}`}
+                  >
                     {mission?.title || "Nuestra Misión"}
                   </h2>
-                  <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
+                  <p
+                    className={`leading-relaxed ${mission?.metadata?.desc_font_size || "text-lg"} ${mission?.metadata?.desc_font_color || "text-gray-600 dark:text-white/70"}`}
+                  >
                     {mission?.description ||
                       "Proporcionar formación laboral especializada y de calidad a personas con discapacidad intelectual, desarrollando sus habilidades prácticas, autonomía e integración social para mejorar su calidad de vida y contribuir a su inclusión en la comunidad."}
                   </p>
@@ -189,10 +195,14 @@ export default async function AboutPage() {
                   <div className="w-16 h-16 bg-green-100 dark:bg-larioja-verde/20 rounded-2xl flex items-center justify-center text-larioja-verde mb-8">
                     <Eye size={32} />
                   </div>
-                  <h2 className="text-3xl font-bold mb-6 text-larioja-azul dark:text-white">
+                  <h2
+                    className={`font-bold mb-6 ${vision?.metadata?.title_font_size || "text-3xl"} ${vision?.metadata?.title_font_color || "text-larioja-azul dark:text-white"}`}
+                  >
                     {vision?.title || "Nuestra Visión"}
                   </h2>
-                  <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
+                  <p
+                    className={`leading-relaxed ${vision?.metadata?.desc_font_size || "text-lg"} ${vision?.metadata?.desc_font_color || "text-gray-600 dark:text-white/70"}`}
+                  >
                     {vision?.description ||
                       "Ser el centro de referencia en educación especializada e inclusión laboral, reconocido por la excelencia de nuestros programas y el éxito de nuestros egresados en el mercado laboral y en la vida cotidiana."}
                   </p>
