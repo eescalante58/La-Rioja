@@ -37,6 +37,7 @@ import { deleteCMSContent, createCMSContent } from "./actions";
 const CMS_PAGES = [
   { value: "home", label: "Home" },
   { value: "about", label: "About" },
+  { value: "programs", label: "Programs" },
   { value: "services", label: "Services (Cards)" },
   { value: "contact", label: "Contact" },
   { value: "global", label: "Global" },

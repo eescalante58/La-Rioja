@@ -81,6 +81,16 @@ export function Navbar() {
               Nosotros
             </Link>
             <Link
+              href="/programs"
+              className={`font-bold text-sm transition-all ${
+                isScrolled
+                  ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
+                  : "text-white hover:text-larioja-amarillo"
+              }`}
+            >
+              Programas
+            </Link>
+            <Link
               href="/faq"
               className={`font-bold text-sm transition-all ${
                 isScrolled
@@ -172,6 +182,13 @@ export function Navbar() {
                 className="text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-4 border-b border-white/10"
               >
                 Nosotros
+              </Link>
+              <Link
+                href="/programs"
+                onClick={() => setIsOpen(false)}
+                className="text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-4 border-b border-white/10"
+              >
+                Programas
               </Link>
               <Link
                 href="/faq"
