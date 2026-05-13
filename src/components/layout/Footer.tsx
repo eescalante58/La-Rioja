@@ -57,7 +57,8 @@ export async function Footer() {
     getPageContent("social media"),
   ]);
 
-  const contactCard = results[0].status === "fulfilled" ? results[0].value : null;
+  const contactCard =
+    results[0].status === "fulfilled" ? results[0].value : null;
   const socialLinks = results[1].status === "fulfilled" ? results[1].value : [];
 
   const getSocialLink = (key: string) => {
@@ -87,6 +88,12 @@ export async function Footer() {
                 className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
               >
                 Nosotros
+              </Link>
+              <Link
+                href="/programs"
+                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
+              >
+                Programas
               </Link>
               <Link
                 href="/faq"
