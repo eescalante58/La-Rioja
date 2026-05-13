@@ -106,6 +106,25 @@ export default async function AboutPage() {
   const team = getSection("about_team");
   const cta = getSection("about_cta");
 
+  // Helper to extract style from array metadata
+  const getStyleFromMetadata = (metadata: any) => {
+    if (!Array.isArray(metadata)) return metadata || {};
+    return (
+      metadata.find(
+        (item: any) =>
+          item.desc_font_size ||
+          item.title_font_size ||
+          item.desc_font_color ||
+          item.title_font_color,
+      ) || {}
+    );
+  };
+
+  const valuesStyle = getStyleFromMetadata(values?.metadata);
+  const valuesItems = Array.isArray(values?.metadata)
+    ? values.metadata.filter((item: any) => item.title)
+    : [];
+
   return (
     <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden font-montserrat">
       <Navbar />
@@ -218,13 +237,17 @@ export default async function AboutPage() {
         <div className="container mx-auto px-6">
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
+              <h2
+                className={`font-bold mb-6 tracking-tight ${valuesStyle?.title_font_size || "text-4xl md:text-5xl"} ${valuesStyle?.title_font_color || "text-larioja-azul dark:text-white"}`}
+              >
                 <HighlightedTitle
                   title={values?.title || "Nuestros Valores"}
                   highlightColor="text-larioja-verde"
                 />
               </h2>
-              <p className="text-lg text-gray-500 dark:text-white/60">
+              <p
+                className={`text-gray-500 dark:text-white/60 ${valuesStyle?.desc_font_size || "text-lg"} ${valuesStyle?.desc_font_color || ""}`}
+              >
                 {values?.description ||
                   "Principios que guían todas nuestras acciones y decisiones para brindar el mejor acompañamiento a nuestros estudiantes."}
               </p>
@@ -232,25 +255,23 @@ export default async function AboutPage() {
           </ScrollReveal>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {(Array.isArray(values?.metadata) ? values.metadata : []).map(
-              (value: any, idx: number) => (
-                <ScrollReveal key={value.title} delay={idx * 100}>
-                  <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all duration-300 group h-full">
-                    <div
-                      className={`w-14 h-14 ${value.bg} rounded-2xl flex items-center justify-center ${value.color} mb-6 group-hover:scale-110 transition-transform duration-300`}
-                    >
-                      <DynamicIcon name={value.icon} size={28} />
-                    </div>
-                    <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white">
-                      {value.title}
-                    </h3>
-                    <p className="text-gray-500 dark:text-white/60 leading-relaxed text-sm">
-                      {value.desc}
-                    </p>
+            {valuesItems.map((value: any, idx: number) => (
+              <ScrollReveal key={value.title} delay={idx * 100}>
+                <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all duration-300 group h-full">
+                  <div
+                    className={`w-14 h-14 ${value.bg} rounded-2xl flex items-center justify-center ${value.color} mb-6 group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <DynamicIcon name={value.icon} size={28} />
                   </div>
-                </ScrollReveal>
-              ),
-            )}
+                  <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white">
+                    {value.title}
+                  </h3>
+                  <p className="text-gray-500 dark:text-white/60 leading-relaxed text-sm">
+                    {value.desc}
+                  </p>
+                </div>
+              </ScrollReveal>
+            ))}
           </div>
         </div>
       </section>
