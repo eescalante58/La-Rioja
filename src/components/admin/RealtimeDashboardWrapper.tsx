@@ -33,6 +33,7 @@ import {
   X,
   DollarSign,
   User,
+  MessageSquare,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -193,11 +194,28 @@ export default function RealtimeDashboardWrapper({
       )
       .subscribe();
 
+    // 5. Subscribe to changes in contact_submissions table
+    const contactChannel = supabase
+      .channel("realtime_dashboard_contacts")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "contact_submissions",
+        },
+        () => {
+          refreshData();
+        },
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
       supabase.removeChannel(cmsChannel);
       supabase.removeChannel(customersChannel);
       supabase.removeChannel(eventsChannel);
+      supabase.removeChannel(contactChannel);
     };
   }, []);
 
@@ -466,31 +484,41 @@ export default function RealtimeDashboardWrapper({
               Últimas interacciones registradas.
             </Text>
             <div className="mt-6 space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Flex
-                  key={i}
-                  className="p-4 rounded-xl bg-gray-50 dark:bg-slate-900/20 border border-gray-100 dark:border-gray-800/50 hover:border-gray-200 dark:hover:border-gray-700 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                    <div>
-                      <Text className="font-semibold text-gray-900 dark:text-slate-200">
-                        Registro actualizado
-                      </Text>
-                      <Text className="text-xs dark:text-slate-500">
-                        Sistema
-                      </Text>
-                    </div>
-                  </div>
-                  <Badge
-                    color="emerald"
-                    size="xs"
-                    className="dark:bg-emerald-500/10 dark:text-emerald-400 border-none"
+              {data.recentContacts?.length > 0 ? (
+                data.recentContacts.map((contact: any) => (
+                  <Flex
+                    key={contact.id}
+                    className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/50 hover:border-blue-200 dark:hover:border-blue-700 transition-colors"
                   >
-                    Reciente
-                  </Badge>
-                </Flex>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400">
+                        <MessageSquare size={16} />
+                      </div>
+                      <div>
+                        <Text className="font-semibold text-gray-900 dark:text-slate-200">
+                          Nuevo mensaje: {contact.name}
+                        </Text>
+                        <Text className="text-xs dark:text-slate-500">
+                          {new Date(contact.created_at).toLocaleString()}
+                        </Text>
+                      </div>
+                    </div>
+                    <Badge
+                      color="blue"
+                      size="xs"
+                      className="dark:bg-blue-500/10 dark:text-blue-400 border-none"
+                    >
+                      Web
+                    </Badge>
+                  </Flex>
+                ))
+              ) : (
+                <div className="py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl">
+                  <Text className="italic text-gray-400">
+                    No hay mensajes de contacto recientes.
+                  </Text>
+                </div>
+              )}
             </div>
           </Card>
 
