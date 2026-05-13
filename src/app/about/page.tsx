@@ -2,6 +2,7 @@ import React from "react";
 import { Metadata } from "next";
 import { Navbar } from "@/components/layout/Navbar";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
+import { getPageContent } from "@/services/cms";
 import {
   Target,
   Eye,
@@ -23,13 +24,69 @@ import Image from "next/image";
 import Link from "next/link";
 import DynamicYear from "@/components/layout/DynamicYear";
 
+// Mapping of icon names to components for CMS
+const IconMap: Record<string, any> = {
+  Target,
+  Eye,
+  Heart,
+  Lightbulb,
+  Users,
+  Star,
+  Award,
+  Briefcase,
+  GraduationCap,
+  Calendar,
+  CheckCircle2,
+  TrendingUp,
+  ShieldCheck,
+  Rocket,
+  User,
+};
+
+/**
+ * Helper to split title and highlight the last word
+ */
+function HighlightedTitle({
+  title,
+  highlightColor = "text-larioja-amarillo",
+}: {
+  title: string;
+  highlightColor?: string;
+}) {
+  const words = title.split(" ");
+  if (words.length <= 1) return <span>{title}</span>;
+
+  const lastWord = words.pop();
+  const mainText = words.join(" ");
+
+  return (
+    <>
+      {mainText} <span className={highlightColor}>{lastWord}</span>
+    </>
+  );
+}
+
 export const metadata: Metadata = {
   title: "Nosotros - La Rioja",
   description:
     "Conoce nuestra historia, misión, visión y el equipo profesional que hace posible la formación laboral de calidad en El Salvador.",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const content = await getPageContent("about");
+
+  const getSection = (key: string) =>
+    content.find((s) => s.section_key === key);
+
+  const hero = getSection("about_hero");
+  const mission = getSection("about_mission");
+  const vision = getSection("about_vision");
+  const values = getSection("about_values");
+  const timeline = getSection("about_timeline");
+  const stats = getSection("about_stats");
+  const team = getSection("about_team");
+  const cta = getSection("about_cta");
+
   return (
     <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden font-montserrat">
       <Navbar />
@@ -46,16 +103,14 @@ export default function AboutPage() {
           <ScrollReveal>
             <div className="max-w-3xl mx-auto text-center">
               <span className="inline-block py-1 px-3 rounded-full bg-larioja-amarillo/20 text-larioja-amarillo text-xs font-bold uppercase tracking-widest mb-4">
-                Trayectoria y Compromiso
+                {hero?.metadata?.badge || "Trayectoria y Compromiso"}
               </span>
               <h1 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight">
-                Nuestra <span className="text-larioja-amarillo">Historia</span>
+                <HighlightedTitle title={hero?.title || "Nuestra Historia"} />
               </h1>
               <p className="text-xl md:text-2xl text-white/80 leading-relaxed font-light">
-                Desde 2009, CFL La Rioja ha sido pionera en educación
-                especializada para personas con discapacidad intelectual en El
-                Salvador, transformando vidas a través de formación laboral de
-                calidad.
+                {hero?.description ||
+                  "Desde 2009, CFL La Rioja ha sido pionera en educación especializada para personas con discapacidad intelectual en El Salvador, transformando vidas a través de formación laboral de calidad."}
               </p>
             </div>
           </ScrollReveal>
@@ -75,14 +130,11 @@ export default function AboutPage() {
                   <Target size={32} />
                 </div>
                 <h2 className="text-3xl font-bold mb-6 text-larioja-azul dark:text-white">
-                  Nuestra Misión
+                  {mission?.title || "Nuestra Misión"}
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
-                  Proporcionar formación laboral especializada y de calidad a
-                  personas con discapacidad intelectual, desarrollando sus
-                  habilidades prácticas, autonomía e integración social para
-                  mejorar su calidad de vida y contribuir a su inclusión en la
-                  comunidad.
+                  {mission?.description ||
+                    "Proporcionar formación laboral especializada y de calidad a personas con discapacidad intelectual, desarrollando sus habilidades prácticas, autonomía e integración social para mejorar su calidad de vida y contribuir a su inclusión en la comunidad."}
                 </p>
               </div>
             </ScrollReveal>
@@ -96,13 +148,11 @@ export default function AboutPage() {
                   <Eye size={32} />
                 </div>
                 <h2 className="text-3xl font-bold mb-6 text-larioja-azul dark:text-white">
-                  Nuestra Visión
+                  {vision?.title || "Nuestra Visión"}
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
-                  Ser el centro de referencia en educación especializada e
-                  inclusión laboral, reconocido por la excelencia de nuestros
-                  programas y el éxito de nuestros egresados en el mercado
-                  laboral y en la vida cotidiana.
+                  {vision?.description ||
+                    "Ser el centro de referencia en educación especializada e inclusión laboral, reconocido por la excelencia de nuestros programas y el éxito de nuestros egresados en el mercado laboral y en la vida cotidiana."}
                 </p>
               </div>
             </ScrollReveal>
@@ -116,62 +166,38 @@ export default function AboutPage() {
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
-                Nuestros <span className="text-larioja-verde">Valores</span>
+                <HighlightedTitle
+                  title={values?.title || "Nuestros Valores"}
+                  highlightColor="text-larioja-verde"
+                />
               </h2>
               <p className="text-lg text-gray-500 dark:text-white/60">
-                Principios que guían todas nuestras acciones y decisiones para
-                brindar el mejor acompañamiento a nuestros estudiantes.
+                {values?.description ||
+                  "Principios que guían todas nuestras acciones y decisiones para brindar el mejor acompañamiento a nuestros estudiantes."}
               </p>
             </div>
           </ScrollReveal>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {[
-              {
-                title: "Compromiso",
-                desc: "Dedicación total al desarrollo integral de nuestros estudiantes.",
-                icon: Heart,
-                color: "text-rose-500",
-                bg: "bg-rose-50 dark:bg-rose-500/10",
-              },
-              {
-                title: "Innovación",
-                desc: "Metodologías actualizadas en educación especializada.",
-                icon: Lightbulb,
-                color: "text-larioja-amarillo",
-                bg: "bg-yellow-50 dark:bg-larioja-amarillo/10",
-              },
-              {
-                title: "Inclusión",
-                desc: "Promoviendo la participación activa en la sociedad.",
-                icon: Users,
-                color: "text-blue-500",
-                bg: "bg-blue-50 dark:bg-blue-500/10",
-              },
-              {
-                title: "Calidad",
-                desc: "Excelencia en todos nuestros programas y servicios.",
-                icon: ShieldCheck,
-                color: "text-larioja-verde",
-                bg: "bg-green-50 dark:bg-larioja-verde/10",
-              },
-            ].map((value, idx) => (
-              <ScrollReveal key={value.title} delay={idx * 100}>
-                <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all duration-300 group h-full">
-                  <div
-                    className={`w-14 h-14 ${value.bg} rounded-2xl flex items-center justify-center ${value.color} mb-6 group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <value.icon size={28} />
+            {(Array.isArray(values?.metadata) ? values.metadata : []).map(
+              (value: any, idx: number) => (
+                <ScrollReveal key={value.title} delay={idx * 100}>
+                  <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all duration-300 group h-full">
+                    <div
+                      className={`w-14 h-14 ${value.bg} rounded-2xl flex items-center justify-center ${value.color} mb-6 group-hover:scale-110 transition-transform duration-300`}
+                    >
+                      <DynamicIcon name={value.icon} size={28} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white">
+                      {value.title}
+                    </h3>
+                    <p className="text-gray-500 dark:text-white/60 leading-relaxed text-sm">
+                      {value.desc}
+                    </p>
                   </div>
-                  <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white">
-                    {value.title}
-                  </h3>
-                  <p className="text-gray-500 dark:text-white/60 leading-relaxed text-sm">
-                    {value.desc}
-                  </p>
-                </div>
-              </ScrollReveal>
-            ))}
+                </ScrollReveal>
+              ),
+            )}
           </div>
         </div>
       </section>
@@ -183,30 +209,15 @@ export default function AboutPage() {
             <ScrollReveal direction="left">
               <div>
                 <h2 className="text-4xl md:text-5xl font-bold mb-8 text-larioja-azul dark:text-white tracking-tight">
-                  Nuestro{" "}
-                  <span className="text-larioja-amarillo">Recorrido</span>
+                  <HighlightedTitle
+                    title={timeline?.title || "Nuestro Recorrido"}
+                  />
                 </h2>
                 <div className="space-y-8 relative before:absolute before:inset-0 before:left-3 before:w-0.5 before:bg-gray-200 dark:before:bg-white/10 before:h-full pb-4">
-                  {[
-                    { year: "2009", event: "Fundación de CFL La Rioja" },
-                    { year: "2012", event: "Apertura del Taller de Panadería" },
-                    {
-                      year: "2015",
-                      event: "Expansión de Talleres Vocacionales",
-                    },
-                    {
-                      year: "2018",
-                      event: "Reconocimiento como Centro de Excelencia",
-                    },
-                    {
-                      year: "2021",
-                      event: "Alianza con Ministerio de Educación",
-                    },
-                    {
-                      year: "2024",
-                      event: "Ampliación de Instalaciones y Programas",
-                    },
-                  ].map((item, idx) => (
+                  {(Array.isArray(timeline?.metadata?.items)
+                    ? timeline.metadata.items
+                    : []
+                  ).map((item: any, idx: number) => (
                     <div key={idx} className="relative pl-10 group">
                       <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-white dark:bg-larioja-azul border-4 border-larioja-azul dark:border-larioja-amarillo group-hover:scale-125 transition-transform duration-300 z-10" />
                       <span className="text-xs font-bold text-larioja-verde mb-1 block uppercase tracking-wider">
@@ -222,24 +233,28 @@ export default function AboutPage() {
             </ScrollReveal>
 
             <ScrollReveal direction="right">
-              <div className="relative">
-                <div className="aspect-square relative rounded-3xl overflow-hidden shadow-2xl">
-                  <div className="absolute inset-0 bg-larioja-azul/20 z-10" />
+              <div className="relative group">
+                <div className="aspect-[4/5] md:aspect-square relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 transition-transform duration-500 group-hover:scale-[1.02]">
                   <Image
-                    src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                    alt="Estudiantes en taller"
+                    src={
+                      timeline?.image_url ||
+                      "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                    }
+                    alt={timeline?.title || "Nuestro Recorrido"}
                     fill
-                    className="object-cover transition-transform duration-700 hover:scale-110"
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    sizes="(max-width: 768px) 100vw, 50vw"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-larioja-azul/40 via-transparent to-transparent opacity-60 z-10" />
                 </div>
                 {/* Decorative floating badge */}
-                <div className="absolute -bottom-8 -right-8 bg-white dark:bg-larioja-azul p-8 rounded-3xl shadow-2xl z-20 border border-gray-100 dark:border-white/5 animate-bounce-slow">
+                <div className="absolute -bottom-6 -right-6 bg-white dark:bg-larioja-azul p-6 md:p-8 rounded-3xl shadow-2xl z-20 border border-gray-100 dark:border-white/5 animate-bounce-slow">
                   <div className="text-center">
-                    <span className="text-4xl font-black text-larioja-azul dark:text-larioja-amarillo block">
-                      16+
+                    <span className="text-4xl md:text-5xl font-black text-larioja-azul dark:text-larioja-amarillo block">
+                      {timeline?.metadata?.badge_value || "16+"}
                     </span>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                      Años de Historia
+                    <span className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">
+                      {timeline?.metadata?.badge_text || "Años de Historia"}
                     </span>
                   </div>
                 </div>
@@ -253,60 +268,25 @@ export default function AboutPage() {
       <section className="py-24 bg-white dark:bg-larioja-azul">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 max-w-7xl mx-auto">
-            {[
-              {
-                label: "Egresados",
-                val: "500+",
-                icon: GraduationCap,
-                color: "text-blue-500",
-              },
-              {
-                label: "Retención",
-                val: "95%",
-                icon: TrendingUp,
-                color: "text-emerald-500",
-              },
-              {
-                label: "Alianzas",
-                val: "15+",
-                icon: Briefcase,
-                color: "text-larioja-amarillo",
-              },
-              {
-                label: "Aval MINED",
-                val: "100%",
-                icon: Award,
-                color: "text-purple-500",
-              },
-              {
-                label: "Estudiantes",
-                val: "63",
-                icon: Users,
-                color: "text-larioja-verde",
-              },
-              {
-                label: "Profesionales",
-                val: "20",
-                icon: Star,
-                color: "text-orange-500",
-              },
-            ].map((stat, idx) => (
-              <ScrollReveal key={stat.label} delay={idx * 50}>
-                <div className="text-center group">
-                  <div
-                    className={`w-12 h-12 mx-auto mb-4 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <stat.icon size={32} />
+            {(Array.isArray(stats?.metadata) ? stats.metadata : []).map(
+              (stat: any, idx: number) => (
+                <ScrollReveal key={stat.label} delay={idx * 50}>
+                  <div className="text-center group">
+                    <div
+                      className={`w-12 h-12 mx-auto mb-4 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-300`}
+                    >
+                      <DynamicIcon name={stat.icon} size={32} />
+                    </div>
+                    <div className="text-3xl font-black text-larioja-azul dark:text-white mb-1">
+                      {stat.val}
+                    </div>
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                      {stat.label}
+                    </div>
                   </div>
-                  <div className="text-3xl font-black text-larioja-azul dark:text-white mb-1">
-                    {stat.val}
-                  </div>
-                  <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                    {stat.label}
-                  </div>
-                </div>
-              </ScrollReveal>
-            ))}
+                </ScrollReveal>
+              ),
+            )}
           </div>
         </div>
       </section>
@@ -317,56 +297,39 @@ export default function AboutPage() {
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
-                Nuestro Equipo{" "}
-                <span className="text-larioja-verde">Profesional</span>
+                <HighlightedTitle
+                  title={team?.title || "Nuestro Equipo Profesional"}
+                  highlightColor="text-larioja-verde"
+                />
               </h2>
               <p className="text-lg text-gray-500 dark:text-white/60">
-                20 profesionales apasionados y dedicados a la excelencia
-                educativa y el desarrollo integral.
+                {team?.description ||
+                  "20 profesionales apasionados y dedicados a la excelencia educativa y el desarrollo integral."}
               </p>
             </div>
           </ScrollReveal>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {[
-              {
-                role: "Directora",
-                desc: "Liderazgo general y visión estratégica.",
-                spec: "Educación Especial",
-              },
-              {
-                role: "Directora Académica",
-                desc: "Coordinación de programas educativos.",
-                spec: "Magíster en Educación",
-              },
-              {
-                role: "Coordinador de Talleres",
-                desc: "Supervisión de capacitación práctica.",
-                spec: "Formación Vocacional",
-              },
-              {
-                role: "Psicólogo/a",
-                desc: "Acompañamiento emocional y social.",
-                spec: "Psicología Clínica",
-              },
-            ].map((member, idx) => (
-              <ScrollReveal key={member.role} delay={idx * 100}>
-                <div className="bg-white dark:bg-larioja-azul p-8 rounded-3xl border border-gray-100 dark:border-white/5 shadow-xl shadow-blue-900/5 hover:-translate-y-2 transition-all duration-300 group text-center">
-                  <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center text-gray-400 overflow-hidden relative border-4 border-gray-50 dark:border-slate-800">
-                    <User size={48} />
+            {(Array.isArray(team?.metadata) ? team.metadata : []).map(
+              (member: any, idx: number) => (
+                <ScrollReveal key={member.role} delay={idx * 100}>
+                  <div className="bg-white dark:bg-larioja-azul p-8 rounded-3xl border border-gray-100 dark:border-white/5 shadow-xl shadow-blue-900/5 hover:-translate-y-2 transition-all duration-300 group text-center">
+                    <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center text-gray-400 overflow-hidden relative border-4 border-gray-50 dark:border-slate-800">
+                      <User size={48} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2 text-larioja-azul dark:text-white">
+                      {member.role}
+                    </h3>
+                    <Badge className="mb-4 bg-larioja-verde/10 text-larioja-verde border-none">
+                      {member.spec}
+                    </Badge>
+                    <p className="text-gray-500 dark:text-white/60 text-sm">
+                      {member.desc}
+                    </p>
                   </div>
-                  <h3 className="text-xl font-bold mb-2 text-larioja-azul dark:text-white">
-                    {member.role}
-                  </h3>
-                  <Badge className="mb-4 bg-larioja-verde/10 text-larioja-verde border-none">
-                    {member.spec}
-                  </Badge>
-                  <p className="text-gray-500 dark:text-white/60 text-sm">
-                    {member.desc}
-                  </p>
-                </div>
-              </ScrollReveal>
-            ))}
+                </ScrollReveal>
+              ),
+            )}
           </div>
         </div>
       </section>
@@ -382,17 +345,17 @@ export default function AboutPage() {
 
               <div className="relative z-10">
                 <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white tracking-tight">
-                  ¿Listo para ser parte de nuestra comunidad?
+                  {cta?.title || "¿Listo para ser parte de nuestra comunidad?"}
                 </h2>
                 <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-                  Conoce nuestros programas vocacionales y descubre cómo podemos
-                  apoyar el desarrollo integral de tus seres queridos.
+                  {cta?.description ||
+                    "Conoce nuestros programas vocacionales y descubre cómo podemos apoyar el desarrollo integral de tus seres queridos."}
                 </p>
                 <Link
-                  href="/bingo"
+                  href={cta?.metadata?.button_link || "/bingo"}
                   className="inline-flex items-center gap-2 bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-4 px-12 rounded-full transition-all hover:scale-105 active:scale-95 shadow-2xl text-lg group"
                 >
-                  Ver Programas
+                  {cta?.metadata?.button_text || "Ver Programas"}
                   <Rocket
                     size={20}
                     className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
@@ -425,7 +388,6 @@ export default function AboutPage() {
     </main>
   );
 }
-
 function Badge({
   children,
   className = "",
