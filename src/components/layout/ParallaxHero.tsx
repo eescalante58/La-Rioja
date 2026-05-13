@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ContactTrigger } from "./ContactTrigger";
+import { Mail } from "lucide-react";
 
 interface ParallaxHeroProps {
   heroContent: any;
@@ -26,13 +28,13 @@ export function ParallaxHero({ heroContent }: ParallaxHeroProps) {
   return (
     <section className="relative min-h-[90vh] md:min-h-screen flex items-center justify-center text-white bg-larioja-azul overflow-hidden pt-32 pb-20 md:pt-40">
       {/* Dynamic Background Overlay */}
-      <div 
-        className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-larioja-azul/40 z-10" 
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-larioja-azul/40 z-10"
         style={{ opacity: 1 - scrollY / 1000 }}
       />
-      
+
       <div className="container mx-auto px-4 sm:px-6 relative z-20 text-center max-w-5xl mt-12 md:mt-0">
-        <h1 
+        <h1
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 animate-fade-in tracking-tight leading-[1.1] drop-shadow-sm text-larioja-amarillo"
           style={{ transform: `translateY(${scrollY * 0.2}px)` }}
         >
@@ -40,11 +42,11 @@ export function ParallaxHero({ heroContent }: ParallaxHeroProps) {
         </h1>
 
         {heroContent?.image_url && (
-          <div 
+          <div
             className="relative w-full max-w-2xl mx-auto h-48 sm:h-64 md:h-80 lg:h-96 mb-8 rounded-3xl overflow-hidden shadow-2xl animate-fade-in"
-            style={{ 
+            style={{
               transform: `translateY(${scrollY * 0.1}px) scale(${1 + scrollY * 0.0002})`,
-              filter: `blur(${scrollY * 0.01}px)`
+              filter: `blur(${scrollY * 0.01}px)`,
             }}
           >
             <Image
@@ -57,15 +59,15 @@ export function ParallaxHero({ heroContent }: ParallaxHeroProps) {
           </div>
         )}
 
-        <p 
+        <p
           className="text-base sm:text-lg md:text-xl lg:text-2xl mb-10 sm:mb-12 max-w-3xl mx-auto font-light leading-relaxed opacity-90 px-4"
           style={{ transform: `translateY(${scrollY * 0.15}px)` }}
         >
           {heroContent?.description ||
             "Entidad de formación laboral para personas con discapacidad intelectual."}
         </p>
-        
-        <div 
+
+        <div
           className="flex justify-center gap-4"
           style={{ transform: `translateY(${scrollY * 0.12}px)` }}
         >
@@ -75,17 +77,33 @@ export function ParallaxHero({ heroContent }: ParallaxHeroProps) {
           >
             Jugar Bingo
           </Link>
+
+          <ContactTrigger>
+            {(openModal) => (
+              <button
+                onClick={openModal}
+                className="bg-larioja-verde hover:bg-larioja-verde/90 text-white font-bold py-2.5 px-6 sm:py-3 sm:px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl shadow-larioja-verde/20 text-sm sm:text-base flex items-center gap-2"
+              >
+                <Mail size={18} />
+                Contáctanos
+              </button>
+            )}
+          </ContactTrigger>
         </div>
       </div>
 
       {/* Parallax Decorative Elements */}
-      <div 
-        className="absolute -bottom-12 -left-12 sm:-bottom-24 sm:-left-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-verde/30 rounded-full blur-2xl sm:blur-3xl z-0" 
-        style={{ transform: `translate(${scrollY * -0.1}px, ${scrollY * 0.1}px)` }}
+      <div
+        className="absolute -bottom-12 -left-12 sm:-bottom-24 sm:-left-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-verde/30 rounded-full blur-2xl sm:blur-3xl z-0"
+        style={{
+          transform: `translate(${scrollY * -0.1}px, ${scrollY * 0.1}px)`,
+        }}
       />
-      <div 
-        className="absolute -top-12 -right-12 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-amarillo/20 rounded-full blur-2xl sm:blur-3xl z-0" 
-        style={{ transform: `translate(${scrollY * 0.1}px, ${scrollY * -0.1}px)` }}
+      <div
+        className="absolute -top-12 -right-12 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-amarillo/20 rounded-full blur-2xl sm:blur-3xl z-0"
+        style={{
+          transform: `translate(${scrollY * 0.1}px, ${scrollY * -0.1}px)`,
+        }}
       />
     </section>
   );

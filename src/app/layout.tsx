@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { SessionManager } from "@/components/auth/SessionManager";
+import { FloatingContact } from "@/components/layout/FloatingContact";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -100,6 +101,7 @@ export default function RootLayout({
         >
           <SessionManager />
           {children}
+          <FloatingContact />
         </ThemeProvider>
       </body>
     </html>
