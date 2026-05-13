@@ -74,7 +74,7 @@
   aspect-ratio: 1/1;
   border-radius: 9999px;
   overflow: hidden;
-  border: 12px solid #33ccff; /* Color celeste brillante como en la imagen */
+  border: 12px solid #1e9922; /* Verde La Rioja */
   box-shadow:
     0 20px 25px -5px rgb(0 0 0 / 0.1),
     0 8px 10px -6px rgb(0 0 0 / 0.1);
@@ -91,7 +91,8 @@
 .blob-purple {
   width: 100px;
   height: 100px;
-  background-color: #a855f7;
+  background-color: #1e9922; /* Verde La Rioja */
+  opacity: 0.6;
   top: 20%;
   left: -40px;
 }
@@ -99,7 +100,8 @@
 .blob-blue {
   width: 120px;
   height: 120px;
-  background-color: #38bdf8;
+  background-color: #ffff00; /* Amarillo La Rioja */
+  opacity: 0.4;
   bottom: 10%;
   right: -50px;
 }
