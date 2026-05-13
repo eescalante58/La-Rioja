@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Mail } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { ContactTrigger } from "./ContactTrigger";
 
 /**
  * Mobile navigation component with hamburger menu.
@@ -109,6 +110,23 @@ export function Navbar() {
             >
               Panel de Control
             </Link>
+
+            <ContactTrigger>
+              {(openModal) => (
+                <button
+                  onClick={openModal}
+                  className={`flex items-center gap-2 font-bold py-2 px-6 rounded-full text-xs transition-all ${
+                    isScrolled
+                      ? "bg-larioja-verde text-white hover:bg-larioja-verde/90"
+                      : "bg-white text-larioja-azul hover:bg-larioja-amarillo hover:text-larioja-azul"
+                  }`}
+                >
+                  <Mail size={14} />
+                  Contacto
+                </button>
+              )}
+            </ContactTrigger>
+
             <div className="">
               <ThemeToggle />
             </div>
@@ -172,10 +190,25 @@ export function Navbar() {
               <Link
                 href="/admin"
                 onClick={() => setIsOpen(false)}
-                className="text-3xl font-bold text-larioja-amarillo hover:text-white transition-colors py-4"
+                className="text-3xl font-bold text-larioja-amarillo hover:text-white transition-colors py-4 border-b border-white/10"
               >
                 Panel de Control
               </Link>
+
+              <ContactTrigger>
+                {(openModal) => (
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      openModal();
+                    }}
+                    className="text-3xl font-bold text-larioja-verde hover:text-white transition-colors py-4 flex items-center justify-center gap-3"
+                  >
+                    <Mail size={28} />
+                    Contacto
+                  </button>
+                )}
+              </ContactTrigger>
             </div>
 
             <div className="mt-auto pb-12 text-center text-white/40 text-sm italic">
