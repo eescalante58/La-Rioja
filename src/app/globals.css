@@ -39,3 +39,24 @@
     rgba(255, 255, 0, 0.1) 100%
   );
 }
+
+/* Custom Animations */
+.animate-pop-in {
+  animation: popIn 0.6s ease forwards;
+  opacity: 0;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
