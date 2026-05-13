@@ -44,6 +44,22 @@ const IconMap: Record<string, any> = {
 };
 
 /**
+ * Helper to render dynamic icons from CMS
+ */
+function DynamicIcon({
+  name,
+  className = "w-8 h-8",
+  size = 28,
+}: {
+  name: string;
+  className?: string;
+  size?: number;
+}) {
+  const IconComponent = IconMap[name] || Star; // Fallback to Star
+  return <IconComponent className={className} size={size} />;
+}
+
+/**
  * Helper to split title and highlight the last word
  */
 function HighlightedTitle({
