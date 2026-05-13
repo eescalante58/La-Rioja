@@ -19,9 +19,10 @@ interface ContactData {
 export async function submitContactForm(data: ContactData) {
   try {
     const apiKey = process.env.RESEND_API_KEY;
+    // Vercel y Supabase suelen usar SUPABASE_SERVICE_ROLE_KEY sin el prefijo NEXT_PUBLIC en el servidor
     const serviceRoleKey =
-      process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.SUPABASE_SERVICE_ROLE_KEY;
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
 
     if (!apiKey) {
       console.error("DEBUG: RESEND_API_KEY no encontrada en process.env");
@@ -34,10 +35,16 @@ export async function submitContactForm(data: ContactData) {
 
     const resend = new Resend(apiKey);
 
-    // Usar Service Role Key para asegurar el guardado ignorando RLS si es necesario
-    const supabase = serviceRoleKey
-      ? createClient(serviceRoleKey) // createClient usa la public key por defecto, pero vamos a forzar el bypass si podemos
-      : createClient();
+    // Si hay serviceRoleKey, la usamos para bypass de RLS
+    if (serviceRoleKey) {
+      console.log("DEBUG: Usando Service Role Key para guardar el mensaje.");
+    } else {
+      console.warn(
+        "DEBUG: No se encontró Service Role Key. Se usará la clave pública (sujeta a RLS).",
+      );
+    }
+
+    const supabase = createClient(serviceRoleKey);
 
     // 1. Save to Supabase (Ecosystem Option B)
     const { error: dbError } = await supabase
