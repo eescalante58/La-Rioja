@@ -104,7 +104,18 @@ export async function getDashboardData() {
       .select("*", { count: "exact", head: true })
       .eq("company_id", companyId);
 
-    // 6. Calculate sales by year from all events
+    // 6. Fetch recent contact submissions
+    const { data: recentContacts, error: contactError } = await supabase
+      .from("contact_submissions")
+      .select("id, name, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (contactError) {
+      console.error("Error fetching recent contact submissions:", contactError);
+    }
+
+    // 7. Calculate sales by year from all events
     const { data: allEvents, error: allEventsError } = await supabase
       .from("events")
       .select("event_date, total_amount_solded, event_id, is_active, status")
@@ -157,6 +168,7 @@ export async function getDashboardData() {
         cmsCount: cmsCount || 0,
         customersCount: customersCount || 0,
       },
+      recentContacts: recentContacts || [],
     };
   } catch (error: any) {
     console.error("Unexpected error in getDashboardData:", error);
