@@ -15,10 +15,85 @@ import {
   ArrowRight,
   CheckCircle2,
   Star,
+  Target,
+  Eye,
+  Lightbulb,
+  Award,
+  GraduationCap,
+  Calendar,
+  TrendingUp,
+  ShieldCheck,
+  Rocket,
+  User,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ProgramCTA } from "@/components/programs/ProgramCTA";
+import { getPageContent } from "@/services/cms";
+
+// Mapping of icon names to components for CMS
+const IconMap: Record<string, any> = {
+  Briefcase,
+  Home,
+  Users,
+  BookOpen,
+  Utensils,
+  Palette,
+  Heart,
+  Smile,
+  Target,
+  Eye,
+  Lightbulb,
+  Award,
+  GraduationCap,
+  Calendar,
+  CheckCircle2,
+  TrendingUp,
+  ShieldCheck,
+  Rocket,
+  User,
+  Star,
+};
+
+/**
+ * Helper to render dynamic icons from CMS
+ */
+function DynamicIcon({
+  name,
+  className = "w-8 h-8",
+  size = 28,
+}: {
+  name: string;
+  className?: string;
+  size?: number;
+}) {
+  const IconComponent = IconMap[name] || Star; // Fallback to Star
+  return <IconComponent className={className} size={size} />;
+}
+
+/**
+ * Helper to split title and highlight the last word
+ */
+function HighlightedTitle({
+  title,
+  highlightColor = "text-larioja-amarillo",
+}: {
+  title: string;
+  highlightColor?: string;
+}) {
+  if (!title) return null;
+  const words = title.split(" ");
+  if (words.length <= 1) return <span>{title}</span>;
+
+  const lastWord = words.pop();
+  const mainText = words.join(" ");
+
+  return (
+    <>
+      {mainText} <span className={highlightColor}>{lastWord}</span>
+    </>
+  );
+}
 
 export const metadata: Metadata = {
   title: "Programas - La Rioja",
@@ -30,69 +105,20 @@ export const metadata: Metadata = {
  * Programs page component.
  * Displays the different educational and vocational programs offered by La Rioja.
  */
-export default function ProgramsPage() {
-  const programs = [
-    {
-      id: "vocational",
-      title: "Talleres Vocacionales",
-      description:
-        "Capacitación práctica en áreas productivas para desarrollar habilidades técnicas y hábitos de trabajo.",
-      icon: Briefcase,
-      color: "text-larioja-azul",
-      bg: "bg-blue-50 dark:bg-blue-900/20",
-      items: [
-        "Panadería y Repostería",
-        "Manualidades",
-        "Servicios de Limpieza",
-        "Embalaje y Etiquetado",
-      ],
-    },
-    {
-      id: "independent-living",
-      title: "Vida Independiente",
-      description:
-        "Entrenamiento en habilidades de la vida diaria para promover la autonomía y autodeterminación.",
-      icon: Home,
-      color: "text-larioja-verde",
-      bg: "bg-green-50 dark:bg-green-900/20",
-      items: [
-        "Cuidado Personal",
-        "Habilidades Domésticas",
-        "Manejo del Dinero",
-        "Uso de la Comunidad",
-      ],
-    },
-    {
-      id: "social-skills",
-      title: "Habilidades Sociales",
-      description:
-        "Fortalecimiento de la interacción social, comunicación y gestión emocional en diversos entornos.",
-      icon: Users,
-      color: "text-larioja-amarillo",
-      bg: "bg-yellow-50 dark:bg-yellow-900/10",
-      items: [
-        "Comunicación Asertiva",
-        "Resolución de Conflictos",
-        "Trabajo en Equipo",
-        "Inteligencia Emocional",
-      ],
-    },
-    {
-      id: "inclusive-education",
-      title: "Educación Inclusiva",
-      description:
-        "Acompañamiento pedagógico adaptado a los ritmos y estilos de aprendizaje de cada joven.",
-      icon: BookOpen,
-      color: "text-rose-500",
-      bg: "bg-rose-50 dark:bg-rose-900/10",
-      items: [
-        "Lectoescritura Funcional",
-        "Cálculo Básico Aplicado",
-        "Informática",
-        "Cultura General",
-      ],
-    },
-  ];
+export default async function ProgramsPage() {
+  const content = await getPageContent("programs");
+
+  const getSection = (key: string) =>
+    content.find((s) => s.section_key === key);
+
+  const hero = getSection("programs_hero");
+  const intro = getSection("programs_intro");
+  const list = getSection("programs_list");
+  const value = getSection("programs_value");
+  const cta = getSection("programs_cta");
+
+  const programs = Array.isArray(list?.metadata) ? list.metadata : [];
+  const valueProps = Array.isArray(value?.metadata) ? value.metadata : [];
 
   return (
     <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden font-montserrat">
@@ -110,16 +136,14 @@ export default function ProgramsPage() {
           <ScrollReveal>
             <div className="max-w-4xl mx-auto text-center">
               <span className="inline-block py-1 px-3 rounded-full bg-larioja-amarillo/20 text-larioja-amarillo text-xs font-bold uppercase tracking-widest mb-4">
-                Formación con Propósito
+                {hero?.metadata?.badge || "Formación con Propósito"}
               </span>
               <h1 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight">
-                Nuestros{" "}
-                <span className="text-larioja-amarillo">Programas</span>
+                <HighlightedTitle title={hero?.title || "Nuestros Programas"} />
               </h1>
               <p className="text-xl md:text-2xl text-white/80 leading-relaxed font-light">
-                Modelos educativos innovadores y personalizados que transforman
-                el potencial de nuestros estudiantes en habilidades reales para
-                la vida y el trabajo.
+                {hero?.description ||
+                  "Modelos educativos innovadores y personalizados que transforman el potencial de nuestros estudiantes en habilidades reales para la vida y el trabajo."}
               </p>
             </div>
           </ScrollReveal>
@@ -133,22 +157,28 @@ export default function ProgramsPage() {
             <ScrollReveal direction="left">
               <div>
                 <h2 className="text-3xl md:text-4xl font-bold mb-6 text-larioja-azul dark:text-white leading-tight">
-                  Un enfoque integral para el{" "}
-                  <span className="text-larioja-verde">desarrollo pleno</span>
+                  <HighlightedTitle
+                    title={
+                      intro?.title ||
+                      "Un enfoque integral para el desarrollo pleno"
+                    }
+                    highlightColor="text-larioja-verde"
+                  />
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-white/70 mb-8 leading-relaxed">
-                  En CFL La Rioja, entendemos que cada persona es única. Por
-                  ello, nuestros programas están diseñados para abordar todas
-                  las dimensiones del ser humano: técnica, social, emocional y
-                  académica.
+                  {intro?.description ||
+                    "En CFL La Rioja, entendemos que cada persona es única. Por ello, nuestros programas están diseñados para abordar todas las dimensiones del ser humano: técnica, social, emocional y académica."}
                 </p>
                 <div className="space-y-4">
-                  {[
-                    "Atención personalizada (grupos reducidos)",
-                    "Metodología 100% práctica y funcional",
-                    "Acompañamiento por profesionales especializados",
-                    "Evaluación continua del progreso",
-                  ].map((item, i) => (
+                  {(Array.isArray(intro?.metadata?.checklist)
+                    ? intro.metadata.checklist
+                    : [
+                        "Atención personalizada (grupos reducidos)",
+                        "Metodología 100% práctica y funcional",
+                        "Acompañamiento por profesionales especializados",
+                        "Evaluación continua del progreso",
+                      ]
+                  ).map((item: string, i: number) => (
                     <div key={i} className="flex items-center gap-3">
                       <div className="flex-shrink-0 w-6 h-6 bg-larioja-verde/20 rounded-full flex items-center justify-center text-larioja-verde">
                         <CheckCircle2 size={16} />
@@ -166,8 +196,11 @@ export default function ProgramsPage() {
               <div className="relative">
                 <div className="aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800">
                   <Image
-                    src="https://images.unsplash.com/photo-1544928147-79a2dbc1f389?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                    alt="Estudiantes trabajando"
+                    src={
+                      intro?.metadata?.image_url ||
+                      "https://images.unsplash.com/photo-1544928147-79a2dbc1f389?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                    }
+                    alt={intro?.title || "Estudiantes trabajando"}
                     fill
                     className="object-cover"
                   />
@@ -190,9 +223,9 @@ export default function ProgramsPage() {
       <section className="py-24 bg-white dark:bg-larioja-azul">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
-            {programs.map((program, idx) => (
+            {programs.map((program: any, idx: number) => (
               <ScrollReveal
-                key={program.id}
+                key={program.id || idx}
                 delay={idx * 100}
                 direction={idx % 2 === 0 ? "left" : "right"}
               >
@@ -200,7 +233,7 @@ export default function ProgramsPage() {
                   <div
                     className={`w-16 h-16 ${program.bg} rounded-2xl flex items-center justify-center ${program.color} mb-8 group-hover:scale-110 transition-transform`}
                   >
-                    <program.icon size={32} />
+                    <DynamicIcon name={program.icon} size={32} />
                   </div>
                   <h3 className="text-3xl font-bold mb-6 text-larioja-azul dark:text-white">
                     {program.title}
@@ -214,15 +247,17 @@ export default function ProgramsPage() {
                       Módulos principales:
                     </h4>
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {program.items.map((item, i) => (
-                        <li
-                          key={i}
-                          className="flex items-center gap-2 text-sm text-gray-600 dark:text-white/80"
-                        >
-                          <div className="w-1.5 h-1.5 rounded-full bg-larioja-amarillo" />
-                          {item}
-                        </li>
-                      ))}
+                      {(Array.isArray(program.items) ? program.items : []).map(
+                        (item: string, i: number) => (
+                          <li
+                            key={i}
+                            className="flex items-center gap-2 text-sm text-gray-600 dark:text-white/80"
+                          >
+                            <div className="w-1.5 h-1.5 rounded-full bg-larioja-amarillo" />
+                            {item}
+                          </li>
+                        ),
+                      )}
                     </ul>
                   </div>
                 </div>
@@ -241,49 +276,23 @@ export default function ProgramsPage() {
         <div className="container mx-auto px-6 relative z-10 text-center max-w-4xl">
           <ScrollReveal>
             <h2 className="text-4xl md:text-5xl font-bold mb-16 text-white">
-              Nuestra{" "}
-              <span className="text-larioja-amarillo">Propuesta de Valor</span>
+              <HighlightedTitle
+                title={value?.title || "Nuestra Propuesta de Valor"}
+              />
             </h2>
 
             <div className="grid sm:grid-cols-3 gap-12">
-              <div className="space-y-4">
-                <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto text-larioja-amarillo">
-                  <Utensils size={40} />
+              {valueProps.map((item: any, idx: number) => (
+                <div key={idx} className="space-y-4">
+                  <div
+                    className={`w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto ${item.color}`}
+                  >
+                    <DynamicIcon name={item.icon} size={40} />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">{item.title}</h3>
+                  <p className="text-white/60 text-sm">{item.desc}</p>
                 </div>
-                <h3 className="text-xl font-bold text-white">
-                  Taller de Panadería
-                </h3>
-                <p className="text-white/60 text-sm">
-                  Nuestro taller insignia donde los jóvenes aprenden el arte de
-                  la panadería tradicional y gourmet.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto text-larioja-verde">
-                  <Palette size={40} />
-                </div>
-                <h3 className="text-xl font-bold text-white">
-                  Arte e Innovación
-                </h3>
-                <p className="text-white/60 text-sm">
-                  Expresión creativa aplicada a productos comercializables,
-                  fomentando el emprendimiento.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto text-rose-400">
-                  <Heart size={40} />
-                </div>
-                <h3 className="text-xl font-bold text-white">
-                  Bienestar Familiar
-                </h3>
-                <p className="text-white/60 text-sm">
-                  Acompañamiento a padres y cuidadores para un entorno de apoyo
-                  integral en el hogar.
-                </p>
-              </div>
+              ))}
             </div>
           </ScrollReveal>
         </div>
@@ -294,8 +303,11 @@ export default function ProgramsPage() {
         <div className="container mx-auto px-6">
           <ScrollReveal>
             <ProgramCTA
-              title="¿Quieres inscribir a tu hijo/a?"
-              description="Estamos aquí para guiarte en el proceso. Conoce los requisitos y agenda una visita para conocer nuestras instalaciones."
+              title={cta?.title || "¿Quieres inscribir a tu hijo/a?"}
+              description={
+                cta?.description ||
+                "Estamos aquí para guiarte en el proceso. Conoce los requisitos y agenda una visita para conocer nuestras instalaciones."
+              }
             />
           </ScrollReveal>
         </div>
