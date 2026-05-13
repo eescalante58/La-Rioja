@@ -250,7 +250,7 @@ export default async function AboutPage() {
 
             <ScrollReveal direction="right">
               <div className="relative group">
-                <div className="aspect-[4/5] md:aspect-square relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 transition-transform duration-500 group-hover:scale-[1.02]">
+                <div className="aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 transition-transform duration-500 group-hover:scale-[1.02] bg-gray-50 dark:bg-slate-900">
                   <Image
                     src={
                       timeline?.image_url ||
@@ -258,18 +258,18 @@ export default async function AboutPage() {
                     }
                     alt={timeline?.title || "Nuestro Recorrido"}
                     fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="object-contain p-2 transition-transform duration-700 group-hover:scale-105"
                     sizes="(max-width: 768px) 100vw, 50vw"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-larioja-azul/40 via-transparent to-transparent opacity-60 z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-larioja-azul/10 via-transparent to-transparent pointer-events-none z-10" />
                 </div>
                 {/* Decorative floating badge */}
-                <div className="absolute -bottom-6 -right-6 bg-white dark:bg-larioja-azul p-6 md:p-8 rounded-3xl shadow-2xl z-20 border border-gray-100 dark:border-white/5 animate-bounce-slow">
+                <div className="absolute -bottom-6 -right-4 bg-white dark:bg-larioja-azul p-5 md:p-6 rounded-3xl shadow-2xl z-20 border border-gray-100 dark:border-white/5 animate-bounce-slow">
                   <div className="text-center">
-                    <span className="text-4xl md:text-5xl font-black text-larioja-azul dark:text-larioja-amarillo block">
+                    <span className="text-3xl md:text-4xl font-black text-larioja-azul dark:text-larioja-amarillo block">
                       {timeline?.metadata?.badge_value || "16+"}
                     </span>
-                    <span className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                       {timeline?.metadata?.badge_text || "Años de Historia"}
                     </span>
                   </div>
