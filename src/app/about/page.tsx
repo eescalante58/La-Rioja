@@ -139,38 +139,64 @@ export default async function AboutPage() {
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 lg:gap-20 max-w-6xl mx-auto">
             <ScrollReveal direction="left">
-              <div className="bg-white dark:bg-larioja-azul p-10 rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 dark:border-white/5 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 text-larioja-azul/5 dark:text-white/5 group-hover:scale-110 transition-transform duration-500">
-                  <Target size={120} />
+              <div className="bg-white dark:bg-larioja-azul rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 dark:border-white/5 overflow-hidden group h-full flex flex-col">
+                {mission?.image_url && (
+                  <div className="relative h-64 w-full overflow-hidden">
+                    <Image
+                      src={mission.image_url}
+                      alt={mission.title || "Nuestra Misión"}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-larioja-azul/20 to-transparent" />
+                  </div>
+                )}
+                <div className="p-10 relative flex-1 flex flex-col">
+                  <div className="absolute top-0 right-0 p-8 text-larioja-azul/5 dark:text-white/5 group-hover:scale-110 transition-transform duration-500 pointer-events-none">
+                    <Target size={120} />
+                  </div>
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-500/20 rounded-2xl flex items-center justify-center text-larioja-azul dark:text-larioja-amarillo mb-8">
+                    <Target size={32} />
+                  </div>
+                  <h2 className="text-3xl font-bold mb-6 text-larioja-azul dark:text-white">
+                    {mission?.title || "Nuestra Misión"}
+                  </h2>
+                  <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
+                    {mission?.description ||
+                      "Proporcionar formación laboral especializada y de calidad a personas con discapacidad intelectual, desarrollando sus habilidades prácticas, autonomía e integración social para mejorar su calidad de vida y contribuir a su inclusión en la comunidad."}
+                  </p>
                 </div>
-                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-500/20 rounded-2xl flex items-center justify-center text-larioja-azul dark:text-larioja-amarillo mb-8">
-                  <Target size={32} />
-                </div>
-                <h2 className="text-3xl font-bold mb-6 text-larioja-azul dark:text-white">
-                  {mission?.title || "Nuestra Misión"}
-                </h2>
-                <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
-                  {mission?.description ||
-                    "Proporcionar formación laboral especializada y de calidad a personas con discapacidad intelectual, desarrollando sus habilidades prácticas, autonomía e integración social para mejorar su calidad de vida y contribuir a su inclusión en la comunidad."}
-                </p>
               </div>
             </ScrollReveal>
 
             <ScrollReveal direction="right">
-              <div className="bg-white dark:bg-larioja-azul p-10 rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 dark:border-white/5 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 text-larioja-verde/5 group-hover:scale-110 transition-transform duration-500">
-                  <Eye size={120} />
+              <div className="bg-white dark:bg-larioja-azul rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 dark:border-white/5 overflow-hidden group h-full flex flex-col">
+                {vision?.image_url && (
+                  <div className="relative h-64 w-full overflow-hidden">
+                    <Image
+                      src={vision.image_url}
+                      alt={vision.title || "Nuestra Visión"}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-larioja-verde/10 to-transparent" />
+                  </div>
+                )}
+                <div className="p-10 relative flex-1 flex flex-col">
+                  <div className="absolute top-0 right-0 p-8 text-larioja-verde/5 group-hover:scale-110 transition-transform duration-500 pointer-events-none">
+                    <Eye size={120} />
+                  </div>
+                  <div className="w-16 h-16 bg-green-100 dark:bg-larioja-verde/20 rounded-2xl flex items-center justify-center text-larioja-verde mb-8">
+                    <Eye size={32} />
+                  </div>
+                  <h2 className="text-3xl font-bold mb-6 text-larioja-azul dark:text-white">
+                    {vision?.title || "Nuestra Visión"}
+                  </h2>
+                  <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
+                    {vision?.description ||
+                      "Ser el centro de referencia en educación especializada e inclusión laboral, reconocido por la excelencia de nuestros programas y el éxito de nuestros egresados en el mercado laboral y en la vida cotidiana."}
+                  </p>
                 </div>
-                <div className="w-16 h-16 bg-green-100 dark:bg-larioja-verde/20 rounded-2xl flex items-center justify-center text-larioja-verde mb-8">
-                  <Eye size={32} />
-                </div>
-                <h2 className="text-3xl font-bold mb-6 text-larioja-azul dark:text-white">
-                  {vision?.title || "Nuestra Visión"}
-                </h2>
-                <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
-                  {vision?.description ||
-                    "Ser el centro de referencia en educación especializada e inclusión laboral, reconocido por la excelencia de nuestros programas y el éxito de nuestros egresados en el mercado laboral y en la vida cotidiana."}
-                </p>
               </div>
             </ScrollReveal>
           </div>
