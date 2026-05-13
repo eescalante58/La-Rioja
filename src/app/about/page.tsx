@@ -101,6 +101,7 @@ export default async function AboutPage() {
   const mission = getSection("about_mission");
   const vision = getSection("about_vision");
   const values = getSection("about_values");
+  const structure = getSection("about_structure");
   const timeline = getSection("about_timeline");
   const stats = getSection("about_stats");
   const team = getSection("about_team");
@@ -273,6 +274,43 @@ export default async function AboutPage() {
               </ScrollReveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Organizational Structure Section */}
+      <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
+        <div className="container mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
+                <HighlightedTitle
+                  title={structure?.title || "Estructura Organizativa"}
+                  highlightColor="text-larioja-verde"
+                />
+              </h2>
+              <p className="text-lg text-gray-500 dark:text-white/60">
+                {structure?.description ||
+                  "Nuestra organización se basa en la colaboración y el compromiso de cada uno de sus miembros para cumplir nuestra misión."}
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={200}>
+            <div className="max-w-5xl mx-auto bg-white dark:bg-larioja-azul p-4 md:p-8 rounded-[3rem] shadow-2xl shadow-blue-900/10 border border-gray-100 dark:border-white/5 overflow-hidden">
+              <div className="relative aspect-[16/10] w-full">
+                <Image
+                  src={
+                    structure?.image_url ||
+                    "https://images.unsplash.com/photo-1517245318773-b7b71a1639d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                  }
+                  alt={structure?.title || "Estructura Organizativa"}
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 1200px) 100vw, 1200px"
+                />
+              </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
