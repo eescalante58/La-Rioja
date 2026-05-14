@@ -119,6 +119,7 @@ export default async function AboutPage() {
   const stats = getSection("about_stats");
   const team = getSection("about_team");
   const maintenance = getSection("about_maintenance");
+  const schoolFees = getSection("about_school_fees");
   const cta = getSection("about_cta");
 
   // Helper to extract style from array metadata
@@ -593,6 +594,46 @@ export default async function AboutPage() {
                   </div>
                 </ScrollReveal>
               ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* School Fees Section */}
+      {schoolFees && (
+        <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
+          <div className="container mx-auto px-6">
+            <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+              <ScrollReveal direction="left">
+                <div>
+                  <h2 className="text-4xl md:text-5xl font-bold mb-8 text-larioja-azul dark:text-white tracking-tight">
+                    <HighlightedTitle title={schoolFees.title} />
+                  </h2>
+                  <div
+                    className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        schoolFees.description?.replace(/\n/g, "<br/>") || "",
+                    }}
+                  />
+                </div>
+              </ScrollReveal>
+
+              {schoolFees.image_url && (
+                <ScrollReveal direction="right">
+                  <div className="relative group">
+                    <div className="aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 transition-transform duration-500 group-hover:scale-[1.02] bg-gray-50 dark:bg-slate-900">
+                      <Image
+                        src={schoolFees.image_url}
+                        alt={schoolFees.title}
+                        fill
+                        className="object-contain p-2 transition-transform duration-700 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                      />
+                    </div>
+                  </div>
+                </ScrollReveal>
+              )}
             </div>
           </div>
         </section>
