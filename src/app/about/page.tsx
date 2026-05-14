@@ -286,7 +286,7 @@ export default async function AboutPage() {
               <ScrollReveal direction="left">
                 <div className="space-y-8">
                   <div className="space-y-2">
-                    <h2 className="text-4xl md:text-5xl font-extrabold text-gray-500 dark:text-gray-400 tracking-tight uppercase">
+                    <h2 className="text-4xl md:text-4xl font-extrabold text-gray-500 dark:text-gray-400 tracking-tight uppercase">
                       {background.title}
                     </h2>
                     {/* Extraemos el nombre de la asociación si está presente en la descripción para darle el estilo verde */}
@@ -343,206 +343,216 @@ export default async function AboutPage() {
       )}
 
       {/* Organizational Structure Section */}
-      <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
-        <div className="container mx-auto px-6">
-          <ScrollReveal>
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
-                <HighlightedTitle
-                  title={structure?.title || "Estructura Organizativa"}
-                  highlightColor="text-larioja-verde"
-                />
-              </h2>
-              <p className="text-lg text-gray-500 dark:text-white/60">
-                {structure?.description ||
-                  "Nuestra organización se basa en la colaboración y el compromiso de cada uno de sus miembros para cumplir nuestra misión."}
-              </p>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal delay={200}>
-            <div className="max-w-5xl mx-auto bg-white dark:bg-larioja-azul p-4 md:p-8 rounded-[3rem] shadow-2xl shadow-blue-900/10 border border-gray-100 dark:border-white/5 overflow-hidden">
-              <div className="relative aspect-[16/10] w-full">
-                <Image
-                  src={
-                    structure?.image_url ||
-                    "https://images.unsplash.com/photo-1517245318773-b7b71a1639d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
-                  }
-                  alt={structure?.title || "Estructura Organizativa"}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 1200px) 100vw, 1200px"
-                />
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
-      {/* Timeline Section */}
-      <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
-        <div className="container mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
-            <ScrollReveal direction="left">
-              <div>
-                <h2 className="text-4xl md:text-5xl font-bold mb-8 text-larioja-azul dark:text-white tracking-tight">
+      {structure && (
+        <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
+          <div className="container mx-auto px-6">
+            <ScrollReveal>
+              <div className="text-center max-w-3xl mx-auto mb-16">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
                   <HighlightedTitle
-                    title={timeline?.title || "Nuestro Recorrido"}
+                    title={structure.title || "Estructura Organizativa"}
+                    highlightColor="text-larioja-verde"
                   />
                 </h2>
-                <div className="space-y-8 relative before:absolute before:inset-0 before:left-3 before:w-0.5 before:bg-gray-200 dark:before:bg-white/10 before:h-full pb-4">
-                  {(Array.isArray(timeline?.metadata?.items)
-                    ? timeline.metadata.items
-                    : []
-                  ).map((item: any, idx: number) => (
-                    <div key={idx} className="relative pl-10 group">
-                      <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-white dark:bg-larioja-azul border-4 border-larioja-azul dark:border-larioja-amarillo group-hover:scale-125 transition-transform duration-300 z-10" />
-                      <span className="text-xs font-bold text-larioja-verde mb-1 block uppercase tracking-wider">
-                        {item.year}
-                      </span>
-                      <p className="text-lg font-medium text-larioja-azul dark:text-white/90">
-                        {item.event}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-lg text-gray-500 dark:text-white/60">
+                  {structure.description ||
+                    "Nuestra organización se basa en la colaboración y el compromiso de cada uno de sus miembros para cumplir nuestra misión."}
+                </p>
               </div>
             </ScrollReveal>
 
-            <ScrollReveal direction="right">
-              <div className="relative group">
-                <div className="aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 transition-transform duration-500 group-hover:scale-[1.02] bg-gray-50 dark:bg-slate-900">
+            <ScrollReveal delay={200}>
+              <div className="max-w-5xl mx-auto bg-white dark:bg-larioja-azul p-4 md:p-8 rounded-[3rem] shadow-2xl shadow-blue-900/10 border border-gray-100 dark:border-white/5 overflow-hidden">
+                <div className="relative aspect-[16/10] w-full">
                   <Image
                     src={
-                      timeline?.image_url ||
-                      "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                      structure.image_url ||
+                      "https://images.unsplash.com/photo-1517245318773-b7b71a1639d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
                     }
-                    alt={timeline?.title || "Nuestro Recorrido"}
+                    alt={structure.title || "Estructura Organizativa"}
                     fill
-                    className="object-contain p-2 transition-transform duration-700 group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-contain"
+                    sizes="(max-width: 1200px) 100vw, 1200px"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-larioja-azul/10 via-transparent to-transparent pointer-events-none z-10" />
-                </div>
-                {/* Decorative floating badge */}
-                <div className="absolute -bottom-6 -right-4 bg-white dark:bg-larioja-azul p-5 md:p-6 rounded-3xl shadow-2xl z-20 border border-gray-100 dark:border-white/5 animate-bounce-slow">
-                  <div className="text-center">
-                    <span className="text-3xl md:text-4xl font-black text-larioja-azul dark:text-larioja-amarillo block">
-                      {timeline?.metadata?.badge_value || "16+"}
-                    </span>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      {timeline?.metadata?.badge_text || "Años de Historia"}
-                    </span>
-                  </div>
                 </div>
               </div>
             </ScrollReveal>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {/* Timeline Section */}
+      {timeline && (
+        <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
+          <div className="container mx-auto px-6">
+            <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+              <ScrollReveal direction="left">
+                <div>
+                  <h2 className="text-4xl md:text-5xl font-bold mb-8 text-larioja-azul dark:text-white tracking-tight">
+                    <HighlightedTitle
+                      title={timeline.title || "Nuestro Recorrido"}
+                    />
+                  </h2>
+                  <div className="space-y-8 relative before:absolute before:inset-0 before:left-3 before:w-0.5 before:bg-gray-200 dark:before:bg-white/10 before:h-full pb-4">
+                    {(Array.isArray(timeline.metadata?.items)
+                      ? timeline.metadata.items
+                      : []
+                    ).map((item: any, idx: number) => (
+                      <div key={idx} className="relative pl-10 group">
+                        <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-white dark:bg-larioja-azul border-4 border-larioja-azul dark:border-larioja-amarillo group-hover:scale-125 transition-transform duration-300 z-10" />
+                        <span className="text-xs font-bold text-larioja-verde mb-1 block uppercase tracking-wider">
+                          {item.year}
+                        </span>
+                        <p className="text-lg font-medium text-larioja-azul dark:text-white/90">
+                          {item.event}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ScrollReveal>
+
+              <ScrollReveal direction="right">
+                <div className="relative group">
+                  <div className="aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 transition-transform duration-500 group-hover:scale-[1.02] bg-gray-50 dark:bg-slate-900">
+                    <Image
+                      src={
+                        timeline.image_url ||
+                        "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                      }
+                      alt={timeline.title || "Nuestro Recorrido"}
+                      fill
+                      className="object-contain p-2 transition-transform duration-700 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-larioja-azul/10 via-transparent to-transparent pointer-events-none z-10" />
+                  </div>
+                  {/* Decorative floating badge */}
+                  <div className="absolute -bottom-6 -right-4 bg-white dark:bg-larioja-azul p-5 md:p-6 rounded-3xl shadow-2xl z-20 border border-gray-100 dark:border-white/5 animate-bounce-slow">
+                    <div className="text-center">
+                      <span className="text-3xl md:text-4xl font-black text-larioja-azul dark:text-larioja-amarillo block">
+                        {timeline.metadata?.badge_value || "16+"}
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        {timeline.metadata?.badge_text || "Años de Historia"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </ScrollReveal>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Stats Section */}
-      <section className="py-24 bg-white dark:bg-larioja-azul">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 max-w-7xl mx-auto">
-            {(Array.isArray(stats?.metadata) ? stats.metadata : []).map(
-              (stat: any, idx: number) => (
-                <ScrollReveal key={stat.label} delay={idx * 50}>
-                  <div className="text-center group">
-                    <div
-                      className={`w-12 h-12 mx-auto mb-4 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-300`}
-                    >
-                      <DynamicIcon name={stat.icon} size={32} />
+      {stats && (
+        <section className="py-24 bg-white dark:bg-larioja-azul">
+          <div className="container mx-auto px-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 max-w-7xl mx-auto">
+              {(Array.isArray(stats.metadata) ? stats.metadata : []).map(
+                (stat: any, idx: number) => (
+                  <ScrollReveal key={stat.label} delay={idx * 50}>
+                    <div className="text-center group">
+                      <div
+                        className={`w-12 h-12 mx-auto mb-4 flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform duration-300`}
+                      >
+                        <DynamicIcon name={stat.icon} size={32} />
+                      </div>
+                      <div className="text-3xl font-black text-larioja-azul dark:text-white mb-1">
+                        {stat.val}
+                      </div>
+                      <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        {stat.label}
+                      </div>
                     </div>
-                    <div className="text-3xl font-black text-larioja-azul dark:text-white mb-1">
-                      {stat.val}
-                    </div>
-                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                      {stat.label}
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ),
-            )}
+                  </ScrollReveal>
+                ),
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Team Section */}
-      <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
-        <div className="container mx-auto px-6">
-          <ScrollReveal>
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
-                <HighlightedTitle
-                  title={team?.title || "Nuestro Equipo Profesional"}
-                  highlightColor="text-larioja-verde"
-                />
-              </h2>
-              <p className="text-lg text-gray-500 dark:text-white/60">
-                {team?.description ||
-                  "20 profesionales apasionados y dedicados a la excelencia educativa y el desarrollo integral."}
-              </p>
-            </div>
-          </ScrollReveal>
+      {team && (
+        <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
+          <div className="container mx-auto px-6">
+            <ScrollReveal>
+              <div className="text-center max-w-3xl mx-auto mb-16">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
+                  <HighlightedTitle
+                    title={team.title || "Nuestro Equipo Profesional"}
+                    highlightColor="text-larioja-verde"
+                  />
+                </h2>
+                <p className="text-lg text-gray-500 dark:text-white/60">
+                  {team.description ||
+                    "20 profesionales apasionados y dedicados a la excelencia educativa y el desarrollo integral."}
+                </p>
+              </div>
+            </ScrollReveal>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {(Array.isArray(team?.metadata) ? team.metadata : []).map(
-              (member: any, idx: number) => (
-                <ScrollReveal key={member.role} delay={idx * 100}>
-                  <div className="bg-white dark:bg-larioja-azul p-8 rounded-3xl border border-gray-100 dark:border-white/5 shadow-xl shadow-blue-900/5 hover:-translate-y-2 transition-all duration-300 group text-center">
-                    <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center text-gray-400 overflow-hidden relative border-4 border-gray-50 dark:border-slate-800">
-                      <User size={48} />
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+              {(Array.isArray(team.metadata) ? team.metadata : []).map(
+                (member: any, idx: number) => (
+                  <ScrollReveal key={member.role} delay={idx * 100}>
+                    <div className="bg-white dark:bg-larioja-azul p-8 rounded-3xl border border-gray-100 dark:border-white/5 shadow-xl shadow-blue-900/5 hover:-translate-y-2 transition-all duration-300 group text-center">
+                      <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center text-gray-400 overflow-hidden relative border-4 border-gray-50 dark:border-slate-800">
+                        <User size={48} />
+                      </div>
+                      <h3 className="text-xl font-bold mb-2 text-larioja-azul dark:text-white">
+                        {member.role}
+                      </h3>
+                      <Badge className="mb-4 bg-larioja-verde/10 text-larioja-verde border-none">
+                        {member.spec}
+                      </Badge>
+                      <p className="text-gray-500 dark:text-white/60 text-sm">
+                        {member.desc}
+                      </p>
                     </div>
-                    <h3 className="text-xl font-bold mb-2 text-larioja-azul dark:text-white">
-                      {member.role}
-                    </h3>
-                    <Badge className="mb-4 bg-larioja-verde/10 text-larioja-verde border-none">
-                      {member.spec}
-                    </Badge>
-                    <p className="text-gray-500 dark:text-white/60 text-sm">
-                      {member.desc}
-                    </p>
-                  </div>
-                </ScrollReveal>
-              ),
-            )}
+                  </ScrollReveal>
+                ),
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CTA Section */}
-      <section className="py-24 bg-white dark:bg-larioja-azul">
-        <div className="container mx-auto px-6">
-          <ScrollReveal>
-            <div className="bg-larioja-verde p-12 md:p-20 rounded-[3rem] relative overflow-hidden text-center max-w-5xl mx-auto">
-              {/* Background patterns */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl" />
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-larioja-azul/10 rounded-full -ml-20 -mb-20 blur-3xl" />
+      {cta && (
+        <section className="py-24 bg-white dark:bg-larioja-azul">
+          <div className="container mx-auto px-6">
+            <ScrollReveal>
+              <div className="bg-larioja-verde p-12 md:p-20 rounded-[3rem] relative overflow-hidden text-center max-w-5xl mx-auto">
+                {/* Background patterns */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-larioja-azul/10 rounded-full -ml-20 -mb-20 blur-3xl" />
 
-              <div className="relative z-10">
-                <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white tracking-tight">
-                  {cta?.title || "¿Listo para ser parte de nuestra comunidad?"}
-                </h2>
-                <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-                  {cta?.description ||
-                    "Conoce nuestros programas vocacionales y descubre cómo podemos apoyar el desarrollo integral de tus seres queridos."}
-                </p>
-                <Link
-                  href={cta?.metadata?.button_link || "/bingo"}
-                  className="inline-flex items-center gap-2 bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-4 px-12 rounded-full transition-all hover:scale-105 active:scale-95 shadow-2xl text-lg group"
-                >
-                  {cta?.metadata?.button_text || "Ver Programas"}
-                  <Rocket
-                    size={20}
-                    className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
-                  />
-                </Link>
+                <div className="relative z-10">
+                  <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white tracking-tight">
+                    {cta.title || "¿Listo para ser parte de nuestra comunidad?"}
+                  </h2>
+                  <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+                    {cta.description ||
+                      "Conoce nuestros programas vocacionales y descubre cómo podemos apoyar el desarrollo integral de tus seres queridos."}
+                  </p>
+                  <Link
+                    href={cta.metadata?.button_link || "/bingo"}
+                    className="inline-flex items-center gap-2 bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-4 px-12 rounded-full transition-all hover:scale-105 active:scale-95 shadow-2xl text-lg group"
+                  >
+                    {cta.metadata?.button_text || "Ver Programas"}
+                    <Rocket
+                      size={20}
+                      className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"
+                    />
+                  </Link>
+                </div>
               </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </main>
