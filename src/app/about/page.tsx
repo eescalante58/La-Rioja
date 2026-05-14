@@ -20,6 +20,12 @@ import {
   ShieldCheck,
   Rocket,
   User,
+  Receipt,
+  Ticket,
+  ShoppingBag,
+  Scissors,
+  HeartHandshake,
+  Building2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -42,6 +48,12 @@ const IconMap: Record<string, any> = {
   ShieldCheck,
   Rocket,
   User,
+  Receipt,
+  Ticket,
+  ShoppingBag,
+  Scissors,
+  HeartHandshake,
+  Building2,
 };
 
 /**
@@ -518,6 +530,168 @@ export default async function AboutPage() {
           </div>
         </section>
       )}
+
+      {/* Maintenance of Mission Section (Hardcoded for now) */}
+      <section className="py-24 bg-white dark:bg-larioja-azul">
+        <div className="container mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center max-w-4xl mx-auto mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
+                <HighlightedTitle
+                  title="COMO MANTENEMOS VIVA NUESTRA MISION"
+                  highlightColor="text-larioja-verde"
+                />
+              </h2>
+              <p className="text-lg text-gray-500 dark:text-white/60 italic font-medium">
+                ASPAPREM busca recursos y alianzas para seguir creciendo de
+                manera autosostenible.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Card 1 */}
+            <ScrollReveal delay={100}>
+              <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-blue-200 dark:hover:border-blue-900/30 transition-all duration-300 group h-full">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-500 mb-6 group-hover:scale-110 transition-transform">
+                  <Receipt size={32} />
+                </div>
+                <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white uppercase tracking-tight">
+                  CUOTAS ESCOLARES
+                </h3>
+                <ul className="space-y-3">
+                  {[
+                    "ESTUDIO SOCIOECONOMICO",
+                    "ASIGNACION DE CUOTA ESCOLAR Y MATRICULA",
+                    "ALUMNOS BECADOS Y MEDIAS BECAS, CONAPINA",
+                  ].map((text, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm text-gray-500 dark:text-white/60"
+                    >
+                      <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                      {text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </ScrollReveal>
+
+            {/* Card 2 */}
+            <ScrollReveal delay={200}>
+              <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-green-200 dark:hover:border-green-900/30 transition-all duration-300 group h-full">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center text-larioja-verde mb-6 group-hover:scale-110 transition-transform">
+                  <Ticket size={32} />
+                </div>
+                <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white uppercase tracking-tight">
+                  ACTIVIDADES
+                </h3>
+                <ul className="space-y-3">
+                  {[
+                    "BINGO LA RIOJA, RIFAS, DESAYUNOS BENEFICOS",
+                    "VENTAS DE ALIMENTOS EN DIA DEPORTIVO, CLAUSURAS, Y EVENTOS ESPECIALES DENTRO DEL CENTRO",
+                  ].map((text, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm text-gray-500 dark:text-white/60"
+                    >
+                      <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-larioja-verde shrink-0" />
+                      {text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </ScrollReveal>
+
+            {/* Card 3 */}
+            <ScrollReveal delay={300}>
+              <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-pink-200 dark:hover:border-pink-900/30 transition-all duration-300 group h-full">
+                <div className="w-16 h-16 bg-pink-100 dark:bg-pink-900/30 rounded-2xl flex items-center justify-center text-pink-500 mb-6 group-hover:scale-110 transition-transform">
+                  <ShoppingBag size={32} />
+                </div>
+                <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white uppercase tracking-tight">
+                  VENTAS TALLER DE PANADERIA
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-white/60 leading-relaxed">
+                  SE PRODUCE A DIARIO ENTRE PAN FRANCES, PAN DULCE, SEMITAS,
+                  TORTAS, ETC., Y SE VENDE EN EL CNR, POBLACION DEL COLEGIO Y
+                  VECINDARIO ALTAMIRA.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            {/* Card 4 */}
+            <ScrollReveal delay={400}>
+              <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-purple-200 dark:hover:border-purple-900/30 transition-all duration-300 group h-full">
+                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center text-purple-500 mb-6 group-hover:scale-110 transition-transform">
+                  <Scissors size={32} />
+                </div>
+                <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white uppercase tracking-tight">
+                  VENTAS DE OTROS TALLERES
+                </h3>
+                <ul className="space-y-3">
+                  {[
+                    "EN COSTURA SE ELABORAN ARTICULOS COMO GABACHAS PARA HUERTO, DELANTALES, GORROS, Y ARTICULOS DE USOS DEL HOGAR COMO TOALLAS, QUE SE VENDEN DENTRO DEL COLEGIO Y EN ALGUNAS FERIAS.",
+                    "EN HUERTO SE VENDEN PRODUCTOS HORTICOLAS.",
+                  ].map((text, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm text-gray-500 dark:text-white/60"
+                    >
+                      <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+                      {text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </ScrollReveal>
+
+            {/* Card 5 */}
+            <ScrollReveal delay={500}>
+              <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-orange-200 dark:hover:border-orange-900/30 transition-all duration-300 group h-full">
+                <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-500 mb-6 group-hover:scale-110 transition-transform">
+                  <HeartHandshake size={32} />
+                </div>
+                <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white uppercase tracking-tight">
+                  DONACIONES
+                </h3>
+                <ul className="space-y-3">
+                  {[
+                    "EMPRESAS O PERSONAS NATURALES ALTRUISTAS QUE NOS APORTAN EN EFECTIVO DE FORMA REGULAR (PROGRAMAS DE BECAS) O IRREGULAR.",
+                    "EMPRESAS QUE NOS DONAN EN ESPECIE, MATERIALES DE PANADERIA, COSTURA Y OTROS.",
+                  ].map((text, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm text-gray-500 dark:text-white/60"
+                    >
+                      <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                      {text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </ScrollReveal>
+
+            {/* Card 6 */}
+            <ScrollReveal delay={600}>
+              <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-3xl border border-transparent hover:border-cyan-200 dark:hover:border-cyan-900/30 transition-all duration-300 group h-full">
+                <div className="w-16 h-16 bg-cyan-100 dark:bg-cyan-900/30 rounded-2xl flex items-center justify-center text-cyan-500 mb-6 group-hover:scale-110 transition-transform">
+                  <Building2 size={32} />
+                </div>
+                <h3 className="text-xl font-bold mb-4 text-larioja-azul dark:text-white uppercase tracking-tight">
+                  SOCIOS ESTRATEGICOS DEL MINED
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-white/60 leading-relaxed">
+                  CONVENIO CON EL MINED EN EL AREA DE INCLUSION, COMO PIONEROS
+                  EN EL AREA DE TALLERES LABORALES. SE INSTRUYEN A MAS DE 30
+                  ESCUELAS NACIONALES QUE ATIENDEN PERSONAS CON DISCAPACIDAD
+                  INTELECTUAL.
+                </p>
+              </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
 
       {/* CTA Section */}
       {cta && (
