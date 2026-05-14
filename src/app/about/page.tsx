@@ -280,16 +280,23 @@ export default async function AboutPage() {
 
       {/* Background Section (Dynamic) */}
       {background && (
-        <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
+        <section className="py-24 bg-white dark:bg-larioja-azul">
           <div className="container mx-auto px-6">
             <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
               <ScrollReveal direction="left">
-                <div>
-                  <h2 className="text-4xl md:text-5xl font-bold mb-8 text-larioja-azul dark:text-white tracking-tight">
-                    <HighlightedTitle title={background.title} />
-                  </h2>
+                <div className="space-y-8">
+                  <div className="space-y-2">
+                    <h2 className="text-4xl md:text-6xl font-extrabold text-gray-500 dark:text-gray-400 tracking-tight uppercase">
+                      {background.title || "Antecedentes"}
+                    </h2>
+                    <h3 className="text-xl md:text-2xl font-bold text-[#1c9c6b] leading-tight tracking-wide">
+                      ASPAPREM (Asociación Salvadoreña Pro-ayuda a Personas con
+                      Discapacidad Intelectual)
+                    </h3>
+                  </div>
+
                   <div
-                    className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap"
+                    className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap font-medium"
                     dangerouslySetInnerHTML={{
                       __html:
                         background.description?.replace(/\n/g, "<br/>") || "",
@@ -301,12 +308,14 @@ export default async function AboutPage() {
               {background.image_url && (
                 <ScrollReveal direction="right">
                   <div className="relative group">
-                    <div className="aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 transition-transform duration-500 group-hover:scale-[1.02]">
+                    <div className="relative rounded-[2rem] overflow-hidden shadow-2xl border-4 border-gray-50 dark:border-slate-800 transition-transform duration-500 group-hover:scale-[1.01] bg-white min-h-[600px] flex items-center justify-center">
                       <Image
                         src={background.image_url}
                         alt={background.title}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        width={800}
+                        height={1200}
+                        className="w-full h-auto object-contain p-4"
+                        priority
                       />
                     </div>
                   </div>
