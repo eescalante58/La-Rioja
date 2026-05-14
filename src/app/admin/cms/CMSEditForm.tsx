@@ -168,17 +168,6 @@ export default function CMSEditForm({ item }: { item: any }) {
           <Badge color="gray">ID: {item.id.slice(0, 8)}...</Badge>
         </div>
 
-        {status && (
-          <Callout
-            className="mb-6"
-            title={status.type === "success" ? "Éxito" : "Error"}
-            icon={status.type === "success" ? CheckCircle : AlertCircle}
-            color={status.type === "success" ? "emerald" : "rose"}
-          >
-            {status.message}
-          </Callout>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -349,6 +338,17 @@ export default function CMSEditForm({ item }: { item: any }) {
               </Flex>
             </div>
           </div>
+
+          {status && (
+            <Callout
+              className="mt-6"
+              title={status.type === "success" ? "Éxito" : "Error"}
+              icon={status.type === "success" ? CheckCircle : AlertCircle}
+              color={status.type === "success" ? "emerald" : "rose"}
+            >
+              {status.message}
+            </Callout>
+          )}
 
           <div className="pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
             <Link href="/admin/cms">

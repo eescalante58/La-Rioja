@@ -21,6 +21,7 @@ import {
   Flex,
   Select,
   SelectItem,
+  Callout,
 } from "@tremor/react";
 import {
   Edit2,
@@ -31,6 +32,8 @@ import {
   Save,
   Upload,
   ImageIcon,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { deleteCMSContent, createCMSContent } from "./actions";
 
@@ -79,6 +82,10 @@ export default function CMSManagerClient({
   // Estados para Nueva Sección
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [createStatus, setCreateStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [newFormData, setNewFormData] = useState({
     page: "home" as CMSPage,
     section_key: "",
@@ -166,10 +173,14 @@ export default function CMSManagerClient({
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newJsonError) {
-      alert("Por favor corrija el error en los metadatos JSON.");
+      setCreateStatus({
+        type: "error",
+        message: "Por favor corrija el error en los metadatos JSON.",
+      });
       return;
     }
     setIsCreating(true);
+    setCreateStatus(null);
     try {
       const submitData = new FormData();
       submitData.append("page", newFormData.page);
@@ -186,24 +197,37 @@ export default function CMSManagerClient({
 
       const result = await createCMSContent(submitData);
       if (result.success) {
-        setIsCreateOpen(false);
-        setNewFormData({
-          page: "home",
-          section_key: "",
-          title: "",
-          description: "",
-          is_active: true,
-          content_order: 0,
-          metadata: {},
+        setCreateStatus({
+          type: "success",
+          message: "Sección creada correctamente.",
         });
-        setNewJsonString("{}");
-        setNewSelectedFile(null);
-        setNewPreviewUrl(null);
+        setTimeout(() => {
+          setIsCreateOpen(false);
+          setCreateStatus(null);
+          setNewFormData({
+            page: "home",
+            section_key: "",
+            title: "",
+            description: "",
+            is_active: true,
+            content_order: 0,
+            metadata: {},
+          });
+          setNewJsonString("{}");
+          setNewSelectedFile(null);
+          setNewPreviewUrl(null);
+        }, 1500);
       } else {
-        alert("Error al crear: " + result.error);
+        setCreateStatus({
+          type: "error",
+          message: result.error || "Error al crear.",
+        });
       }
     } catch (error) {
-      alert("Error inesperado al crear.");
+      setCreateStatus({
+        type: "error",
+        message: "Error inesperado al crear.",
+      });
     } finally {
       setIsCreating(false);
     }
@@ -638,6 +662,19 @@ export default function CMSManagerClient({
                 </Text>
               </div>
             </div>
+
+            {createStatus && (
+              <Callout
+                className="mt-4"
+                title={createStatus.type === "success" ? "Éxito" : "Error"}
+                icon={
+                  createStatus.type === "success" ? CheckCircle : AlertCircle
+                }
+                color={createStatus.type === "success" ? "emerald" : "rose"}
+              >
+                {createStatus.message}
+              </Callout>
+            )}
 
             <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
               <Button
