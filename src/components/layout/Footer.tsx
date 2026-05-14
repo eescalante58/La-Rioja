@@ -90,6 +90,12 @@ export async function Footer() {
                 Nosotros
               </Link>
               <Link
+                href="/contact"
+                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
+              >
+                Apóyanos
+              </Link>
+              <Link
                 href="/programs"
                 className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
               >
