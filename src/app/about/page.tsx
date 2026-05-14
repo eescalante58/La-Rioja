@@ -286,7 +286,7 @@ export default async function AboutPage() {
               <ScrollReveal direction="left">
                 <div className="space-y-8">
                   <div className="space-y-2">
-                    <h2 className="text-4xl md:text-6xl font-extrabold text-gray-500 dark:text-gray-400 tracking-tight uppercase">
+                    <h2 className="text-4xl md:text-5xl font-extrabold text-gray-500 dark:text-gray-400 tracking-tight uppercase">
                       {background.title}
                     </h2>
                     {/* Extraemos el nombre de la asociación si está presente en la descripción para darle el estilo verde */}
