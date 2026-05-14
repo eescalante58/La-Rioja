@@ -287,21 +287,37 @@ export default async function AboutPage() {
                 <div className="space-y-8">
                   <div className="space-y-2">
                     <h2 className="text-4xl md:text-6xl font-extrabold text-gray-500 dark:text-gray-400 tracking-tight uppercase">
-                      {background.title || "Antecedentes"}
+                      {background.title}
                     </h2>
-                    <h3 className="text-xl md:text-2xl font-bold text-[#1c9c6b] leading-tight tracking-wide">
-                      ASPAPREM (Asociación Salvadoreña Pro-ayuda a Personas con
-                      Discapacidad Intelectual)
-                    </h3>
+                    {/* Extraemos el nombre de la asociación si está presente en la descripción para darle el estilo verde */}
+                    {background.description?.includes("ASPAPREM") ? (
+                      <>
+                        <h3 className="text-xl md:text-2xl font-bold text-[#1c9c6b] leading-tight tracking-wide">
+                          {background.description.split("\n")[0]}
+                        </h3>
+                        <div
+                          className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap font-medium"
+                          dangerouslySetInnerHTML={{
+                            __html:
+                              background.description
+                                .split("\n")
+                                .slice(1)
+                                .join("<br/>")
+                                .trim() || "",
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <div
+                        className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap font-medium"
+                        dangerouslySetInnerHTML={{
+                          __html:
+                            background.description?.replace(/\n/g, "<br/>") ||
+                            "",
+                        }}
+                      />
+                    )}
                   </div>
-
-                  <div
-                    className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap font-medium"
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        background.description?.replace(/\n/g, "<br/>") || "",
-                    }}
-                  />
                 </div>
               </ScrollReveal>
 
