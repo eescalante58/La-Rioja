@@ -121,7 +121,7 @@ export default async function ProgramsPage() {
   const valueProps = Array.isArray(value?.metadata) ? value.metadata : [];
 
   return (
-    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden font-montserrat">
+    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden">
       <Navbar />
 
       {/* Hero Section */}

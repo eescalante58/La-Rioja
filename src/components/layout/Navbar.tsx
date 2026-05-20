@@ -69,7 +69,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-8 font-montserrat">
             <Link
               href="/about"
               className={`font-bold text-sm transition-all ${
@@ -185,7 +185,7 @@ export function Navbar() {
               <X size={32} />
             </button>
 
-            <div className="flex flex-col gap-6 text-center">
+            <div className="flex flex-col gap-6 text-center font-montserrat">
               <Link
                 href="/about"
                 onClick={() => setIsOpen(false)}

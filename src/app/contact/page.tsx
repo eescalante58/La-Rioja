@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden font-montserrat">
+    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden">
       <Navbar />
       <ContactClient />
       <Footer />

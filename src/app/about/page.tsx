@@ -142,7 +142,7 @@ export default async function AboutPage() {
     : [];
 
   return (
-    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden font-montserrat">
+    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden">
       <Navbar />
 
       {/* Hero Section - Nuestra Historia */}

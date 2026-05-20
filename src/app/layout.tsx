@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
+import { Montserrat, Inter } from "next/font/google";
 import "./globals.css";
 
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
@@ -9,6 +9,11 @@ import { FloatingContact } from "@/components/layout/FloatingContact";
 const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-montserrat",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -92,7 +97,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${montserrat.variable} font-montserrat antialiased`}>
+      <body
+        className={`${montserrat.variable} ${inter.variable} font-inter antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
