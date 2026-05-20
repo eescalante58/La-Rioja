@@ -169,7 +169,7 @@ export default async function Home() {
                         {service.metadata?.link && (
                           <Link
                             href={service.metadata.link}
-                            className="bg-white dark:bg-larioja-azul text-larioja-azul dark:text-white px-8 py-3 rounded-full font-black text-sm hover:scale-105 transition-transform shadow-lg"
+                            className="bg-white dark:bg-larioja-azul text-larioja-azul dark:text-white px-8 py-3 rounded-full font-black text-sm hover:scale-105 transition-transform shadow-lg font-montserrat"
                           >
                             {service.metadata?.buttonText || "SABER MÁS"}
                           </Link>

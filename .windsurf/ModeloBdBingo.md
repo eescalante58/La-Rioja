@@ -226,7 +226,7 @@ El acceso a estas opciones unicamente se permitirá a usuarios el el roles "admi
 ### 6.2 Estilos
 
 - Diseño reponsivo (desktop, laptop, tablet, smartphone)
-  Los colores oficiales de la institución son: Amarillo(FFFF00), verde(1E9922) y azul(012060).
+  Los colores oficiales de la institución son: Amarillo('#FFFF00') ('#F1B812') ('#F3C31B'), verde('#1E9922') ('#2D814E') ('#2A9D6A')y azul('#012060') ('#0B557C') ('#0F5B7B').
 - Diseño minimalista
 - Tipo de letra: San Serifs Monserrat
 - Usar javicon

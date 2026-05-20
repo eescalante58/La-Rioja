@@ -10,7 +10,7 @@
 
 @layer base {
   body {
-    @apply text-larioja-azul dark:text-slate-100 font-montserrat bg-white dark:bg-black transition-colors duration-300;
+    @apply text-larioja-azul dark:text-slate-100 font-inter bg-white dark:bg-black transition-colors duration-300;
   }
 
   h1,
@@ -19,7 +19,7 @@
   h4,
   h5,
   h6 {
-    @apply font-bold;
+    @apply font-montserrat font-bold;
   }
 }
 

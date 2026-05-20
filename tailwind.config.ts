@@ -105,6 +105,7 @@ const config: Config = {
       },
       fontFamily: {
         montserrat: ["var(--font-montserrat)", "sans-serif"],
+        inter: ["var(--font-inter)", "sans-serif"],
       },
       keyframes: {
         "fade-in": {

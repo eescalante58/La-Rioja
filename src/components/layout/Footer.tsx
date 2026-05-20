@@ -72,11 +72,13 @@ export async function Footer() {
       <div className="container mx-auto px-6">
         <ScrollReveal className="flex flex-col md:flex-row justify-between items-center gap-12 mb-12">
           <div className="text-center md:text-left">
-            <h3 className="text-2xl font-bold mb-2">La Rioja</h3>
+            <h3 className="text-2xl font-bold mb-2 font-montserrat">
+              La Rioja
+            </h3>
             <p className="opacity-70 mb-4">
               Formando futuros, integrando vidas.
             </p>
-            <div className="flex flex-col gap-2 mb-6">
+            <div className="flex flex-col gap-2 mb-6 font-montserrat">
               <Link
                 href="/"
                 className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
