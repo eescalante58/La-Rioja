@@ -260,7 +260,7 @@ export default function RealtimeDashboardWrapper({
           <div className="h-1 w-20 bg-larioja-azul dark:bg-slate-700 mx-auto mt-2 rounded-full" />
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {data.hasEvent ? (
             <>
               <SalesProgressChart
@@ -449,7 +449,7 @@ export default function RealtimeDashboardWrapper({
           </Text>
         </div>
 
-        <Grid numItemsSm={2} numItemsLg={4} className="gap-6">
+        <Grid numItems={1} numItemsSm={2} numItemsLg={4} className="gap-6">
           {stats.map((item) => (
             <Card
               key={item.title}
@@ -477,7 +477,7 @@ export default function RealtimeDashboardWrapper({
           ))}
         </Grid>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="border-gray-200 dark:border-gray-800">
             <Title className="dark:text-white">Actividad Reciente</Title>
             <Text className="dark:text-slate-400">

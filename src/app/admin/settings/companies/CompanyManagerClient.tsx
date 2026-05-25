@@ -217,7 +217,7 @@ export default function CompanyManagerClient({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-nowrap">
                     Cód. Área
@@ -228,7 +228,7 @@ export default function CompanyManagerClient({
                     defaultValue={editingCompany?.phone_code_area || ""}
                   />
                 </div>
-                <div className="col-span-2 space-y-1">
+                <div className="sm:col-span-2 space-y-1">
                   <Text className="text-xs font-bold uppercase">
                     Número de Teléfono
                   </Text>

@@ -500,7 +500,7 @@ export default function UserManagerClient({
               Nuevo Usuario
             </Title>
             <form onSubmit={handleCreateUser} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextInput
                   name="email"
                   type="email"
@@ -610,7 +610,7 @@ export default function UserManagerClient({
               Editar Usuario
             </Title>
             <form onSubmit={handleUpdateUser} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextInput
                   name="full_name"
                   defaultValue={editingUser?.full_name || ""}
