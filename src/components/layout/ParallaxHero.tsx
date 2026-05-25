@@ -68,12 +68,12 @@ export function ParallaxHero({ heroContent }: ParallaxHeroProps) {
         </p>
 
         <div
-          className="flex justify-center gap-4"
+          className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 px-4"
           style={{ transform: `translateY(${scrollY * 0.12}px)` }}
         >
           <Link
             href="/bingo"
-            className="bg-larioja-amarillo hover:bg-yellow-400 text-larioja-azul font-bold py-2.5 px-6 sm:py-3 sm:px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl shadow-larioja-amarillo/20 text-sm sm:text-base"
+            className="bg-larioja-amarillo hover:bg-yellow-400 text-larioja-azul font-bold py-2.5 px-6 sm:py-3 sm:px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl shadow-larioja-amarillo/20 text-sm sm:text-base text-center"
           >
             Jugar Bingo
           </Link>
@@ -82,7 +82,7 @@ export function ParallaxHero({ heroContent }: ParallaxHeroProps) {
             {(openModal) => (
               <button
                 onClick={openModal}
-                className="bg-larioja-verde hover:bg-larioja-verde/90 text-white font-bold py-2.5 px-6 sm:py-3 sm:px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl shadow-larioja-verde/20 text-sm sm:text-base flex items-center gap-2"
+                className="bg-larioja-verde hover:bg-larioja-verde/90 text-white font-bold py-2.5 px-6 sm:py-3 sm:px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl shadow-larioja-verde/20 text-sm sm:text-base flex items-center justify-center gap-2"
               >
                 <Mail size={18} />
                 Contáctanos

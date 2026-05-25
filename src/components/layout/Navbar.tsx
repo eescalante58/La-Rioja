@@ -177,7 +177,7 @@ export function Navbar() {
             isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
           }`}
         >
-          <div className="flex flex-col h-full p-8 pt-24">
+          <div className="flex flex-col h-full overflow-y-auto p-6 sm:p-8 pt-20 sm:pt-24">
             <button
               onClick={toggleMenu}
               className="absolute top-6 right-6 p-2 text-white/70 hover:text-white transition-colors"
@@ -185,46 +185,46 @@ export function Navbar() {
               <X size={32} />
             </button>
 
-            <div className="flex flex-col gap-6 text-center font-montserrat">
+            <div className="flex flex-col gap-3 sm:gap-6 text-center font-montserrat">
               <Link
                 href="/about"
                 onClick={() => setIsOpen(false)}
-                className="text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-4 border-b border-white/10"
+                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-3 sm:py-4 border-b border-white/10"
               >
                 Nosotros
               </Link>
               <Link
                 href="/contact"
                 onClick={() => setIsOpen(false)}
-                className="text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-4 border-b border-white/10"
+                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-3 sm:py-4 border-b border-white/10"
               >
                 Apóyanos
               </Link>
               <Link
                 href="/programs"
                 onClick={() => setIsOpen(false)}
-                className="text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-4 border-b border-white/10"
+                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-3 sm:py-4 border-b border-white/10"
               >
                 Programas
               </Link>
               <Link
                 href="/faq"
                 onClick={() => setIsOpen(false)}
-                className="text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-4 border-b border-white/10"
+                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-3 sm:py-4 border-b border-white/10"
               >
                 Preguntas
               </Link>
               <Link
                 href="/bingo"
                 onClick={() => setIsOpen(false)}
-                className="text-3xl font-bold text-white hover:text-larioja-verde transition-colors py-4 border-b border-white/10"
+                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-verde transition-colors py-3 sm:py-4 border-b border-white/10"
               >
                 Bingo
               </Link>
               <Link
                 href="/admin"
                 onClick={() => setIsOpen(false)}
-                className="text-3xl font-bold text-larioja-amarillo hover:text-white transition-colors py-4 border-b border-white/10"
+                className="text-2xl sm:text-3xl font-bold text-larioja-amarillo hover:text-white transition-colors py-3 sm:py-4 border-b border-white/10"
               >
                 Panel de Control
               </Link>
@@ -236,7 +236,7 @@ export function Navbar() {
                       setIsOpen(false);
                       openModal();
                     }}
-                    className="text-3xl font-bold text-larioja-verde hover:text-white transition-colors py-4 flex items-center justify-center gap-3"
+                    className="text-2xl sm:text-3xl font-bold text-larioja-verde hover:text-white transition-colors py-3 sm:py-4 flex items-center justify-center gap-3"
                   >
                     <Mail size={28} />
                     Contacto
@@ -245,7 +245,7 @@ export function Navbar() {
               </ContactTrigger>
             </div>
 
-            <div className="mt-auto pb-12 text-center text-white/40 text-sm italic">
+            <div className="mt-auto pt-8 pb-8 sm:pb-12 text-center text-white/40 text-sm italic">
               Formando futuros, integrando vidas.
             </div>
           </div>

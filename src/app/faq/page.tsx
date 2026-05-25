@@ -135,7 +135,7 @@ export default async function FAQPage() {
       {/* Programs Link CTA */}
       <section className="py-20">
         <div className="container mx-auto px-6 text-center">
-          <div className="bg-larioja-verde/5 dark:bg-larioja-verde/10 p-12 rounded-3xl border border-larioja-verde/20 max-w-4xl mx-auto">
+          <div className="bg-larioja-verde/5 dark:bg-larioja-verde/10 p-6 sm:p-12 rounded-3xl border border-larioja-verde/20 max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold text-larioja-verde mb-4">
               ¿Listo para conocer más?
             </h2>
