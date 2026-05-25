@@ -170,7 +170,7 @@ export default function LogViewerClient({
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="space-y-1">
                 <Text className="text-[10px] font-bold uppercase text-gray-500">
                   Usuario

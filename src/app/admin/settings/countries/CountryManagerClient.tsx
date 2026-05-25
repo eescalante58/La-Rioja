@@ -430,7 +430,7 @@ export default function CountryManagerClient({
                 <input type="hidden" name="id" value={editingCountry.id} />
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">
                     ISO 2
@@ -469,7 +469,7 @@ export default function CountryManagerClient({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">
                     Código Telefónico

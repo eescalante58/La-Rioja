@@ -725,7 +725,7 @@ export default function StudentManagerClient({
                 />
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400">
                     Id Alumno
@@ -1159,7 +1159,7 @@ export default function StudentManagerClient({
 
             {selectedInvoice ? (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Card className="p-3 bg-gray-50 dark:bg-gray-800 border-none">
                     <Text className="text-[10px] font-bold uppercase text-gray-400">
                       Fecha de Emisión

@@ -483,7 +483,7 @@ export default function CMSManagerClient({
           </div>
 
           <form onSubmit={handleCreate} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Text className="text-xs font-bold uppercase text-gray-500">
                   Página
@@ -634,7 +634,7 @@ export default function CMSManagerClient({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Text className="text-xs font-bold uppercase text-gray-500">
                   Orden

@@ -81,7 +81,7 @@ export default function SettingsPage() {
         </Text>
       </div>
 
-      <Grid numItemsSm={2} numItemsLg={3} className="gap-6">
+      <Grid numItems={1} numItemsSm={2} numItemsLg={3} className="gap-6">
         {settingsOptions.map((option) => (
           <Link key={option.title} href={option.href}>
             <Card

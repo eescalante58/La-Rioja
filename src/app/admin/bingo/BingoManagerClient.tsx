@@ -2150,7 +2150,7 @@ export default function BingoManagerClient({
                   4. Imagen de los Cartones ({cardImagesUrls.length})
                 </label>
                 {cardImagesUrls.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2">
                     {cardImagesUrls.map((url, i) => (
                       <div
                         key={i}
@@ -2592,7 +2592,7 @@ export default function BingoManagerClient({
               <div className="bg-red-500 text-white p-2 text-center font-bold rounded-lg mb-4">
                 MODO GENERACIÓN ACTIVO
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-gray-500">
                     Número Inicial
@@ -2730,7 +2730,7 @@ export default function BingoManagerClient({
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-gray-500">
                     ID Evento (Slug)
@@ -2776,7 +2776,7 @@ export default function BingoManagerClient({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-gray-500">
                     Responsable
@@ -2808,7 +2808,7 @@ export default function BingoManagerClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-gray-500">
                     Número de Cartones
@@ -2834,7 +2834,7 @@ export default function BingoManagerClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase text-gray-500">
                     Fecha
@@ -2925,7 +2925,7 @@ export default function BingoManagerClient({
                   value={currentEventInfo?.eventId}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                       N° Factura
@@ -2962,7 +2962,7 @@ export default function BingoManagerClient({
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                       Nombre del Cliente
@@ -2987,7 +2987,7 @@ export default function BingoManagerClient({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1">
                     <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                       Área
@@ -3080,7 +3080,7 @@ export default function BingoManagerClient({
                   </datalist>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                       Imagen de Factura
@@ -3107,7 +3107,7 @@ export default function BingoManagerClient({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1">
                     <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                       Número de Cartones
@@ -3195,7 +3195,7 @@ export default function BingoManagerClient({
                     />
                   </div>
                   <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-2">
                       {availableCardsForInvoice.map((card) => (
                         <div
                           key={card.card_number}
@@ -3386,7 +3386,7 @@ export default function BingoManagerClient({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                         Fecha Emisión
@@ -3416,7 +3416,7 @@ export default function BingoManagerClient({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                         Método de Pago
@@ -3569,7 +3569,7 @@ export default function BingoManagerClient({
             </div>
 
             <form onSubmit={handleRangeReassignType} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase text-gray-500">
                     Desde N°
@@ -3673,7 +3673,7 @@ export default function BingoManagerClient({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Primera Columna */}
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                           Tipo
@@ -3706,7 +3706,7 @@ export default function BingoManagerClient({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                           Precio Base
@@ -3906,7 +3906,7 @@ export default function BingoManagerClient({
                       ></textarea>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-400">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] text-gray-400">
                       <div>
                         <span className="font-bold uppercase">Creado:</span>
                         <p>
@@ -4055,7 +4055,7 @@ export default function BingoManagerClient({
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto">
-              <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <Card className="p-3 text-center border-emerald-100 bg-emerald-50 dark:bg-emerald-950/20">
                   <Text className="text-[10px] font-bold uppercase text-emerald-600">
                     Total
