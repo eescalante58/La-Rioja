@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import { submitContactForm } from "@/app/actions/contact";
 
@@ -15,6 +16,7 @@ export function ContactModal({
   onClose,
   targetEmail,
 }: ContactModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +28,11 @@ export function ContactModal({
     message: "",
   });
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,9 +81,9 @@ export function ContactModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto px-4 py-8"
+      className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm animate-fade-in overflow-y-auto px-4 py-8"
       onClick={onClose}
     >
       <div className="flex min-h-full items-center justify-center">
@@ -221,6 +227,7 @@ export function ContactModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

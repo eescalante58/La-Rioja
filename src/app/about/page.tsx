@@ -644,22 +644,22 @@ export default async function AboutPage() {
         <section className="py-24 bg-white dark:bg-larioja-azul">
           <div className="container mx-auto px-6">
             <ScrollReveal>
-              <div className="bg-larioja-verde p-12 md:p-20 rounded-[3rem] relative overflow-hidden text-center max-w-5xl mx-auto">
+              <div className="bg-larioja-verde p-6 sm:p-10 md:p-20 rounded-3xl md:rounded-[3rem] relative overflow-hidden text-center max-w-5xl mx-auto">
                 {/* Background patterns */}
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl" />
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-larioja-azul/10 rounded-full -ml-20 -mb-20 blur-3xl" />
 
                 <div className="relative z-10">
-                  <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white tracking-tight">
+                  <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 sm:mb-8 text-white tracking-tight">
                     {cta.title || "¿Listo para ser parte de nuestra comunidad?"}
                   </h2>
-                  <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+                  <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-12 max-w-2xl mx-auto font-light leading-relaxed">
                     {cta.description ||
                       "Conoce nuestros programas vocacionales y descubre cómo podemos apoyar el desarrollo integral de tus seres queridos."}
                   </p>
                   <Link
                     href={cta.metadata?.button_link || "/bingo"}
-                    className="inline-flex items-center gap-2 bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-4 px-12 rounded-full transition-all hover:scale-105 active:scale-95 shadow-2xl text-lg group"
+                    className="inline-flex items-center justify-center gap-2 bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-12 rounded-full transition-all hover:scale-105 active:scale-95 shadow-2xl text-base sm:text-lg group w-full sm:w-auto"
                   >
                     {cta.metadata?.button_text || "Ver Programas"}
                     <Rocket

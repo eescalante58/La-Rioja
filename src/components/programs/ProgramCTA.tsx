@@ -12,15 +12,15 @@ interface ProgramCTAProps {
 
 export function ProgramCTA({ title, description }: ProgramCTAProps) {
   return (
-    <div className="bg-larioja-verde p-12 md:p-20 rounded-[3rem] relative overflow-hidden text-center max-w-5xl mx-auto">
+    <div className="bg-larioja-verde p-6 sm:p-10 md:p-20 rounded-3xl md:rounded-[3rem] relative overflow-hidden text-center max-w-5xl mx-auto">
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-larioja-azul/10 rounded-full -ml-20 -mb-20 blur-3xl" />
       
       <div className="relative z-10">
-        <h2 className="text-4xl md:text-6xl font-bold mb-8 text-white tracking-tight">
+        <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 sm:mb-8 text-white tracking-tight">
           {title}
         </h2>
-        <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-white/90 mb-8 sm:mb-12 max-w-2xl mx-auto font-light leading-relaxed">
           {description}
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -28,7 +28,7 @@ export function ProgramCTA({ title, description }: ProgramCTAProps) {
             {(openModal) => (
               <button
                 onClick={openModal}
-                className="inline-flex items-center gap-2 bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-4 px-12 rounded-full transition-all hover:scale-105 active:scale-95 shadow-2xl text-lg group w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-12 rounded-full transition-all hover:scale-105 active:scale-95 shadow-2xl text-base sm:text-lg group w-full sm:w-auto"
               >
                 Agendar Cita
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -37,7 +37,7 @@ export function ProgramCTA({ title, description }: ProgramCTAProps) {
           </ContactTrigger>
           <Link
             href="/faq"
-            className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold py-4 px-12 rounded-full transition-all text-lg backdrop-blur-sm w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold py-3 sm:py-4 px-6 sm:px-12 rounded-full transition-all text-base sm:text-lg backdrop-blur-sm w-full sm:w-auto"
           >
             Ver Preguntas
           </Link>

@@ -246,17 +246,17 @@ export function ContactClient() {
       {/* Tu Impacto Section */}
       <section className="py-24 bg-white dark:bg-larioja-azul overflow-hidden">
         <div className="container mx-auto px-6">
-          <div className="bg-larioja-azul rounded-[3rem] p-12 md:p-20 relative overflow-hidden">
+          <div className="bg-larioja-azul rounded-3xl md:rounded-[3rem] p-6 sm:p-10 md:p-20 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-larioja-verde/20 rounded-full -mr-20 -mt-20 blur-3xl" />
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-larioja-amarillo/10 rounded-full -ml-20 -mb-20 blur-3xl" />
 
             <div className="relative z-10">
               <ScrollReveal>
                 <div className="text-center mb-16">
-                  <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white tracking-tight">
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-white tracking-tight">
                     Tu <span className="text-larioja-verde">Impacto</span>
                   </h2>
-                  <p className="text-xl text-white/70 max-w-2xl mx-auto">
+                  <p className="text-base sm:text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
                     Mira cómo tu donativo transforma vidas
                   </p>
                 </div>
@@ -266,7 +266,7 @@ export function ContactClient() {
                 {impactData.map((impact, idx) => (
                   <ScrollReveal key={idx} delay={idx * 100}>
                     <div className="text-center group">
-                      <div className="text-5xl md:text-6xl font-black text-white mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <div className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4 group-hover:scale-110 transition-transform duration-300">
                         {impact.value}
                       </div>
                       <p className="text-white/60 text-lg leading-relaxed">
@@ -316,29 +316,29 @@ export function ContactClient() {
       <section className="py-24 bg-gray-50 dark:bg-slate-900/50 overflow-hidden">
         <div className="container mx-auto px-6">
           <ScrollReveal>
-            <div className="bg-larioja-amarillo p-12 md:p-20 rounded-[3rem] relative overflow-hidden text-center max-w-5xl mx-auto shadow-2xl">
+            <div className="bg-larioja-amarillo p-6 sm:p-10 md:p-20 rounded-3xl md:rounded-[3rem] relative overflow-hidden text-center max-w-5xl mx-auto shadow-2xl">
               <div className="absolute top-0 left-0 w-64 h-64 bg-white/20 rounded-full -ml-20 -mt-20 blur-3xl" />
               <div className="absolute bottom-0 right-0 w-64 h-64 bg-larioja-verde/20 rounded-full -mr-20 -mb-20 blur-3xl" />
 
               <div className="relative z-10">
-                <h2 className="text-4xl md:text-6xl font-bold mb-8 text-larioja-azul tracking-tight">
+                <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 sm:mb-8 text-larioja-azul tracking-tight">
                   ¿Tienes más <span className="text-white">preguntas?</span>
                 </h2>
-                <p className="text-xl text-larioja-azul/80 mb-12 max-w-2xl mx-auto font-medium">
+                <p className="text-base sm:text-lg md:text-xl text-larioja-azul/80 mb-8 sm:mb-12 max-w-2xl mx-auto font-medium">
                   Estamos aquí para ayudarte. No dudes en contactarnos con
                   cualquier inquietud.
                 </p>
-                <div className="flex flex-wrap justify-center gap-6">
+                <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
                   <a
                     href="tel:+50378580322"
-                    className="inline-flex items-center gap-2 bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-4 px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl group"
+                    className="inline-flex items-center justify-center gap-2 bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl group"
                   >
                     <Phone size={20} />
                     Llamar ahora
                   </a>
                   <a
                     href="mailto:info@cflrioja.org"
-                    className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-larioja-azul font-bold py-4 px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl group"
+                    className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-larioja-azul font-bold py-3 sm:py-4 px-6 sm:px-10 rounded-full transition-all hover:scale-105 active:scale-95 shadow-xl group"
                   >
                     <Mail size={20} />
                     Escribir correo
