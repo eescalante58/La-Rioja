@@ -182,9 +182,10 @@ export function ContactModal({
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-larioja-azul focus:ring-2 focus:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900 appearance-none cursor-pointer"
                 >
                   <option>Consulta General</option>
-                  <option>Información de Cursos</option>
-                  <option>Soporte de Bingo</option>
-                  <option>Donaciones</option>
+                  <option>Información de Inscripción</option>
+                  <option>Donativos</option>
+                  <option>Patrocinio</option>
+                  <option>Otros</option>
                 </select>
               </div>
 
