@@ -315,16 +315,19 @@ export default function UserManagerClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
         <div className="flex items-center gap-4">
           <Link href="/admin/settings">
-            <Button variant="light" icon={ArrowLeft}>
-              Volver
-            </Button>
+            <Button variant="light" icon={ArrowLeft} className="rounded-full" />
           </Link>
-          <Title className="text-lg font-bold text-larioja-azul dark:text-larioja-amarillo">
-            Usuarios [v2.9]
-          </Title>
+          <div>
+            <Title className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
+              Usuarios y Roles
+            </Title>
+            <Text className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+              Gestiona accesos, perfiles de usuario y permisos del sistema.
+            </Text>
+          </div>
         </div>
       </div>
       <TabGroup>
@@ -495,7 +498,7 @@ export default function UserManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
               Nuevo Usuario
             </Title>
@@ -605,7 +608,7 @@ export default function UserManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
               Editar Usuario
             </Title>
@@ -730,7 +733,7 @@ export default function UserManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
               {editingRole ? "Editar Rol" : "Nuevo Rol"}
             </Title>
@@ -773,7 +776,7 @@ export default function UserManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex justify-between mb-4">
               <Title className="text-larioja-azul dark:text-larioja-amarillo">
                 Empresas: {selectedUserForCompanies?.email}

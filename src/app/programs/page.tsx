@@ -129,16 +129,16 @@ export default async function ProgramsPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-larioja-azul via-larioja-azul to-blue-900 opacity-50 z-0" />
 
         {/* Decorative elements */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-larioja-verde/20 rounded-full blur-3xl z-0" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-larioja-amarillo/10 rounded-full blur-3xl z-0" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-larioja-verde/10 rounded-full blur-2xl z-0" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-larioja-amarillo/5 rounded-full blur-2xl z-0" />
 
         <div className="container mx-auto px-6 relative z-10">
           <ScrollReveal>
             <div className="max-w-4xl mx-auto text-center">
-              <span className="inline-block py-1 px-3 rounded-full bg-larioja-amarillo/20 text-larioja-amarillo text-xs font-bold uppercase tracking-widest mb-4">
+              <span className="inline-block py-1 px-3 rounded-full bg-larioja-amarillo text-larioja-azul text-xs font-bold uppercase tracking-widest mb-4 shadow-sm">
                 {hero?.metadata?.badge || "Formación con Propósito"}
               </span>
-              <h1 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight">
+              <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold mb-8 tracking-tight break-words [overflow-wrap:anywhere]">
                 <HighlightedTitle title={hero?.title || "Nuestros Programas"} />
               </h1>
               <p className="text-xl md:text-2xl text-white/80 leading-relaxed font-light">
@@ -153,10 +153,10 @@ export default async function ProgramsPage() {
       {/* Intro Section */}
       <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
         <div className="container mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
             <ScrollReveal direction="left">
               <div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-6 text-larioja-azul dark:text-white leading-tight">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-larioja-azul dark:text-white leading-tight break-words [overflow-wrap:anywhere]">
                   <HighlightedTitle
                     title={
                       intro?.title ||
@@ -196,8 +196,8 @@ export default async function ProgramsPage() {
               <div className="relative">
                 {intro?.metadata?.image_style === "circle" ? (
                   <div className="circle-effect-container">
-                    <div className="circle-decoration-blob blob-purple animate-pulse" />
-                    <div className="circle-decoration-blob blob-blue animate-pulse delay-700" />
+                    <div className="circle-decoration-blob blob-verde animate-pulse" />
+                    <div className="circle-decoration-blob blob-amarillo animate-pulse delay-700" />
                     <div
                       className={`circle-image-wrapper ${intro?.metadata?.image_animation === "popIn" ? "animate-pop-in" : ""}`}
                     >
@@ -215,7 +215,7 @@ export default async function ProgramsPage() {
                   </div>
                 ) : (
                   <div
-                    className={`aspect-video relative rounded-[2rem] overflow-hidden shadow-2xl border-8 border-white dark:border-slate-800 ${intro?.metadata?.image_animation === "popIn" ? "animate-pop-in" : ""}`}
+                    className={`aspect-video relative rounded-2xl overflow-hidden shadow-lg border-4 border-white dark:border-slate-800 ${intro?.metadata?.image_animation === "popIn" ? "animate-pop-in" : ""}`}
                   >
                     <Image
                       src={
@@ -247,16 +247,16 @@ export default async function ProgramsPage() {
       {/* Programs Grid */}
       <section className="py-24 bg-white dark:bg-larioja-azul">
         <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
             {programs.map((program: any, idx: number) => (
               <ScrollReveal
                 key={program.id || idx}
                 delay={idx * 100}
                 direction={idx % 2 === 0 ? "left" : "right"}
               >
-                <div className="bg-gray-50 dark:bg-slate-900/30 rounded-[2.5rem] p-10 h-full border border-transparent hover:border-larioja-verde/20 transition-all duration-500 group flex flex-col">
+                <div className="bg-gray-50 dark:bg-slate-900/30 rounded-3xl p-10 h-full border border-transparent hover:border-larioja-verde/20 transition-all duration-500 group flex flex-col hover:bg-white dark:hover:bg-slate-900 hover:shadow-md">
                   <div
-                    className={`w-16 h-16 ${program.bg} rounded-2xl flex items-center justify-center ${program.color} mb-8 group-hover:scale-110 transition-transform`}
+                    className={`w-16 h-16 ${program.bg} rounded-2xl flex items-center justify-center ${program.color} mb-8 group-hover:scale-105 transition-transform`}
                   >
                     <DynamicIcon name={program.icon} size={32} />
                   </div>
@@ -300,13 +300,13 @@ export default async function ProgramsPage() {
 
         <div className="container mx-auto px-6 relative z-10 text-center max-w-4xl">
           <ScrollReveal>
-            <h2 className="text-4xl md:text-5xl font-bold mb-16 text-white">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-16 text-white break-words [overflow-wrap:anywhere]">
               <HighlightedTitle
                 title={value?.title || "Nuestra Propuesta de Valor"}
               />
             </h2>
 
-            <div className="grid sm:grid-cols-3 gap-12">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
               {valueProps.map((item: any, idx: number) => (
                 <div key={idx} className="space-y-4">
                   <div

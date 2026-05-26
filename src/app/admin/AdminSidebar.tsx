@@ -75,7 +75,10 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
       {/* Desktop Sidebar (Permanent) */}
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-black border-r border-gray-200 dark:border-gray-800 transition-colors">
         <div className="p-6">
-          <Link href="/admin" className="flex items-center gap-2">
+          <Link
+            href="/admin"
+            className="flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-larioja-azul rounded-lg outline-none"
+          >
             <span className="text-xl font-bold text-larioja-azul dark:text-white">
               La Rioja Admin
             </span>
@@ -87,7 +90,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-larioja-azul ${
                 pathname === link.href
                   ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white"
                   : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
@@ -102,7 +105,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
             <form action={signOut}>
               <button
                 type="submit"
-                className="flex items-center gap-3 px-4 py-2 w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors font-medium"
+                className="flex items-center gap-3 px-4 py-2 w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors font-medium outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
                 <LogOut size={20} />
                 <span>Cerrar Sesión</span>
@@ -185,7 +188,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-colors ${
+                className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-colors outline-none focus-visible:ring-4 focus-visible:ring-larioja-azul/40 ${
                   pathname === link.href
                     ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-lg shadow-larioja-azul/10"
                     : "text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
@@ -200,7 +203,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="flex items-center gap-4 px-4 py-4 w-full text-red-600 font-bold hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors"
+                  className="flex items-center gap-4 px-4 py-4 w-full text-red-600 font-bold hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors outline-none focus-visible:ring-4 focus-visible:ring-red-500/40"
                 >
                   <LogOut size={24} />
                   <span className="text-lg">Cerrar Sesión</span>

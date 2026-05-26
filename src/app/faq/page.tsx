@@ -40,10 +40,10 @@ export default async function FAQPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="bg-larioja-azul text-white pt-32 pb-20 relative overflow-hidden">
+      <section className="bg-larioja-azul text-white pt-32 pb-20 relative overflow-hidden shadow-inner">
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent z-10" />
         <div className="container mx-auto px-6 relative z-20 text-center max-w-4xl">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in break-words [overflow-wrap:anywhere]">
             Preguntas Frecuentes
           </h1>
           <p className="text-lg md:text-xl font-light opacity-90 max-w-2xl mx-auto">
@@ -51,10 +51,6 @@ export default async function FAQPage() {
             inscripción y servicios.
           </p>
         </div>
-
-        {/* Decorative elements */}
-        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-larioja-verde/10 rounded-full blur-3xl z-0" />
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-larioja-amarillo/10 rounded-full blur-3xl z-0" />
       </section>
 
       {/* FAQ Content Section */}

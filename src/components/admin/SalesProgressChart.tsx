@@ -137,7 +137,7 @@ export default function SalesProgressChart({
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+      <div className="grid grid-cols-1 xs:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
         <div className="text-center">
           <Text className="text-[10px] font-bold uppercase text-slate-500">
             Meta

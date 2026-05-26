@@ -1,20 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Card, 
-  Title, 
-  Text, 
-  Button, 
-  TextInput,
-  Callout
-} from "@tremor/react";
-import { 
-  Mail, 
-  AlertCircle,
-  ArrowLeft,
-  CheckCircle
-} from "lucide-react";
+import { Card, Title, Text, Button, TextInput, Callout } from "@tremor/react";
+import { Mail, AlertCircle, ArrowLeft, CheckCircle } from "lucide-react";
 import { resetPasswordForEmail } from "../actions";
 import Link from "next/link";
 import Image from "next/image";
@@ -48,9 +36,12 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-larioja-gradient p-4 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-larioja-gradient p-4 transition-colors relative overflow-hidden">
+      {/* Soften the background saturation */}
+      <div className="absolute inset-0 bg-white/20 dark:bg-black/40 pointer-events-none" />
+
       <div className="w-full max-w-md">
-        <Card className="p-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-2xl border-2 border-white/20 dark:border-gray-800 rounded-3xl">
+        <Card className="p-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-xl border-2 border-white/20 dark:border-gray-800 rounded-2xl">
           <div className="text-center mb-6">
             <div className="relative h-16 w-48 mx-auto mb-4">
               <Image
@@ -65,23 +56,38 @@ export default function ForgotPasswordPage() {
               Recuperar Contraseña
             </Title>
             <Text className="text-xs text-gray-500 mt-2">
-              Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.
+              Ingresa tu correo y te enviaremos un enlace para restablecer tu
+              contraseña.
             </Text>
           </div>
 
           {error && (
-            <Callout className="mb-4 py-2" title="Error" icon={AlertCircle} color="rose">
+            <Callout
+              className="mb-4 py-2"
+              title="Error"
+              icon={AlertCircle}
+              color="rose"
+            >
               <span className="text-xs">{error}</span>
             </Callout>
           )}
 
           {success ? (
             <div className="text-center space-y-4">
-              <Callout title="Enlace enviado" icon={CheckCircle} color="emerald">
+              <Callout
+                title="Enlace enviado"
+                icon={CheckCircle}
+                color="emerald"
+              >
                 Revisa tu bandeja de entrada para continuar con el proceso.
               </Callout>
               <Link href="/login">
-                <Button variant="secondary" color="gray" className="w-full mt-4" icon={ArrowLeft}>
+                <Button
+                  variant="secondary"
+                  color="gray"
+                  className="w-full mt-4"
+                  icon={ArrowLeft}
+                >
                   Volver al Login
                 </Button>
               </Link>

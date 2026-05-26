@@ -35,7 +35,7 @@ export default async function AdminLayout({
               >
                 <Building2
                   size={22}
-                  className="text-larioja-azul dark:text-slate-200 group-hover:scale-110 transition-transform"
+                  className="text-larioja-azul dark:text-slate-200 group-hover:scale-105 transition-transform"
                 />
                 <span className="text-lg md:text-xl font-bold tracking-tight text-larioja-azul dark:text-white truncate max-w-[150px] sm:max-w-none">
                   {selectedCompanyName}

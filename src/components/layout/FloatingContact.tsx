@@ -31,11 +31,11 @@ export function FloatingContact() {
         {(openModal) => (
           <button
             onClick={openModal}
-            className="group relative flex items-center justify-center w-14 h-14 bg-larioja-verde text-white rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300"
+            className="group relative flex items-center justify-center w-14 h-14 bg-larioja-verde text-white rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all duration-300"
             aria-label="Contacto"
           >
             <MessageSquare size={24} />
-            
+
             {/* Tooltip */}
             <span className="absolute right-full mr-4 px-3 py-1 bg-larioja-azul text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/10">
               ¿En qué podemos ayudarte?

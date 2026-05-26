@@ -112,12 +112,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-larioja-gradient p-4 transition-colors relative">
+    <div className="min-h-screen flex items-center justify-center bg-larioja-gradient p-4 transition-colors relative overflow-hidden">
+      {/* Soften the background saturation */}
+      <div className="absolute inset-0 bg-white/20 dark:bg-black/40 pointer-events-none" />
+
       <div className="absolute top-4 right-4 z-50 bg-white/10 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md">
-        <Card className="p-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-2xl border-2 border-white/20 dark:border-gray-800 rounded-3xl">
+        <Card className="p-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-xl border-2 border-white/20 dark:border-gray-800 rounded-2xl">
           {/* Logo & Header */}
           <div className="text-center mb-6">
             <Link
@@ -176,7 +179,7 @@ export default function LoginPage() {
                   onBlur={(e) => validateEmail(e.target.value)}
                   aria-invalid={!!emailError}
                   aria-describedby={emailError ? "email-error" : undefined}
-                  className={`w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border ${emailError ? "border-red-600" : "border-gray-300 dark:border-gray-600"} rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-larioja-azul dark:focus:ring-larioja-amarillo outline-none transition-all`}
+                  className={`w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border ${emailError ? "border-red-600" : "border-gray-300 dark:border-gray-600"} rounded-xl text-sm text-gray-900 dark:text-white focus-visible:ring-2 focus-visible:ring-larioja-azul dark:focus-visible:ring-larioja-amarillo outline-none transition-all`}
                 />
               </div>
               {emailError && (
@@ -223,7 +226,7 @@ export default function LoginPage() {
                   aria-describedby={
                     passwordError ? "password-error" : undefined
                   }
-                  className={`w-full pl-10 pr-12 py-2 bg-gray-50 dark:bg-gray-800 border ${passwordError ? "border-red-600" : "border-gray-300 dark:border-gray-600"} rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-larioja-azul dark:focus:ring-larioja-amarillo outline-none transition-all`}
+                  className={`w-full pl-10 pr-12 py-2 bg-gray-50 dark:bg-gray-800 border ${passwordError ? "border-red-600" : "border-gray-300 dark:border-gray-600"} rounded-xl text-sm text-gray-900 dark:text-white focus-visible:ring-2 focus-visible:ring-larioja-azul dark:focus-visible:ring-larioja-amarillo outline-none transition-all`}
                 />
                 <button
                   type="button"
@@ -249,7 +252,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full py-2 bg-larioja-azul hover:bg-blue-800 text-white rounded-xl shadow-lg transition-all focus:ring-2 focus:ring-offset-2 focus:ring-larioja-azul"
+              className="w-full py-2 bg-larioja-azul hover:bg-blue-800 text-white rounded-xl shadow-lg transition-all focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-larioja-azul"
               loading={loading}
               icon={LogIn}
             >
@@ -284,12 +287,12 @@ export default function LoginPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
             <button
               type="button"
               onClick={() => handleOAuth("google")}
               aria-label="Iniciar sesión con Google"
-              className="flex items-center justify-center p-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group focus:ring-2 focus:ring-larioja-azul"
+              className="flex items-center justify-center p-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group focus-visible:ring-2 focus-visible:ring-larioja-azul"
             >
               <Chrome
                 className="text-gray-600 group-hover:text-red-600 transition-colors"
@@ -300,7 +303,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleOAuth("facebook")}
               aria-label="Iniciar sesión con Facebook"
-              className="flex items-center justify-center p-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group focus:ring-2 focus:ring-larioja-azul"
+              className="flex items-center justify-center p-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group focus-visible:ring-2 focus-visible:ring-larioja-azul"
             >
               <Facebook
                 className="text-gray-600 group-hover:text-blue-600 transition-colors"
@@ -311,7 +314,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => handleOAuth("twitter")}
               aria-label="Iniciar sesión con X (Twitter)"
-              className="flex items-center justify-center p-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group focus:ring-2 focus:ring-larioja-azul"
+              className="flex items-center justify-center p-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group focus-visible:ring-2 focus-visible:ring-larioja-azul"
             >
               <Twitter
                 className="text-gray-600 group-hover:Sky-500 transition-colors"

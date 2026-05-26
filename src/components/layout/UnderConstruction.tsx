@@ -13,15 +13,15 @@ interface UnderConstructionProps {
 /**
  * Reusable Under Construction component for pages still in development.
  */
-export default function UnderConstruction({ 
-  title, 
-  description = "Estamos trabajando para brindarte la mejor experiencia. Vuelve pronto para ver las novedades." 
+export default function UnderConstruction({
+  title,
+  description = "Estamos trabajando para brindarte la mejor experiencia. Vuelve pronto para ver las novedades.",
 }: UnderConstructionProps) {
   return (
     <div className="min-h-screen bg-larioja-azul flex flex-col items-center justify-center p-6 text-center text-white relative overflow-hidden">
       {/* Subtle Background Elements */}
-      <div className="absolute -top-24 -left-24 w-96 h-96 bg-larioja-verde/20 rounded-full blur-3xl z-0" />
-      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-larioja-amarillo/10 rounded-full blur-3xl z-0" />
+      <div className="absolute -top-24 -left-24 w-96 h-96 bg-larioja-verde/10 rounded-full blur-2xl z-0" />
+      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-larioja-amarillo/5 rounded-full blur-2xl z-0" />
 
       <div className="relative z-10 flex flex-col items-center max-w-2xl">
         {/* Logo */}
@@ -61,9 +61,9 @@ export default function UnderConstruction({
       </div>
 
       {/* Hammer Icon Floating Decoration */}
-      <Hammer 
-        size={120} 
-        className="absolute bottom-10 left-10 text-white/5 -rotate-12 hidden md:block" 
+      <Hammer
+        size={120}
+        className="absolute bottom-10 left-10 text-white/5 -rotate-12 hidden md:block"
       />
     </div>
   );

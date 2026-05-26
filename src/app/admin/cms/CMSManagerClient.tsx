@@ -235,25 +235,26 @@ export default function CMSManagerClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
         <div>
-          <Title className="text-lg font-bold text-larioja-azul/80 dark:text-larioja-amarillo/80">
+          <Title className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
             Gestión de Contenido (CMS)
           </Title>
-          <Text className="text-xs">
-            Administra el contenido dinámico de la landing page y secciones.
+          <Text className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+            Administra el contenido dinámico de la landing page y secciones
+            informativas.
           </Text>
         </div>
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="flex items-center gap-2 bg-larioja-verde hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition-all active:scale-95"
+          className="flex items-center gap-2 bg-larioja-verde hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95"
         >
           <Plus size={18} />
           Nueva Sección
         </button>
       </div>
 
-      <Card className="p-0 overflow-hidden shadow-xl border-gray-200 dark:border-gray-800">
+      <Card className="p-0 overflow-hidden shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
         {/* Barra de desplazamiento superior (Trick: transform rotate) */}
         <div style={{ transform: "rotateX(180deg)", overflowX: "auto" }}>
           <div style={{ transform: "rotateX(180deg)" }}>
@@ -568,7 +569,7 @@ export default function CMSManagerClient({
                     className="flex flex-col items-center justify-center w-full aspect-square max-h-[250px] border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all cursor-pointer group"
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-3 group-hover:scale-110 transition-transform">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-3 group-hover:scale-105 transition-transform">
                         <ImageIcon size={28} className="text-blue-500" />
                       </div>
                       <p className="mb-1 text-xs text-gray-700 dark:text-gray-300 text-center">
@@ -650,7 +651,7 @@ export default function CMSManagerClient({
                   }
                 />
               </div>
-              <div className="flex items-center gap-3 pt-6">
+              <div className="flex items-center gap-3 pt-0 sm:pt-6">
                 <Switch
                   checked={newFormData.is_active}
                   onChange={(checked) =>

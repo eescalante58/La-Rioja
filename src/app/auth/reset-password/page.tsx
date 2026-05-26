@@ -91,12 +91,15 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-larioja-gradient p-4 transition-colors relative">
+    <div className="min-h-screen flex items-center justify-center bg-larioja-gradient p-4 transition-colors relative overflow-hidden">
+      {/* Soften the background saturation */}
+      <div className="absolute inset-0 bg-white/20 dark:bg-black/40 pointer-events-none" />
+
       <div className="absolute top-4 right-4 z-50 bg-white/10 backdrop-blur-md p-1 rounded-xl border border-white/20 shadow-lg">
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md">
-        <Card className="p-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-2xl border-2 border-white/20 dark:border-gray-800 rounded-3xl">
+        <Card className="p-6 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm shadow-xl border-2 border-white/20 dark:border-gray-800 rounded-2xl">
           <div className="text-center mb-6">
             <div className="relative h-16 w-48 mx-auto mb-4">
               <Image
