@@ -350,7 +350,7 @@ export default async function ProgramsPage() {
                 className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center sm:items-start gap-6 group hover:shadow-md transition-shadow"
               >
                 <div
-                  className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg ${item.color || "bg-larioja-azul"} group-hover:scale-110 transition-transform`}
+                  className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow-lg ${item.color || "bg-larioja-azul"} ${item.textColor || "text-white"} group-hover:scale-110 transition-transform`}
                 >
                   {item.number}
                 </div>
