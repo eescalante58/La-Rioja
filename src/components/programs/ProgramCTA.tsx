@@ -2,15 +2,21 @@
 
 import React from "react";
 import { ContactTrigger } from "@/components/layout/ContactTrigger";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
+import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import Link from "next/link";
 
 interface ProgramCTAProps {
   title: string;
   description: string;
+  whatsappLink?: string;
 }
 
-export function ProgramCTA({ title, description }: ProgramCTAProps) {
+export function ProgramCTA({
+  title,
+  description,
+  whatsappLink,
+}: ProgramCTAProps) {
   return (
     <div className="bg-larioja-verde p-6 sm:p-10 md:p-20 rounded-3xl relative overflow-hidden text-center max-w-5xl mx-auto shadow-xl">
       <div className="relative z-10">
@@ -42,6 +48,22 @@ export function ProgramCTA({ title, description }: ProgramCTAProps) {
             Ver Preguntas
           </Link>
         </div>
+
+        {whatsappLink && (
+          <div className="mt-6">
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-3 text-white/80 hover:text-white transition-colors group text-sm sm:text-base font-medium"
+            >
+              <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-larioja-verde transition-colors">
+                <WhatsAppIcon className="w-5 h-5" />
+              </div>
+              Enviar un mensaje por WhatsApp
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
