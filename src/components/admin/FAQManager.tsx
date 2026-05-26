@@ -254,6 +254,17 @@ export default function FAQManager({
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
+        <div>
+          <Title className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
+            Gestión de Preguntas (FAQ)
+          </Title>
+          <Text className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+            Administra las preguntas y respuestas frecuentes del sitio público.
+          </Text>
+        </div>
+      </div>
+
       <TabGroup>
         <TabList variant="solid" color="zinc" className="mb-4">
           <Tab icon={HelpCircle}>Preguntas</Tab>
@@ -263,10 +274,10 @@ export default function FAQManager({
           <TabPanel>
             {/* Gestión de Preguntas */}
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-6">
                 <div>
-                  <Title className="text-lg font-bold text-larioja-azul/80 dark:text-larioja-amarillo/80">
-                    Preguntas Frecuentes
+                  <Title className="text-lg font-bold text-larioja-azul dark:text-white uppercase">
+                    Listado de Preguntas
                   </Title>
                 </div>
                 <Button
@@ -279,7 +290,7 @@ export default function FAQManager({
                 </Button>
               </div>
 
-              <Card className="p-0 overflow-hidden shadow-xl border-gray-200 dark:border-gray-800">
+              <Card className="p-0 overflow-hidden shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
                 <Table>
                   <TableHead className="bg-gray-50 dark:bg-gray-900">
                     <TableRow>
@@ -372,9 +383,9 @@ export default function FAQManager({
           <TabPanel>
             {/* Gestión de Secciones */}
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-6">
                 <div>
-                  <Title className="text-lg font-bold text-larioja-azul/80 dark:text-larioja-amarillo/80">
+                  <Title className="text-lg font-bold text-larioja-azul dark:text-white uppercase">
                     Secciones de FAQ
                   </Title>
                 </div>
@@ -388,7 +399,7 @@ export default function FAQManager({
                 </Button>
               </div>
 
-              <Card className="p-0 overflow-hidden shadow-xl border-gray-200 dark:border-gray-800">
+              <Card className="p-0 overflow-hidden shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
                 <Table>
                   <TableHead className="bg-gray-50 dark:bg-gray-900">
                     <TableRow>
@@ -516,7 +527,7 @@ export default function FAQManager({
                 required
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Text className="text-xs font-bold uppercase text-gray-500">
                   Orden
@@ -607,7 +618,7 @@ export default function FAQManager({
                 }
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Text className="text-xs font-bold uppercase text-gray-500">
                   Orden

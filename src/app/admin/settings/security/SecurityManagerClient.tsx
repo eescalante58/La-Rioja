@@ -133,19 +133,18 @@ export default function SecurityManagerClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
         <div className="flex items-center gap-4">
           <Link href="/admin/settings">
-            <Button variant="light" icon={ArrowLeft}>
-              Volver a Configuración
-            </Button>
+            <Button variant="light" icon={ArrowLeft} className="rounded-full" />
           </Link>
           <div>
-            <Title className="text-2xl font-bold text-larioja-azul dark:text-larioja-amarillo">
-              Panel de Seguridad
+            <Title className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
+              Seguridad del Sistema
             </Title>
-            <Text className="text-gray-500 text-xs">
-              Monitoreo de políticas, RLS y vulnerabilidades potenciales.
+            <Text className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+              Monitoreo de políticas RLS, privilegios de vistas y
+              vulnerabilidades.
             </Text>
           </div>
         </div>
@@ -358,7 +357,7 @@ export default function SecurityManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <Title className="text-larioja-azul dark:text-larioja-amarillo">

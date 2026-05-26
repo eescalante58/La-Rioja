@@ -227,7 +227,7 @@ export default function CMSEditForm({ item }: { item: any }) {
                   className="flex flex-col items-center justify-center w-full aspect-square max-h-[300px] border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all cursor-pointer group"
                 >
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-4 group-hover:scale-110 transition-transform">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-full mb-4 group-hover:scale-105 transition-transform">
                       <ImageIcon size={32} className="text-blue-500" />
                     </div>
                     <p className="mb-2 text-sm text-gray-700 dark:text-gray-300">

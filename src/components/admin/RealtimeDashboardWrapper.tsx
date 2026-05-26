@@ -250,14 +250,19 @@ export default function RealtimeDashboardWrapper({
   ];
 
   return (
-    <div className="space-y-10">
-      {/* Panel 1: Gráficos de Avance */}
+    <div className="space-y-8">
+      {/* Panel 1: Header y Gráficos */}
       <section className="space-y-6">
-        <div className="text-center">
-          <Title className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-[0.2em]">
-            {data.hasEvent ? data.eventName : "Sin Evento Configurado"}
-          </Title>
-          <div className="h-1 w-20 bg-larioja-azul dark:bg-slate-700 mx-auto mt-2 rounded-full" />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
+          <div>
+            <Title className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
+              {data.hasEvent ? data.eventName : "Sin Evento Configurado"}
+            </Title>
+            <Text className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+              Resumen en tiempo real del progreso de ventas y actividad
+              reciente.
+            </Text>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
@@ -297,7 +302,7 @@ export default function RealtimeDashboardWrapper({
       >
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]" />
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-950 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-950 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 max-h-[85vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
@@ -390,7 +395,7 @@ export default function RealtimeDashboardWrapper({
       >
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]" />
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-950 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-950 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">

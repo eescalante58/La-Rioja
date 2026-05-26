@@ -35,7 +35,7 @@ export function ParallaxHero({ heroContent }: ParallaxHeroProps) {
 
       <div className="container mx-auto px-4 sm:px-6 relative z-20 text-center max-w-5xl mt-12 md:mt-0">
         <h1
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 animate-fade-in tracking-tight leading-[1.1] drop-shadow-sm text-larioja-amarillo"
+          className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 animate-fade-in tracking-tight leading-[1.1] drop-shadow-sm text-larioja-amarillo break-words [overflow-wrap:anywhere]"
           style={{ transform: `translateY(${scrollY * 0.2}px)` }}
         >
           {heroContent?.title || "Bienvenidos a La Rioja"}
@@ -94,13 +94,13 @@ export function ParallaxHero({ heroContent }: ParallaxHeroProps) {
 
       {/* Parallax Decorative Elements */}
       <div
-        className="absolute -bottom-12 -left-12 sm:-bottom-24 sm:-left-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-verde/30 rounded-full blur-2xl sm:blur-3xl z-0"
+        className="absolute -bottom-12 -left-12 sm:-bottom-24 sm:-left-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-verde/20 rounded-full blur-xl sm:blur-2xl z-0"
         style={{
           transform: `translate(${scrollY * -0.1}px, ${scrollY * 0.1}px)`,
         }}
       />
       <div
-        className="absolute -top-12 -right-12 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-amarillo/20 rounded-full blur-2xl sm:blur-3xl z-0"
+        className="absolute -top-12 -right-12 sm:-top-24 sm:-right-24 w-48 h-48 sm:w-96 sm:h-96 bg-larioja-amarillo/10 rounded-full blur-xl sm:blur-2xl z-0"
         style={{
           transform: `translate(${scrollY * 0.1}px, ${scrollY * -0.1}px)`,
         }}

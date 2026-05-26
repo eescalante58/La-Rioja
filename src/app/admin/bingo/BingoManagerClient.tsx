@@ -1207,13 +1207,14 @@ export default function BingoManagerClient({
 
   return (
     <div className="space-y-6 px-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
         <div>
-          <Title className="text-lg font-bold text-larioja-azul/80 dark:text-larioja-amarillo/80">
+          <Title className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
             Gestión de Bingo
           </Title>
-          <Text className="text-xs">
-            Administra eventos, cartones y ventas del sistema.
+          <Text className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+            Administra eventos de bingo, inventario de cartones y facturación de
+            ventas del sistema.
           </Text>
         </div>
       </div>
@@ -1228,7 +1229,7 @@ export default function BingoManagerClient({
         <TabPanels>
           {/* Tab 1: Eventos */}
           <TabPanel>
-            <Card className="mt-4">
+            <Card className="mt-4 shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
               <div className="flex justify-between items-center mb-6">
                 <Title>Listado de Eventos</Title>
                 <Button
@@ -1334,7 +1335,7 @@ export default function BingoManagerClient({
 
           {/* Tab 2: Inventario (Resumen rápido) */}
           <TabPanel>
-            <Card className="mt-4">
+            <Card className="mt-4 shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
               <Title>Inventario por Evento</Title>
               <Text className="mb-6">
                 Selecciona un evento para gestionar sus cartones.
@@ -1343,7 +1344,7 @@ export default function BingoManagerClient({
                 {events.map((ev) => (
                   <Card
                     key={ev.id}
-                    className="hover:shadow-lg transition-all duration-300 cursor-pointer bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.15] border-gray-100 dark:border-gray-800"
+                    className="hover:shadow-md transition-all duration-300 cursor-pointer bg-white dark:bg-black border border-gray-100 dark:border-gray-800"
                   >
                     <div className="flex justify-between items-start">
                       <div>
@@ -1384,7 +1385,7 @@ export default function BingoManagerClient({
 
           {/* Tab 3: Ventas y Facturación */}
           <TabPanel>
-            <Card className="mt-4">
+            <Card className="mt-4 shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
               <div className="flex justify-between items-center mb-6">
                 <Title>Ventas y Facturación</Title>
                 {currentEventInfo && (
@@ -1518,7 +1519,7 @@ export default function BingoManagerClient({
           <TabPanel>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
               {/* Columna Izquierda: Gestión de Clientes */}
-              <Card className="lg:col-span-1 flex flex-col h-[700px]">
+              <Card className="lg:col-span-1 flex flex-col h-[700px] shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <Title className="text-larioja-azul flex items-center gap-2">
@@ -1668,7 +1669,7 @@ export default function BingoManagerClient({
               </Card>
 
               {/* Columna Derecha: Envío de Mensajes */}
-              <Card className="lg:col-span-2 flex flex-col h-[700px] bg-gradient-to-br from-larioja-azul/[0.05] to-larioja-verde/[0.05]">
+              <Card className="lg:col-span-2 flex flex-col h-[700px] shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
                 <div className="flex justify-between items-center mb-6">
                   <Title className="text-larioja-azul flex items-center gap-2">
                     <Send size={20} />
@@ -2024,7 +2025,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[60]" />
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh] overflow-hidden bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh] overflow-hidden transition-all duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-azul/5 backdrop-blur-sm">
               <div className="flex items-center gap-3">
                 <div className="bg-green-500/10 p-2 rounded-lg text-green-600">
@@ -2228,7 +2229,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -2404,7 +2405,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[60]" />
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
                 <RefreshCw size={24} />
@@ -2473,7 +2474,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
                 <Upload size={24} />
@@ -2577,7 +2578,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
               Generar Cartones
             </Title>
@@ -2696,7 +2697,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <Title className="mb-4 text-larioja-azul dark:text-larioja-amarillo">
               {editingEvent ? "Editar Evento" : "Nuevo Evento de Bingo"}
             </Title>
@@ -2895,7 +2896,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col max-h-[95vh]">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
               <Title className="text-larioja-azul dark:text-larioja-amarillo">
                 {editingInvoice ? "Editar Factura" : "Nueva Factura"}
@@ -3298,7 +3299,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col max-h-[95vh] bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col max-h-[95vh] transition-all duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
               <div className="flex items-center gap-3">
                 <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
@@ -3560,7 +3561,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
                 <RefreshCw size={24} />
@@ -3645,7 +3646,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12] hover:shadow-larioja-azul/20 hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col max-h-[95vh]">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
@@ -3964,7 +3965,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden bg-gradient-to-br from-larioja-azul/[0.08] via-larioja-verde/[0.08] to-larioja-amarillo/[0.12]">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden transition-all duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-azul/5">
               <div className="flex items-center gap-3">
                 <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
@@ -4035,7 +4036,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[80]" />
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[80vh] overflow-hidden">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[80vh] overflow-hidden transition-all duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-verde/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -4158,7 +4159,7 @@ export default function BingoManagerClient({
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[90]" />
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[85vh] overflow-hidden">
+          <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[85vh] overflow-hidden transition-all duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-azul/5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

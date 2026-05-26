@@ -144,7 +144,7 @@ export async function Footer() {
             >
               <MapPin
                 size={18}
-                className="text-larioja-amarillo group-hover:scale-110 transition-transform"
+                className="text-larioja-amarillo group-hover:scale-105 transition-transform"
               />
               <span>Encuéntranos en Google Maps</span>
             </a>

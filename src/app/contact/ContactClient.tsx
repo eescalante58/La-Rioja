@@ -167,16 +167,16 @@ export function ContactClient() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 bg-larioja-azul text-white overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-larioja-azul via-larioja-azul to-blue-900 opacity-50 z-0" />
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-larioja-verde/20 rounded-full blur-3xl z-0" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-larioja-amarillo/10 rounded-full blur-3xl z-0" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-larioja-verde/10 rounded-full blur-2xl z-0" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-larioja-amarillo/5 rounded-full blur-2xl z-0" />
 
         <div className="container mx-auto px-6 relative z-10">
           <ScrollReveal>
             <div className="max-w-3xl mx-auto text-center">
-              <span className="inline-block py-1 px-3 rounded-full bg-larioja-amarillo/20 text-larioja-amarillo text-xs font-bold uppercase tracking-widest mb-4">
+              <span className="inline-block py-1 px-3 rounded-full bg-larioja-amarillo text-larioja-azul text-xs font-bold uppercase tracking-widest mb-4 shadow-sm">
                 Súmate a la Causa
               </span>
-              <h1 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight">
+              <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold mb-8 tracking-tight break-words [overflow-wrap:anywhere]">
                 <HighlightedTitle title="Apóyanos" />
               </h1>
               <p className="text-xl md:text-2xl text-white/80 leading-relaxed font-light">
@@ -193,7 +193,7 @@ export function ContactClient() {
         <div className="container mx-auto px-6">
           <ScrollReveal>
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
+              <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight break-words [overflow-wrap:anywhere]">
                 <HighlightedTitle
                   title="Formas de Apoyar"
                   highlightColor="text-larioja-verde"
@@ -208,7 +208,7 @@ export function ContactClient() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
             {formsOfSupport.map((form, idx) => (
               <ScrollReveal key={form.title} delay={idx * 100}>
-                <div className="bg-white dark:bg-larioja-azul p-8 rounded-[2.5rem] shadow-xl shadow-blue-900/5 border border-gray-100 dark:border-white/5 h-full flex flex-col group hover:-translate-y-1 transition-all duration-300">
+                <div className="bg-white dark:bg-larioja-azul p-8 rounded-3xl shadow-lg border border-gray-100 dark:border-white/5 h-full flex flex-col group hover:-translate-y-1 transition-all duration-300 hover:shadow-xl">
                   <div
                     className={`w-14 h-14 ${form.bg} rounded-2xl flex items-center justify-center ${form.color} mb-6`}
                   >
@@ -246,14 +246,11 @@ export function ContactClient() {
       {/* Tu Impacto Section */}
       <section className="py-24 bg-white dark:bg-larioja-azul overflow-hidden">
         <div className="container mx-auto px-6">
-          <div className="bg-larioja-azul rounded-3xl md:rounded-[3rem] p-6 sm:p-10 md:p-20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-larioja-verde/20 rounded-full -mr-20 -mt-20 blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-larioja-amarillo/10 rounded-full -ml-20 -mb-20 blur-3xl" />
-
+          <div className="bg-larioja-azul rounded-3xl p-6 sm:p-10 md:p-20 relative overflow-hidden">
             <div className="relative z-10">
               <ScrollReveal>
                 <div className="text-center mb-16">
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-white tracking-tight">
+                  <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-6 text-white tracking-tight break-words [overflow-wrap:anywhere]">
                     Tu <span className="text-larioja-verde">Impacto</span>
                   </h2>
                   <p className="text-base sm:text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
@@ -262,11 +259,11 @@ export function ContactClient() {
                 </div>
               </ScrollReveal>
 
-              <div className="grid md:grid-cols-3 gap-12 max-w-5xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto">
                 {impactData.map((impact, idx) => (
                   <ScrollReveal key={idx} delay={idx * 100}>
                     <div className="text-center group">
-                      <div className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <div className="text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 group-hover:scale-105 transition-transform duration-300 break-words [overflow-wrap:anywhere]">
                         {impact.value}
                       </div>
                       <p className="text-white/60 text-lg leading-relaxed">
@@ -287,7 +284,7 @@ export function ContactClient() {
           <div className="max-w-4xl mx-auto">
             <ScrollReveal>
               <div className="text-center mb-16">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight">
+                <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white tracking-tight break-words [overflow-wrap:anywhere]">
                   <HighlightedTitle
                     title="Preguntas Frecuentes"
                     highlightColor="text-larioja-verde"
@@ -300,7 +297,7 @@ export function ContactClient() {
             </ScrollReveal>
 
             <ScrollReveal delay={200}>
-              <div className="bg-gray-50 dark:bg-white/5 rounded-[3rem] p-8 md:p-12">
+              <div className="bg-gray-50 dark:bg-white/5 rounded-3xl p-8 md:p-12 shadow-inner">
                 <div className="divide-y divide-gray-100 dark:divide-white/10">
                   {faqs.map((faq, idx) => (
                     <FAQItem key={idx} {...faq} />
@@ -316,12 +313,9 @@ export function ContactClient() {
       <section className="py-24 bg-gray-50 dark:bg-slate-900/50 overflow-hidden">
         <div className="container mx-auto px-6">
           <ScrollReveal>
-            <div className="bg-larioja-amarillo p-6 sm:p-10 md:p-20 rounded-3xl md:rounded-[3rem] relative overflow-hidden text-center max-w-5xl mx-auto shadow-2xl">
-              <div className="absolute top-0 left-0 w-64 h-64 bg-white/20 rounded-full -ml-20 -mt-20 blur-3xl" />
-              <div className="absolute bottom-0 right-0 w-64 h-64 bg-larioja-verde/20 rounded-full -mr-20 -mb-20 blur-3xl" />
-
+            <div className="bg-larioja-amarillo p-6 sm:p-10 md:p-20 rounded-3xl relative overflow-hidden text-center max-w-5xl mx-auto shadow-lg">
               <div className="relative z-10">
-                <h2 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-6 sm:mb-8 text-larioja-azul tracking-tight">
+                <h2 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-6 sm:mb-8 text-larioja-azul tracking-tight break-words [overflow-wrap:anywhere]">
                   ¿Tienes más <span className="text-white">preguntas?</span>
                 </h2>
                 <p className="text-base sm:text-lg md:text-xl text-larioja-azul/80 mb-8 sm:mb-12 max-w-2xl mx-auto font-medium">

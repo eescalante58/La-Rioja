@@ -97,11 +97,11 @@ export default async function Home() {
       <section className="py-24 bg-gray-50 dark:bg-gray-900 transition-colors relative z-30">
         <div className="container mx-auto px-6">
           <ScrollReveal className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-4">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-larioja-azul dark:text-larioja-amarillo mb-4 break-words [overflow-wrap:anywhere]">
               {servicesIntro?.title || "Nuestros Servicios"}
             </h2>
             {servicesIntro?.image_url && (
-              <div className="relative w-full max-w-4xl mx-auto h-64 md:h-96 mb-10 rounded-3xl overflow-hidden shadow-2xl group">
+              <div className="relative w-full max-w-4xl mx-auto h-64 md:h-96 mb-10 rounded-2xl overflow-hidden shadow-lg group">
                 <Image
                   src={servicesIntro.image_url}
                   alt={servicesIntro.title || "Nuestros Servicios"}
@@ -128,9 +128,9 @@ export default async function Home() {
                     delay={i * 100}
                     className="h-[450px] [perspective:1000px] w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-[400px] flex-grow-0 flex-shrink-0"
                   >
-                    <div className="group relative h-full w-full rounded-3xl transition-all duration-700 [transform-style:preserve-3d] hover:[transform:rotateY(180deg)] shadow-xl">
+                    <div className="group relative h-full w-full rounded-2xl transition-all duration-700 [transform-style:preserve-3d] hover:[transform:rotateY(180deg)] shadow-lg hover:shadow-xl">
                       {/* Front Side */}
-                      <div className="absolute inset-0 h-full w-full rounded-3xl bg-white dark:bg-gray-800 [backface-visibility:hidden] overflow-hidden flex flex-col">
+                      <div className="absolute inset-0 h-full w-full rounded-2xl bg-white dark:bg-gray-800 [backface-visibility:hidden] overflow-hidden flex flex-col">
                         {service.image_url ? (
                           <div className="relative h-48 w-full">
                             <Image
@@ -159,7 +159,7 @@ export default async function Home() {
                       </div>
 
                       {/* Back Side */}
-                      <div className="absolute inset-0 h-full w-full rounded-3xl bg-larioja-azul dark:bg-larioja-amarillo p-8 text-white dark:text-larioja-azul [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center text-center">
+                      <div className="absolute inset-0 h-full w-full rounded-2xl bg-larioja-azul dark:bg-larioja-amarillo p-8 text-white dark:text-larioja-azul [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center text-center">
                         <h3 className="text-2xl font-bold mb-4">
                           {service.title}
                         </h3>
@@ -186,7 +186,7 @@ export default async function Home() {
                   delay={i * 100}
                   className="w-full sm:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)] max-w-[400px] flex-grow-0 flex-shrink-0"
                 >
-                  <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden group h-full">
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 overflow-hidden group h-full">
                     {service.image_url && (
                       <div className="relative h-52 w-full overflow-hidden bg-gray-50 dark:bg-gray-900/50">
                         <Image

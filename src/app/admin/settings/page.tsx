@@ -94,7 +94,7 @@ export default function SettingsPage() {
                   variant="light"
                   size="lg"
                   color={option.color as any}
-                  className="group-hover:scale-110 transition-transform"
+                  className="group-hover:scale-105 transition-transform"
                 />
                 <div>
                   <Title className="text-lg font-bold group-hover:text-larioja-azul dark:group-hover:text-larioja-amarillo transition-colors">

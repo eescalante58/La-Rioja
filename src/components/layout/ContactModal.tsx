@@ -88,7 +88,7 @@ export function ContactModal({
     >
       <div className="flex min-h-full items-center justify-center">
         <div
-          className="bg-[#f8f9fa] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-scale-in"
+          className="bg-[#f8f9fa] w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden animate-scale-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -135,7 +135,7 @@ export function ContactModal({
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="Tu nombre"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-larioja-azul focus:ring-2 focus:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus-visible:border-larioja-azul focus-visible:ring-2 focus-visible:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900"
                 />
               </div>
 
@@ -151,7 +151,7 @@ export function ContactModal({
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="tu@correo.com"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-larioja-azul focus:ring-2 focus:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus-visible:border-larioja-azul focus-visible:ring-2 focus-visible:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900"
                 />
               </div>
 
@@ -166,7 +166,7 @@ export function ContactModal({
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="7858-0322"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-larioja-azul focus:ring-2 focus:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus-visible:border-larioja-azul focus-visible:ring-2 focus-visible:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900"
                 />
               </div>
 
@@ -179,7 +179,7 @@ export function ContactModal({
                   name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-larioja-azul focus:ring-2 focus:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900 appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus-visible:border-larioja-azul focus-visible:ring-2 focus-visible:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900 appearance-none cursor-pointer"
                 >
                   <option>Consulta General</option>
                   <option>Información de Inscripción</option>
@@ -201,7 +201,7 @@ export function ContactModal({
                   value={formData.message}
                   onChange={handleChange}
                   placeholder="Cuéntanos cómo podemos ayudarte..."
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-larioja-azul focus:ring-2 focus:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900 resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus-visible:border-larioja-azul focus-visible:ring-2 focus-visible:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900 resize-none"
                 ></textarea>
               </div>
 
@@ -209,7 +209,7 @@ export function ContactModal({
               <button
                 disabled={isSubmitting}
                 type="submit"
-                className="w-full bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-larioja-azul/20 flex items-center justify-center gap-2 disabled:opacity-70"
+                className="w-full bg-larioja-azul hover:bg-larioja-azul/90 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-larioja-azul/20 flex items-center justify-center gap-2 disabled:opacity-70 focus-visible:ring-4 focus-visible:ring-larioja-azul/40 outline-none"
               >
                 {isSubmitting ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
