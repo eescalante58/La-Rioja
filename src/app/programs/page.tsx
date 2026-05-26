@@ -106,10 +106,21 @@ export const metadata: Metadata = {
  * Displays the different educational and vocational programs offered by La Rioja.
  */
 export default async function ProgramsPage() {
-  const content = await getPageContent("programs");
+  const [content, socialMedia] = await Promise.all([
+    getPageContent("programs"),
+    getPageContent("social media"),
+  ]);
 
   const getSection = (key: string) =>
-    content.find((s) => s.section_key === key);
+    content.find((s: any) => s.section_key === key);
+
+  const getSocialLink = (key: string) => {
+    if (!Array.isArray(socialMedia)) return "#";
+    const link = socialMedia.find((l: any) => l.section_key === key);
+    return link?.description ?? "#";
+  };
+
+  const whatsappLink = getSocialLink("whatsapp");
 
   const hero = getSection("programs_hero");
   const intro = getSection("programs_intro");
@@ -333,6 +344,7 @@ export default async function ProgramsPage() {
                 cta?.description ||
                 "Estamos aquí para guiarte en el proceso. Conoce los requisitos y agenda una visita para conocer nuestras instalaciones."
               }
+              whatsappLink={whatsappLink}
             />
           </ScrollReveal>
         </div>
