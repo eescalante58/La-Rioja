@@ -305,11 +305,12 @@ Accion recomendada:
 
 ### Desviaciones
 
-- Hay sobreuso de tarjetas con radios muy grandes, sombras intensas, blobs y fondos con blur. Esto acerca la interfaz a un estilo promocional/generico y resta sobriedad institucional.
+- Hay sobreuso de tarjetas con radios muy grandes, sombras intensas, blobs y fondos con blur. Esto acerca la interfaz a un estilo promocional/generico y resta sobriedad institucional. RESUELTO 25/6/2026
 - El admin mezcla Tremor, componentes propios y estilos Tailwind ad hoc; se perciben patrones visuales distintos entre dashboard, CMS y Bingo.
-- Los gradientes azul-verde-amarillo pueden sentirse muy saturados, especialmente en pantallas de login/auth.
-- La nomenclatura visual no esta formalizada: no hay guia de botones, cards, tablas, modales, estados ni formularios.
-- `blob-purple` en CSS realmente usa verde; el nombre semantico no coincide.
+  RESUELTO 25/6/2026
+- Los gradientes azul-verde-amarillo pueden sentirse muy saturados, especialmente en pantallas de login/auth. RESUELTO 25/6/2026
+- La nomenclatura visual no esta formalizada: no hay guia de botones, cards, tablas, modales, estados ni formularios. RESUELTO 25/6/2026
+- `blob-purple` en CSS realmente usa verde; el nombre semantico no coincide. RESUELTO 25/6/2026
 
 ### Recomendacion visual
 
