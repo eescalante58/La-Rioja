@@ -124,11 +124,11 @@ export default async function ProgramsPage() {
 
   const hero = getSection("programs_hero");
   const intro = getSection("programs_intro");
-  const list = getSection("programs_list");
+  const levels = getSection("programs_levels");
   const value = getSection("programs_value");
   const cta = getSection("programs_cta");
 
-  const programs = Array.isArray(list?.metadata) ? list.metadata : [];
+  const programs = Array.isArray(levels?.metadata) ? levels.metadata : [];
   const valueProps = Array.isArray(value?.metadata) ? value.metadata : [];
 
   return (
@@ -255,10 +255,28 @@ export default async function ProgramsPage() {
         </div>
       </section>
 
-      {/* Programs Grid */}
+      {/* Programs Grid (Levels) */}
       <section className="py-24 bg-white dark:bg-larioja-azul">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-7xl mx-auto">
+          {(levels?.title || levels?.description) && (
+            <ScrollReveal className="text-center max-w-3xl mx-auto mb-16">
+              {levels.title && (
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white break-words [overflow-wrap:anywhere]">
+                  <HighlightedTitle
+                    title={levels.title}
+                    highlightColor="text-larioja-verde"
+                  />
+                </h2>
+              )}
+              {levels.description && (
+                <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
+                  {levels.description}
+                </p>
+              )}
+            </ScrollReveal>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 max-w-7xl mx-auto">
             {programs.map((program: any, idx: number) => (
               <ScrollReveal
                 key={program.id || idx}
