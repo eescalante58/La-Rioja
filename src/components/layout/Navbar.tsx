@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Mail } from "lucide-react";
+import { Menu, X, Mail, MessageCircle } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { ContactTrigger } from "./ContactTrigger";
+import { WhatsAppIcon } from "./WhatsAppIcon";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * Mobile navigation component with hamburger menu.
@@ -13,6 +15,26 @@ import { ContactTrigger } from "./ContactTrigger";
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [whatsappLink, setWhatsappLink] = useState<string>("#");
+
+  // Fetch WhatsApp link from CMS
+  useEffect(() => {
+    const fetchWhatsApp = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("site_content")
+        .select("description")
+        .eq("page", "social media")
+        .eq("section_key", "whatsapp")
+        .eq("is_active", true)
+        .single();
+
+      if (data?.description) {
+        setWhatsappLink(data.description);
+      }
+    };
+    fetchWhatsApp();
+  }, []);
 
   // Handle scroll for sticky effect
   useEffect(() => {
@@ -147,6 +169,20 @@ export function Navbar() {
               )}
             </ContactTrigger>
 
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center justify-center w-9 h-9 rounded-full transition-all ${
+                isScrolled
+                  ? "bg-larioja-verde text-white hover:scale-110"
+                  : "bg-white/10 text-white hover:bg-larioja-verde hover:scale-110 backdrop-blur-md"
+              }`}
+              title="WhatsApp"
+            >
+              <WhatsAppIcon className="w-5 h-5" />
+            </a>
+
             <div className="">
               <ThemeToggle />
             </div>
@@ -243,6 +279,17 @@ export function Navbar() {
                   </button>
                 )}
               </ContactTrigger>
+
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsOpen(false)}
+                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-verde transition-colors py-3 sm:py-4 flex items-center justify-center gap-3 border-t border-white/10"
+              >
+                <WhatsAppIcon className="w-8 h-8 text-larioja-verde" />
+                WhatsApp
+              </a>
             </div>
 
             <div className="mt-auto pt-8 pb-8 sm:pb-12 text-center text-white/40 text-sm italic">
