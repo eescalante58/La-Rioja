@@ -125,10 +125,14 @@ export default async function ProgramsPage() {
   const hero = getSection("programs_hero");
   const intro = getSection("programs_intro");
   const levels = getSection("programs_levels");
+  const academic = getSection("academic_content");
   const value = getSection("programs_value");
   const cta = getSection("programs_cta");
 
   const programs = Array.isArray(levels?.metadata) ? levels.metadata : [];
+  const academicItems = Array.isArray(academic?.metadata)
+    ? academic.metadata
+    : [];
   const valueProps = Array.isArray(value?.metadata) ? value.metadata : [];
 
   return (
@@ -314,6 +318,49 @@ export default async function ProgramsPage() {
                       )}
                     </ul>
                   </div>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Academic Content Section */}
+      <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
+        <div className="container mx-auto px-6">
+          <ScrollReveal className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white">
+              <HighlightedTitle
+                title={academic?.title || "Contenido Académico"}
+                highlightColor="text-larioja-verde"
+              />
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
+              {academic?.description ||
+                "Nuestro programa incluye una formación académica integral diseñada para fortalecer las capacidades fundamentales de cada estudiante."}
+            </p>
+          </ScrollReveal>
+
+          <div className="max-w-5xl mx-auto space-y-8">
+            {academicItems.map((item: any, idx: number) => (
+              <ScrollReveal
+                key={idx}
+                delay={idx * 100}
+                direction="up"
+                className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 flex flex-col sm:flex-row items-center sm:items-start gap-6 group hover:shadow-md transition-shadow"
+              >
+                <div
+                  className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg ${item.color || "bg-larioja-azul"} group-hover:scale-110 transition-transform`}
+                >
+                  {item.number}
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <h3 className="text-lg sm:text-xl font-bold text-larioja-azul dark:text-white mb-2 uppercase tracking-tight">
+                    {item.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-white/60 leading-relaxed">
+                    {item.description}
+                  </p>
                 </div>
               </ScrollReveal>
             ))}
