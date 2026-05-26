@@ -126,12 +126,16 @@ export default async function ProgramsPage() {
   const intro = getSection("programs_intro");
   const levels = getSection("programs_levels");
   const academic = getSection("academic_content");
+  const workshops = getSection("workshops");
   const value = getSection("programs_value");
   const cta = getSection("programs_cta");
 
   const programs = Array.isArray(levels?.metadata) ? levels.metadata : [];
   const academicItems = Array.isArray(academic?.metadata)
     ? academic.metadata
+    : [];
+  const workshopItems = Array.isArray(workshops?.metadata)
+    ? workshops.metadata
     : [];
   const valueProps = Array.isArray(value?.metadata) ? value.metadata : [];
 
@@ -361,6 +365,82 @@ export default async function ProgramsPage() {
                   <p className="text-gray-600 dark:text-white/60 leading-relaxed">
                     {item.description}
                   </p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Workshops Section */}
+      <section className="py-24 bg-white dark:bg-larioja-azul relative overflow-hidden">
+        {/* Background Decoration */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-larioja-verde/5 -skew-x-12 translate-x-1/2 pointer-events-none" />
+
+        <div className="container mx-auto px-6 relative z-10">
+          <ScrollReveal className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white">
+              <HighlightedTitle
+                title={workshops?.title || "Talleres Vocacionales"}
+                highlightColor="text-larioja-verde"
+              />
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
+              {workshops?.description ||
+                "Nuestros talleres proporcionan formación técnica especializada para fomentar la autonomía y la inserción laboral."}
+            </p>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-stretch">
+            {workshopItems.map((workshop: any, idx: number) => (
+              <ScrollReveal
+                key={workshop.id || idx}
+                delay={idx * 150}
+                direction={idx % 2 === 0 ? "left" : "right"}
+                className="group h-[450px] [perspective:1200px]"
+              >
+                <div className="relative h-full w-full rounded-3xl transition-all duration-700 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] shadow-xl border border-gray-100 dark:border-white/5">
+                  {/* Front Side: Image with Badge */}
+                  <div className="absolute inset-0 h-full w-full rounded-3xl [backface-visibility:hidden] overflow-hidden">
+                    <Image
+                      src={workshop.image_url}
+                      alt={workshop.title}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute bottom-8 left-8 right-8">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 bg-larioja-amarillo rounded-2xl flex items-center justify-center text-larioja-azul shadow-lg">
+                          <DynamicIcon name={workshop.icon} size={24} />
+                        </div>
+                        <h3 className="text-2xl font-bold text-white uppercase tracking-tight">
+                          {workshop.title}
+                        </h3>
+                      </div>
+                      <p className="text-white/80 text-sm font-medium uppercase tracking-widest">
+                        Toca para conocer más
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Back Side: Description and Icon */}
+                  <div className="absolute inset-0 h-full w-full rounded-3xl bg-larioja-azul dark:bg-slate-900 p-10 text-white [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center text-center">
+                    <div className="w-20 h-20 bg-larioja-amarillo/10 rounded-3xl flex items-center justify-center text-larioja-amarillo mb-8">
+                      <DynamicIcon name={workshop.icon} size={40} />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-6 uppercase tracking-tight">
+                      {workshop.title}
+                    </h3>
+                    <p className="text-lg text-white/70 leading-relaxed font-light">
+                      {workshop.description}
+                    </p>
+                    <div className="mt-8 pt-8 border-t border-white/10 w-full">
+                      <span className="text-larioja-amarillo font-bold uppercase tracking-widest text-xs">
+                        Formación Técnica La Rioja
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </ScrollReveal>
             ))}
