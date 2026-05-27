@@ -456,11 +456,19 @@ export default async function ProgramsPage() {
 
         <div className="container mx-auto px-6 relative z-10 text-center max-w-4xl">
           <ScrollReveal>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-16 text-white break-words [overflow-wrap:anywhere]">
+            <h2
+              className={`text-2xl sm:text-4xl md:text-5xl font-bold text-white break-words [overflow-wrap:anywhere] ${value?.description ? "mb-6" : "mb-16"}`}
+            >
               <HighlightedTitle
                 title={value?.title || "Nuestra Propuesta de Valor"}
               />
             </h2>
+
+            {value?.description && (
+              <p className="text-lg text-white/70 max-w-2xl mx-auto mb-16 leading-relaxed">
+                {value.description}
+              </p>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
               {valueProps.map((item: any, idx: number) => (
