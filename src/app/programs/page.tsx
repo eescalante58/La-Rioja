@@ -31,6 +31,8 @@ import {
   Leaf,
   Brush,
   Laptop,
+  Volleyball,
+  Drama,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -65,6 +67,8 @@ const IconMap: Record<string, any> = {
   Leaf,
   Brush,
   Laptop,
+  Volleyball,
+  Drama,
 };
 
 /**
@@ -79,7 +83,11 @@ function DynamicIcon({
   className?: string;
   size?: number;
 }) {
-  const IconComponent = IconMap[name] || Star; // Fallback to Star
+  // Búsqueda insensible a mayúsculas/minúsculas
+  const iconKey = Object.keys(IconMap).find(
+    (key) => key.toLowerCase() === name.toLowerCase(),
+  );
+  const IconComponent = (iconKey ? IconMap[iconKey] : null) || Star;
   return <IconComponent className={className} size={size} />;
 }
 
@@ -530,18 +538,7 @@ export default async function ProgramsPage() {
                 <div
                   className={`w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${item.color || "text-larioja-azul"}`}
                 >
-                  <DynamicIcon
-                    name={
-                      item.icon === "volleyball"
-                        ? "Trophy"
-                        : item.icon === "drama"
-                          ? "Theater"
-                          : item.icon === "dance"
-                            ? "Music"
-                            : item.icon
-                    }
-                    size={32}
-                  />
+                  <DynamicIcon name={item.icon} size={32} />
                 </div>
                 <h3 className="text-xl font-bold text-larioja-azul dark:text-white mb-3">
                   {item.title}
