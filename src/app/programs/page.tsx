@@ -28,6 +28,9 @@ import {
   Music,
   Theater,
   Trophy,
+  Leaf,
+  Brush,
+  Laptop,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -59,6 +62,9 @@ const IconMap: Record<string, any> = {
   Music,
   Theater,
   Trophy,
+  Leaf,
+  Brush,
+  Laptop,
 };
 
 /**
