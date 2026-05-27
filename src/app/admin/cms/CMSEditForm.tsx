@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { updateCMSContent } from "./actions";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /**
  * Edit form for CMS content sections.
@@ -53,6 +53,12 @@ export default function CMSEditForm({ item }: { item: any }) {
     message: string;
   } | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Obtener filtros de la URL para regresar al mismo estado
+  const pageFilter = searchParams.get("page") || "all";
+  const searchFilter = searchParams.get("search") || "";
+  const backUrl = `/admin/cms?page=${pageFilter}&search=${searchFilter}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +95,7 @@ export default function CMSEditForm({ item }: { item: any }) {
           type: "success",
           message: "Contenido actualizado correctamente.",
         });
-        setTimeout(() => router.push("/admin/cms"), 1500);
+        setTimeout(() => router.push(backUrl), 1500);
       } else {
         setStatus({
           type: "error",
@@ -149,7 +155,7 @@ export default function CMSEditForm({ item }: { item: any }) {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <Link
-        href="/admin/cms"
+        href={backUrl}
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
       >
         <ArrowLeft size={16} />
@@ -351,7 +357,7 @@ export default function CMSEditForm({ item }: { item: any }) {
           )}
 
           <div className="pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
-            <Link href="/admin/cms">
+            <Link href={backUrl}>
               <button
                 type="button"
                 className="px-6 py-2 bg-[#FFFF00] hover:bg-yellow-400 text-[#012060] rounded-lg shadow-md transition-all font-bold border border-yellow-300"
