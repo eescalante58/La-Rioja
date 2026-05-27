@@ -221,46 +221,46 @@ export function Navbar() {
               <X size={32} />
             </button>
 
-            <div className="flex flex-col gap-3 sm:gap-6 text-center font-montserrat">
+            <div className="flex flex-col gap-2 sm:gap-4 text-center font-montserrat">
               <Link
                 href="/about"
                 onClick={() => setIsOpen(false)}
-                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-3 sm:py-4 border-b border-white/10"
+                className="text-xl sm:text-2xl font-medium text-white/90 hover:text-white transition-all py-3 sm:py-4 border-b border-white/5"
               >
                 Nosotros
               </Link>
               <Link
                 href="/contact"
                 onClick={() => setIsOpen(false)}
-                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-3 sm:py-4 border-b border-white/10"
+                className="text-xl sm:text-2xl font-medium text-white/90 hover:text-white transition-all py-3 sm:py-4 border-b border-white/5"
               >
                 Apóyanos
               </Link>
               <Link
                 href="/programs"
                 onClick={() => setIsOpen(false)}
-                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-3 sm:py-4 border-b border-white/10"
+                className="text-xl sm:text-2xl font-medium text-white/90 hover:text-white transition-all py-3 sm:py-4 border-b border-white/5"
               >
                 Programas
               </Link>
               <Link
                 href="/faq"
                 onClick={() => setIsOpen(false)}
-                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-amarillo transition-colors py-3 sm:py-4 border-b border-white/10"
+                className="text-xl sm:text-2xl font-medium text-white/90 hover:text-white transition-all py-3 sm:py-4 border-b border-white/5"
               >
                 Preguntas
               </Link>
               <Link
                 href="/bingo"
                 onClick={() => setIsOpen(false)}
-                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-verde transition-colors py-3 sm:py-4 border-b border-white/10"
+                className="text-xl sm:text-2xl font-medium text-larioja-verde hover:text-larioja-verde/80 transition-all py-3 sm:py-4 border-b border-white/5"
               >
                 Bingo
               </Link>
               <Link
                 href="/admin"
                 onClick={() => setIsOpen(false)}
-                className="text-2xl sm:text-3xl font-bold text-larioja-amarillo hover:text-white transition-colors py-3 sm:py-4 border-b border-white/10"
+                className="text-xl sm:text-2xl font-medium text-larioja-amarillo hover:text-larioja-amarillo/80 transition-all py-3 sm:py-4 border-b border-white/5"
               >
                 Panel de Control
               </Link>
@@ -272,9 +272,9 @@ export function Navbar() {
                       setIsOpen(false);
                       openModal();
                     }}
-                    className="text-2xl sm:text-3xl font-bold text-larioja-verde hover:text-white transition-colors py-3 sm:py-4 flex items-center justify-center gap-3"
+                    className="text-xl sm:text-2xl font-medium text-larioja-verde hover:text-white transition-all py-3 sm:py-4 flex items-center justify-center gap-3"
                   >
-                    <Mail size={28} />
+                    <Mail size={24} />
                     Contacto
                   </button>
                 )}
@@ -285,9 +285,9 @@ export function Navbar() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsOpen(false)}
-                className="text-2xl sm:text-3xl font-bold text-white hover:text-larioja-verde transition-colors py-3 sm:py-4 flex items-center justify-center gap-3 border-t border-white/10"
+                className="text-xl sm:text-2xl font-medium text-white hover:text-larioja-verde transition-all py-3 sm:py-4 flex items-center justify-center gap-3 border-t border-white/10"
               >
-                <WhatsAppIcon className="w-8 h-8 text-larioja-verde" />
+                <WhatsAppIcon className="w-6 h-6 text-larioja-verde" />
                 WhatsApp
               </a>
             </div>

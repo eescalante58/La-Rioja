@@ -25,6 +25,9 @@ import {
   ShieldCheck,
   Rocket,
   User,
+  Music,
+  Theater,
+  Trophy,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -53,6 +56,9 @@ const IconMap: Record<string, any> = {
   Rocket,
   User,
   Star,
+  Music,
+  Theater,
+  Trophy,
 };
 
 /**
@@ -127,6 +133,7 @@ export default async function ProgramsPage() {
   const levels = getSection("programs_levels");
   const academic = getSection("academic_content");
   const workshops = getSection("workshops");
+  const supplementary = getSection("supplementary-subjects");
   const value = getSection("programs_value");
   const cta = getSection("programs_cta");
 
@@ -136,6 +143,9 @@ export default async function ProgramsPage() {
     : [];
   const workshopItems = Array.isArray(workshops?.metadata)
     ? workshops.metadata
+    : [];
+  const supplementaryItems = Array.isArray(supplementary?.metadata)
+    ? supplementary.metadata
     : [];
   const valueProps = Array.isArray(value?.metadata) ? value.metadata : [];
 
@@ -484,6 +494,58 @@ export default async function ProgramsPage() {
               ))}
             </div>
           </ScrollReveal>
+        </div>
+      </section>
+
+      {/* Supplementary Subjects Section */}
+      <section className="py-24 bg-gray-50 dark:bg-slate-900/50">
+        <div className="container mx-auto px-6">
+          <ScrollReveal className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 text-larioja-azul dark:text-white">
+              <HighlightedTitle
+                title={supplementary?.title || "Materias Complementarias"}
+                highlightColor="text-larioja-verde"
+              />
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">
+              {supplementary?.description ||
+                "Ayudan a mejorar las habilidades motoras de comunicación, trabajo en equipo y la empatía."}
+            </p>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            {supplementaryItems.map((item: any, idx: number) => (
+              <ScrollReveal
+                key={idx}
+                delay={idx * 100}
+                direction="up"
+                className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/5 flex flex-col items-center text-center group hover:shadow-md transition-all hover:-translate-y-1"
+              >
+                <div
+                  className={`w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${item.color || "text-larioja-azul"}`}
+                >
+                  <DynamicIcon
+                    name={
+                      item.icon === "volleyball"
+                        ? "Trophy"
+                        : item.icon === "drama"
+                          ? "Theater"
+                          : item.icon === "dance"
+                            ? "Music"
+                            : item.icon
+                    }
+                    size={32}
+                  />
+                </div>
+                <h3 className="text-xl font-bold text-larioja-azul dark:text-white mb-3">
+                  {item.title}
+                </h3>
+                <p className="text-gray-500 dark:text-white/60 text-sm leading-relaxed">
+                  {item.desc}
+                </p>
+              </ScrollReveal>
+            ))}
+          </div>
         </div>
       </section>
 
