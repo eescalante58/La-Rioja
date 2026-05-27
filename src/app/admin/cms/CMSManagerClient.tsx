@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Card,
   Table,
@@ -64,9 +65,38 @@ interface CMSManagerClientProps {
 export default function CMSManagerClient({
   initialContent,
 }: CMSManagerClientProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   // Filtros
-  const [pageFilter, setPageFilter] = useState<string>("all");
-  const [searchFilter, setSearchFilter] = useState("");
+  const [pageFilter, setPageFilter] = useState<string>(
+    searchParams.get("page") || "all",
+  );
+  const [searchFilter, setSearchFilter] = useState(
+    searchParams.get("search") || "",
+  );
+
+  // Actualizar URL cuando cambian los filtros (opcional pero recomendado para persistencia)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (pageFilter !== "all") {
+      params.set("page", pageFilter);
+    } else {
+      params.delete("page");
+    }
+
+    if (searchFilter) {
+      params.set("search", searchFilter);
+    } else {
+      params.delete("search");
+    }
+
+    // Actualizamos la URL sin recargar la página
+    const queryString = params.toString();
+    router.replace(`/admin/cms${queryString ? `?${queryString}` : ""}`, {
+      scroll: false,
+    });
+  }, [pageFilter, searchFilter, router, searchParams]);
 
   // Filtrar el contenido
   const filteredContent = (initialContent || []).filter((item) => {
@@ -406,7 +436,9 @@ export default function CMSManagerClient({
                           color="gray"
                           onClick={() => handleView(item)}
                         />
-                        <Link href={`/admin/cms/${item.id}`}>
+                        <Link
+                          href={`/admin/cms/${item.id}?page=${pageFilter}&search=${searchFilter}`}
+                        >
                           <Button
                             variant="light"
                             icon={Edit2}
