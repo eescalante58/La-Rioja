@@ -330,7 +330,7 @@ export default async function ProgramsPage() {
 
                   <div className="mt-auto">
                     <h4 className="text-sm font-black uppercase tracking-widest text-larioja-verde mb-4">
-                      Módulos principales:
+                      Módulos curriculares:
                     </h4>
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {(Array.isArray(program.items) ? program.items : []).map(
