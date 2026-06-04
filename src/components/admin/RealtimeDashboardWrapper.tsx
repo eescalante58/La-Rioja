@@ -130,94 +130,75 @@ export default function RealtimeDashboardWrapper({
   };
 
   useEffect(() => {
-    // 1. Subscribe to changes in invoices table
-    const channel = supabase
-      .channel("realtime_dashboard_invoices")
-      .on(
-        "postgres_changes",
-        {
-          event: "*", // Listen for ALL events (INSERT, UPDATE, DELETE)
-          schema: "public",
-          table: "invoices",
-        },
-        () => {
-          refreshData();
-        },
-      )
-      .subscribe();
+    // Consolidated realtime channel for the dashboard
+    const channel = supabase.channel(
+      `realtime_dashboard_${data.companyId || "global"}`,
+    );
 
-    // 2. Subscribe to changes in site_content table
-    const cmsChannel = supabase
-      .channel("realtime_dashboard_cms")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "site_content",
-        },
-        () => {
-          refreshData();
-        },
-      )
-      .subscribe();
+    // 1. Subscribe to changes in invoices table (filtered by company)
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "invoices",
+        filter: data.companyId ? `company_id=eq.${data.companyId}` : undefined,
+      },
+      () => refreshData(),
+    );
 
-    // 3. Subscribe to changes in customer_phone_number table
-    const customersChannel = supabase
-      .channel("realtime_dashboard_customers")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "customer_phone_number",
-        },
-        () => {
-          refreshData();
-        },
-      )
-      .subscribe();
+    // 2. Subscribe to changes in site_content table (global)
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "site_content",
+      },
+      () => refreshData(),
+    );
 
-    // 4. Subscribe to changes in events table (for yearly sales updates)
-    const eventsChannel = supabase
-      .channel("realtime_dashboard_events")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "events",
-        },
-        () => {
-          refreshData();
-        },
-      )
-      .subscribe();
+    // 3. Subscribe to changes in customer_phone_number table (filtered by company)
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "customer_phone_number",
+        filter: data.companyId ? `company_id=eq.${data.companyId}` : undefined,
+      },
+      () => refreshData(),
+    );
 
-    // 5. Subscribe to changes in contact_submissions table
-    const contactChannel = supabase
-      .channel("realtime_dashboard_contacts")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "contact_submissions",
-        },
-        () => {
-          refreshData();
-        },
-      )
-      .subscribe();
+    // 4. Subscribe to changes in events table (filtered by company)
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "events",
+        filter: data.companyId ? `company_id=eq.${data.companyId}` : undefined,
+      },
+      () => refreshData(),
+    );
+
+    // 5. Subscribe to changes in contact_submissions table (global)
+    channel.on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "contact_submissions",
+      },
+      () => refreshData(),
+    );
+
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);
-      supabase.removeChannel(cmsChannel);
-      supabase.removeChannel(customersChannel);
-      supabase.removeChannel(eventsChannel);
-      supabase.removeChannel(contactChannel);
     };
-  }, []);
+  }, [data.companyId]);
 
   const stats = [
     {
@@ -253,19 +234,19 @@ export default function RealtimeDashboardWrapper({
     <div className="space-y-8">
       {/* Panel 1: Header y Gráficos */}
       <section className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6 px-4 sm:px-0">
           <div>
-            <Title className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
+            <Title className="text-xl sm:text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
               {data.hasEvent ? data.eventName : "Sin Evento Configurado"}
             </Title>
-            <Text className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+            <Text className="text-xs sm:text-sm mt-1 text-gray-500 dark:text-gray-400">
               Resumen en tiempo real del progreso de ventas y actividad
               reciente.
             </Text>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto px-4 sm:px-0">
           {data.hasEvent ? (
             <>
               <SalesProgressChart
@@ -300,9 +281,9 @@ export default function RealtimeDashboardWrapper({
         onClose={() => setIsDateDetailOpen(false)}
         static={true}
       >
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]" />
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-950 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 max-h-[85vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
+          <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
@@ -393,9 +374,9 @@ export default function RealtimeDashboardWrapper({
         onClose={() => setIsManagerDetailOpen(false)}
         static={true}
       >
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]" />
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-950 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
+        <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">
@@ -454,11 +435,16 @@ export default function RealtimeDashboardWrapper({
           </Text>
         </div>
 
-        <Grid numItems={1} numItemsSm={2} numItemsLg={4} className="gap-6">
+        <Grid
+          numItems={1}
+          numItemsSm={2}
+          numItemsLg={4}
+          className="gap-6 px-4 sm:px-0"
+        >
           {stats.map((item) => (
             <Card
               key={item.title}
-              className="border-gray-200 dark:border-gray-800"
+              className="border-gray-200 dark:border-gray-800 shadow-sm sm:shadow-md"
             >
               <Flex justifyContent="start" className="gap-4">
                 <div
@@ -482,8 +468,8 @@ export default function RealtimeDashboardWrapper({
           ))}
         </Grid>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border-gray-200 dark:border-gray-800">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 sm:px-0">
+          <Card className="border-gray-200 dark:border-gray-800 shadow-sm sm:shadow-md">
             <Title className="dark:text-white">Actividad Reciente</Title>
             <Text className="dark:text-slate-400">
               Últimas interacciones registradas.

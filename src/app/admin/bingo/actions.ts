@@ -2,6 +2,18 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import {
+  requireRoleLevel,
+  requireCompanyAccess,
+} from "@/lib/auth/authorization";
+
+/**
+ * Sanitizes string input for Bingo operations.
+ */
+function sanitizeInput(str: string): string {
+  if (!str) return "";
+  return str.replace(/<[^>]*>/g, ""); // Strips all HTML tags for safety
+}
 
 /**
  * Upload card images and create card records.
@@ -12,7 +24,15 @@ export async function uploadCardImages(
   cardPrice: number,
   formData: FormData,
 ) {
-  const supabase = createClient();
+  // RBAC: Min Operator level (40+) and company access (P0.4)
+  const { error: authError } = await requireRoleLevel(40);
+  if (authError) return { error: authError };
+
+  const { authorized, error: accessError } =
+    await requireCompanyAccess(companyId);
+  if (!authorized) return { error: accessError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -254,14 +274,33 @@ export async function uploadCardImages(
  * Fetch all data needed for Bingo management.
  */
 export async function getBingoData() {
-  const supabase = createClient();
+  const { user, level, error: authError } = await requireRoleLevel(40); // Min Operator level
+  if (authError)
+    return { events: [], companies: [], countries: [], error: authError };
+
+  const supabase = await createClient();
+
+  // If not Super Admin (100), only fetch data for the companies the user belongs to
+  let eventsQuery = supabase.from("events").select("*");
+  let companiesQuery = supabase
+    .from("companies")
+    .select("company_id, company_name");
+
+  if (level < 100) {
+    const { data: memberships } = await supabase
+      .from("user_companies")
+      .select("company_id")
+      .eq("user_id", user?.id);
+
+    const companyIds = memberships?.map((m) => m.company_id) || [];
+
+    eventsQuery = eventsQuery.in("company_id", companyIds);
+    companiesQuery = companiesQuery.in("company_id", companyIds);
+  }
 
   const [eventsRes, companiesRes, countriesRes] = await Promise.all([
-    supabase
-      .from("events")
-      .select("*")
-      .order("event_date", { ascending: false }),
-    supabase.from("companies").select("company_id, company_name"),
+    eventsQuery.order("event_date", { ascending: false }),
+    companiesQuery,
     supabase
       .from("country_codes")
       .select("name, phone_code, flag_emoji, iso2")
@@ -284,16 +323,27 @@ export async function getBingoData() {
  * Save or update a Bingo event.
  */
 export async function saveEvent(formData: FormData) {
-  const supabase = createClient();
+  // RBAC: Min Admin level (80+) (P0.4)
+  const { error: authError } = await requireRoleLevel(80);
+  if (authError) return { error: authError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const id = formData.get("id");
-  const company_id = formData.get("company_id");
-  const event_id = formData.get("event_id") as string;
-  const event_name = formData.get("event_name") as string;
+  const company_id = parseInt(formData.get("company_id") as string);
+  const event_id = sanitizeInput(formData.get("event_id") as string);
+  const event_name = sanitizeInput(formData.get("event_name") as string);
   const event_date = formData.get("event_date") as string;
+
+  // RBAC: Validate company access if changing company or creating new (P0.4)
+  if (company_id) {
+    const { authorized, error: accessError } =
+      await requireCompanyAccess(company_id);
+    if (!authorized) return { error: accessError };
+  }
   const card_value = parseFloat((formData.get("card_value") as string) || "0");
   const status = (formData.get("status") as string) || "Inactivo";
   const event_manager = formData.get("event_manager") as string;
@@ -352,6 +402,7 @@ export async function saveEvent(formData: FormData) {
   }
 
   revalidatePath("/admin/bingo");
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -359,7 +410,11 @@ export async function saveEvent(formData: FormData) {
  * Delete a Bingo event.
  */
 export async function deleteEvent(id: number) {
-  const supabase = createClient();
+  // RBAC: Only Super Admin can delete events (P0.4)
+  const { error: authError } = await requireRoleLevel(100);
+  if (authError) return { error: authError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -391,6 +446,7 @@ export async function deleteEvent(id: number) {
   }
 
   revalidatePath("/admin/bingo");
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -398,7 +454,15 @@ export async function deleteEvent(id: number) {
  * Fetch cards for a specific event.
  */
 export async function getEventCards(companyId: number, eventId: string) {
-  const supabase = createClient();
+  // RBAC: Min Operator level (40+) and company access (P0.3/P0.4)
+  const { error: authError } = await requireRoleLevel(40);
+  if (authError) return { error: authError };
+
+  const { authorized, error: accessError } =
+    await requireCompanyAccess(companyId);
+  if (!authorized) return { error: accessError };
+
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("cards")
     .select("*")
@@ -421,7 +485,15 @@ export async function generateCards(
   price: number,
   deleteExisting: boolean = false,
 ) {
-  const supabase = createClient();
+  // RBAC: Min Admin level (80+) and company access (P0.4)
+  const { error: authError } = await requireRoleLevel(80);
+  if (authError) return { error: authError };
+
+  const { authorized, error: accessError } =
+    await requireCompanyAccess(companyId);
+  if (!authorized) return { error: accessError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -570,6 +642,7 @@ export async function generateCards(
   }
 
   revalidatePath("/admin/bingo");
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -583,7 +656,15 @@ export async function updateCardType(
   newType: string,
   officialName: string,
 ) {
-  const supabase = createClient();
+  // RBAC: Min Operator level (40+) and company access (P0.4)
+  const { error: authError } = await requireRoleLevel(40);
+  if (authError) return { error: authError };
+
+  const { authorized, error: accessError } =
+    await requireCompanyAccess(companyId);
+  if (!authorized) return { error: accessError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -635,6 +716,7 @@ export async function updateCardType(
   });
 
   revalidatePath("/admin/bingo");
+  revalidatePath("/admin");
   return { success: true };
 }
 /**
@@ -648,7 +730,15 @@ export async function updateCardRangeType(
   newType: string,
   officialName: string,
 ) {
-  const supabase = createClient();
+  // RBAC: Min Operator level (40+) and company access (P0.4)
+  const { error: authError } = await requireRoleLevel(40);
+  if (authError) return { error: authError };
+
+  const { authorized, error: accessError } =
+    await requireCompanyAccess(companyId);
+  if (!authorized) return { error: accessError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -705,7 +795,15 @@ export async function updateSingleCard(
   cardNumber: number,
   formData: FormData,
 ) {
-  const supabase = createClient();
+  // RBAC: Min Operator level (40+) and company access (P0.4)
+  const { error: authError } = await requireRoleLevel(40);
+  if (authError) return { error: authError };
+
+  const { authorized, error: accessError } =
+    await requireCompanyAccess(companyId);
+  if (!authorized) return { error: accessError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -718,13 +816,15 @@ export async function updateSingleCard(
   const salesPrice = formData.get("sales_price")
     ? parseFloat(formData.get("sales_price") as string)
     : null;
-  const soldBy = formData.get("sold_by") as string;
-  const playerName = formData.get("player_name") as string;
-  const playerPhone = formData.get("player_phone_number") as string;
-  const playerEmail = formData.get("player_email") as string;
-  const prize = formData.get("prize") as string;
-  const comment = formData.get("comment") as string;
-  const invoiceNumber = formData.get("invoice_number") as string;
+  const soldBy = sanitizeInput(formData.get("sold_by") as string);
+  const playerName = sanitizeInput(formData.get("player_name") as string);
+  const playerPhone = sanitizeInput(
+    formData.get("player_phone_number") as string,
+  );
+  const playerEmail = sanitizeInput(formData.get("player_email") as string);
+  const prize = sanitizeInput(formData.get("prize") as string);
+  const comment = sanitizeInput(formData.get("comment") as string);
+  const invoiceNumber = sanitizeInput(formData.get("invoice_number") as string);
   const file = formData.get("file") as File;
 
   // 1. Get current data for comparison and potential file cleanup
@@ -808,11 +908,20 @@ export async function updateSingleCard(
   });
 
   revalidatePath("/admin/bingo");
+  revalidatePath("/admin");
   return { success: true };
 }
 
 export async function getInvoices(companyId: number, eventId: string) {
-  const supabase = createClient();
+  // RBAC: Min Operator level (40+) and company access (P0.3/P0.4)
+  const { error: authError } = await requireRoleLevel(40);
+  if (authError) return { error: authError };
+
+  const { authorized, error: accessError } =
+    await requireCompanyAccess(companyId);
+  if (!authorized) return { error: accessError };
+
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("invoices")
@@ -829,7 +938,11 @@ export async function getInvoices(companyId: number, eventId: string) {
  * Save a new invoice and update associated cards.
  */
 export async function saveInvoice(formData: FormData) {
-  const supabase = createClient();
+  // RBAC: Min Operator level (40+) (P0.4)
+  const { error: authError } = await requireRoleLevel(40);
+  if (authError) return { error: authError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -837,15 +950,27 @@ export async function saveInvoice(formData: FormData) {
   if (!user) return { error: "No autorizado" };
 
   const company_id = parseInt(formData.get("company_id") as string);
+
+  // RBAC: Validate company access (P0.4)
+  const { authorized, error: accessError } =
+    await requireCompanyAccess(company_id);
+  if (!authorized) return { error: accessError };
+
   const event_id = formData.get("event_id") as string;
-  const invoice_number = formData.get("invoice_number") as string;
+  const invoice_number = sanitizeInput(
+    formData.get("invoice_number") as string,
+  );
   const invoice_date = formData.get("invoice_date") as string;
-  const customer_name = formData.get("customer_name") as string;
-  const customer_email = formData.get("customer_email") as string;
-  const phone_area = formData.get("phone_area") as string;
-  const phone_number = formData.get("phone_number") as string;
-  const whatsapp_number = formData.get("whatsapp_number") as string;
-  const manager_name = formData.get("manager_name") as string;
+  const customer_name = sanitizeInput(formData.get("customer_name") as string);
+  const customer_email = sanitizeInput(
+    formData.get("customer_email") as string,
+  );
+  const phone_area = sanitizeInput(formData.get("phone_area") as string);
+  const phone_number = sanitizeInput(formData.get("phone_number") as string);
+  const whatsapp_number = sanitizeInput(
+    formData.get("whatsapp_number") as string,
+  );
+  const manager_name = sanitizeInput(formData.get("manager_name") as string);
   const cards_number = parseInt(formData.get("cards_number") as string);
   const card_price = parseFloat(formData.get("card_price") as string);
   const total_amount = parseFloat(formData.get("total_amount") as string);
@@ -955,6 +1080,7 @@ export async function saveInvoice(formData: FormData) {
   });
 
   revalidatePath("/admin/bingo");
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -962,7 +1088,11 @@ export async function saveInvoice(formData: FormData) {
  * Update an existing invoice and associated cards.
  */
 export async function updateInvoice(formData: FormData) {
-  const supabase = createClient();
+  // RBAC: Min Operator level (40+) (P0.4)
+  const { error: authError } = await requireRoleLevel(40);
+  if (authError) return { error: authError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -971,15 +1101,27 @@ export async function updateInvoice(formData: FormData) {
 
   const id = formData.get("id") as string;
   const company_id = parseInt(formData.get("company_id") as string);
+
+  // RBAC: Validate company access (P0.4)
+  const { authorized, error: accessError } =
+    await requireCompanyAccess(company_id);
+  if (!authorized) return { error: accessError };
+
   const event_id = formData.get("event_id") as string;
-  const invoice_number = formData.get("invoice_number") as string;
+  const invoice_number = sanitizeInput(
+    formData.get("invoice_number") as string,
+  );
   const invoice_date = formData.get("invoice_date") as string;
-  const customer_name = formData.get("customer_name") as string;
-  const customer_email = formData.get("customer_email") as string;
-  const phone_area = formData.get("phone_area") as string;
-  const phone_number = formData.get("phone_number") as string;
-  const whatsapp_number = formData.get("whatsapp_number") as string;
-  const manager_name = formData.get("manager_name") as string;
+  const customer_name = sanitizeInput(formData.get("customer_name") as string);
+  const customer_email = sanitizeInput(
+    formData.get("customer_email") as string,
+  );
+  const phone_area = sanitizeInput(formData.get("phone_area") as string);
+  const phone_number = sanitizeInput(formData.get("phone_number") as string);
+  const whatsapp_number = sanitizeInput(
+    formData.get("whatsapp_number") as string,
+  );
+  const manager_name = sanitizeInput(formData.get("manager_name") as string);
   const cards_number = parseInt(formData.get("cards_number") as string);
   const card_price = parseFloat(formData.get("card_price") as string);
   const total_amount = parseFloat(formData.get("total_amount") as string);
@@ -1135,6 +1277,7 @@ export async function updateInvoice(formData: FormData) {
   });
 
   revalidatePath("/admin/bingo");
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -1142,7 +1285,7 @@ export async function updateInvoice(formData: FormData) {
  * Delete an invoice.
  */
 export async function deleteInvoice(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -1172,6 +1315,7 @@ export async function deleteInvoice(id: string) {
   }
 
   revalidatePath("/admin/bingo");
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -1179,7 +1323,7 @@ export async function deleteInvoice(id: string) {
  * Update the WhatsApp sending status for an invoice.
  */
 export async function updateInvoiceWhatsAppStatus(id: string, status: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -1220,6 +1364,7 @@ export async function updateInvoiceWhatsAppStatus(id: string, status: string) {
   }
 
   revalidatePath("/admin/bingo");
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -1227,7 +1372,7 @@ export async function updateInvoiceWhatsAppStatus(id: string, status: string) {
  * Fetch the WhatsApp message template from site_content.
  */
 export async function getWhatsAppMessageTemplate() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("site_content")
     .select("*")
@@ -1248,7 +1393,7 @@ export async function getCardsForInvoice(
   eventId: string,
   invoiceNumber: string,
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("cards")
     .select("*")
@@ -1265,7 +1410,7 @@ export async function getCardsForInvoice(
  * Fallback to invoices table if view fails.
  */
 export async function getSellersFromView(companyId: number, eventId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Try view first
   const { data: viewData, error: viewError } = await supabase
@@ -1304,7 +1449,7 @@ export async function getSellersFromView(companyId: number, eventId: string) {
  */
 
 export async function getCustomers(companyId: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("customer_phone_number")
     .select("*")
@@ -1321,7 +1466,7 @@ export async function saveCustomer(payload: {
   customer_name: string;
   phone_number: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("customer_phone_number")
     .upsert(payload)
@@ -1333,7 +1478,7 @@ export async function saveCustomer(payload: {
 }
 
 export async function deleteCustomer(id: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("customer_phone_number")
     .delete()
@@ -1344,7 +1489,7 @@ export async function deleteCustomer(id: number) {
 }
 
 export async function getPromoTemplates() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("site_content")
     .select("*")
@@ -1371,7 +1516,7 @@ export async function logPromoMessage(payload: {
   status: string;
   error_message?: string;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   console.log("Attempting to log promo message to DB:", payload);
   const { data, error } = await supabase
     .from("whatsapp_promo_logs")
@@ -1386,7 +1531,7 @@ export async function logPromoMessage(payload: {
 }
 
 export async function getBatchLogs(companyId: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("v_promo_batch_summary")
     .select("*")
@@ -1398,7 +1543,7 @@ export async function getBatchLogs(companyId: number) {
 }
 
 export async function getBatchDetails(batchId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("whatsapp_promo_logs")
     .select("*")
@@ -1410,7 +1555,7 @@ export async function getBatchDetails(batchId: string) {
 }
 
 export async function syncCustomers() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.rpc("sync_customers_from_cards");
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -1420,7 +1565,7 @@ export async function syncCustomers() {
  * Upload a promotional image to storage and return its public URL.
  */
 export async function uploadPromoImage(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const file = formData.get("file") as File;
   const companyId = formData.get("company_id");
 

@@ -30,6 +30,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import DynamicYear from "@/components/layout/DynamicYear";
+import { SafeText } from "@/components/layout/SafeContent";
 
 // Mapping of icon names to components for CMS
 const IconMap: Record<string, any> = {
@@ -101,7 +102,7 @@ export const metadata: Metadata = {
     "Conoce nuestra historia, misión, visión y el equipo profesional que hace posible la formación laboral de calidad en El Salvador.",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function AboutPage() {
   const content = await getPageContent("about");
@@ -309,26 +310,21 @@ export default async function AboutPage() {
                         <h3 className="text-xl md:text-2xl font-bold text-[#1c9c6b] leading-tight tracking-wide">
                           {background.description.split("\n")[0]}
                         </h3>
-                        <div
+                        <SafeText
                           className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap font-medium"
-                          dangerouslySetInnerHTML={{
-                            __html:
-                              background.description
-                                .split("\n")
-                                .slice(1)
-                                .join("<br/>")
-                                .trim() || "",
-                          }}
+                          text={
+                            background.description
+                              .split("\n")
+                              .slice(1)
+                              .join("\n")
+                              .trim() || ""
+                          }
                         />
                       </>
                     ) : (
-                      <div
+                      <SafeText
                         className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap font-medium"
-                        dangerouslySetInnerHTML={{
-                          __html:
-                            background.description?.replace(/\n/g, "<br/>") ||
-                            "",
-                        }}
+                        text={background.description || ""}
                       />
                     )}
                   </div>
@@ -609,12 +605,9 @@ export default async function AboutPage() {
                   <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-8 text-larioja-azul dark:text-white tracking-tight break-words [overflow-wrap:anywhere]">
                     <HighlightedTitle title={schoolFees.title} />
                   </h2>
-                  <div
+                  <SafeText
                     className="text-lg text-gray-600 dark:text-white/70 leading-relaxed whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{
-                      __html:
-                        schoolFees.description?.replace(/\n/g, "<br/>") || "",
-                    }}
+                    text={schoolFees.description || ""}
                   />
                 </div>
               </ScrollReveal>

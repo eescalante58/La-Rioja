@@ -12,7 +12,7 @@ async function logActivity(
   entityId: string | null,
   metadata: any = {},
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -35,7 +35,7 @@ async function logActivity(
  * Helper to check if the current user has a specific minimum role level.
  */
 async function checkMinLevel(minLevel: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -55,7 +55,7 @@ async function checkMinLevel(minLevel: number) {
  * Server action to fetch all companies.
  */
 export async function getCompanies() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("companies")
     .select("*")
@@ -76,7 +76,7 @@ export async function saveCompany(formData: FormData) {
     return { error: "No tienes permisos para gestionar empresas." };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = formData.get("id");
   const name = formData.get("company_name") as string;
   const phone_code = formData.get("phone_code_area") as string;
@@ -144,7 +144,7 @@ export async function deleteCompany(id: number) {
     };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("companies")
     .delete()

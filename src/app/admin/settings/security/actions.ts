@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
  * This now queries the database directly to get real-time info.
  */
 export async function getSecurityAdvisors() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Query to find views with SECURITY DEFINER
   const { data: definerViews, error: viewsError } = await supabase.rpc(
@@ -50,7 +50,7 @@ export async function getSecurityAdvisors() {
  * Server action to fetch security policies for a specific table.
  */
 export async function getTablePolicies(tableName: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_table_policies", {
     t_name: tableName,
   });
@@ -65,7 +65,7 @@ export async function getTablePolicies(tableName: string) {
  * Server action to fetch RLS status for all tables.
  */
 export async function getRLSStatus() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("get_tables_rls_status");
 
@@ -81,7 +81,7 @@ export async function getRLSStatus() {
  * Server action to fetch all views in the public schema.
  */
 export async function getViewsStatus() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_views_status");
 
   if (error) {

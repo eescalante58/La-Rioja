@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * @returns {Promise<JSX.Element>} The CMS management interface.
  */
 export default async function CMSManager() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: content, error } = await supabase
     .from("site_content")

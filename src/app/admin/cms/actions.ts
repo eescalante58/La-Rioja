@@ -2,6 +2,19 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { requireRoleLevel } from "@/lib/auth/authorization";
+
+/**
+ * Sanitizes string input to prevent basic HTML injection.
+ * In a real production app, consider using a library like DOMPurify for complex HTML.
+ */
+function sanitizeInput(str: string): string {
+  if (!str) return "";
+  return str
+    .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "") // Remove scripts
+    .replace(/on\w+="[^"]*"/gim, "") // Remove on* attributes
+    .replace(/javascript:/gim, ""); // Remove javascript: links
+}
 
 /**
  * Updates a section of content in the CMS.
@@ -10,16 +23,14 @@ import { revalidatePath } from "next/cache";
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function updateCMSContent(id: string, formData: FormData) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await requireRoleLevel(80); // Min Admin level
+  if (authError) return { success: false, error: authError };
 
-  if (!user) return { success: false, error: "No autorizado" };
+  const supabase = await createClient();
 
-  // Extraer datos de FormData
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
+  // Extraer y sanitizar datos
+  const title = sanitizeInput(formData.get("title") as string);
+  const description = sanitizeInput(formData.get("description") as string);
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
   const metadataStr = formData.get("metadata") as string;
@@ -107,18 +118,20 @@ export async function updateCMSContent(id: string, formData: FormData) {
   }
 
   // Registro de auditoría
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "UPDATE_CMS_CONTENT",
-    entity: "site_content",
-    metadata: {
-      id,
-      section_key,
-      title,
-      image_updated: image_url !== old_image_url,
-      timestamp: new Date().toISOString(),
-    },
-  });
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "UPDATE_CMS_CONTENT",
+      entity: "site_content",
+      metadata: {
+        id,
+        section_key,
+        title,
+        image_updated: image_url !== old_image_url,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -132,15 +145,13 @@ export async function updateCMSContent(id: string, formData: FormData) {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function updateFAQ(id: string, formData: FormData) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await requireRoleLevel(80);
+  if (authError) return { success: false, error: authError };
 
-  if (!user) return { success: false, error: "No autorizado" };
+  const supabase = await createClient();
 
-  const question = formData.get("question") as string;
-  const answer = formData.get("answer") as string;
+  const question = sanitizeInput(formData.get("question") as string);
+  const answer = sanitizeInput(formData.get("answer") as string);
   const section_id = formData.get("section_id") as string | null;
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
@@ -163,16 +174,18 @@ export async function updateFAQ(id: string, formData: FormData) {
   }
 
   // Registro de auditoría
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "UPDATE_FAQ",
-    entity: "faqs",
-    metadata: {
-      id,
-      question: question.substring(0, 100),
-      timestamp: new Date().toISOString(),
-    },
-  });
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "UPDATE_FAQ",
+      entity: "faqs",
+      metadata: {
+        id,
+        question: question.substring(0, 100),
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -185,15 +198,13 @@ export async function updateFAQ(id: string, formData: FormData) {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function createFAQ(formData: FormData) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await requireRoleLevel(80);
+  if (authError) return { success: false, error: authError };
 
-  if (!user) return { success: false, error: "No autorizado" };
+  const supabase = await createClient();
 
-  const question = formData.get("question") as string;
-  const answer = formData.get("answer") as string;
+  const question = sanitizeInput(formData.get("question") as string);
+  const answer = sanitizeInput(formData.get("answer") as string);
   const section_id = formData.get("section_id") as string | null;
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
@@ -220,16 +231,18 @@ export async function createFAQ(formData: FormData) {
   }
 
   // Registro de auditoría
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "CREATE_FAQ",
-    entity: "faqs",
-    metadata: {
-      id: data.id,
-      question: question.substring(0, 100),
-      timestamp: new Date().toISOString(),
-    },
-  });
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "CREATE_FAQ",
+      entity: "faqs",
+      metadata: {
+        id: data.id,
+        question: question.substring(0, 100),
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -242,12 +255,13 @@ export async function createFAQ(formData: FormData) {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function deleteFAQ(id: string) {
-  const supabase = createClient();
+  const { error: authError } = await requireRoleLevel(80);
+  if (authError) return { success: false, error: authError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (!user) return { success: false, error: "No autorizado" };
 
   const { error } = await supabase.from("faqs").delete().eq("id", id);
 
@@ -257,15 +271,17 @@ export async function deleteFAQ(id: string) {
   }
 
   // Registro de auditoría
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "DELETE_FAQ",
-    entity: "faqs",
-    metadata: {
-      id,
-      timestamp: new Date().toISOString(),
-    },
-  });
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "DELETE_FAQ",
+      entity: "faqs",
+      metadata: {
+        id,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -279,15 +295,13 @@ export async function deleteFAQ(id: string) {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function updateFAQSection(id: string, formData: FormData) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await requireRoleLevel(80);
+  if (authError) return { success: false, error: authError };
 
-  if (!user) return { success: false, error: "No autorizado" };
+  const supabase = await createClient();
 
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
+  const title = sanitizeInput(formData.get("title") as string);
+  const description = sanitizeInput(formData.get("description") as string);
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
 
@@ -308,16 +322,18 @@ export async function updateFAQSection(id: string, formData: FormData) {
   }
 
   // Registro de auditoría
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "UPDATE_FAQ_SECTION",
-    entity: "faq_sections",
-    metadata: {
-      id,
-      title,
-      timestamp: new Date().toISOString(),
-    },
-  });
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "UPDATE_FAQ_SECTION",
+      entity: "faq_sections",
+      metadata: {
+        id,
+        title,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -330,15 +346,13 @@ export async function updateFAQSection(id: string, formData: FormData) {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function createFAQSection(formData: FormData) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await requireRoleLevel(80);
+  if (authError) return { success: false, error: authError };
 
-  if (!user) return { success: false, error: "No autorizado" };
+  const supabase = await createClient();
 
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
+  const title = sanitizeInput(formData.get("title") as string);
+  const description = sanitizeInput(formData.get("description") as string);
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
 
@@ -363,16 +377,18 @@ export async function createFAQSection(formData: FormData) {
   }
 
   // Registro de auditoría
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "CREATE_FAQ_SECTION",
-    entity: "faq_sections",
-    metadata: {
-      id: data.id,
-      title,
-      timestamp: new Date().toISOString(),
-    },
-  });
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "CREATE_FAQ_SECTION",
+      entity: "faq_sections",
+      metadata: {
+        id: data.id,
+        title,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -385,12 +401,13 @@ export async function createFAQSection(formData: FormData) {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function deleteFAQSection(id: string) {
-  const supabase = createClient();
+  const { error: authError } = await requireRoleLevel(80);
+  if (authError) return { success: false, error: authError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (!user) return { success: false, error: "No autorizado" };
 
   const { error } = await supabase.from("faq_sections").delete().eq("id", id);
 
@@ -400,15 +417,17 @@ export async function deleteFAQSection(id: string) {
   }
 
   // Registro de auditoría
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "DELETE_FAQ_SECTION",
-    entity: "faq_sections",
-    metadata: {
-      id,
-      timestamp: new Date().toISOString(),
-    },
-  });
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "DELETE_FAQ_SECTION",
+      entity: "faq_sections",
+      metadata: {
+        id,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -421,17 +440,15 @@ export async function deleteFAQSection(id: string) {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function createCMSContent(formData: FormData) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, error: authError } = await requireRoleLevel(80);
+  if (authError) return { success: false, error: authError };
 
-  if (!user) return { success: false, error: "No autorizado" };
+  const supabase = await createClient();
 
   const page = formData.get("page") as string;
   const section_key = formData.get("section_key") as string;
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
+  const title = sanitizeInput(formData.get("title") as string);
+  const description = sanitizeInput(formData.get("description") as string);
   const is_active = formData.get("is_active") === "true";
   const content_order = parseInt(formData.get("content_order") as string) || 0;
   const metadataStr = formData.get("metadata") as string;
@@ -518,17 +535,19 @@ export async function createCMSContent(formData: FormData) {
   }
 
   // Registro de auditoría
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "CREATE_CMS_CONTENT",
-    entity: "site_content",
-    metadata: {
-      id: data.id,
-      section_key,
-      title,
-      timestamp: new Date().toISOString(),
-    },
-  });
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "CREATE_CMS_CONTENT",
+      entity: "site_content",
+      metadata: {
+        id: data.id,
+        section_key,
+        title,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
@@ -541,12 +560,13 @@ export async function createCMSContent(formData: FormData) {
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function deleteCMSContent(id: string) {
-  const supabase = createClient();
+  const { error: authError } = await requireRoleLevel(100); // Only Super Admin can delete sections
+  if (authError) return { success: false, error: authError };
+
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (!user) return { success: false, error: "No autorizado" };
 
   // 1. Obtener la información del registro antes de borrarlo para limpiar el storage
   const { data: item } = await supabase
@@ -578,15 +598,17 @@ export async function deleteCMSContent(id: string) {
   }
 
   // Registro de auditoría
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "DELETE_CMS_CONTENT",
-    entity: "site_content",
-    metadata: {
-      id,
-      timestamp: new Date().toISOString(),
-    },
-  });
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "DELETE_CMS_CONTENT",
+      entity: "site_content",
+      metadata: {
+        id,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
 
   revalidatePath("/");
   revalidatePath("/admin/cms");

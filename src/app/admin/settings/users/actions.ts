@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
  * Server action to fetch all users with their roles.
  */
 export async function getUsersWithRoles() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("users")
     .select(
@@ -31,7 +31,7 @@ export async function getUsersWithRoles() {
  * Server action to fetch all available roles.
  */
 export async function getRoles() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("roles")
     .select("*")
@@ -48,7 +48,7 @@ export async function getRoles() {
  * Server action to fetch all country codes.
  */
 export async function getCountryCodes() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("country_codes")
     .select("iso2, name, phone_code, flag_emoji")
@@ -70,7 +70,7 @@ async function logActivity(
   entityId: string | null,
   metadata: any = {},
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -93,7 +93,7 @@ async function logActivity(
  * Helper to check if the current user has a specific minimum role level.
  */
 async function checkMinLevel(minLevel: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -124,25 +124,9 @@ export async function createNewUser(data: {
     return { error: "No tienes permisos para crear usuarios." };
   }
 
-  const cookieStore = cookies();
-
   // Need a special client with Service Role Key for admin operations
-  const supabaseAdmin = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options: any) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name: string, options: any) {
-          cookieStore.set({ name, value: "", ...options });
-        },
-      },
-    },
+  const supabaseAdmin = await createClient(
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
   );
 
   // 1. Create user in Supabase Auth
@@ -188,7 +172,7 @@ export async function createNewUser(data: {
  * Server action to upload a user avatar.
  */
 export async function uploadUserAvatar(file: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const image = file.get("avatar") as File;
   const fileName = `${Date.now()}-${image.name}`;
 
@@ -211,7 +195,7 @@ export async function uploadUserAvatar(file: FormData) {
  * Server action to update a user's role and status.
  */
 export async function updateUser(userId: string, data: any) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
@@ -269,7 +253,7 @@ export async function deleteUser(userId: string) {
     };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Note: This only deletes from our 'users' table, not Supabase Auth
   const { error } = await supabase.from("users").delete().eq("id", userId);
@@ -291,7 +275,7 @@ export async function createRole(data: any) {
   if (!(await checkMinLevel(100))) {
     return { error: "Solo los Super Administradores pueden gestionar roles." };
   }
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: newRole, error } = await supabase
     .from("roles")
     .insert([data])
@@ -315,7 +299,7 @@ export async function updateRole(roleId: number, data: any) {
   if (!(await checkMinLevel(100))) {
     return { error: "Solo los Super Administradores pueden gestionar roles." };
   }
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase
     .from("roles")
     .update({
@@ -341,7 +325,7 @@ export async function deleteRole(roleId: number) {
   if (!(await checkMinLevel(100))) {
     return { error: "Solo los Super Administradores pueden gestionar roles." };
   }
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("roles").delete().eq("role_id", roleId);
 
   if (error) {
@@ -365,7 +349,7 @@ export async function assignUserToCompany(
   if (!(await checkMinLevel(80))) {
     return { error: "No tienes permisos para gestionar empresas de usuarios." };
   }
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("user_companies").insert([
     {
       user_id: userId,
@@ -391,7 +375,10 @@ export async function assignUserToCompany(
  * Server action to remove a user from a company.
  */
 export async function removeUserFromCompany(userId: string, companyId: number) {
-  const supabase = createClient();
+  if (!(await checkMinLevel(80))) {
+    return { error: "No tienes permisos para gestionar empresas de usuarios." };
+  }
+  const supabase = await createClient();
   const { error } = await supabase
     .from("user_companies")
     .delete()
@@ -417,7 +404,10 @@ export async function updateUserCompanyRole(
   companyId: number,
   roleId: number,
 ) {
-  const supabase = createClient();
+  if (!(await checkMinLevel(80))) {
+    return { error: "No tienes permisos para gestionar empresas de usuarios." };
+  }
+  const supabase = await createClient();
   const { error } = await supabase
     .from("user_companies")
     .update({
@@ -438,7 +428,7 @@ export async function updateUserCompanyRole(
  * Server action to fetch user-company relationships.
  */
 export async function getUserCompanies(userId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("user_companies")
     .select(

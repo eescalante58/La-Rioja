@@ -48,6 +48,8 @@ function DynamicIcon({
   return <IconComponent className={className} />;
 }
 
+export const revalidate = 3600; // revalidate at most every hour
+
 /**
  * Main Home page component that consumes dynamic content from the CMS.
  * @returns {Promise<JSX.Element>} The rendered home page.

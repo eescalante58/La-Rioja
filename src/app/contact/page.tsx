@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "Formas de apoyar nuestra misión: donativos monetarios, en especie, patrocinio de estudiantes y alianzas empresariales.",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default function ContactPage() {
   return (
