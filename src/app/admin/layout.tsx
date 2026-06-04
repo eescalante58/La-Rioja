@@ -16,8 +16,9 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
   const selectedCompanyName =
-    cookies().get("selected_company_name")?.value || "Empresa";
+    cookieStore.get("selected_company_name")?.value || "Empresa";
 
   return (
     <UserProvider>

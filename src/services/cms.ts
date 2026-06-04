@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/server";
 
 /**
  * Fetches content for a specific page and section from the site_content table.
@@ -7,8 +7,8 @@ import { createClient } from "@/lib/supabase/server";
  * @returns {Promise<any>} The content object or null if not found.
  */
 export async function getSectionContent(page: string, sectionKey: string) {
-  const supabase = createClient();
-  
+  const supabase = createStaticClient();
+
   const { data, error } = await supabase
     .from("site_content")
     .select("*")
@@ -18,7 +18,10 @@ export async function getSectionContent(page: string, sectionKey: string) {
     .single();
 
   if (error) {
-    console.error(`Error fetching CMS content for ${page}/${sectionKey}:`, error);
+    console.error(
+      `Error fetching CMS content for ${page}/${sectionKey}:`,
+      error,
+    );
     return null;
   }
 
@@ -31,8 +34,8 @@ export async function getSectionContent(page: string, sectionKey: string) {
  * @returns {Promise<any[]>} Array of content sections.
  */
 export async function getPageContent(page: string) {
-  const supabase = createClient();
-  
+  const supabase = createStaticClient();
+
   const { data, error } = await supabase
     .from("site_content")
     .select("*")

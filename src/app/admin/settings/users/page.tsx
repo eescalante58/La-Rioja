@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
  * Server component that fetches data and renders the client manager.
  */
 export default async function UsersSettingsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

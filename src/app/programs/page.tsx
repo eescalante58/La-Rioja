@@ -121,6 +121,8 @@ export const metadata: Metadata = {
     "Descubre nuestros programas de formación laboral, talleres vocacionales y proyectos de inclusión diseñados para potenciar el talento de cada estudiante.",
 };
 
+export const revalidate = 3600;
+
 /**
  * Programs page component.
  * Displays the different educational and vocational programs offered by La Rioja.

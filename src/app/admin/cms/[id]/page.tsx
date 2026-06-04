@@ -8,13 +8,18 @@ import CMSEditForm from "../CMSEditForm";
  * @param {Object} props.params - Route params.
  * @returns {Promise<JSX.Element>} The edit page.
  */
-export default async function EditCMSPage({ params }: { params: { id: string } }) {
-  const supabase = createClient();
-  
+export default async function EditCMSPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+
   const { data: item, error } = await supabase
     .from("site_content")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (error || !item) {

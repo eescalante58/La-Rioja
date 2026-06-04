@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import {
@@ -25,8 +25,10 @@ export const metadata = {
   ],
 };
 
+export const revalidate = 3600;
+
 export default async function FAQPage() {
-  const supabase = createClient();
+  const supabase = createStaticClient();
 
   // Fetch sections and faqs from database
   const { data: sections } = await supabase

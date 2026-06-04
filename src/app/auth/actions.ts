@@ -12,7 +12,7 @@ import { cookies } from "next/headers";
 export async function login(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -45,7 +45,7 @@ export async function login(formData: FormData) {
  * Handles sign out.
  */
 export async function signOut() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -65,8 +65,9 @@ export async function signOut() {
   await supabase.auth.signOut();
 
   // Clear company cookies
-  cookies().delete("selected_company_id");
-  cookies().delete("selected_company_name");
+  const cookieStore = await cookies();
+  cookieStore.delete("selected_company_id");
+  cookieStore.delete("selected_company_name");
 
   revalidatePath("/", "layout");
   redirect("/login");
@@ -79,7 +80,7 @@ export async function signOut() {
 export async function signInWithOAuth(
   provider: "google" | "facebook" | "twitter",
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
@@ -102,7 +103,7 @@ export async function signInWithOAuth(
  * @param {string} email - The user's email.
  */
 export async function resetPasswordForEmail(email: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password`,
   });
@@ -120,7 +121,7 @@ export async function resetPasswordForEmail(email: string) {
  * @param {string} password - The new password.
  */
 export async function updatePassword(password: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {

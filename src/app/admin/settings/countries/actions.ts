@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
  * Server action to fetch all country codes.
  */
 export async function getCountryCodes() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("country_codes")
     .select("*")
@@ -24,7 +24,7 @@ export async function getCountryCodes() {
  * Server action to create or update a country code.
  */
 export async function saveCountryCode(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -87,7 +87,7 @@ export async function saveCountryCode(formData: FormData) {
  * Server action to delete a country code.
  */
 export async function deleteCountryCode(id: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -127,7 +127,7 @@ export async function deleteCountryCode(id: number) {
  * Server action to bulk import country codes.
  */
 export async function importCountryCodes(countries: any[]) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get current user for logging
   const {
@@ -172,7 +172,7 @@ export async function importCountryCodes(countries: any[]) {
  * Server action to log data export activity.
  */
 export async function logExportActivity(count: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

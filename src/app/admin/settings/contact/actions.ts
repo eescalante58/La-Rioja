@@ -10,7 +10,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  * Fetch contact submissions with search filtering
  */
 export async function getContactSubmissions(searchQuery?: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Verificar sesión
   const {
@@ -53,7 +53,7 @@ export async function getContactSubmissions(searchQuery?: string) {
  * Delete a contact submission
  */
 export async function deleteContactSubmission(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Verificar sesión
   const {
@@ -81,7 +81,7 @@ export async function deleteContactSubmission(id: string) {
  * Resend a contact submission email
  */
 export async function resendContactEmail(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Verificar sesión
   const {

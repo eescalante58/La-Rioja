@@ -8,24 +8,60 @@ import { cookies } from "next/headers";
  * @returns {Promise<any>} Dashboard statistics and event data.
  */
 export async function getDashboardData() {
-  const supabase = createClient();
-  const companyId = cookies().get("selected_company_id")?.value;
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
 
   if (!companyId) {
     return { success: false, error: "No company selected" };
   }
 
   try {
-    // 1. Get the default event ID for the dashboard from the company settings
-    const { data: company, error: companyError } = await supabase
-      .from("companies")
-      .select("def_dash_event_id, company_name")
-      .eq("company_id", companyId)
-      .single();
+    // 1. Fetch company info and general stats in parallel
+    const [companyRes, cmsRes, customersRes, contactsRes, allEventsRes] =
+      await Promise.all([
+        supabase
+          .from("companies")
+          .select("def_dash_event_id, company_name")
+          .eq("company_id", companyId)
+          .single(),
+        supabase
+          .from("site_content")
+          .select("*", { count: "exact", head: true }),
+        supabase
+          .from("customer_phone_number")
+          .select("*", { count: "exact", head: true })
+          .eq("company_id", companyId),
+        supabase
+          .from("contact_submissions")
+          .select("id, name, created_at")
+          .order("created_at", { ascending: false })
+          .limit(5),
+        supabase
+          .from("events")
+          .select(
+            "event_date, total_amount_solded, event_id, is_active, status",
+          )
+          .eq("company_id", companyId),
+      ]);
+
+    const { data: company, error: companyError } = companyRes;
+    const { count: cmsCount } = cmsRes;
+    const { count: customersCount } = customersRes;
+    const { data: recentContacts, error: contactError } = contactsRes;
+    const { data: allEvents, error: allEventsError } = allEventsRes;
 
     if (companyError || !company) {
       console.error("Error fetching company dash settings:", companyError);
       return { success: false, error: "Company settings not found" };
+    }
+
+    if (contactError) {
+      console.error("Error fetching recent contact submissions:", contactError);
+    }
+
+    if (allEventsError) {
+      console.error("Error fetching events for yearly sales:", allEventsError);
     }
 
     const eventId = company.def_dash_event_id;
@@ -33,55 +69,64 @@ export async function getDashboardData() {
     if (!eventId) {
       return {
         success: true,
+        companyId,
         companyName: company.company_name,
         hasEvent: false,
+        stats: {
+          cmsCount: cmsCount || 0,
+          customersCount: customersCount || 0,
+        },
+        recentContacts: recentContacts || [],
       };
     }
 
-    // 2. Get event details (name and goal)
-    const { data: event, error: eventError } = await supabase
-      .from("events")
-      .select("event_name, event_goal")
-      .eq("event_id", eventId)
-      .eq("company_id", companyId)
-      .single();
+    // 2. Fetch event-specific data in parallel
+    const [eventRes, invoicesRes, dailySalesRes] = await Promise.all([
+      supabase
+        .from("events")
+        .select("event_name, event_goal")
+        .eq("event_id", eventId)
+        .eq("company_id", companyId)
+        .single(),
+      supabase
+        .from("invoices")
+        .select("total_amount")
+        .eq("event_id", eventId)
+        .eq("company_id", companyId)
+        .eq("status", "pagada"),
+      supabase
+        .from("invoices")
+        .select("invoice_date, total_amount")
+        .eq("event_id", eventId)
+        .eq("company_id", companyId)
+        .eq("status", "pagada")
+        .order("invoice_date", { ascending: true }),
+    ]);
+
+    const { data: event, error: eventError } = eventRes;
+    const { data: invoices, error: invoicesError } = invoicesRes;
+    const { data: dailySales, error: dailySalesError } = dailySalesRes;
 
     if (eventError || !event) {
       console.error("Error fetching event details:", eventError);
       return { success: false, error: "Event details not found" };
     }
 
-    // 3. Calculate realized sales from invoices
-    const { data: invoices, error: invoicesError } = await supabase
-      .from("invoices")
-      .select("total_amount")
-      .eq("event_id", eventId)
-      .eq("company_id", companyId)
-      .eq("status", "pagada"); // Only count paid invoices
-
     if (invoicesError) {
       console.error("Error fetching invoices:", invoicesError);
       return { success: false, error: "Error calculating sales" };
     }
 
+    if (dailySalesError) {
+      console.error("Error fetching daily sales:", dailySalesError);
+    }
+
+    // Process results
     const realized =
       invoices?.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) ||
       0;
     const goal = Number(event.event_goal || 0);
     const percentage = goal > 0 ? (realized / goal) * 100 : 0;
-
-    // 4. Calculate daily sales
-    const { data: dailySales, error: dailySalesError } = await supabase
-      .from("invoices")
-      .select("invoice_date, total_amount")
-      .eq("event_id", eventId)
-      .eq("company_id", companyId)
-      .eq("status", "pagada")
-      .order("invoice_date", { ascending: true });
-
-    if (dailySalesError) {
-      console.error("Error fetching daily sales:", dailySalesError);
-    }
 
     const dailySalesMap = dailySales?.reduce((acc: any, inv) => {
       const date = inv.invoice_date;
@@ -93,37 +138,6 @@ export async function getDashboardData() {
       date,
       total: dailySalesMap[date],
     }));
-
-    // 5. Also fetch some general stats for the other panel
-    const { count: cmsCount } = await supabase
-      .from("site_content")
-      .select("*", { count: "exact", head: true });
-
-    const { count: customersCount } = await supabase
-      .from("customer_phone_number")
-      .select("*", { count: "exact", head: true })
-      .eq("company_id", companyId);
-
-    // 6. Fetch recent contact submissions
-    const { data: recentContacts, error: contactError } = await supabase
-      .from("contact_submissions")
-      .select("id, name, created_at")
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    if (contactError) {
-      console.error("Error fetching recent contact submissions:", contactError);
-    }
-
-    // 7. Calculate sales by year from all events
-    const { data: allEvents, error: allEventsError } = await supabase
-      .from("events")
-      .select("event_date, total_amount_solded, event_id, is_active, status")
-      .eq("company_id", companyId);
-
-    if (allEventsError) {
-      console.error("Error fetching events for yearly sales:", allEventsError);
-    }
 
     const yearlySalesMap = allEvents?.reduce((acc: any, ev) => {
       let year = "";
@@ -156,6 +170,7 @@ export async function getDashboardData() {
 
     return {
       success: true,
+      companyId,
       companyName: company.company_name,
       hasEvent: true,
       eventName: event.event_name,
@@ -180,8 +195,9 @@ export async function getDashboardData() {
  * Fetches invoice details for a specific date (Drill down).
  */
 export async function getInvoicesByDate(date: string) {
-  const supabase = createClient();
-  const companyId = cookies().get("selected_company_id")?.value;
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
 
   if (!companyId) return { success: false, error: "No company" };
 
@@ -203,8 +219,9 @@ export async function getInvoicesByDate(date: string) {
  * Fetches sales breakdown by manager for the current event (Drill down).
  */
 export async function getSalesByManager() {
-  const supabase = createClient();
-  const companyId = cookies().get("selected_company_id")?.value;
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
 
   if (!companyId) return { success: false, error: "No company" };
 

@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
  * Server action to fetch all students with their event names.
  */
 export async function getStudents() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch students, their associated event names and cards count
   const { data, error } = await supabase
@@ -54,7 +54,7 @@ export async function getStudents() {
  * Server action to fetch events for dropdown.
  */
 export async function getEvents() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("events")
     .select("company_id, event_id, event_name")
@@ -71,7 +71,7 @@ export async function getEvents() {
  * Server action to save a student (create or update).
  */
 export async function saveStudent(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -136,7 +136,7 @@ export async function saveStudent(formData: FormData) {
  * Server action to delete a student.
  */
 export async function deleteStudent(id: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -177,7 +177,7 @@ export async function deleteStudent(id: number) {
  * Server action to import multiple students.
  */
 export async function importStudents(students: any[]) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -214,7 +214,7 @@ export async function importStudents(students: any[]) {
  * Server action to log export activity.
  */
 export async function logExportActivity(count: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -240,7 +240,7 @@ export async function getStudentCards(
   companyId: number,
   eventId: string,
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("students_cards")
@@ -289,7 +289,7 @@ export async function assignCardToStudent(
   eventId: string,
   cardNumber: number,
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -356,7 +356,7 @@ export async function unassignCardFromStudent(
   eventId: string,
   cardNumber: number,
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -402,7 +402,7 @@ export async function unassignCardFromStudent(
  * Server action to bulk assign cards to students.
  */
 export async function bulkAssignCards(assignments: any[]) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -487,7 +487,7 @@ export async function bulkAssignCards(assignments: any[]) {
  * Server action to fetch all assigned cards for download.
  */
 export async function getAllAssignedCards() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.from("students_cards").select(`
       card_number,
