@@ -215,7 +215,7 @@ export async function createFAQ(formData: FormData) {
   if (!validation.success) {
     return {
       success: false,
-      error: "Datos inválidos: " + validation.error.errors.map(e => e.message).join(", "),
+      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
     };
   }
   

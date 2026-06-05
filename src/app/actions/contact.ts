@@ -16,7 +16,7 @@ export async function submitContactForm(rawInput: ContactInput) {
     if (!validation.success) {
       return {
         success: false,
-        error: "Datos inválidos: " + validation.error.errors.map(e => e.message).join(", "),
+        error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
       };
     }
     const data = validation.data;
@@ -140,7 +140,7 @@ export async function submitContactForm(rawInput: ContactInput) {
     console.error("Submission Error Details:", {
       message: error.message,
       stack: error.stack,
-      data: data,
+      data: rawInput,
     });
     return {
       success: false,
