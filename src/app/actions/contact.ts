@@ -2,6 +2,7 @@
 
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
+import { escapeHTML } from "@/lib/utils";
 
 import { contactSchema, type ContactInput } from "@/lib/validation/contact";
 
@@ -24,35 +25,20 @@ export async function submitContactForm(rawInput: ContactInput) {
     const apiKey = process.env.RESEND_API_KEY;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY) {
-      console.error(
-        "CRITICAL SECURITY WARNING: NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY is defined in the environment. This is a severe security risk. Please remove the NEXT_PUBLIC prefix from this variable in your environment settings immediately.",
-      );
-    }
-
     if (!apiKey) {
-      console.error("DEBUG: RESEND_API_KEY no encontrada en process.env");
+      console.error("RESEND_API_KEY no encontrada en variables de entorno.");
       return {
         success: false,
         error:
-          "Configuración incompleta: La clave RESEND_API_KEY no está configurada en el servidor.",
+          "Configuración incompleta en el servidor. Intente más tarde.",
       };
     }
 
     const resend = new Resend(apiKey);
 
-    // Si hay serviceRoleKey, la usamos para bypass de RLS
-    if (serviceRoleKey) {
-      console.log("DEBUG: Usando Service Role Key para guardar el mensaje.");
-    } else {
-      console.warn(
-        "DEBUG: No se encontró Service Role Key. Se usará la clave pública (sujeta a RLS).",
-      );
-    }
-
     // 0. Security Validations (P0.6 Allowlist)
     const EMAIL_ALLOWLIST: Record<string, string> = {
-      general: "info@larioja.edu.gt", // Cambiar por correos reales
+      general: "info@larioja.edu.gt",
       donaciones: "donaciones@larioja.edu.gt",
       programas: "programas@larioja.edu.gt",
       soporte: "soporte@larioja.edu.gt",
@@ -60,15 +46,6 @@ export async function submitContactForm(rawInput: ContactInput) {
 
     const targetEmail =
       EMAIL_ALLOWLIST[data.targetEmail] || EMAIL_ALLOWLIST.general;
-
-    // Helper to escape HTML (P0.5)
-    const escapeHTML = (str: string) =>
-      str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
 
     const sanitizedData = {
       name: escapeHTML(data.name),

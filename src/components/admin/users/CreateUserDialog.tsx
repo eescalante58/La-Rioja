@@ -65,9 +65,10 @@ export default function CreateUserDialog({
       email: formData.get("email") as string,
       full_name: formData.get("full_name") as string,
       role_id: parseInt(formData.get("role_id") as string),
-      secondary_email: formData.get("secondary_email") as string,
+      secondary_email: formData.get("secondary_email") as string || "",
       phone: `${formData.get("phone_code")}${formData.get("phone_number")}`,
       avatar_url: avatarUrl,
+      status: "active" as const,
     };
     const res = await createNewUser(data);
     if (res.success) window.location.reload();

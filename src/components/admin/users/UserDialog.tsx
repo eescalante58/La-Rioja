@@ -81,10 +81,10 @@ export default function UserDialog({
       if (uploadRes.publicUrl) avatarUrl = uploadRes.publicUrl;
     }
     const data = {
-      full_name: (formData.get("full_name") as string) || user.full_name,
+      full_name: (formData.get("full_name") as string) || user.full_name || "",
       role_id: formData.get("role_id") ? parseInt(formData.get("role_id") as string) : user.role_id,
-      status: (formData.get("status") as string) || user.status,
-      secondary_email: formData.get("secondary_email") as string,
+      status: ((formData.get("status") as string) || user.status) as "active" | "inactive",
+      secondary_email: (formData.get("secondary_email") as string) || "",
       phone: `${formData.get("phone_code")}${formData.get("phone_number")}`,
       avatar_url: avatarUrl,
     };

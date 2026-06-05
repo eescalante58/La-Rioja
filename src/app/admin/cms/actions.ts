@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
-import { faqSchema } from "@/lib/validation/cms";
+import { faqSchema, faqSectionSchema, cmsContentSchema } from "@/lib/validation/cms";
 
 /**
  * Sanitizes string input to prevent basic HTML injection.
@@ -27,25 +27,35 @@ export async function updateCMSContent(id: string, formData: FormData) {
   const { user, error: authError } = await requireRoleLevel(80); // Min Admin level
   if (authError) return { success: false, error: authError };
 
-  const supabase = await createClient();
+  // 1. Validation with Zod
+  const rawMetadataStr = formData.get("metadata") as string;
+  let rawMetadata = {};
+  try {
+    rawMetadata = JSON.parse(rawMetadataStr || "{}");
+  } catch (e) {}
 
-  // Extraer y sanitizar datos
-  const title = sanitizeInput(formData.get("title") as string);
-  const description = sanitizeInput(formData.get("description") as string);
-  const is_active = formData.get("is_active") === "true";
-  const content_order = parseInt(formData.get("content_order") as string) || 0;
-  const metadataStr = formData.get("metadata") as string;
-  const section_key = formData.get("section_key") as string;
+  const rawData = {
+    title: formData.get("title") as string,
+    description: formData.get("description") as string,
+    is_active: formData.get("is_active") === "true",
+    content_order: parseInt(formData.get("content_order") as string) || 0,
+    section_key: formData.get("section_key") as string,
+    metadata: rawMetadata,
+  };
+
+  const validation = cmsContentSchema.partial().safeParse(rawData);
+  if (!validation.success) {
+    return {
+      success: false,
+      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+    };
+  }
+
+  const { title, description, is_active, content_order, section_key, metadata } = validation.data;
   const old_image_url = formData.get("old_image_url") as string;
   const file = formData.get("file") as File | null;
 
-  let metadata = {};
-  try {
-    metadata = JSON.parse(metadataStr || "{}");
-  } catch (e) {
-    console.error("Metadata parse error:", e);
-  }
-
+  const supabase = await createClient();
   let image_url = old_image_url;
 
   // 1. Handle File Upload if present
@@ -103,8 +113,8 @@ export async function updateCMSContent(id: string, formData: FormData) {
   const { error } = await supabase
     .from("site_content")
     .update({
-      title,
-      description,
+      title: sanitizeInput(title || ""),
+      description: sanitizeInput(description || ""),
       image_url,
       is_active,
       content_order,
@@ -149,19 +159,31 @@ export async function updateFAQ(id: string, formData: FormData) {
   const { user, error: authError } = await requireRoleLevel(80);
   if (authError) return { success: false, error: authError };
 
-  const supabase = await createClient();
+  // 1. Validation with Zod
+  const rawData = {
+    question: formData.get("question") as string,
+    answer: formData.get("answer") as string,
+    section_id: formData.get("section_id") as string || null,
+    is_active: formData.get("is_active") === "true",
+    content_order: parseInt(formData.get("content_order") as string) || 0,
+  };
 
-  const question = sanitizeInput(formData.get("question") as string);
-  const answer = sanitizeInput(formData.get("answer") as string);
-  const section_id = formData.get("section_id") as string | null;
-  const is_active = formData.get("is_active") === "true";
-  const content_order = parseInt(formData.get("content_order") as string) || 0;
+  const validation = faqSchema.partial().safeParse(rawData);
+  if (!validation.success) {
+    return {
+      success: false,
+      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+    };
+  }
+
+  const { question, answer, section_id, is_active, content_order } = validation.data;
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from("faqs")
     .update({
-      question,
-      answer,
+      question: sanitizeInput(question || ""),
+      answer: sanitizeInput(answer || ""),
       section_id: section_id || null,
       is_active,
       content_order,
@@ -182,7 +204,7 @@ export async function updateFAQ(id: string, formData: FormData) {
       entity: "faqs",
       metadata: {
         id,
-        question: question.substring(0, 100),
+        question: (question || "").substring(0, 100),
         timestamp: new Date().toISOString(),
       },
     });
@@ -252,7 +274,7 @@ export async function createFAQ(formData: FormData) {
       entity: "faqs",
       metadata: {
         id: data.id,
-        question: question.substring(0, 100),
+        question: (question || "").substring(0, 100),
         timestamp: new Date().toISOString(),
       },
     });
@@ -312,18 +334,30 @@ export async function updateFAQSection(id: string, formData: FormData) {
   const { user, error: authError } = await requireRoleLevel(80);
   if (authError) return { success: false, error: authError };
 
-  const supabase = await createClient();
+  // 1. Validation with Zod
+  const rawData = {
+    title: formData.get("title") as string,
+    description: formData.get("description") as string,
+    is_active: formData.get("is_active") === "true",
+    content_order: parseInt(formData.get("content_order") as string) || 0,
+  };
 
-  const title = sanitizeInput(formData.get("title") as string);
-  const description = sanitizeInput(formData.get("description") as string);
-  const is_active = formData.get("is_active") === "true";
-  const content_order = parseInt(formData.get("content_order") as string) || 0;
+  const validation = faqSectionSchema.partial().safeParse(rawData);
+  if (!validation.success) {
+    return {
+      success: false,
+      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+    };
+  }
+
+  const { title, description, is_active, content_order } = validation.data;
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from("faq_sections")
     .update({
-      title,
-      description,
+      title: sanitizeInput(title || ""),
+      description: sanitizeInput(description || ""),
       is_active,
       content_order,
       updated_at: new Date().toISOString(),
@@ -363,19 +397,31 @@ export async function createFAQSection(formData: FormData) {
   const { user, error: authError } = await requireRoleLevel(80);
   if (authError) return { success: false, error: authError };
 
-  const supabase = await createClient();
+  // 1. Validation with Zod
+  const rawData = {
+    title: formData.get("title") as string,
+    description: formData.get("description") as string,
+    is_active: formData.get("is_active") === "true",
+    content_order: parseInt(formData.get("content_order") as string) || 0,
+  };
 
-  const title = sanitizeInput(formData.get("title") as string);
-  const description = sanitizeInput(formData.get("description") as string);
-  const is_active = formData.get("is_active") === "true";
-  const content_order = parseInt(formData.get("content_order") as string) || 0;
+  const validation = faqSectionSchema.safeParse(rawData);
+  if (!validation.success) {
+    return {
+      success: false,
+      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+    };
+  }
+
+  const { title, description, is_active, content_order } = validation.data;
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("faq_sections")
     .insert([
       {
-        title,
-        description,
+        title: sanitizeInput(title),
+        description: sanitizeInput(description || ""),
         is_active,
         content_order,
         created_at: new Date().toISOString(),
@@ -457,22 +503,41 @@ export async function createCMSContent(formData: FormData) {
   const { user, error: authError } = await requireRoleLevel(80);
   if (authError) return { success: false, error: authError };
 
-  const supabase = await createClient();
+  // 1. Validation with Zod
+  const rawMetadataStr = formData.get("metadata") as string;
+  let rawMetadata = {};
+  try {
+    rawMetadata = JSON.parse(rawMetadataStr || "{}");
+  } catch (e) {}
 
-  const page = formData.get("page") as string;
-  const section_key = formData.get("section_key") as string;
-  const title = sanitizeInput(formData.get("title") as string);
-  const description = sanitizeInput(formData.get("description") as string);
-  const is_active = formData.get("is_active") === "true";
-  const content_order = parseInt(formData.get("content_order") as string) || 0;
-  const metadataStr = formData.get("metadata") as string;
+  const rawData = {
+    page: formData.get("page") as string,
+    section_key: formData.get("section_key") as string,
+    title: formData.get("title") as string,
+    description: formData.get("description") as string,
+    is_active: formData.get("is_active") === "true",
+    content_order: parseInt(formData.get("content_order") as string) || 0,
+    metadata: rawMetadata,
+  };
+
+  const validation = cmsContentSchema.safeParse(rawData);
+  if (!validation.success) {
+    return {
+      success: false,
+      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+    };
+  }
+
+  const { page, section_key, title, description, is_active, content_order, metadata } = validation.data;
   const file = formData.get("file") as File | null;
+
+  const supabase = await createClient();
 
   // Check uniqueness of combination (page, section_key, content_order)
   const { data: existing } = await supabase
     .from("site_content")
     .select("id")
-    .eq("page", page)
+    .eq("page", page || "")
     .eq("section_key", section_key)
     .eq("content_order", content_order)
     .maybeSingle();
@@ -482,13 +547,6 @@ export async function createCMSContent(formData: FormData) {
       success: false,
       error: `Ya existe un registro con la misma clave "${section_key}" y orden "${content_order}" en la página "${page}".`,
     };
-  }
-
-  let metadata = {};
-  try {
-    metadata = JSON.parse(metadataStr || "{}");
-  } catch (e) {
-    console.error("Metadata parse error:", e);
   }
 
   let image_url = "";
@@ -530,8 +588,8 @@ export async function createCMSContent(formData: FormData) {
       {
         page,
         section_key,
-        title,
-        description,
+        title: sanitizeInput(title),
+        description: sanitizeInput(description || ""),
         image_url,
         is_active,
         content_order,
