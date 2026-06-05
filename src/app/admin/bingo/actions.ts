@@ -6,6 +6,14 @@ import {
   requireRoleLevel,
   requireCompanyAccess,
 } from "@/lib/auth/authorization";
+import { 
+  eventSchema, 
+  invoiceSchema, 
+  generateCardsSchema, 
+  updateCardTypeSchema, 
+  updateCardRangeTypeSchema, 
+  singleCardSchema 
+} from "@/lib/validation/bingo";
 
 /**
  * Sanitizes string input for Bingo operations.
@@ -28,8 +36,23 @@ export async function uploadCardImages(
   const { error: authError } = await requireRoleLevel(40);
   if (authError) return { error: authError };
 
-  const { authorized, error: accessError } =
-    await requireCompanyAccess(companyId);
+  // Validation with Zod
+  const validation = generateCardsSchema.pick({
+    company_id: true,
+    event_id: true,
+    price: true,
+  }).safeParse({
+    company_id: companyId,
+    event_id: eventId,
+    price: cardPrice,
+  });
+
+  if (!validation.success) {
+    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+  }
+  const data = validation.data;
+
+  const { authorized, error: accessError } = await requireCompanyAccess(data.company_id);
   if (!authorized) return { error: accessError };
 
   const supabase = await createClient();
@@ -51,8 +74,8 @@ export async function uploadCardImages(
     const { data: cardsToDelete, error: fetchError } = await supabase
       .from("cards")
       .select("card_number, image_url")
-      .eq("company_id", companyId)
-      .eq("event_id", eventId)
+      .eq("company_id", data.company_id)
+      .eq("event_id", data.event_id)
       .eq("card_status", "Disponible");
 
     if (fetchError) {
@@ -91,11 +114,6 @@ export async function uploadCardImages(
 
         if (storageError) {
           console.warn("Error deleting files from storage:", storageError);
-        } else {
-          console.log(
-            "Archivos eliminados de Storage con éxito (Upload):",
-            removedFiles,
-          );
         }
       }
 
@@ -103,8 +121,8 @@ export async function uploadCardImages(
       const { data: deletedRows, error: dbError } = await supabase
         .from("cards")
         .delete()
-        .eq("company_id", companyId)
-        .eq("event_id", eventId)
+        .eq("company_id", data.company_id)
+        .eq("event_id", data.event_id)
         .eq("card_status", "Disponible")
         .select();
 
@@ -112,7 +130,6 @@ export async function uploadCardImages(
         console.error("Error deleting rows from DB:", dbError);
       } else {
         deletedCount = deletedRows?.length || 0;
-        console.log(`Registros eliminados de BD (Upload): ${deletedCount}`);
       }
     }
   }
@@ -143,10 +160,10 @@ export async function uploadCardImages(
       const cardNumber = parseInt(match[2]);
 
       // 2. Basic validations
-      if (fileEventId !== eventId) {
+      if (fileEventId !== data.event_id) {
         results.error_count++;
         results.errors.push(
-          `Archivo ${fileName}: El ID de evento del archivo (${fileEventId}) no coincide con el evento seleccionado (${eventId}).`,
+          `Archivo ${fileName}: El ID de evento del archivo (${fileEventId}) no coincide con el evento seleccionado (${data.event_id}).`,
         );
         continue;
       }
@@ -155,8 +172,8 @@ export async function uploadCardImages(
       const { data: existingCard, error: checkError } = await supabase
         .from("cards")
         .select("id")
-        .eq("company_id", companyId)
-        .eq("event_id", eventId)
+        .eq("company_id", data.company_id)
+        .eq("event_id", data.event_id)
         .eq("card_number", cardNumber)
         .maybeSingle();
 
@@ -177,7 +194,7 @@ export async function uploadCardImages(
       }
 
       // 4. Upload to Storage
-      const storagePath = `${companyId}/${eventId}/${fileName}`;
+      const storagePath = `${data.company_id}/${data.event_id}/${fileName}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("cards_images")
         .upload(storagePath, file, {
@@ -200,10 +217,10 @@ export async function uploadCardImages(
 
       // 6. Create record in DB
       const { error: insertError } = await supabase.from("cards").insert({
-        company_id: companyId,
-        event_id: eventId,
+        company_id: data.company_id,
+        event_id: data.event_id,
         card_number: cardNumber,
-        card_price: cardPrice,
+        card_price: data.price,
         card_type: "Virtual",
         card_status: "Disponible",
         image_url: publicUrl,
@@ -234,8 +251,8 @@ export async function uploadCardImages(
     const { data: cards } = await supabase
       .from("cards")
       .select("card_number")
-      .eq("company_id", companyId)
-      .eq("event_id", eventId);
+      .eq("company_id", data.company_id)
+      .eq("event_id", data.event_id);
 
     if (cards && cards.length > 0) {
       const maxCardNumber = Math.max(
@@ -244,8 +261,8 @@ export async function uploadCardImages(
       await supabase
         .from("events")
         .update({ event_cartons_number: maxCardNumber })
-        .eq("company_id", companyId)
-        .eq("event_id", eventId);
+        .eq("company_id", data.company_id)
+        .eq("event_id", data.event_id);
     }
 
     if (user) {
@@ -254,8 +271,8 @@ export async function uploadCardImages(
         action: "UPLOAD_CARDS_IMAGES",
         entity: "cards",
         metadata: {
-          company_id: companyId,
-          event_id: eventId,
+          company_id: data.company_id,
+          event_id: data.event_id,
           success_count: results.success_count,
           error_count: results.error_count,
           deleted_previous: deleteExisting,
@@ -327,48 +344,40 @@ export async function saveEvent(formData: FormData) {
   const { error: authError } = await requireRoleLevel(80);
   if (authError) return { error: authError };
 
+  const id = formData.get("id");
+  const rawData = {
+    company_id: parseInt(formData.get("company_id") as string),
+    event_id: formData.get("event_id") as string,
+    event_name: formData.get("event_name") as string,
+    event_date: formData.get("event_date") as string,
+    card_value: parseFloat((formData.get("card_value") as string) || "0"),
+    status: (formData.get("status") as string) || "Inactivo",
+    event_manager: formData.get("event_manager") as string,
+    event_goal: formData.get("event_goal") ? parseFloat(formData.get("event_goal") as string) : null,
+    event_cartons_number: formData.get("event_cartons_number") ? parseInt(formData.get("event_cartons_number") as string) : null,
+    event_start_promotion_date: formData.get("event_start_promotion_date") || null,
+  };
+
+  // Validation with Zod
+  const validation = eventSchema.safeParse(rawData);
+  if (!validation.success) {
+    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+  }
+  const eventData = {
+    ...validation.data,
+    event_id: sanitizeInput(validation.data.event_id),
+    event_name: sanitizeInput(validation.data.event_name),
+    updated_at: new Date().toISOString(),
+  };
+
+  // RBAC: Validate company access if changing company or creating new (P0.4)
+  const { authorized, error: accessError } = await requireCompanyAccess(eventData.company_id);
+  if (!authorized) return { error: accessError };
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const id = formData.get("id");
-  const company_id = parseInt(formData.get("company_id") as string);
-  const event_id = sanitizeInput(formData.get("event_id") as string);
-  const event_name = sanitizeInput(formData.get("event_name") as string);
-  const event_date = formData.get("event_date") as string;
-
-  // RBAC: Validate company access if changing company or creating new (P0.4)
-  if (company_id) {
-    const { authorized, error: accessError } =
-      await requireCompanyAccess(company_id);
-    if (!authorized) return { error: accessError };
-  }
-  const card_value = parseFloat((formData.get("card_value") as string) || "0");
-  const status = (formData.get("status") as string) || "Inactivo";
-  const event_manager = formData.get("event_manager") as string;
-  const event_goal = formData.get("event_goal")
-    ? parseFloat(formData.get("event_goal") as string)
-    : null;
-  const event_cartons_number = formData.get("event_cartons_number")
-    ? parseInt(formData.get("event_cartons_number") as string)
-    : null;
-  const event_start_promotion_date =
-    formData.get("event_start_promotion_date") || null;
-
-  const eventData = {
-    company_id,
-    event_id,
-    event_name,
-    event_date,
-    card_value,
-    status,
-    event_manager,
-    event_goal,
-    event_cartons_number,
-    event_start_promotion_date,
-    updated_at: new Date().toISOString(),
-  };
 
   let error;
   let action: "INSERT" | "UPDATE" = id ? "UPDATE" : "INSERT";
@@ -393,9 +402,9 @@ export async function saveEvent(formData: FormData) {
       action: action,
       entity: "events",
       metadata: {
-        event_name,
-        event_id,
-        status,
+        event_name: eventData.event_name,
+        event_id: eventData.event_id,
+        status: eventData.status,
         timestamp: new Date().toISOString(),
       },
     });
@@ -489,8 +498,21 @@ export async function generateCards(
   const { error: authError } = await requireRoleLevel(80);
   if (authError) return { error: authError };
 
-  const { authorized, error: accessError } =
-    await requireCompanyAccess(companyId);
+  // Validation with Zod
+  const validation = generateCardsSchema.safeParse({
+    company_id: companyId,
+    event_id: eventId,
+    start,
+    end,
+    price,
+    deleteExisting,
+  });
+  if (!validation.success) {
+    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+  }
+  const data = validation.data;
+
+  const { authorized, error: accessError } = await requireCompanyAccess(data.company_id);
   if (!authorized) return { error: accessError };
 
   const supabase = await createClient();
@@ -498,23 +520,23 @@ export async function generateCards(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (start > end) {
+  if (data.start > data.end) {
     return { error: "El número inicial no puede ser mayor al número final." };
   }
 
-  const count = end - start + 1;
+  const count = data.end - data.start + 1;
   if (count > 5000) {
     return { error: "No se pueden generar más de 5,000 cartones a la vez." };
   }
 
   // If requested, delete existing cards for this event first
-  if (deleteExisting) {
+  if (data.deleteExisting) {
     // 1. Get cards that can be deleted (status = 'Disponible')
     const { data: cardsToDelete, error: fetchError } = await supabase
       .from("cards")
       .select("card_number, image_url")
-      .eq("company_id", companyId)
-      .eq("event_id", eventId)
+      .eq("company_id", data.company_id)
+      .eq("event_id", data.event_id)
       .eq("card_status", "Disponible");
 
     if (fetchError) {
@@ -525,13 +547,10 @@ export async function generateCards(
     if (cardsToDelete && cardsToDelete.length > 0) {
       console.log(`Eliminando ${cardsToDelete.length} cartones previos...`);
       // 2. Identify files to delete in Storage
-      // We extract the filename from the public URL if possible
       const filesToDelete = cardsToDelete
         .map((c) => {
           if (!c.image_url) return null;
           try {
-            // Extract the path from the URL
-            // Format: .../storage/v1/object/public/cards_images/1/20250825113902/SERIAL_...pdf
             const urlParts = c.image_url.split("/cards_images/");
             if (urlParts.length > 1) {
               return urlParts[1];
@@ -555,11 +574,6 @@ export async function generateCards(
             "Some storage files could not be deleted:",
             storageError,
           );
-        } else {
-          console.log(
-            "Archivos eliminados de Storage con éxito:",
-            removedFiles,
-          );
         }
       }
 
@@ -567,8 +581,8 @@ export async function generateCards(
       const { data: deletedRows, error: deleteError } = await supabase
         .from("cards")
         .delete()
-        .eq("company_id", companyId)
-        .eq("event_id", eventId)
+        .eq("company_id", data.company_id)
+        .eq("event_id", data.event_id)
         .eq("card_status", "Disponible")
         .select();
 
@@ -580,18 +594,17 @@ export async function generateCards(
             deleteError.message,
         };
       }
-      console.log(`Registros eliminados de BD: ${deletedRows?.length || 0}`);
     }
   }
 
   const cards = [];
-  for (let i = start; i <= end; i++) {
+  for (let i = data.start; i <= data.end; i++) {
     cards.push({
-      company_id: companyId,
-      event_id: eventId,
+      company_id: data.company_id,
+      event_id: data.event_id,
       card_number: i,
       card_status: "Disponible",
-      card_price: price,
+      card_price: data.price,
       card_type: "Virtual",
       updated_at: new Date().toISOString(),
     });
@@ -611,16 +624,16 @@ export async function generateCards(
   const { data: event } = await supabase
     .from("events")
     .select("event_cartons_number")
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
+    .eq("company_id", data.company_id)
+    .eq("event_id", data.event_id)
     .single();
 
-  if (event && (event.event_cartons_number || 0) < end) {
+  if (event && (event.event_cartons_number || 0) < data.end) {
     await supabase
       .from("events")
-      .update({ event_cartons_number: end })
-      .eq("company_id", companyId)
-      .eq("event_id", eventId);
+      .update({ event_cartons_number: data.end })
+      .eq("company_id", data.company_id)
+      .eq("event_id", data.event_id);
   }
 
   // Log activity
@@ -630,12 +643,12 @@ export async function generateCards(
       action: "GENERATE_CARDS",
       entity: "cards",
       metadata: {
-        company_id: companyId,
-        event_id: eventId,
-        range: `${start}-${end}`,
+        company_id: data.company_id,
+        event_id: data.event_id,
+        range: `${data.start}-${data.end}`,
         count: count,
-        price: price,
-        deleted_previous: deleteExisting,
+        price: data.price,
+        deleted_previous: data.deleteExisting,
         timestamp: new Date().toISOString(),
       },
     });
@@ -660,8 +673,20 @@ export async function updateCardType(
   const { error: authError } = await requireRoleLevel(40);
   if (authError) return { error: authError };
 
-  const { authorized, error: accessError } =
-    await requireCompanyAccess(companyId);
+  // Validation with Zod
+  const validation = updateCardTypeSchema.safeParse({
+    company_id: companyId,
+    event_id: eventId,
+    card_number: cardNumber,
+    new_type: newType,
+    official_name: officialName,
+  });
+  if (!validation.success) {
+    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+  }
+  const data = validation.data;
+
+  const { authorized, error: accessError } = await requireCompanyAccess(data.company_id);
   if (!authorized) return { error: accessError };
 
   const supabase = await createClient();
@@ -675,9 +700,9 @@ export async function updateCardType(
   const { data: card, error: fetchError } = await supabase
     .from("cards")
     .select("card_type, card_status")
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .eq("card_number", cardNumber)
+    .eq("company_id", data.company_id)
+    .eq("event_id", data.event_id)
+    .eq("card_number", data.card_number)
     .single();
 
   if (fetchError || !card) {
@@ -688,12 +713,12 @@ export async function updateCardType(
   const { error: updateError } = await supabase
     .from("cards")
     .update({
-      card_type: newType,
+      card_type: data.new_type,
       updated_at: new Date().toISOString(),
     })
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .eq("card_number", cardNumber);
+    .eq("company_id", data.company_id)
+    .eq("event_id", data.event_id)
+    .eq("card_number", data.card_number);
 
   if (updateError) {
     return { error: updateError.message };
@@ -705,12 +730,12 @@ export async function updateCardType(
     action: "REASSIGN_CARD_TYPE",
     entity: "cards",
     metadata: {
-      company_id: companyId,
-      event_id: eventId,
-      card_number: cardNumber,
+      company_id: data.company_id,
+      event_id: data.event_id,
+      card_number: data.card_number,
       old_type: card.card_type,
-      new_type: newType,
-      requested_by: officialName,
+      new_type: data.new_type,
+      requested_by: data.official_name,
       timestamp: new Date().toISOString(),
     },
   });
@@ -734,8 +759,21 @@ export async function updateCardRangeType(
   const { error: authError } = await requireRoleLevel(40);
   if (authError) return { error: authError };
 
-  const { authorized, error: accessError } =
-    await requireCompanyAccess(companyId);
+  // Validation with Zod
+  const validation = updateCardRangeTypeSchema.safeParse({
+    company_id: companyId,
+    event_id: eventId,
+    start,
+    end,
+    new_type: newType,
+    official_name: officialName,
+  });
+  if (!validation.success) {
+    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+  }
+  const data = validation.data;
+
+  const { authorized, error: accessError } = await requireCompanyAccess(data.company_id);
   if (!authorized) return { error: accessError };
 
   const supabase = await createClient();
@@ -745,7 +783,7 @@ export async function updateCardRangeType(
 
   if (!user) return { error: "No autorizado" };
 
-  if (start > end) {
+  if (data.start > data.end) {
     return { error: "El rango inicial no puede ser mayor al final." };
   }
 
@@ -753,13 +791,13 @@ export async function updateCardRangeType(
   const { error: updateError, data: updatedCards } = await supabase
     .from("cards")
     .update({
-      card_type: newType,
+      card_type: data.new_type,
       updated_at: new Date().toISOString(),
     })
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .gte("card_number", start)
-    .lte("card_number", end)
+    .eq("company_id", data.company_id)
+    .eq("event_id", data.event_id)
+    .gte("card_number", data.start)
+    .lte("card_number", data.end)
     .select("card_number");
 
   if (updateError) {
@@ -772,11 +810,11 @@ export async function updateCardRangeType(
     action: "REASSIGN_CARD_RANGE_TYPE",
     entity: "cards",
     metadata: {
-      company_id: companyId,
-      event_id: eventId,
-      range: `${start}-${end}`,
-      new_type: newType,
-      requested_by: officialName,
+      company_id: data.company_id,
+      event_id: data.event_id,
+      range: `${data.start}-${data.end}`,
+      new_type: data.new_type,
+      requested_by: data.official_name,
       updated_count: updatedCards?.length || 0,
       timestamp: new Date().toISOString(),
     },
@@ -799,9 +837,29 @@ export async function updateSingleCard(
   const { error: authError } = await requireRoleLevel(40);
   if (authError) return { error: authError };
 
-  const { authorized, error: accessError } =
-    await requireCompanyAccess(companyId);
+  const { authorized, error: accessError } = await requireCompanyAccess(companyId);
   if (!authorized) return { error: accessError };
+
+  const rawData = {
+    card_type: formData.get("card_type") as string,
+    card_status: formData.get("card_status") as string,
+    card_price: parseFloat(formData.get("card_price") as string),
+    sales_price: formData.get("sales_price") ? parseFloat(formData.get("sales_price") as string) : null,
+    sold_by: formData.get("sold_by") as string,
+    player_name: formData.get("player_name") as string,
+    player_phone_number: formData.get("player_phone_number") as string,
+    player_email: formData.get("player_email") as string,
+    prize: formData.get("prize") as string,
+    comment: formData.get("comment") as string,
+    invoice_number: formData.get("invoice_number") as string,
+  };
+
+  // Validation with Zod
+  const validation = singleCardSchema.safeParse(rawData);
+  if (!validation.success) {
+    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+  }
+  const data = validation.data;
 
   const supabase = await createClient();
   const {
@@ -809,23 +867,6 @@ export async function updateSingleCard(
   } = await supabase.auth.getUser();
 
   if (!user) return { error: "No autorizado" };
-
-  const newType = formData.get("card_type") as string;
-  const newStatus = formData.get("card_status") as string;
-  const newPrice = parseFloat(formData.get("card_price") as string);
-  const salesPrice = formData.get("sales_price")
-    ? parseFloat(formData.get("sales_price") as string)
-    : null;
-  const soldBy = sanitizeInput(formData.get("sold_by") as string);
-  const playerName = sanitizeInput(formData.get("player_name") as string);
-  const playerPhone = sanitizeInput(
-    formData.get("player_phone_number") as string,
-  );
-  const playerEmail = sanitizeInput(formData.get("player_email") as string);
-  const prize = sanitizeInput(formData.get("prize") as string);
-  const comment = sanitizeInput(formData.get("comment") as string);
-  const invoiceNumber = sanitizeInput(formData.get("invoice_number") as string);
-  const file = formData.get("file") as File;
 
   // 1. Get current data for comparison and potential file cleanup
   const { data: currentCard, error: fetchError } = await supabase
@@ -841,19 +882,18 @@ export async function updateSingleCard(
   }
 
   const updates: any = {
-    card_type: newType,
-    card_status: newStatus,
-    card_price: newPrice,
-    sales_price: salesPrice,
-    sold_by: soldBy,
-    player_name: playerName,
-    player_phone_number: playerPhone,
-    player_email: playerEmail,
-    prize: prize,
-    comment: comment,
-    invoice_number: invoiceNumber,
+    ...data,
+    sold_by: sanitizeInput(data.sold_by || ""),
+    player_name: sanitizeInput(data.player_name || ""),
+    player_phone_number: sanitizeInput(data.player_phone_number || ""),
+    player_email: sanitizeInput(data.player_email || ""),
+    prize: sanitizeInput(data.prize || ""),
+    comment: sanitizeInput(data.comment || ""),
+    invoice_number: sanitizeInput(data.invoice_number || ""),
     updated_at: new Date().toISOString(),
   };
+
+  const file = formData.get("file") as File;
 
   // 2. Handle File Upload if present
   if (file && file.size > 0) {
@@ -942,6 +982,34 @@ export async function saveInvoice(formData: FormData) {
   const { error: authError } = await requireRoleLevel(40);
   if (authError) return { error: authError };
 
+  const rawData = {
+    company_id: parseInt(formData.get("company_id") as string),
+    event_id: formData.get("event_id") as string,
+    invoice_number: formData.get("invoice_number") as string,
+    invoice_date: formData.get("invoice_date") as string,
+    customer_name: formData.get("customer_name") as string,
+    customer_email: formData.get("customer_email") as string,
+    phone_area: formData.get("phone_area") as string,
+    phone_number: formData.get("phone_number") as string,
+    whatsapp_number: formData.get("whatsapp_number") as string,
+    manager_name: formData.get("manager_name") as string,
+    cards_number: parseInt(formData.get("cards_number") as string),
+    card_price: parseFloat(formData.get("card_price") as string),
+    total_amount: parseFloat(formData.get("total_amount") as string),
+    payment_method: formData.get("payment_method") as string,
+    status: (formData.get("status") as string) || "Pagado",
+    associated_cards: JSON.parse((formData.get("associated_cards") as string) || "[]"),
+  };
+
+  // Validation with Zod
+  const validation = invoiceSchema.safeParse(rawData);
+  if (!validation.success) {
+    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+  }
+
+  const { authorized, error: accessError } = await requireCompanyAccess(validation.data.company_id);
+  if (!authorized) return { error: accessError };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -949,45 +1017,15 @@ export async function saveInvoice(formData: FormData) {
 
   if (!user) return { error: "No autorizado" };
 
-  const company_id = parseInt(formData.get("company_id") as string);
-
-  // RBAC: Validate company access (P0.4)
-  const { authorized, error: accessError } =
-    await requireCompanyAccess(company_id);
-  if (!authorized) return { error: accessError };
-
-  const event_id = formData.get("event_id") as string;
-  const invoice_number = sanitizeInput(
-    formData.get("invoice_number") as string,
-  );
-  const invoice_date = formData.get("invoice_date") as string;
-  const customer_name = sanitizeInput(formData.get("customer_name") as string);
-  const customer_email = sanitizeInput(
-    formData.get("customer_email") as string,
-  );
-  const phone_area = sanitizeInput(formData.get("phone_area") as string);
-  const phone_number = sanitizeInput(formData.get("phone_number") as string);
-  const whatsapp_number = sanitizeInput(
-    formData.get("whatsapp_number") as string,
-  );
-  const manager_name = sanitizeInput(formData.get("manager_name") as string);
-  const cards_number = parseInt(formData.get("cards_number") as string);
-  const card_price = parseFloat(formData.get("card_price") as string);
-  const total_amount = parseFloat(formData.get("total_amount") as string);
-  const payment_method = formData.get("payment_method") as string;
-  const status = formData.get("status") as string;
-  const associated_cards = JSON.parse(
-    (formData.get("associated_cards") as string) || "[]",
-  );
+  const data = validation.data;
   const invoice_file = formData.get("invoice_file") as File;
-
   let url_invoice = "";
 
   // 1. Handle File Upload if present
   if (invoice_file && invoice_file.size > 0) {
     const fileExt = invoice_file.name.split(".").pop();
-    const fileName = `${invoice_number}_${Date.now()}.${fileExt}`;
-    const storagePath = `${company_id}/${event_id}/${fileName}`;
+    const fileName = `${data.invoice_number}_${Date.now()}.${fileExt}`;
+    const storagePath = `${data.company_id}/${data.event_id}/${fileName}`;
 
     // Convert File to ArrayBuffer for Supabase Storage in Node.js environment
     const arrayBuffer = await invoice_file.arrayBuffer();
@@ -1013,21 +1051,14 @@ export async function saveInvoice(formData: FormData) {
   }
 
   const invoiceData = {
-    company_id,
-    event_id,
-    invoice_number,
-    invoice_date,
-    customer_name,
-    customer_email,
-    phone_area,
-    phone_number,
-    whatsapp_number,
-    manager_name,
-    cards_number,
-    card_price,
-    total_amount,
-    payment_method,
-    status,
+    ...data,
+    invoice_number: sanitizeInput(data.invoice_number),
+    customer_name: sanitizeInput(data.customer_name),
+    customer_email: sanitizeInput(data.customer_email),
+    phone_area: sanitizeInput(data.phone_area || ""),
+    phone_number: sanitizeInput(data.phone_number || ""),
+    whatsapp_number: sanitizeInput(data.whatsapp_number || ""),
+    manager_name: sanitizeInput(data.manager_name),
     url_invoice,
     updated_at: new Date().toISOString(),
   };
@@ -1040,22 +1071,22 @@ export async function saveInvoice(formData: FormData) {
   if (invoiceError) return { error: invoiceError.message };
 
   // 3. Update Associated Cards
-  if (associated_cards.length > 0) {
+  if (data.associated_cards.length > 0) {
     const { error: cardsError } = await supabase
       .from("cards")
       .update({
         card_status: "Vendido",
-        invoice_number: invoice_number,
-        sales_price: card_price,
-        sold_by: manager_name,
-        player_name: customer_name,
-        player_phone_number: whatsapp_number,
-        player_email: customer_email,
+        invoice_number: data.invoice_number,
+        sales_price: data.card_price,
+        sold_by: data.manager_name,
+        player_name: data.customer_name,
+        player_phone_number: data.whatsapp_number,
+        player_email: data.customer_email,
         updated_at: new Date().toISOString(),
       })
-      .eq("company_id", company_id)
-      .eq("event_id", event_id)
-      .in("card_number", associated_cards);
+      .eq("company_id", data.company_id)
+      .eq("event_id", data.event_id)
+      .in("card_number", data.associated_cards);
 
     if (cardsError) {
       return {
@@ -1070,11 +1101,11 @@ export async function saveInvoice(formData: FormData) {
     action: "INSERT",
     entity: "invoices",
     metadata: {
-      invoice_number,
-      event_id,
-      customer_name,
-      total_amount,
-      associated_cards,
+      invoice_number: data.invoice_number,
+      event_id: data.event_id,
+      customer_name: data.customer_name,
+      total_amount: data.total_amount,
+      associated_cards: data.associated_cards,
       timestamp: new Date().toISOString(),
     },
   });
@@ -1092,6 +1123,35 @@ export async function updateInvoice(formData: FormData) {
   const { error: authError } = await requireRoleLevel(40);
   if (authError) return { error: authError };
 
+  const id = formData.get("id") as string;
+  const rawData = {
+    company_id: parseInt(formData.get("company_id") as string),
+    event_id: formData.get("event_id") as string,
+    invoice_number: formData.get("invoice_number") as string,
+    invoice_date: formData.get("invoice_date") as string,
+    customer_name: formData.get("customer_name") as string,
+    customer_email: formData.get("customer_email") as string,
+    phone_area: formData.get("phone_area") as string,
+    phone_number: formData.get("phone_number") as string,
+    whatsapp_number: formData.get("whatsapp_number") as string,
+    manager_name: formData.get("manager_name") as string,
+    cards_number: parseInt(formData.get("cards_number") as string),
+    card_price: parseFloat(formData.get("card_price") as string),
+    total_amount: parseFloat(formData.get("total_amount") as string),
+    payment_method: formData.get("payment_method") as string,
+    status: (formData.get("status") as string) || "Pagado",
+    associated_cards: JSON.parse((formData.get("associated_cards") as string) || "[]"),
+  };
+
+  // Validation with Zod
+  const validation = invoiceSchema.partial().safeParse(rawData);
+  if (!validation.success) {
+    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+  }
+
+  const { authorized, error: accessError } = await requireCompanyAccess(validation.data.company_id || 0);
+  if (!authorized) return { error: accessError };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -1099,37 +1159,7 @@ export async function updateInvoice(formData: FormData) {
 
   if (!user) return { error: "No autorizado" };
 
-  const id = formData.get("id") as string;
-  const company_id = parseInt(formData.get("company_id") as string);
-
-  // RBAC: Validate company access (P0.4)
-  const { authorized, error: accessError } =
-    await requireCompanyAccess(company_id);
-  if (!authorized) return { error: accessError };
-
-  const event_id = formData.get("event_id") as string;
-  const invoice_number = sanitizeInput(
-    formData.get("invoice_number") as string,
-  );
-  const invoice_date = formData.get("invoice_date") as string;
-  const customer_name = sanitizeInput(formData.get("customer_name") as string);
-  const customer_email = sanitizeInput(
-    formData.get("customer_email") as string,
-  );
-  const phone_area = sanitizeInput(formData.get("phone_area") as string);
-  const phone_number = sanitizeInput(formData.get("phone_number") as string);
-  const whatsapp_number = sanitizeInput(
-    formData.get("whatsapp_number") as string,
-  );
-  const manager_name = sanitizeInput(formData.get("manager_name") as string);
-  const cards_number = parseInt(formData.get("cards_number") as string);
-  const card_price = parseFloat(formData.get("card_price") as string);
-  const total_amount = parseFloat(formData.get("total_amount") as string);
-  const payment_method = formData.get("payment_method") as string;
-  const status = formData.get("status") as string;
-  const associated_cards = JSON.parse(
-    (formData.get("associated_cards") as string) || "[]",
-  );
+  const data = validation.data;
   const invoice_file = formData.get("invoice_file") as File;
 
   // 1. Get current invoice to handle file cleanup if needed
@@ -1144,8 +1174,8 @@ export async function updateInvoice(formData: FormData) {
   // 2. Handle File Upload if present
   if (invoice_file && invoice_file.size > 0) {
     const fileExt = invoice_file.name.split(".").pop();
-    const fileName = `${invoice_number}_${Date.now()}.${fileExt}`;
-    const storagePath = `${company_id}/${event_id}/${fileName}`;
+    const fileName = `${data.invoice_number}_${Date.now()}.${fileExt}`;
+    const storagePath = `${data.company_id}/${data.event_id}/${fileName}`;
 
     // Convert File to ArrayBuffer for Supabase Storage in Node.js environment
     const arrayBuffer = await invoice_file.arrayBuffer();
@@ -1171,14 +1201,10 @@ export async function updateInvoice(formData: FormData) {
     // Cleanup: Delete old file from Storage if it exists
     if (currentInvoice?.url_invoice) {
       try {
-        const oldUrlParts =
-          currentInvoice.url_invoice.split("/invoices_images/");
+        const oldUrlParts = currentInvoice.url_invoice.split("/invoices_images/");
         if (oldUrlParts.length > 1) {
           const oldStoragePath = oldUrlParts[1];
-          await supabase.storage
-            .from("invoices_images")
-            .remove([oldStoragePath]);
-          console.log(`Factura antigua eliminada: ${oldStoragePath}`);
+          await supabase.storage.from("invoices_images").remove([oldStoragePath]);
         }
       } catch (cleanupError) {
         console.warn("Error cleaning up old invoice:", cleanupError);
@@ -1188,22 +1214,15 @@ export async function updateInvoice(formData: FormData) {
     url_invoice = publicUrl;
   }
 
-  const invoiceData: any = {
-    company_id,
-    event_id,
-    invoice_number,
-    invoice_date,
-    customer_name,
-    customer_email,
-    phone_area,
-    phone_number,
-    whatsapp_number,
-    manager_name,
-    cards_number,
-    card_price,
-    total_amount,
-    payment_method,
-    status,
+  const invoiceData = {
+    ...data,
+    invoice_number: sanitizeInput(data.invoice_number || ""),
+    customer_name: sanitizeInput(data.customer_name || ""),
+    customer_email: sanitizeInput(data.customer_email || ""),
+    phone_area: sanitizeInput(data.phone_area || ""),
+    phone_number: sanitizeInput(data.phone_number || ""),
+    whatsapp_number: sanitizeInput(data.whatsapp_number || ""),
+    manager_name: sanitizeInput(data.manager_name || ""),
     url_invoice,
     updated_at: new Date().toISOString(),
   };
@@ -1231,28 +1250,28 @@ export async function updateInvoice(formData: FormData) {
         player_email: null,
         updated_at: new Date().toISOString(),
       })
-      .eq("company_id", company_id)
-      .eq("event_id", event_id)
+      .eq("company_id", data.company_id || 0)
+      .eq("event_id", data.event_id || "")
       .eq("invoice_number", currentInvoice.invoice_number);
   }
 
   // Now link the new selection
-  if (associated_cards.length > 0) {
+  if (data.associated_cards && data.associated_cards.length > 0) {
     const { error: cardsError } = await supabase
       .from("cards")
       .update({
         card_status: "Vendido",
-        invoice_number: invoice_number,
-        sales_price: card_price,
-        sold_by: manager_name,
-        player_name: customer_name,
-        player_phone_number: whatsapp_number,
-        player_email: customer_email,
+        invoice_number: data.invoice_number,
+        sales_price: data.card_price,
+        sold_by: data.manager_name,
+        player_name: data.customer_name,
+        player_phone_number: data.whatsapp_number,
+        player_email: data.customer_email,
         updated_at: new Date().toISOString(),
       })
-      .eq("company_id", company_id)
-      .eq("event_id", event_id)
-      .in("card_number", associated_cards);
+      .eq("company_id", data.company_id || 0)
+      .eq("event_id", data.event_id || "")
+      .in("card_number", data.associated_cards);
 
     if (cardsError) {
       return {
@@ -1268,10 +1287,10 @@ export async function updateInvoice(formData: FormData) {
     entity: "invoices",
     metadata: {
       invoice_id: id,
-      invoice_number,
-      event_id,
-      customer_name,
-      associated_cards,
+      invoice_number: data.invoice_number,
+      event_id: data.event_id,
+      customer_name: data.customer_name,
+      associated_cards: data.associated_cards,
       timestamp: new Date().toISOString(),
     },
   });

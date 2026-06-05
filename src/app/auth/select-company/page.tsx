@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Card, Title, Text, Button, Grid } from "@tremor/react";
 import { Building2, ChevronRight } from "lucide-react";
 import Image from "next/image";
-import { cookies } from "next/headers";
+import { selectCompany } from "./actions";
 
 /**
  * Page for selecting which company to work with after login.
@@ -52,64 +52,6 @@ export default async function SelectCompanyPage() {
         </Card>
       </div>
     );
-  }
-
-  // Server Action for selecting the company
-  async function selectCompany(formData: FormData) {
-    "use server";
-    const companyIdStr = formData.get("companyId") as string;
-    const companyId = parseInt(companyIdStr);
-
-    if (isNaN(companyId)) {
-      console.error("ID de empresa inválido.");
-      return;
-    }
-
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      redirect("/login");
-    }
-
-    // Revalidate: Check if user actually belongs to this company (P0.3)
-    const { data: membership, error } = await supabase
-      .from("user_companies")
-      .select("companies(company_name)")
-      .eq("user_id", user.id)
-      .eq("company_id", companyId)
-      .single();
-
-    if (error || !membership) {
-      console.error(
-        `SECURITY ALERT: User ${user.id} tried to select company ${companyId} without membership.`,
-      );
-      return;
-    }
-
-    const companyName =
-      (membership.companies as any)?.company_name || "Empresa";
-
-    // Set cookies with basic security settings
-    const cookieStore = await cookies();
-    cookieStore.set("selected_company_id", companyIdStr, {
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 1 week
-    });
-    cookieStore.set("selected_company_name", companyName, {
-      path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    redirect("/admin");
   }
 
   return (
