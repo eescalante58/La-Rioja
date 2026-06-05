@@ -307,10 +307,10 @@ Accion recomendada:
 
 - Hay sobreuso de tarjetas con radios muy grandes, sombras intensas, blobs y fondos con blur. Esto acerca la interfaz a un estilo promocional/generico y resta sobriedad institucional. RESUELTO 25/6/2026
 - El admin mezcla Tremor, componentes propios y estilos Tailwind ad hoc; se perciben patrones visuales distintos entre dashboard, CMS y Bingo.
-  RESUELTO 25/6/2026
+  RESUELTO 25/5/2026
 - Los gradientes azul-verde-amarillo pueden sentirse muy saturados, especialmente en pantallas de login/auth. RESUELTO 25/6/2026
 - La nomenclatura visual no esta formalizada: no hay guia de botones, cards, tablas, modales, estados ni formularios. RESUELTO 25/6/2026
-- `blob-purple` en CSS realmente usa verde; el nombre semantico no coincide. RESUELTO 25/6/2026
+- `blob-purple` en CSS realmente usa verde; el nombre semantico no coincide. RESUELTO 25/5/2026
 
 ### Recomendacion visual
 
@@ -394,3 +394,4 @@ Crear una mini guia institucional:
 ## 11. Conclusion
 
 LaRioja tiene una estructura prometedora y una identidad visual reconocible, pero hoy depende demasiado de convenciones implicitas: cookies confiables, RLS no visible, permisos distribuidos y contenido CMS asumido como seguro. La mayor mejora no es estetica sino de gobierno tecnico: centralizar autorizacion, validar entradas, actualizar dependencias y formalizar los patrones de UI. Con esas correcciones, el proyecto puede evolucionar hacia una plataforma institucional mas robusta, mantenible y segura.
+

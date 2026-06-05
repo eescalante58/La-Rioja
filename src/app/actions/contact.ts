@@ -3,21 +3,24 @@
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
 
-interface ContactData {
-  name: string;
-  email: string;
-  phone?: string;
-  type: string;
-  message: string;
-  targetEmail: string;
-}
+import { contactSchema, type ContactInput } from "@/lib/validation/contact";
 
 /**
  * Server Action to handle contact form submission.
  * Saves to Supabase and sends email via Resend.
  */
-export async function submitContactForm(data: ContactData) {
+export async function submitContactForm(rawInput: ContactInput) {
   try {
+    // 0. Validation with Zod
+    const validation = contactSchema.safeParse(rawInput);
+    if (!validation.success) {
+      return {
+        success: false,
+        error: "Datos inválidos: " + validation.error.errors.map(e => e.message).join(", "),
+      };
+    }
+    const data = validation.data;
+
     const apiKey = process.env.RESEND_API_KEY;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
