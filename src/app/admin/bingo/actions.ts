@@ -6,6 +6,7 @@ import {
   requireRoleLevel,
   requireCompanyAccess,
 } from "@/lib/auth/authorization";
+import { withRole, withCompanyAccess } from "@/lib/auth/guards";
 import { 
   eventSchema, 
   invoiceSchema, 
@@ -26,16 +27,14 @@ function sanitizeInput(str: string): string {
 /**
  * Upload card images and create card records.
  */
-export async function uploadCardImages(
+async function uploadCardImagesInternal(
   companyId: number,
   eventId: string,
   cardPrice: number,
   formData: FormData,
+  context: { user: any }
 ) {
-  // RBAC: Min Operator level (40+) and company access (P0.4)
-  const { error: authError } = await requireRoleLevel(40);
-  if (authError) return { error: authError };
-
+  const { user } = context;
   // Validation with Zod
   const validation = generateCardsSchema.pick({
     company_id: true,
@@ -52,13 +51,7 @@ export async function uploadCardImages(
   }
   const data = validation.data;
 
-  const { authorized, error: accessError } = await requireCompanyAccess(data.company_id);
-  if (!authorized) return { error: accessError };
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const files = formData.getAll("files") as File[];
   if (!files || files.length === 0) {
@@ -287,14 +280,10 @@ export async function uploadCardImages(
   return { success: results.error_count === 0, ...results };
 }
 
-/**
- * Fetch all data needed for Bingo management.
- */
-export async function getBingoData() {
-  const { user, level, error: authError } = await requireRoleLevel(40); // Min Operator level
-  if (authError)
-    return { events: [], companies: [], countries: [], error: authError };
+export const uploadCardImages = withRole(40, withCompanyAccess(uploadCardImagesInternal, 0));
 
+async function getBingoDataInternal(context: { user: any, level: number }) {
+  const { user, level } = context;
   const supabase = await createClient();
 
   // If not Super Admin (100), only fetch data for the companies the user belongs to
@@ -336,14 +325,13 @@ export async function getBingoData() {
   };
 }
 
+export const getBingoData = withRole(40, getBingoDataInternal);
+
 /**
  * Save or update a Bingo event.
  */
-export async function saveEvent(formData: FormData) {
-  // RBAC: Min Admin level (80+) (P0.4)
-  const { error: authError } = await requireRoleLevel(80);
-  if (authError) return { error: authError };
-
+async function saveEventInternal(formData: FormData, context: { user: any }) {
+  const { user } = context;
   const id = formData.get("id");
   const rawData = {
     company_id: parseInt(formData.get("company_id") as string),
@@ -370,14 +358,7 @@ export async function saveEvent(formData: FormData) {
     updated_at: new Date().toISOString(),
   };
 
-  // RBAC: Validate company access if changing company or creating new (P0.4)
-  const { authorized, error: accessError } = await requireCompanyAccess(eventData.company_id);
-  if (!authorized) return { error: accessError };
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   let error;
   let action: "INSERT" | "UPDATE" = id ? "UPDATE" : "INSERT";
@@ -415,18 +396,14 @@ export async function saveEvent(formData: FormData) {
   return { success: true };
 }
 
+export const saveEvent = withRole(80, saveEventInternal);
+
 /**
  * Delete a Bingo event.
  */
-export async function deleteEvent(id: number) {
-  // RBAC: Only Super Admin can delete events (P0.4)
-  const { error: authError } = await requireRoleLevel(100);
-  if (authError) return { error: authError };
-
+async function deleteEventInternal(id: number, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   // Get event details before deleting for the log
   const { data: event } = await supabase
@@ -459,18 +436,9 @@ export async function deleteEvent(id: number) {
   return { success: true };
 }
 
-/**
- * Fetch cards for a specific event.
- */
-export async function getEventCards(companyId: number, eventId: string) {
-  // RBAC: Min Operator level (40+) and company access (P0.3/P0.4)
-  const { error: authError } = await requireRoleLevel(40);
-  if (authError) return { error: authError };
+export const deleteEvent = withRole(100, deleteEventInternal);
 
-  const { authorized, error: accessError } =
-    await requireCompanyAccess(companyId);
-  if (!authorized) return { error: accessError };
-
+async function getEventCardsInternal(companyId: number, eventId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("cards")
@@ -483,21 +451,18 @@ export async function getEventCards(companyId: number, eventId: string) {
   return { data };
 }
 
-/**
- * Bulk generate cards for an event.
- */
-export async function generateCards(
+export const getEventCards = withRole(40, withCompanyAccess(getEventCardsInternal, 0));
+
+async function generateCardsInternal(
   companyId: number,
   eventId: string,
   start: number,
   end: number,
   price: number,
   deleteExisting: boolean = false,
+  context: { user: any }
 ) {
-  // RBAC: Min Admin level (80+) and company access (P0.4)
-  const { error: authError } = await requireRoleLevel(80);
-  if (authError) return { error: authError };
-
+  const { user } = context;
   // Validation with Zod
   const validation = generateCardsSchema.safeParse({
     company_id: companyId,
@@ -512,13 +477,7 @@ export async function generateCards(
   }
   const data = validation.data;
 
-  const { authorized, error: accessError } = await requireCompanyAccess(data.company_id);
-  if (!authorized) return { error: accessError };
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   if (data.start > data.end) {
     return { error: "El número inicial no puede ser mayor al número final." };
@@ -659,20 +618,20 @@ export async function generateCards(
   return { success: true };
 }
 
+export const generateCards = withRole(80, withCompanyAccess(generateCardsInternal, 0));
+
 /**
  * Reassign card type (Virtual/Fisico) and log activity.
  */
-export async function updateCardType(
+async function updateCardTypeInternal(
   companyId: number,
   eventId: string,
   cardNumber: number,
   newType: string,
   officialName: string,
+  context: { user: any }
 ) {
-  // RBAC: Min Operator level (40+) and company access (P0.4)
-  const { error: authError } = await requireRoleLevel(40);
-  if (authError) return { error: authError };
-
+  const { user } = context;
   // Validation with Zod
   const validation = updateCardTypeSchema.safeParse({
     company_id: companyId,
@@ -686,15 +645,7 @@ export async function updateCardType(
   }
   const data = validation.data;
 
-  const { authorized, error: accessError } = await requireCompanyAccess(data.company_id);
-  if (!authorized) return { error: accessError };
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: "No autorizado" };
 
   // 1. Get current card data for logging
   const { data: card, error: fetchError } = await supabase
@@ -744,21 +695,22 @@ export async function updateCardType(
   revalidatePath("/admin");
   return { success: true };
 }
+
+export const updateCardType = withRole(40, withCompanyAccess(updateCardTypeInternal, 0));
+
 /**
  * Reassign card type for a range of cards and log activity.
  */
-export async function updateCardRangeType(
+async function updateCardRangeTypeInternal(
   companyId: number,
   eventId: string,
   start: number,
   end: number,
   newType: string,
   officialName: string,
+  context: { user: any }
 ) {
-  // RBAC: Min Operator level (40+) and company access (P0.4)
-  const { error: authError } = await requireRoleLevel(40);
-  if (authError) return { error: authError };
-
+  const { user } = context;
   // Validation with Zod
   const validation = updateCardRangeTypeSchema.safeParse({
     company_id: companyId,
@@ -777,11 +729,6 @@ export async function updateCardRangeType(
   if (!authorized) return { error: accessError };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: "No autorizado" };
 
   if (data.start > data.end) {
     return { error: "El rango inicial no puede ser mayor al final." };
@@ -824,22 +771,19 @@ export async function updateCardRangeType(
   return { success: true, updated_count: updatedCards?.length || 0 };
 }
 
+export const updateCardRangeType = withRole(40, withCompanyAccess(updateCardRangeTypeInternal, 0));
+
 /**
  * Update a single card's details and optionally its PDF image.
  */
-export async function updateSingleCard(
+async function updateSingleCardInternal(
   companyId: number,
   eventId: string,
   cardNumber: number,
   formData: FormData,
+  context: { user: any }
 ) {
-  // RBAC: Min Operator level (40+) and company access (P0.4)
-  const { error: authError } = await requireRoleLevel(40);
-  if (authError) return { error: authError };
-
-  const { authorized, error: accessError } = await requireCompanyAccess(companyId);
-  if (!authorized) return { error: accessError };
-
+  const { user } = context;
   const rawData = {
     card_type: formData.get("card_type") as string,
     card_status: formData.get("card_status") as string,
@@ -862,11 +806,6 @@ export async function updateSingleCard(
   const data = validation.data;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: "No autorizado" };
 
   // 1. Get current data for comparison and potential file cleanup
   const { data: currentCard, error: fetchError } = await supabase
@@ -952,15 +891,9 @@ export async function updateSingleCard(
   return { success: true };
 }
 
-export async function getInvoices(companyId: number, eventId: string) {
-  // RBAC: Min Operator level (40+) and company access (P0.3/P0.4)
-  const { error: authError } = await requireRoleLevel(40);
-  if (authError) return { error: authError };
+export const updateSingleCard = withRole(40, withCompanyAccess(updateSingleCardInternal, 0));
 
-  const { authorized, error: accessError } =
-    await requireCompanyAccess(companyId);
-  if (!authorized) return { error: accessError };
-
+async function getInvoicesInternal(companyId: number, eventId: string) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -974,14 +907,10 @@ export async function getInvoices(companyId: number, eventId: string) {
   return { success: true, data };
 }
 
-/**
- * Save a new invoice and update associated cards.
- */
-export async function saveInvoice(formData: FormData) {
-  // RBAC: Min Operator level (40+) (P0.4)
-  const { error: authError } = await requireRoleLevel(40);
-  if (authError) return { error: authError };
+export const getInvoices = withRole(40, withCompanyAccess(getInvoicesInternal, 0));
 
+async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
+  const { user } = context;
   const rawData = {
     company_id: parseInt(formData.get("company_id") as string),
     event_id: formData.get("event_id") as string,
@@ -1007,15 +936,7 @@ export async function saveInvoice(formData: FormData) {
     return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
   }
 
-  const { authorized, error: accessError } = await requireCompanyAccess(validation.data.company_id);
-  if (!authorized) return { error: accessError };
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: "No autorizado" };
 
   const data = validation.data;
   const invoice_file = formData.get("invoice_file") as File;
@@ -1115,14 +1036,13 @@ export async function saveInvoice(formData: FormData) {
   return { success: true };
 }
 
+export const saveInvoice = withRole(40, withCompanyAccess(saveInvoiceInternal, 0));
+
 /**
  * Update an existing invoice and associated cards.
  */
-export async function updateInvoice(formData: FormData) {
-  // RBAC: Min Operator level (40+) (P0.4)
-  const { error: authError } = await requireRoleLevel(40);
-  if (authError) return { error: authError };
-
+async function updateInvoiceInternal(formData: FormData, context: { user: any }) {
+  const { user } = context;
   const id = formData.get("id") as string;
   const rawData = {
     company_id: parseInt(formData.get("company_id") as string),
@@ -1149,18 +1069,8 @@ export async function updateInvoice(formData: FormData) {
     return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
   }
 
-  const { authorized, error: accessError } = await requireCompanyAccess(validation.data.company_id || 0);
-  if (!authorized) return { error: accessError };
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: "No autorizado" };
-
   const data = validation.data;
-  const invoice_file = formData.get("invoice_file") as File;
+  const supabase = await createClient();
 
   // 1. Get current invoice to handle file cleanup if needed
   const { data: currentInvoice } = await supabase
@@ -1172,6 +1082,7 @@ export async function updateInvoice(formData: FormData) {
   let url_invoice = currentInvoice?.url_invoice || "";
 
   // 2. Handle File Upload if present
+  const invoice_file = formData.get("invoice_file") as File;
   if (invoice_file && invoice_file.size > 0) {
     const fileExt = invoice_file.name.split(".").pop();
     const fileName = `${data.invoice_number}_${Date.now()}.${fileExt}`;
@@ -1300,14 +1211,13 @@ export async function updateInvoice(formData: FormData) {
   return { success: true };
 }
 
-/**
- * Delete an invoice.
- */
-export async function deleteInvoice(id: string) {
+export const updateInvoice = withRole(40, withCompanyAccess(updateInvoiceInternal, 0));
+
+export const sendWhatsAppAutomation = withRole(40, sendWhatsAppAutomationInternal);
+
+async function deleteInvoiceInternal(id: string, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const { data: invoice } = await supabase
     .from("invoices")
@@ -1338,14 +1248,11 @@ export async function deleteInvoice(id: string) {
   return { success: true };
 }
 
-/**
- * Update the WhatsApp sending status for an invoice.
- */
-export async function updateInvoiceWhatsAppStatus(id: string, status: string) {
+export const deleteInvoice = withRole(40, deleteInvoiceInternal);
+
+async function updateInvoiceWhatsAppStatusInternal(id: string, status: string, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   // 1. Get invoice details for logging
   const { data: invoice } = await supabase
@@ -1387,10 +1294,9 @@ export async function updateInvoiceWhatsAppStatus(id: string, status: string) {
   return { success: true };
 }
 
-/**
- * Fetch the WhatsApp message template from site_content.
- */
-export async function getWhatsAppMessageTemplate() {
+export const updateInvoiceWhatsAppStatus = withRole(40, updateInvoiceWhatsAppStatusInternal);
+
+async function getWhatsAppMessageTemplateInternal() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("site_content")
@@ -1404,10 +1310,9 @@ export async function getWhatsAppMessageTemplate() {
   return { success: true, data };
 }
 
-/**
- * Fetch cards associated with a specific invoice.
- */
-export async function getCardsForInvoice(
+export const getWhatsAppMessageTemplate = withRole(40, getWhatsAppMessageTemplateInternal);
+
+async function getCardsForInvoiceInternal(
   companyId: number,
   eventId: string,
   invoiceNumber: string,
@@ -1424,11 +1329,9 @@ export async function getCardsForInvoice(
   return { success: true, data };
 }
 
-/**
- * Fetch the list of sellers (sold_by) from the v_sold_by view.
- * Fallback to invoices table if view fails.
- */
-export async function getSellersFromView(companyId: number, eventId: string) {
+export const getCardsForInvoice = withRole(40, withCompanyAccess(getCardsForInvoiceInternal, 0));
+
+async function getSellersFromViewInternal(companyId: number, eventId: string) {
   const supabase = await createClient();
 
   // Try view first
@@ -1463,11 +1366,13 @@ export async function getSellersFromView(companyId: number, eventId: string) {
   };
 }
 
+export const getSellersFromView = withRole(40, withCompanyAccess(getSellersFromViewInternal, 0));
+
 /**
  * Customers and Promotional Messages actions
  */
 
-export async function getCustomers(companyId: number) {
+async function getCustomersInternal(companyId: number) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("customer_phone_number")
@@ -1479,7 +1384,9 @@ export async function getCustomers(companyId: number) {
   return { success: true, data };
 }
 
-export async function saveCustomer(payload: {
+export const getCustomers = withRole(40, withCompanyAccess(getCustomersInternal, 0));
+
+async function saveCustomerInternal(payload: {
   id?: number;
   company_id: number;
   customer_name: string;
@@ -1496,7 +1403,9 @@ export async function saveCustomer(payload: {
   return { success: true, data };
 }
 
-export async function deleteCustomer(id: number) {
+export const saveCustomer = withRole(40, withCompanyAccess(saveCustomerInternal, 0));
+
+async function deleteCustomerInternal(id: number) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("customer_phone_number")
@@ -1507,7 +1416,9 @@ export async function deleteCustomer(id: number) {
   return { success: true };
 }
 
-export async function getPromoTemplates() {
+export const deleteCustomer = withRole(40, deleteCustomerInternal);
+
+async function getPromoTemplatesInternal() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("site_content")
@@ -1525,7 +1436,9 @@ export async function getPromoTemplates() {
   return { success: true, data };
 }
 
-export async function logPromoMessage(payload: {
+export const getPromoTemplates = withRole(40, getPromoTemplatesInternal);
+
+async function logPromoMessageInternal(payload: {
   batch_id: string;
   company_id: number;
   customer_name: string;
@@ -1549,7 +1462,9 @@ export async function logPromoMessage(payload: {
   return { success: true };
 }
 
-export async function getBatchLogs(companyId: number) {
+export const logPromoMessage = withRole(40, logPromoMessageInternal);
+
+async function getBatchLogsInternal(companyId: number) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("v_promo_batch_summary")
@@ -1561,7 +1476,9 @@ export async function getBatchLogs(companyId: number) {
   return { success: true, data };
 }
 
-export async function getBatchDetails(batchId: string) {
+export const getBatchLogs = withRole(40, withCompanyAccess(getBatchLogsInternal, 0));
+
+async function getBatchDetailsInternal(batchId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("whatsapp_promo_logs")
@@ -1573,17 +1490,18 @@ export async function getBatchDetails(batchId: string) {
   return { success: true, data };
 }
 
-export async function syncCustomers() {
+export const getBatchDetails = withRole(40, getBatchDetailsInternal);
+
+async function syncCustomersInternal() {
   const supabase = await createClient();
   const { error } = await supabase.rpc("sync_customers_from_cards");
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
 
-/**
- * Upload a promotional image to storage and return its public URL.
- */
-export async function uploadPromoImage(formData: FormData) {
+export const syncCustomers = withRole(80, syncCustomersInternal);
+
+async function uploadPromoImageInternal(formData: FormData) {
   const supabase = await createClient();
   const file = formData.get("file") as File;
   const companyId = formData.get("company_id");
@@ -1615,10 +1533,9 @@ export async function uploadPromoImage(formData: FormData) {
   }
 }
 
-/**
- * Send automated WhatsApp messages and documents via Ultramsg.
- */
-export async function sendWhatsAppAutomation(payload: {
+export const uploadPromoImage = withRole(40, uploadPromoImageInternal);
+
+async function sendWhatsAppAutomationInternal(payload: {
   to: string;
   message: string;
   templateImage?: string;
