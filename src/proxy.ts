@@ -2,10 +2,10 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Middleware to handle session refreshing and route protection.
+ * Proxy to handle session refreshing and route protection.
  * @param {NextRequest} request - The incoming request.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
