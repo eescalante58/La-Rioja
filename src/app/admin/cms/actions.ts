@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
+import { faqSchema } from "@/lib/validation/cms";
 
 /**
  * Sanitizes string input to prevent basic HTML injection.
@@ -201,20 +202,33 @@ export async function createFAQ(formData: FormData) {
   const { user, error: authError } = await requireRoleLevel(80);
   if (authError) return { success: false, error: authError };
 
-  const supabase = await createClient();
+  // 1. Validation with Zod
+  const rawData = {
+    question: formData.get("question") as string,
+    answer: formData.get("answer") as string,
+    section_id: formData.get("section_id") as string || null,
+    is_active: formData.get("is_active") === "true",
+    content_order: parseInt(formData.get("content_order") as string) || 0,
+  };
 
-  const question = sanitizeInput(formData.get("question") as string);
-  const answer = sanitizeInput(formData.get("answer") as string);
-  const section_id = formData.get("section_id") as string | null;
-  const is_active = formData.get("is_active") === "true";
-  const content_order = parseInt(formData.get("content_order") as string) || 0;
+  const validation = faqSchema.safeParse(rawData);
+  if (!validation.success) {
+    return {
+      success: false,
+      error: "Datos inválidos: " + validation.error.errors.map(e => e.message).join(", "),
+    };
+  }
+  
+  const { question, answer, section_id, is_active, content_order } = validation.data;
+
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("faqs")
     .insert([
       {
-        question,
-        answer,
+        question: sanitizeInput(question),
+        answer: sanitizeInput(answer),
         section_id: section_id || null,
         is_active,
         content_order,
