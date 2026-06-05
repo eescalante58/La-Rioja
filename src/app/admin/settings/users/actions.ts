@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
+import { withRole } from "@/lib/auth/guards";
 import { userSchema, roleSchema, type UserInput, type RoleInput } from "@/lib/validation/users";
 
 /**
@@ -89,15 +90,7 @@ async function logActivity(
   ]);
 }
 
-/**
- * Server action to create a new user (Auth + Profile).
- */
-export async function createNewUser(rawInput: UserInput) {
-  const { error: authErrorRBAC } = await requireRoleLevel(80);
-  if (authErrorRBAC) {
-    return { error: authErrorRBAC };
-  }
-
+async function createNewUserInternal(rawInput: UserInput) {
   // Validation with Zod
   const validation = userSchema.safeParse(rawInput);
   if (!validation.success) {
@@ -148,6 +141,8 @@ export async function createNewUser(rawInput: UserInput) {
   revalidatePath("/admin/settings/users");
   return { success: true };
 }
+
+export const createNewUser = withRole(80, createNewUserInternal);
 
 /**
  * Server action to upload a user avatar.
@@ -232,13 +227,7 @@ export async function updateUser(userId: string, rawInput: any) {
   return { success: true };
 }
 
-/**
- * Server action to delete a user.
- */
-export async function deleteUser(userId: string) {
-  const { error: authError } = await requireRoleLevel(100);
-  if (authError) return { error: authError };
-
+async function deleteUserInternal(userId: string) {
   const supabase = await createClient();
 
   // Note: This only deletes from our 'users' table, not Supabase Auth
@@ -254,13 +243,9 @@ export async function deleteUser(userId: string) {
   return { success: true };
 }
 
-/**
- * Server action to create a new role.
- */
-export async function createRole(rawInput: RoleInput) {
-  const { error: authErrorRBAC } = await requireRoleLevel(100);
-  if (authErrorRBAC) return { error: authErrorRBAC };
+export const deleteUser = withRole(100, deleteUserInternal);
 
+async function createRoleInternal(rawInput: RoleInput) {
   // Validation with Zod
   const validation = roleSchema.safeParse(rawInput);
   if (!validation.success) {
@@ -285,13 +270,9 @@ export async function createRole(rawInput: RoleInput) {
   return { success: true };
 }
 
-/**
- * Server action to update a role.
- */
-export async function updateRole(roleId: number, rawInput: any) {
-  const { error: authErrorRBAC } = await requireRoleLevel(100);
-  if (authErrorRBAC) return { error: authErrorRBAC };
+export const createRole = withRole(100, createRoleInternal);
 
+async function updateRoleInternal(roleId: number, rawInput: any) {
   // Validation with Zod
   const validation = roleSchema.partial().safeParse(rawInput);
   if (!validation.success) {
@@ -318,12 +299,9 @@ export async function updateRole(roleId: number, rawInput: any) {
   return { success: true };
 }
 
-/**
- * Server action to delete a role.
- */
-export async function deleteRole(roleId: number) {
-  const { error: authError } = await requireRoleLevel(100);
-  if (authError) return { error: authError };
+export const updateRole = withRole(100, updateRoleInternal);
+
+async function deleteRoleInternal(roleId: number) {
   const supabase = await createClient();
   const { error } = await supabase.from("roles").delete().eq("role_id", roleId);
 
@@ -337,16 +315,13 @@ export async function deleteRole(roleId: number) {
   return { success: true };
 }
 
-/**
- * Server action to assign a user to a company.
- */
-export async function assignUserToCompany(
+export const deleteRole = withRole(100, deleteRoleInternal);
+
+async function assignUserToCompanyInternal(
   userId: string,
   companyId: number,
   roleId: number,
 ) {
-  const { error: authError } = await requireRoleLevel(80);
-  if (authError) return { error: authError };
   const supabase = await createClient();
   const { error } = await supabase.from("user_companies").insert([
     {
@@ -369,12 +344,9 @@ export async function assignUserToCompany(
   return { success: true };
 }
 
-/**
- * Server action to remove a user from a company.
- */
-export async function removeUserFromCompany(userId: string, companyId: number) {
-  const { error: authError } = await requireRoleLevel(80);
-  if (authError) return { error: authError };
+export const assignUserToCompany = withRole(80, assignUserToCompanyInternal);
+
+async function removeUserFromCompanyInternal(userId: string, companyId: number) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("user_companies")
@@ -393,16 +365,13 @@ export async function removeUserFromCompany(userId: string, companyId: number) {
   return { success: true };
 }
 
-/**
- * Server action to update user-company role.
- */
-export async function updateUserCompanyRole(
+export const removeUserFromCompany = withRole(80, removeUserFromCompanyInternal);
+
+async function updateUserCompanyRoleInternal(
   userId: string,
   companyId: number,
   roleId: number,
 ) {
-  const { error: authError } = await requireRoleLevel(80);
-  if (authError) return { error: authError };
   const supabase = await createClient();
   const { error } = await supabase
     .from("user_companies")
@@ -419,6 +388,8 @@ export async function updateUserCompanyRole(
   revalidatePath("/admin/settings/users");
   return { success: true };
 }
+
+export const updateUserCompanyRole = withRole(80, updateUserCompanyRoleInternal);
 
 /**
  * Server action to fetch user-company relationships.

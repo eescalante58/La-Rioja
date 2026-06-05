@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
+import { withRole } from "@/lib/auth/guards";
 import { faqSchema, faqSectionSchema, cmsContentSchema } from "@/lib/validation/cms";
 
 /**
@@ -23,10 +24,8 @@ function sanitizeInput(str: string): string {
  * @param {FormData} formData - The updated data as FormData.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function updateCMSContent(id: string, formData: FormData) {
-  const { user, error: authError } = await requireRoleLevel(80); // Min Admin level
-  if (authError) return { success: false, error: authError };
-
+async function updateCMSContentInternal(id: string, formData: FormData, context: { user: any }) {
+  const { user } = context;
   // 1. Validation with Zod
   const rawMetadataStr = formData.get("metadata") as string;
   let rawMetadata = {};
@@ -155,10 +154,10 @@ export async function updateCMSContent(id: string, formData: FormData) {
  * @param {FormData} formData - The updated FAQ data.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function updateFAQ(id: string, formData: FormData) {
-  const { user, error: authError } = await requireRoleLevel(80);
-  if (authError) return { success: false, error: authError };
+export const updateCMSContent = withRole(80, updateCMSContentInternal);
 
+async function updateFAQInternal(id: string, formData: FormData, context: { user: any }) {
+  const { user } = context;
   // 1. Validation with Zod
   const rawData = {
     question: formData.get("question") as string,
@@ -220,10 +219,10 @@ export async function updateFAQ(id: string, formData: FormData) {
  * @param {FormData} formData - The FAQ data.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function createFAQ(formData: FormData) {
-  const { user, error: authError } = await requireRoleLevel(80);
-  if (authError) return { success: false, error: authError };
+export const updateFAQ = withRole(80, updateFAQInternal);
 
+async function createFAQInternal(formData: FormData, context: { user: any }) {
+  const { user } = context;
   // 1. Validation with Zod
   const rawData = {
     question: formData.get("question") as string,
@@ -290,14 +289,11 @@ export async function createFAQ(formData: FormData) {
  * @param {string} id - The ID of the FAQ to delete.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function deleteFAQ(id: string) {
-  const { error: authError } = await requireRoleLevel(80);
-  if (authError) return { success: false, error: authError };
+export const createFAQ = withRole(80, createFAQInternal);
 
+async function deleteFAQInternal(id: string, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const { error } = await supabase.from("faqs").delete().eq("id", id);
 
@@ -330,10 +326,10 @@ export async function deleteFAQ(id: string) {
  * @param {FormData} formData - The updated section data.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function updateFAQSection(id: string, formData: FormData) {
-  const { user, error: authError } = await requireRoleLevel(80);
-  if (authError) return { success: false, error: authError };
+export const deleteFAQ = withRole(80, deleteFAQInternal);
 
+async function updateFAQSectionInternal(id: string, formData: FormData, context: { user: any }) {
+  const { user } = context;
   // 1. Validation with Zod
   const rawData = {
     title: formData.get("title") as string,
@@ -393,10 +389,10 @@ export async function updateFAQSection(id: string, formData: FormData) {
  * @param {FormData} formData - The section data.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function createFAQSection(formData: FormData) {
-  const { user, error: authError } = await requireRoleLevel(80);
-  if (authError) return { success: false, error: authError };
+export const updateFAQSection = withRole(80, updateFAQSectionInternal);
 
+async function createFAQSectionInternal(formData: FormData, context: { user: any }) {
+  const { user } = context;
   // 1. Validation with Zod
   const rawData = {
     title: formData.get("title") as string,
@@ -460,14 +456,11 @@ export async function createFAQSection(formData: FormData) {
  * @param {string} id - The ID of the section to delete.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function deleteFAQSection(id: string) {
-  const { error: authError } = await requireRoleLevel(80);
-  if (authError) return { success: false, error: authError };
+export const createFAQSection = withRole(80, createFAQSectionInternal);
 
+async function deleteFAQSectionInternal(id: string, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const { error } = await supabase.from("faq_sections").delete().eq("id", id);
 
@@ -499,10 +492,10 @@ export async function deleteFAQSection(id: string) {
  * @param {FormData} formData - The new section data as FormData.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function createCMSContent(formData: FormData) {
-  const { user, error: authError } = await requireRoleLevel(80);
-  if (authError) return { success: false, error: authError };
+export const deleteFAQSection = withRole(80, deleteFAQSectionInternal);
 
+async function createCMSContentInternal(formData: FormData, context: { user: any }) {
+  const { user } = context;
   // 1. Validation with Zod
   const rawMetadataStr = formData.get("metadata") as string;
   let rawMetadata = {};
@@ -631,14 +624,11 @@ export async function createCMSContent(formData: FormData) {
  * @param {string} id - The ID of the content to delete.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function deleteCMSContent(id: string) {
-  const { error: authError } = await requireRoleLevel(100); // Only Super Admin can delete sections
-  if (authError) return { success: false, error: authError };
+export const createCMSContent = withRole(80, createCMSContentInternal);
 
+async function deleteCMSContentInternal(id: string, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   // 1. Obtener la información del registro antes de borrarlo para limpiar el storage
   const { data: item } = await supabase
@@ -686,3 +676,5 @@ export async function deleteCMSContent(id: string) {
   revalidatePath("/admin/cms");
   return { success: true };
 }
+
+export const deleteCMSContent = withRole(100, deleteCMSContentInternal);
