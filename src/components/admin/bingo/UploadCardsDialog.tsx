@@ -274,6 +274,16 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
                     id="delete_existing_upload"
                     name="delete_existing_upload"
                     className="h-4 w-4 text-larioja-azul border-gray-300 rounded focus:ring-larioja-azul"
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setStatusMessage({ 
+                          type: 'info', 
+                          text: "¡ATENCIÓN! Se eliminarán permanentemente los registros e imágenes de los cartones actuales antes de subir los nuevos." 
+                        });
+                      } else {
+                        setStatusMessage(null);
+                      }
+                    }}
                     disabled={loading}
                   />
                   <label
