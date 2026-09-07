@@ -229,6 +229,8 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
                   <SelectItem value="Activo">Activo</SelectItem>
                   <SelectItem value="Realizado">Realizado</SelectItem>
                   <SelectItem value="Cancelado">Cancelado</SelectItem>
+                  <SelectItem value="Cerrado">Cerrado</SelectItem>
+                  <SelectItem value="Finalizado">Finalizado</SelectItem>
                 </Select>
               </div>
             </div>
