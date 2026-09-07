@@ -27,260 +27,177 @@ function sanitizeInput(str: string): string {
 /**
  * Upload card images and create card records.
  */
-async function uploadCardImagesInternal(
+/**
+ * Upload a single card image and create its record in the database.
+ * This is used to track progress in the UI.
+ */
+async function uploadSingleCardImageInternal(
   companyId: number,
   eventId: string,
   cardPrice: number,
-  formData: FormData,
+  fileName: string,
+  file: File,
   context: { user: any }
 ) {
   const { user } = context;
-  // Validation with Zod
-  const validation = generateCardsSchema.pick({
-    company_id: true,
-    event_id: true,
-    price: true,
-  }).safeParse({
-    company_id: companyId,
-    event_id: eventId,
-    price: cardPrice,
-  });
-
-  if (!validation.success) {
-    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
-  }
-  const data = validation.data;
-
   const supabase = await createClient();
 
-  const files = formData.getAll("files") as File[];
-  if (!files || files.length === 0) {
-    return { error: "No se seleccionaron archivos." };
-  }
-
-  const deleteExisting = formData.get("delete_existing_upload") === "on";
-
-  // If requested, delete existing cards for this event first
-  let deletedCount = 0;
-  if (deleteExisting) {
-    // 1. Get cards that can be deleted (status = 'Disponible')
-    const { data: cardsToDelete, error: fetchError } = await supabase
-      .from("cards")
-      .select("card_number, image_url")
-      .eq("company_id", data.company_id)
-      .eq("event_id", data.event_id)
-      .eq("card_status", "Disponible");
-
-    if (fetchError) {
-      console.error("Error fetching cards for deletion:", fetchError);
-      return { error: "Error al buscar cartones para eliminar." };
+  try {
+    // 1. Extract info from filename
+    const match = fileName.match(/^SERIAL_(\d{14})_Carton_(\d+)\.pdf$/i);
+    if (!match) {
+      return { error: `Archivo ${fileName}: El nombre no sigue el patrón SERIAL_EventoID_Carton_Numero.pdf` };
     }
 
-    if (cardsToDelete && cardsToDelete.length > 0) {
-      console.log(
-        `Eliminando ${cardsToDelete.length} cartones previos (Upload)...`,
-      );
-      // 2. Identify files to delete in Storage
-      const filesToDelete = cardsToDelete
-        .map((c) => {
-          if (!c.image_url) return null;
-          try {
-            const urlParts = c.image_url.split("/cards_images/");
-            if (urlParts.length > 1) {
-              return urlParts[1];
-            }
-            return null;
-          } catch (e) {
-            return null;
-          }
-        })
-        .filter((path): path is string => path !== null);
+    const fileEventId = match[1];
+    const cardNumber = parseInt(match[2]);
 
-      console.log(
-        `Archivos a eliminar en Storage (Upload): ${filesToDelete.length}`,
-      );
-
-      // 3. Delete from Storage
-      if (filesToDelete.length > 0) {
-        const { data: removedFiles, error: storageError } =
-          await supabase.storage.from("cards_images").remove(filesToDelete);
-
-        if (storageError) {
-          console.warn("Error deleting files from storage:", storageError);
-        }
-      }
-
-      // 4. Delete from Database
-      const { data: deletedRows, error: dbError } = await supabase
-        .from("cards")
-        .delete()
-        .eq("company_id", data.company_id)
-        .eq("event_id", data.event_id)
-        .eq("card_status", "Disponible")
-        .select();
-
-      if (dbError) {
-        console.error("Error deleting rows from DB:", dbError);
-      } else {
-        deletedCount = deletedRows?.length || 0;
-      }
+    // 2. Basic validations
+    if (fileEventId !== eventId) {
+      return { error: `Archivo ${fileName}: El ID de evento del archivo (${fileEventId}) no coincide con el seleccionado.` };
     }
-  }
 
-  const results = {
-    success_count: 0,
-    error_count: 0,
-    errors: [] as string[],
-  };
-
-  for (const file of files) {
-    const fileName = file.name;
-    // Pattern: SERIAL_ (7) + EventID (14) + _Carton_ (8) + CardNumber
-    // Example: SERIAL_20250825113902_Carton_1.pdf
-
-    try {
-      // 1. Extract info from filename
-      const match = fileName.match(/^SERIAL_(\d{14})_Carton_(\d+)\.pdf$/i);
-      if (!match) {
-        results.error_count++;
-        results.errors.push(
-          `Archivo ${fileName}: El nombre no sigue el patrón SERIAL_EventoID_Carton_Numero.pdf`,
-        );
-        continue;
-      }
-
-      const fileEventId = match[1];
-      const cardNumber = parseInt(match[2]);
-
-      // 2. Basic validations
-      if (fileEventId !== data.event_id) {
-        results.error_count++;
-        results.errors.push(
-          `Archivo ${fileName}: El ID de evento del archivo (${fileEventId}) no coincide con el evento seleccionado (${data.event_id}).`,
-        );
-        continue;
-      }
-
-      // 3. Check if card already exists in DB
-      const { data: existingCard, error: checkError } = await supabase
-        .from("cards")
-        .select("id")
-        .eq("company_id", data.company_id)
-        .eq("event_id", data.event_id)
-        .eq("card_number", cardNumber)
-        .maybeSingle();
-
-      if (checkError) {
-        results.error_count++;
-        results.errors.push(
-          `Archivo ${fileName}: Error al verificar existencia en BD.`,
-        );
-        continue;
-      }
-
-      if (existingCard) {
-        results.error_count++;
-        results.errors.push(
-          `Archivo ${fileName}: El cartón número ${cardNumber} ya existe en este evento.`,
-        );
-        continue;
-      }
-
-      // 4. Upload to Storage
-      const storagePath = `${data.company_id}/${data.event_id}/${fileName}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("cards_images")
-        .upload(storagePath, file, {
-          cacheControl: "3600",
-          upsert: true,
-        });
-
-      if (uploadError) {
-        results.error_count++;
-        results.errors.push(
-          `Archivo ${fileName}: Error al subir al bucket (${uploadError.message}).`,
-        );
-        continue;
-      }
-
-      // 5. Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("cards_images").getPublicUrl(storagePath);
-
-      // 6. Create record in DB
-      const { error: insertError } = await supabase.from("cards").insert({
-        company_id: data.company_id,
-        event_id: data.event_id,
-        card_number: cardNumber,
-        card_price: data.price,
-        card_type: "Virtual",
-        card_status: "Disponible",
-        image_url: publicUrl,
-        updated_at: new Date().toISOString(),
+    // 3. Upload to Storage
+    const storagePath = `${companyId}/${eventId}/${fileName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("cards_images")
+      .upload(storagePath, file, {
+        cacheControl: "3600",
+        upsert: true,
       });
 
-      if (insertError) {
-        // Rollback storage if DB fails
-        await supabase.storage.from("cards_images").remove([storagePath]);
-        results.error_count++;
-        results.errors.push(
-          `Archivo ${fileName}: Error al crear registro en BD (${insertError.message}).`,
-        );
-        continue;
-      }
-
-      results.success_count++;
-    } catch (err: any) {
-      results.error_count++;
-      results.errors.push(
-        `Archivo ${fileName}: Error inesperado (${err.message}).`,
-      );
+    if (uploadError) {
+      return { error: `Archivo ${fileName}: Error al subir al bucket (${uploadError.message}).` };
     }
-  }
 
-  // Update event cartons count if needed
-  if (results.success_count > 0) {
-    const { data: cards } = await supabase
-      .from("cards")
-      .select("card_number")
-      .eq("company_id", data.company_id)
-      .eq("event_id", data.event_id);
+    // 4. Get Public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from("cards_images")
+      .getPublicUrl(storagePath);
 
-    if (cards && cards.length > 0) {
-      const maxCardNumber = Math.max(
-        ...cards.map((c) => Number(c.card_number)),
-      );
+    // 5. Create record in DB
+    const { error: insertError } = await supabase.from("cards").upsert({
+      company_id: companyId,
+      event_id: eventId,
+      card_number: cardNumber,
+      card_price: cardPrice,
+      card_type: "Virtual",
+      card_status: "Disponible",
+      image_url: publicUrl,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: "company_id,event_id,card_number"
+    });
+
+    if (insertError) {
+      // Rollback storage if DB fails
+      await supabase.storage.from("cards_images").remove([storagePath]);
+      return { error: `Archivo ${fileName}: Error al crear registro en BD (${insertError.message}).` };
+    }
+
+    // Update event cartons count if this is a new maximum
+    const { data: eventData } = await supabase
+      .from("events")
+      .select("event_cartons_number")
+      .eq("company_id", companyId)
+      .eq("event_id", eventId)
+      .single();
+
+    if (eventData && (eventData.event_cartons_number || 0) < cardNumber) {
       await supabase
         .from("events")
-        .update({ event_cartons_number: maxCardNumber })
-        .eq("company_id", data.company_id)
-        .eq("event_id", data.event_id);
+        .update({ event_cartons_number: cardNumber })
+        .eq("company_id", companyId)
+        .eq("event_id", eventId);
     }
 
-    if (user) {
-      await supabase.from("user_activity_log").insert({
-        user_id: user.id,
-        action: "UPLOAD_CARDS_IMAGES",
-        entity: "cards",
-        metadata: {
-          company_id: data.company_id,
-          event_id: data.event_id,
-          success_count: results.success_count,
-          error_count: results.error_count,
-          deleted_previous: deleteExisting,
-          deleted_count: deletedCount,
-          timestamp: new Date().toISOString(),
-        },
-      });
-    }
-    revalidatePath("/admin/bingo");
+    return { success: true, cardNumber };
+  } catch (err: any) {
+    return { error: `Archivo ${fileName}: Error inesperado (${err.message}).` };
   }
-
-  return { success: results.error_count === 0, ...results };
 }
 
-export const uploadCardImages = withRole(4, withCompanyAccess(uploadCardImagesInternal, 0));
+export const uploadSingleCardImage = withRole(8, withCompanyAccess(uploadSingleCardImageInternal, 0));
+
+/**
+ * Delete all 'Disponible' cards for an event before a new upload batch.
+ */
+async function clearEventCardsInternal(
+  companyId: number,
+  eventId: string,
+  context: { user: any }
+) {
+  const supabase = await createClient();
+  const { data: cardsToDelete, error: fetchError } = await supabase
+    .from("cards")
+    .select("card_number, image_url")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .eq("card_status", "Disponible");
+
+  if (fetchError) return { error: fetchError.message };
+
+  if (cardsToDelete && cardsToDelete.length > 0) {
+    const filesToDelete = cardsToDelete
+      .map((c) => {
+        if (!c.image_url) return null;
+        try {
+          const urlParts = c.image_url.split("/cards_images/");
+          return urlParts.length > 1 ? urlParts[1] : null;
+        } catch (e) { return null; }
+      })
+      .filter((path): path is string => path !== null);
+
+    if (filesToDelete.length > 0) {
+      await supabase.storage.from("cards_images").remove(filesToDelete);
+    }
+
+    const { error: dbError } = await supabase
+      .from("cards")
+      .delete()
+      .eq("company_id", companyId)
+      .eq("event_id", eventId)
+      .eq("card_status", "Disponible");
+
+    if (dbError) return { error: dbError.message };
+  }
+
+  return { success: true };
+}
+
+export const clearEventCards = withRole(8, withCompanyAccess(clearEventCardsInternal, 0));
+
+/**
+ * Log the summary of an upload operation.
+ */
+async function logUploadActivityInternal(
+  companyId: number,
+  eventId: string,
+  metadata: any,
+  context: { user: any }
+) {
+  const { user } = context;
+  const supabase = await createClient();
+
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "UPLOAD_CARDS_IMAGES",
+      entity: "cards",
+      metadata: {
+        company_id: companyId,
+        event_id: eventId,
+        ...metadata,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+  
+  revalidatePath("/admin/bingo");
+  return { success: true };
+}
+
+export const logUploadActivity = withRole(8, withCompanyAccess(logUploadActivityInternal, 0));
 
 async function getBingoDataInternal(context: { user: any, level: number }) {
   const { user, level } = context;

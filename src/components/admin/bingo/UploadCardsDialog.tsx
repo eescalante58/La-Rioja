@@ -10,7 +10,11 @@ import {
   Button,
 } from "@tremor/react";
 import { DollarSign, Upload, FileIcon } from "lucide-react";
-import { uploadCardImages } from "@/app/admin/bingo/actions";
+import {
+  uploadSingleCardImage,
+  clearEventCards,
+  logUploadActivity,
+} from "@/app/admin/bingo/actions";
 
 interface Event {
   id: number;
@@ -29,6 +33,8 @@ interface UploadCardsDialogProps {
 export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCardsDialogProps) {
   const [loading, setLoading] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<FileList | null>(null);
+  const [currentFileIndex, setCurrentFileIndex] = useState<number>(0);
+  const [currentCardNumber, setCurrentCardNumber] = useState<number | null>(null);
 
   const handleUploadCards = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,51 +43,88 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
       return;
     }
 
-    setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    for (let i = 0; i < uploadingFiles.length; i++) {
-      formData.append("files", uploadingFiles[i]);
-    }
-
     const price = parseFloat(
       (e.currentTarget.elements.namedItem("card_price") as HTMLInputElement).value,
     );
-    const deleteExisting = formData.get("delete_existing_upload") === "on";
+    const deleteExisting = (e.currentTarget.elements.namedItem("delete_existing_upload") as HTMLInputElement).checked;
 
     const confirmMessage = deleteExisting
       ? `¿Estás seguro de ELIMINAR los cartones disponibles existentes y subir estos ${uploadingFiles.length} nuevos?`
       : `¿Deseas subir estos ${uploadingFiles.length} cartones?`;
 
     if (!confirm(confirmMessage)) {
-      setLoading(false);
       return;
     }
 
-    try {
-      const result = await uploadCardImages(
-        event.company_id,
-        event.event_id,
-        price,
-        formData,
-      );
+    setLoading(true);
+    setCurrentFileIndex(0);
 
-      if ("success_count" in result && result.success_count > 0) {
-        let message = `Se cargaron exitosamente ${result.success_count} cartones.`;
-        if (result.error_count > 0) {
-          message += `\nHubo ${result.error_count} errores:\n` + result.errors.slice(0, 5).join("\n");
+    try {
+      // 1. If requested, clear existing cards first
+      if (deleteExisting) {
+        const clearResult = await clearEventCards(event.company_id, event.event_id);
+        if (clearResult.error) {
+          alert("Error al limpiar cartones previos: " + clearResult.error);
+          setLoading(false);
+          return;
+        }
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      // 2. Upload files one by one to track progress
+      for (let i = 0; i < uploadingFiles.length; i++) {
+        const file = uploadingFiles[i];
+        setCurrentFileIndex(i + 1);
+        
+        // Extract card number for UI feedback
+        const match = file.name.match(/_Carton_(\d+)\.pdf$/i);
+        if (match) {
+          setCurrentCardNumber(parseInt(match[1]));
+        }
+
+        const result = await uploadSingleCardImage(
+          event.company_id,
+          event.event_id,
+          price,
+          file.name,
+          file
+        );
+
+        if (result.success) {
+          successCount++;
+        } else {
+          errorCount++;
+          errors.push(result.error || "Error desconocido");
+        }
+      }
+
+      if (successCount > 0) {
+        // 3. Log the activity summary
+        await logUploadActivity(event.company_id, event.event_id, {
+          success_count: successCount,
+          error_count: errorCount,
+          deleted_previous: deleteExisting,
+          total_files: uploadingFiles.length,
+        });
+
+        let message = `Se cargaron exitosamente ${successCount} cartones.`;
+        if (errorCount > 0) {
+          message += `\nHubo ${errorCount} errores:\n` + errors.slice(0, 5).join("\n");
         }
         alert(message);
         sessionStorage.setItem("bingo_selected_tab", "1");
         window.location.reload();
-      } else if ("errors" in result) {
-        alert("Error al cargar cartones:\n" + result.errors.join("\n"));
-      } else if ("error" in result) {
-        alert("Error: " + result.error);
+      } else {
+        alert("Error al cargar cartones:\n" + errors.join("\n"));
       }
     } catch (error) {
       console.error("Error uploading cards:", error);
     } finally {
       setLoading(false);
+      setCurrentCardNumber(null);
     }
   };
 
@@ -155,6 +198,19 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
+              {loading && (
+                <div className="flex-1 flex flex-col justify-center">
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
+                    <div 
+                      className="bg-larioja-azul h-1.5 rounded-full transition-all duration-300" 
+                      style={{ width: `${(currentFileIndex / (uploadingFiles?.length || 1)) * 100}%` }}
+                    ></div>
+                  </div>
+                  <Text className="text-[10px] mt-1 text-larioja-azul font-bold">
+                    Cargando cartón {currentCardNumber ? `#${currentCardNumber}` : ""} ({currentFileIndex}/{uploadingFiles?.length})
+                  </Text>
+                </div>
+              )}
               <Button variant="secondary" onClick={onClose} disabled={loading} type="button">
                 Cancelar
               </Button>
