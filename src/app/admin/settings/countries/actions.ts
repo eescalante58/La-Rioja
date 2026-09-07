@@ -23,11 +23,9 @@ export async function getCountryCodes() {
 /**
  * Server action to create or update a country code.
  */
-export async function saveCountryCode(formData: FormData) {
+async function saveCountryCodeInternal(formData: FormData, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const id = formData.get("id");
   const iso2 = formData.get("iso2") as string;
@@ -83,14 +81,14 @@ export async function saveCountryCode(formData: FormData) {
   return { success: true };
 }
 
+export const saveCountryCode = withRole(10, saveCountryCodeInternal);
+
 /**
  * Server action to delete a country code.
  */
-export async function deleteCountryCode(id: number) {
+async function deleteCountryCodeInternal(id: number, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   // Get name before deleting for the log
   const { data: country } = await supabase
@@ -123,16 +121,14 @@ export async function deleteCountryCode(id: number) {
   return { success: true };
 }
 
+export const deleteCountryCode = withRole(10, deleteCountryCodeInternal);
+
 /**
  * Server action to bulk import country codes.
  */
-export async function importCountryCodes(countries: any[]) {
+async function importCountryCodesInternal(countries: any[], context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-
-  // Get current user for logging
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const formattedData = countries.map((c) => ({
     iso2: c.iso2,
@@ -168,14 +164,14 @@ export async function importCountryCodes(countries: any[]) {
   return { success: true };
 }
 
+export const importCountryCodes = withRole(10, importCountryCodesInternal);
+
 /**
  * Server action to log data export activity.
  */
-export async function logExportActivity(count: number) {
+async function logExportActivityInternal(count: number, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   if (user) {
     await supabase.from("user_activity_log").insert({
@@ -191,3 +187,5 @@ export async function logExportActivity(count: number) {
   }
   return { success: true };
 }
+
+export const logExportActivity = withRole(10, logExportActivityInternal);

@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Checks if a user is authenticated and has a minimum role level.
- * @param minLevel Minimum level required (SuperAdmin: 100, Admin: 80, Editor: 60, Operator: 40)
+ * @param minLevel Minimum level required (SuperAdmin: 10, Admin: 8, Editor: 6, Operator: 4)
  * @returns {Promise<{user: any, level: number, error?: string}>}
  */
 export async function requireRoleLevel(minLevel: number) {

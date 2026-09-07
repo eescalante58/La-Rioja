@@ -3,25 +3,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 import { revalidatePath } from "next/cache";
+import { withRole } from "@/lib/auth/guards";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Fetch contact submissions with search filtering
  */
-export async function getContactSubmissions(searchQuery?: string) {
+async function getContactSubmissionsInternal(searchQuery?: string) {
   const supabase = await createClient();
-
-  // Verificar sesión
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return {
-      success: false,
-      error: "No autorizado. Por favor inicia sesión de nuevo.",
-    };
-  }
 
   let query = supabase
     .from("contact_submissions")
@@ -49,19 +39,13 @@ export async function getContactSubmissions(searchQuery?: string) {
   return { success: true, data };
 }
 
+export const getContactSubmissions = withRole(4, getContactSubmissionsInternal);
+
 /**
  * Delete a contact submission
  */
-export async function deleteContactSubmission(id: string) {
+async function deleteContactSubmissionInternal(id: string) {
   const supabase = await createClient();
-
-  // Verificar sesión
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { success: false, error: "No autorizado." };
-  }
 
   const { error } = await supabase
     .from("contact_submissions")
@@ -77,19 +61,13 @@ export async function deleteContactSubmission(id: string) {
   return { success: true };
 }
 
+export const deleteContactSubmission = withRole(8, deleteContactSubmissionInternal);
+
 /**
  * Resend a contact submission email
  */
-export async function resendContactEmail(id: string) {
+async function resendContactEmailInternal(id: string) {
   const supabase = await createClient();
-
-  // Verificar sesión
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return { success: false, error: "No autorizado." };
-  }
 
   const { data, error: fetchError } = await supabase
     .from("contact_submissions")
@@ -140,3 +118,5 @@ export async function resendContactEmail(id: string) {
     return { success: false, error: err.message };
   }
 }
+
+export const resendContactEmail = withRole(4, resendContactEmailInternal);

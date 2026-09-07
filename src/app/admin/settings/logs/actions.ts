@@ -1,11 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { withRole } from "@/lib/auth/guards";
 
 /**
  * Server action to fetch activity logs.
  */
-export async function getActivityLogs() {
+async function getActivityLogsInternal() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("user_activity_log")
@@ -24,3 +25,5 @@ export async function getActivityLogs() {
   }
   return data;
 }
+
+export const getActivityLogs = withRole(10, getActivityLogsInternal);

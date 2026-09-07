@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 /**
  * Server action to fetch all students with their event names.
  */
-export async function getStudents() {
+async function getStudentsInternal() {
   const supabase = await createClient();
 
   // Fetch students, their associated event names and cards count
@@ -50,10 +50,12 @@ export async function getStudents() {
   }));
 }
 
+export const getStudents = withRole(4, getStudentsInternal);
+
 /**
  * Server action to fetch events for dropdown.
  */
-export async function getEvents() {
+async function getEventsInternal() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("events")
@@ -67,14 +69,14 @@ export async function getEvents() {
   return data;
 }
 
+export const getEvents = withRole(4, getEventsInternal);
+
 /**
  * Server action to save a student (create or update).
  */
-export async function saveStudent(formData: FormData) {
+async function saveStudentInternal(formData: FormData, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const id = formData.get("id");
   const student_id = formData.get("student_id");
@@ -132,14 +134,14 @@ export async function saveStudent(formData: FormData) {
   return { success: true };
 }
 
+export const saveStudent = withRole(8, saveStudentInternal);
+
 /**
  * Server action to delete a student.
  */
-export async function deleteStudent(id: number) {
+async function deleteStudentInternal(id: number, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   // Get student details before deleting for the log
   const { data: student } = await supabase
@@ -173,14 +175,14 @@ export async function deleteStudent(id: number) {
   return { success: true };
 }
 
+export const deleteStudent = withRole(8, deleteStudentInternal);
+
 /**
  * Server action to import multiple students.
  */
-export async function importStudents(students: any[]) {
+async function importStudentsInternal(students: any[], context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   // Clean data for import (remove id to let db generate it)
   const cleanedStudents = students.map(({ id, event, ...rest }) => ({
@@ -210,14 +212,14 @@ export async function importStudents(students: any[]) {
   return { success: true };
 }
 
+export const importStudents = withRole(8, importStudentsInternal);
+
 /**
  * Server action to log export activity.
  */
-export async function logExportActivity(count: number) {
+async function logExportActivityInternal(count: number, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   if (user) {
     await supabase.from("user_activity_log").insert({
@@ -232,10 +234,12 @@ export async function logExportActivity(count: number) {
   }
 }
 
+export const logExportActivity = withRole(4, logExportActivityInternal);
+
 /**
  * Server action to fetch cards assigned to a specific student.
  */
-export async function getStudentCards(
+async function getStudentCardsInternal(
   studentId: number,
   companyId: number,
   eventId: string,
@@ -280,19 +284,20 @@ export async function getStudentCards(
   }));
 }
 
+export const getStudentCards = withRole(4, getStudentCardsInternal);
+
 /**
  * Server action to assign a single card to a student.
  */
-export async function assignCardToStudent(
+async function assignCardToStudentInternal(
   studentId: number,
   companyId: number,
   eventId: string,
   cardNumber: number,
+  context: { user: any }
 ) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   // 1. Check if the card exists and is available
   const { data: card, error: cardError } = await supabase
@@ -347,19 +352,20 @@ export async function assignCardToStudent(
   return { success: true };
 }
 
+export const assignCardToStudent = withRole(8, assignCardToStudentInternal);
+
 /**
  * Server action to unassign a card from a student.
  */
-export async function unassignCardFromStudent(
+async function unassignCardFromStudentInternal(
   studentId: number,
   companyId: number,
   eventId: string,
   cardNumber: number,
+  context: { user: any }
 ) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   // 1. Delete from students_cards
   const { error: deleteError } = await supabase
@@ -398,14 +404,14 @@ export async function unassignCardFromStudent(
   return { success: true };
 }
 
+export const unassignCardFromStudent = withRole(8, unassignCardFromStudentInternal);
+
 /**
  * Server action to bulk assign cards to students.
  */
-export async function bulkAssignCards(assignments: any[]) {
+async function bulkAssignCardsInternal(assignments: any[], context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   if (!assignments || assignments.length === 0) {
     return { error: "No se proporcionaron asignaciones." };
@@ -483,10 +489,12 @@ export async function bulkAssignCards(assignments: any[]) {
   return { success: true };
 }
 
+export const bulkAssignCards = withRole(8, bulkAssignCardsInternal);
+
 /**
  * Server action to fetch all assigned cards for download.
  */
-export async function getAllAssignedCards() {
+async function getAllAssignedCardsInternal() {
   const supabase = await createClient();
 
   const { data, error } = await supabase.from("students_cards").select(`
@@ -512,3 +520,5 @@ export async function getAllAssignedCards() {
     student_level: (item.student as any)?.student_level,
   }));
 }
+
+export const getAllAssignedCards = withRole(4, getAllAssignedCardsInternal);

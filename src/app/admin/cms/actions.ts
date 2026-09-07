@@ -154,7 +154,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
  * @param {FormData} formData - The updated FAQ data.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const updateCMSContent = withRole(80, updateCMSContentInternal);
+export const updateCMSContent = withRole(8, updateCMSContentInternal);
 
 async function updateFAQInternal(id: string, formData: FormData, context: { user: any }) {
   const { user } = context;
@@ -219,7 +219,7 @@ async function updateFAQInternal(id: string, formData: FormData, context: { user
  * @param {FormData} formData - The FAQ data.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const updateFAQ = withRole(80, updateFAQInternal);
+export const updateFAQ = withRole(8, updateFAQInternal);
 
 async function createFAQInternal(formData: FormData, context: { user: any }) {
   const { user } = context;
@@ -289,7 +289,7 @@ async function createFAQInternal(formData: FormData, context: { user: any }) {
  * @param {string} id - The ID of the FAQ to delete.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const createFAQ = withRole(80, createFAQInternal);
+export const createFAQ = withRole(8, createFAQInternal);
 
 async function deleteFAQInternal(id: string, context: { user: any }) {
   const { user } = context;
@@ -326,7 +326,7 @@ async function deleteFAQInternal(id: string, context: { user: any }) {
  * @param {FormData} formData - The updated section data.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const deleteFAQ = withRole(80, deleteFAQInternal);
+export const deleteFAQ = withRole(8, deleteFAQInternal);
 
 async function updateFAQSectionInternal(id: string, formData: FormData, context: { user: any }) {
   const { user } = context;
@@ -389,7 +389,7 @@ async function updateFAQSectionInternal(id: string, formData: FormData, context:
  * @param {FormData} formData - The section data.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const updateFAQSection = withRole(80, updateFAQSectionInternal);
+export const updateFAQSection = withRole(8, updateFAQSectionInternal);
 
 async function createFAQSectionInternal(formData: FormData, context: { user: any }) {
   const { user } = context;
@@ -456,7 +456,7 @@ async function createFAQSectionInternal(formData: FormData, context: { user: any
  * @param {string} id - The ID of the section to delete.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const createFAQSection = withRole(80, createFAQSectionInternal);
+export const createFAQSection = withRole(8, createFAQSectionInternal);
 
 async function deleteFAQSectionInternal(id: string, context: { user: any }) {
   const { user } = context;
@@ -492,7 +492,7 @@ async function deleteFAQSectionInternal(id: string, context: { user: any }) {
  * @param {FormData} formData - The new section data as FormData.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const deleteFAQSection = withRole(80, deleteFAQSectionInternal);
+export const deleteFAQSection = withRole(8, deleteFAQSectionInternal);
 
 async function createCMSContentInternal(formData: FormData, context: { user: any }) {
   const { user } = context;
@@ -624,7 +624,7 @@ async function createCMSContentInternal(formData: FormData, context: { user: any
  * @param {string} id - The ID of the content to delete.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export const createCMSContent = withRole(80, createCMSContentInternal);
+export const createCMSContent = withRole(8, createCMSContentInternal);
 
 async function deleteCMSContentInternal(id: string, context: { user: any }) {
   const { user } = context;
@@ -677,4 +677,4 @@ async function deleteCMSContentInternal(id: string, context: { user: any }) {
   return { success: true };
 }
 
-export const deleteCMSContent = withRole(100, deleteCMSContentInternal);
+export const deleteCMSContent = withRole(10, deleteCMSContentInternal);

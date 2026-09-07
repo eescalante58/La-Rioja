@@ -142,7 +142,7 @@ async function createNewUserInternal(rawInput: UserInput) {
   return { success: true };
 }
 
-export const createNewUser = withRole(80, createNewUserInternal);
+export const createNewUser = withRole(8, createNewUserInternal);
 
 /**
  * Server action to upload a user avatar.
@@ -189,7 +189,7 @@ export async function updateUser(userId: string, rawInput: any) {
 
   // RBAC: Admins (80+) can update anyone. Others can only update themselves.
   const isSelf = currentUser.id === userId;
-  const isAdmin = currentLevel >= 80;
+  const isAdmin = currentLevel >= 8;
   const isAuthorized = isSelf || isAdmin;
 
   if (!isAuthorized) {
@@ -243,7 +243,7 @@ async function deleteUserInternal(userId: string) {
   return { success: true };
 }
 
-export const deleteUser = withRole(100, deleteUserInternal);
+export const deleteUser = withRole(10, deleteUserInternal);
 
 async function createRoleInternal(rawInput: RoleInput) {
   // Validation with Zod
@@ -270,7 +270,7 @@ async function createRoleInternal(rawInput: RoleInput) {
   return { success: true };
 }
 
-export const createRole = withRole(100, createRoleInternal);
+export const createRole = withRole(10, createRoleInternal);
 
 async function updateRoleInternal(roleId: number, rawInput: any) {
   // Validation with Zod
@@ -299,7 +299,7 @@ async function updateRoleInternal(roleId: number, rawInput: any) {
   return { success: true };
 }
 
-export const updateRole = withRole(100, updateRoleInternal);
+export const updateRole = withRole(10, updateRoleInternal);
 
 async function deleteRoleInternal(roleId: number) {
   const supabase = await createClient();
@@ -315,7 +315,7 @@ async function deleteRoleInternal(roleId: number) {
   return { success: true };
 }
 
-export const deleteRole = withRole(100, deleteRoleInternal);
+export const deleteRole = withRole(10, deleteRoleInternal);
 
 async function assignUserToCompanyInternal(
   userId: string,
@@ -344,7 +344,7 @@ async function assignUserToCompanyInternal(
   return { success: true };
 }
 
-export const assignUserToCompany = withRole(80, assignUserToCompanyInternal);
+export const assignUserToCompany = withRole(8, assignUserToCompanyInternal);
 
 async function removeUserFromCompanyInternal(userId: string, companyId: number) {
   const supabase = await createClient();
@@ -365,7 +365,7 @@ async function removeUserFromCompanyInternal(userId: string, companyId: number) 
   return { success: true };
 }
 
-export const removeUserFromCompany = withRole(80, removeUserFromCompanyInternal);
+export const removeUserFromCompany = withRole(8, removeUserFromCompanyInternal);
 
 async function updateUserCompanyRoleInternal(
   userId: string,
@@ -389,7 +389,7 @@ async function updateUserCompanyRoleInternal(
   return { success: true };
 }
 
-export const updateUserCompanyRole = withRole(80, updateUserCompanyRoleInternal);
+export const updateUserCompanyRole = withRole(8, updateUserCompanyRoleInternal);
 
 /**
  * Server action to fetch user-company relationships.

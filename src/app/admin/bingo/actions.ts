@@ -280,7 +280,7 @@ async function uploadCardImagesInternal(
   return { success: results.error_count === 0, ...results };
 }
 
-export const uploadCardImages = withRole(40, withCompanyAccess(uploadCardImagesInternal, 0));
+export const uploadCardImages = withRole(4, withCompanyAccess(uploadCardImagesInternal, 0));
 
 async function getBingoDataInternal(context: { user: any, level: number }) {
   const { user, level } = context;
@@ -292,7 +292,7 @@ async function getBingoDataInternal(context: { user: any, level: number }) {
     .from("companies")
     .select("company_id, company_name");
 
-  if (level < 100) {
+  if (level < 10) {
     const { data: memberships } = await supabase
       .from("user_companies")
       .select("company_id")
@@ -325,7 +325,7 @@ async function getBingoDataInternal(context: { user: any, level: number }) {
   };
 }
 
-export const getBingoData = withRole(40, getBingoDataInternal);
+export const getBingoData = withRole(4, getBingoDataInternal);
 
 /**
  * Save or update a Bingo event.
@@ -396,7 +396,7 @@ async function saveEventInternal(formData: FormData, context: { user: any }) {
   return { success: true };
 }
 
-export const saveEvent = withRole(80, saveEventInternal);
+export const saveEvent = withRole(8, saveEventInternal);
 
 /**
  * Delete a Bingo event.
@@ -436,7 +436,7 @@ async function deleteEventInternal(id: number, context: { user: any }) {
   return { success: true };
 }
 
-export const deleteEvent = withRole(100, deleteEventInternal);
+export const deleteEvent = withRole(10, deleteEventInternal);
 
 async function getEventCardsInternal(companyId: number, eventId: string) {
   const supabase = await createClient();
@@ -451,7 +451,7 @@ async function getEventCardsInternal(companyId: number, eventId: string) {
   return { data };
 }
 
-export const getEventCards = withRole(40, withCompanyAccess(getEventCardsInternal, 0));
+export const getEventCards = withRole(4, withCompanyAccess(getEventCardsInternal, 0));
 
 async function generateCardsInternal(
   companyId: number,
@@ -618,7 +618,7 @@ async function generateCardsInternal(
   return { success: true };
 }
 
-export const generateCards = withRole(80, withCompanyAccess(generateCardsInternal, 0));
+export const generateCards = withRole(8, withCompanyAccess(generateCardsInternal, 0));
 
 /**
  * Reassign card type (Virtual/Fisico) and log activity.
@@ -696,7 +696,7 @@ async function updateCardTypeInternal(
   return { success: true };
 }
 
-export const updateCardType = withRole(40, withCompanyAccess(updateCardTypeInternal, 0));
+export const updateCardType = withRole(4, withCompanyAccess(updateCardTypeInternal, 0));
 
 /**
  * Reassign card type for a range of cards and log activity.
@@ -771,7 +771,7 @@ async function updateCardRangeTypeInternal(
   return { success: true, updated_count: updatedCards?.length || 0 };
 }
 
-export const updateCardRangeType = withRole(40, withCompanyAccess(updateCardRangeTypeInternal, 0));
+export const updateCardRangeType = withRole(4, withCompanyAccess(updateCardRangeTypeInternal, 0));
 
 /**
  * Update a single card's details and optionally its PDF image.
@@ -891,7 +891,7 @@ async function updateSingleCardInternal(
   return { success: true };
 }
 
-export const updateSingleCard = withRole(40, withCompanyAccess(updateSingleCardInternal, 0));
+export const updateSingleCard = withRole(4, withCompanyAccess(updateSingleCardInternal, 0));
 
 async function getInvoicesInternal(companyId: number, eventId: string) {
   const supabase = await createClient();
@@ -907,7 +907,7 @@ async function getInvoicesInternal(companyId: number, eventId: string) {
   return { success: true, data };
 }
 
-export const getInvoices = withRole(40, withCompanyAccess(getInvoicesInternal, 0));
+export const getInvoices = withRole(4, withCompanyAccess(getInvoicesInternal, 0));
 
 async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
   const { user } = context;
@@ -1036,7 +1036,7 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
   return { success: true };
 }
 
-export const saveInvoice = withRole(40, withCompanyAccess(saveInvoiceInternal, 0));
+export const saveInvoice = withRole(4, withCompanyAccess(saveInvoiceInternal, 0));
 
 /**
  * Update an existing invoice and associated cards.
@@ -1211,9 +1211,9 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
   return { success: true };
 }
 
-export const updateInvoice = withRole(40, withCompanyAccess(updateInvoiceInternal, 0));
+export const updateInvoice = withRole(4, withCompanyAccess(updateInvoiceInternal, 0));
 
-export const sendWhatsAppAutomation = withRole(40, sendWhatsAppAutomationInternal);
+export const sendWhatsAppAutomation = withRole(4, sendWhatsAppAutomationInternal);
 
 async function deleteInvoiceInternal(id: string, context: { user: any }) {
   const { user } = context;
@@ -1248,7 +1248,7 @@ async function deleteInvoiceInternal(id: string, context: { user: any }) {
   return { success: true };
 }
 
-export const deleteInvoice = withRole(40, deleteInvoiceInternal);
+export const deleteInvoice = withRole(4, deleteInvoiceInternal);
 
 async function updateInvoiceWhatsAppStatusInternal(id: string, status: string, context: { user: any }) {
   const { user } = context;
@@ -1294,7 +1294,7 @@ async function updateInvoiceWhatsAppStatusInternal(id: string, status: string, c
   return { success: true };
 }
 
-export const updateInvoiceWhatsAppStatus = withRole(40, updateInvoiceWhatsAppStatusInternal);
+export const updateInvoiceWhatsAppStatus = withRole(4, updateInvoiceWhatsAppStatusInternal);
 
 async function getWhatsAppMessageTemplateInternal() {
   const supabase = await createClient();
@@ -1310,7 +1310,7 @@ async function getWhatsAppMessageTemplateInternal() {
   return { success: true, data };
 }
 
-export const getWhatsAppMessageTemplate = withRole(40, getWhatsAppMessageTemplateInternal);
+export const getWhatsAppMessageTemplate = withRole(4, getWhatsAppMessageTemplateInternal);
 
 async function getCardsForInvoiceInternal(
   companyId: number,
@@ -1329,7 +1329,7 @@ async function getCardsForInvoiceInternal(
   return { success: true, data };
 }
 
-export const getCardsForInvoice = withRole(40, withCompanyAccess(getCardsForInvoiceInternal, 0));
+export const getCardsForInvoice = withRole(4, withCompanyAccess(getCardsForInvoiceInternal, 0));
 
 async function getSellersFromViewInternal(companyId: number, eventId: string) {
   const supabase = await createClient();
@@ -1366,7 +1366,7 @@ async function getSellersFromViewInternal(companyId: number, eventId: string) {
   };
 }
 
-export const getSellersFromView = withRole(40, withCompanyAccess(getSellersFromViewInternal, 0));
+export const getSellersFromView = withRole(4, withCompanyAccess(getSellersFromViewInternal, 0));
 
 /**
  * Customers and Promotional Messages actions
@@ -1384,7 +1384,7 @@ async function getCustomersInternal(companyId: number) {
   return { success: true, data };
 }
 
-export const getCustomers = withRole(40, withCompanyAccess(getCustomersInternal, 0));
+export const getCustomers = withRole(4, withCompanyAccess(getCustomersInternal, 0));
 
 async function saveCustomerInternal(payload: {
   id?: number;
@@ -1403,7 +1403,7 @@ async function saveCustomerInternal(payload: {
   return { success: true, data };
 }
 
-export const saveCustomer = withRole(40, withCompanyAccess(saveCustomerInternal, 0));
+export const saveCustomer = withRole(4, withCompanyAccess(saveCustomerInternal, 0));
 
 async function deleteCustomerInternal(id: number) {
   const supabase = await createClient();
@@ -1416,7 +1416,7 @@ async function deleteCustomerInternal(id: number) {
   return { success: true };
 }
 
-export const deleteCustomer = withRole(40, deleteCustomerInternal);
+export const deleteCustomer = withRole(4, deleteCustomerInternal);
 
 async function getPromoTemplatesInternal() {
   const supabase = await createClient();
@@ -1436,7 +1436,7 @@ async function getPromoTemplatesInternal() {
   return { success: true, data };
 }
 
-export const getPromoTemplates = withRole(40, getPromoTemplatesInternal);
+export const getPromoTemplates = withRole(4, getPromoTemplatesInternal);
 
 async function logPromoMessageInternal(payload: {
   batch_id: string;
@@ -1462,7 +1462,7 @@ async function logPromoMessageInternal(payload: {
   return { success: true };
 }
 
-export const logPromoMessage = withRole(40, logPromoMessageInternal);
+export const logPromoMessage = withRole(4, logPromoMessageInternal);
 
 async function getBatchLogsInternal(companyId: number) {
   const supabase = await createClient();
@@ -1476,7 +1476,7 @@ async function getBatchLogsInternal(companyId: number) {
   return { success: true, data };
 }
 
-export const getBatchLogs = withRole(40, withCompanyAccess(getBatchLogsInternal, 0));
+export const getBatchLogs = withRole(4, withCompanyAccess(getBatchLogsInternal, 0));
 
 async function getBatchDetailsInternal(batchId: string) {
   const supabase = await createClient();
@@ -1490,7 +1490,7 @@ async function getBatchDetailsInternal(batchId: string) {
   return { success: true, data };
 }
 
-export const getBatchDetails = withRole(40, getBatchDetailsInternal);
+export const getBatchDetails = withRole(4, getBatchDetailsInternal);
 
 async function syncCustomersInternal() {
   const supabase = await createClient();
@@ -1499,7 +1499,7 @@ async function syncCustomersInternal() {
   return { success: true };
 }
 
-export const syncCustomers = withRole(80, syncCustomersInternal);
+export const syncCustomers = withRole(8, syncCustomersInternal);
 
 async function uploadPromoImageInternal(formData: FormData) {
   const supabase = await createClient();
@@ -1533,7 +1533,7 @@ async function uploadPromoImageInternal(formData: FormData) {
   }
 }
 
-export const uploadPromoImage = withRole(40, uploadPromoImageInternal);
+export const uploadPromoImage = withRole(4, uploadPromoImageInternal);
 
 async function sendWhatsAppAutomationInternal(payload: {
   to: string;
