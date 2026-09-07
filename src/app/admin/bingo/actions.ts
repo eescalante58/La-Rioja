@@ -465,6 +465,7 @@ async function generateCardsInternal(
   start: number,
   end: number,
   price: number,
+  cardType: "Virtual" | "Fisico",
   deleteExisting: boolean = false,
   context: { user: any }
 ) {
@@ -476,6 +477,7 @@ async function generateCardsInternal(
     start,
     end,
     price,
+    card_type: cardType,
     deleteExisting,
   });
   if (!validation.success) {
@@ -570,7 +572,7 @@ async function generateCardsInternal(
       card_number: i,
       card_status: "Disponible",
       card_price: data.price,
-      card_type: "Virtual",
+      card_type: data.card_type,
       updated_at: new Date().toISOString(),
     });
   }

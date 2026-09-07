@@ -8,6 +8,8 @@ import {
   Text,
   TextInput,
   Button,
+  Select,
+  SelectItem,
 } from "@tremor/react";
 import { DollarSign, Upload } from "lucide-react";
 import { generateCards } from "@/app/admin/bingo/actions";
@@ -35,6 +37,7 @@ export default function GenerateCardsDialog({
   onOpenUpload,
 }: GenerateCardsDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [cardType, setCardType] = useState<string>("Virtual");
 
   const handleGenerateCards = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,6 +48,7 @@ export default function GenerateCardsDialog({
     const start = parseInt(formData.get("start") as string);
     const end = parseInt(formData.get("end") as string);
     const price = parseFloat(formData.get("price") as string);
+    const type = cardType as "Virtual" | "Fisico";
     const deleteExisting = formData.get("delete_existing") === "on";
 
     if (end - start + 1 > 5000) {
@@ -54,8 +58,8 @@ export default function GenerateCardsDialog({
     }
 
     const message = deleteExisting
-      ? `¿Estás seguro de ELIMINAR TODOS los cartones existentes de este evento y generar ${end - start + 1} cartones nuevos? Esta acción no se puede deshacer.`
-      : `¿Estás seguro de generar ${end - start + 1} cartones? Si ya existen en este rango, sus valores se actualizarán.`;
+      ? `¿Estás seguro de ELIMINAR TODOS los cartones existentes de este evento y generar ${end - start + 1} cartones nuevos de tipo ${type}? Esta acción no se puede deshacer.`
+      : `¿Estás seguro de generar ${end - start + 1} cartones de tipo ${type}? Si ya existen en este rango, sus valores se actualizarán.`;
 
     if (confirm(message)) {
       try {
@@ -65,6 +69,7 @@ export default function GenerateCardsDialog({
           start,
           end,
           price,
+          type,
           deleteExisting,
         );
 
@@ -118,16 +123,25 @@ export default function GenerateCardsDialog({
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase text-gray-500">Precio por Cartón</Text>
-              <TextInput
-                name="price"
-                type="number"
-                step="0.01"
-                icon={DollarSign}
-                defaultValue={event?.card_value?.toString()}
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Text className="text-xs font-bold uppercase text-gray-500">Precio por Cartón</Text>
+                <TextInput
+                  name="price"
+                  type="number"
+                  step="0.01"
+                  icon={DollarSign}
+                  defaultValue={event?.card_value?.toString()}
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <Text className="text-xs font-bold uppercase text-gray-500">Tipo de Cartón</Text>
+                <Select value={cardType} onValueChange={setCardType} enableClear={false}>
+                  <SelectItem value="Virtual">Virtual</SelectItem>
+                  <SelectItem value="Fisico">Físico</SelectItem>
+                </Select>
+              </div>
             </div>
 
             <div className="flex items-center gap-2 pt-2">
