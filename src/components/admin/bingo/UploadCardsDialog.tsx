@@ -36,6 +36,7 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
   const [loading, setLoading] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<FileList | null>(null);
   const [currentFileIndex, setCurrentFileIndex] = useState<number>(0);
+  const [isClearing, setIsClearing] = useState<boolean>(false);
   const [currentCardNumber, setCurrentCardNumber] = useState<number | null>(null);
   const [invalidFiles, setInvalidFiles] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
@@ -100,7 +101,9 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
     try {
       // 1. If requested, clear existing cards first
       if (deleteExisting) {
+        setIsClearing(true);
         const clearResult = await clearEventCards(event.company_id, event.event_id);
+        setIsClearing(false);
         if (clearResult.error) {
           alert("Error al limpiar cartones previos: " + clearResult.error);
           setLoading(false);
@@ -287,11 +290,13 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
                       <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
                         <div 
                           className="bg-larioja-azul h-1.5 rounded-full transition-all duration-300" 
-                          style={{ width: `${(currentFileIndex / (uploadingFiles?.length || 1)) * 100}%` }}
+                          style={{ width: isClearing ? '100%' : `${(currentFileIndex / (uploadingFiles?.length || 1)) * 100}%` }}
                         ></div>
                       </div>
-                      <Text className="text-[10px] mt-1 text-larioja-azul font-bold">
-                        Cargando cartón {currentCardNumber ? `#${currentCardNumber}` : ""} ({currentFileIndex}/{uploadingFiles?.length})
+                      <Text className={`text-[10px] mt-1 font-bold ${isClearing ? 'text-orange-500 animate-pulse' : 'text-larioja-azul'}`}>
+                        {isClearing 
+                          ? "Limpiando cartones anteriores (esto puede tardar unos segundos)..." 
+                          : `Cargando cartón ${currentCardNumber ? `#${currentCardNumber}` : ""} (${currentFileIndex}/${uploadingFiles?.length})`}
                       </Text>
                     </div>
                   )}
