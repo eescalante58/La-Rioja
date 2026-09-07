@@ -34,6 +34,7 @@ interface Company {
   phone_code_area: string | null;
   phone_number: string | null;
   session_timeout_minutes: number | null;
+  def_dash_event_id: string | null;
 }
 
 /**
@@ -251,6 +252,17 @@ export default function CompanyManagerClient({
                     editingCompany?.session_timeout_minutes?.toString() || "30"
                   }
                   required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Text className="text-xs font-bold uppercase">
+                  Id de Evento default
+                </Text>
+                <TextInput
+                  name="def_dash_event_id"
+                  placeholder="20240101_BINGO"
+                  defaultValue={editingCompany?.def_dash_event_id || ""}
                 />
               </div>
 
