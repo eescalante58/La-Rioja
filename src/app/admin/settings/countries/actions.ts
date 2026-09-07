@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { withRole } from "@/lib/auth/guards";
 
 /**
  * Server action to fetch all country codes.
