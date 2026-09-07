@@ -64,7 +64,12 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
       return;
     }
 
-    // 1. Pre-validation of all filenames
+    // 1. Extract values IMMEDIATELY before any async await
+    const form = e.currentTarget;
+    const price = parseFloat((form.elements.namedItem("card_price") as HTMLInputElement).value);
+    const deleteExisting = (form.elements.namedItem("delete_existing_upload") as HTMLInputElement).checked;
+
+    // 2. Pre-validation of all filenames
     const invalid: string[] = [];
     const expectedPattern = new RegExp(`^SERIAL_${event.event_id}_Carton_\\d+\\.pdf$`, "i");
 
@@ -84,22 +89,18 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
     setInvalidFiles([]);
     setStatusMessage({ type: 'success', text: "Validación exitosa. Iniciando proceso de carga..." });
     
-    // Set loading true BEFORE the wait so UI feedback is immediate
+    // 3. Set states for processing
     setLoading(true);
     setCurrentFileIndex(0);
     setUploadSummary(null);
+    setIsClearing(false);
 
     // Give user a moment to see the success message
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 800));
     setStatusMessage(null);
 
-    const price = parseFloat(
-      (e.currentTarget.elements.namedItem("card_price") as HTMLInputElement).value,
-    );
-    const deleteExisting = (e.currentTarget.elements.namedItem("delete_existing_upload") as HTMLInputElement).checked;
-
     try {
-      // 1. If requested, clear existing cards first
+      // 4. If requested, clear existing cards first
       if (deleteExisting) {
         setIsClearing(true);
         const clearResult = await clearEventCards(event.company_id, event.event_id);
@@ -115,7 +116,7 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
       let errorCount = 0;
       const errors: string[] = [];
 
-      // 2. Upload files one by one to track progress
+      // 5. Upload files one by one to track progress
       for (let i = 0; i < uploadingFiles.length; i++) {
         const file = uploadingFiles[i];
         setCurrentFileIndex(i + 1);
@@ -165,8 +166,9 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
         errorList: errors,
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading cards:", error);
+      alert("Se produjo un error inesperado durante la carga: " + (error.message || "Error desconocido"));
     } finally {
       setLoading(false);
       setCurrentCardNumber(null);

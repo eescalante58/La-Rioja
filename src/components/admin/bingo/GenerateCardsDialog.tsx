@@ -100,6 +100,8 @@ export default function GenerateCardsDialog({
           </Title>
           <Text className="mb-6 text-sm">
             Evento: <span className="font-bold">{event?.event_name}</span>
+            <br />
+            ID: <span className="font-mono text-xs text-gray-500">{event?.event_id}</span>
           </Text>
 
           <form onSubmit={handleGenerateCards} className="space-y-4">
