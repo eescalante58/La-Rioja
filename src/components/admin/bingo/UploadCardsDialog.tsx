@@ -38,6 +38,7 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
   const [currentFileIndex, setCurrentFileIndex] = useState<number>(0);
   const [currentCardNumber, setCurrentCardNumber] = useState<number | null>(null);
   const [invalidFiles, setInvalidFiles] = useState<string[]>([]);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
   const [uploadSummary, setUploadSummary] = useState<{
     success: number;
     errors: number;
@@ -75,10 +76,17 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
 
     if (invalid.length > 0) {
       setInvalidFiles(invalid);
+      setStatusMessage({ type: 'error', text: `Validación fallida: ${invalid.length} archivos no cumplen el formato.` });
       return;
     }
 
     setInvalidFiles([]);
+    setStatusMessage({ type: 'success', text: "Validación exitosa. Iniciando proceso de carga..." });
+    
+    // Give user time to see the success message before starting
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setStatusMessage(null);
+
     const price = parseFloat(
       (e.currentTarget.elements.namedItem("card_price") as HTMLInputElement).value,
     );
@@ -217,6 +225,7 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
                       onChange={(e) => {
                         setUploadingFiles(e.target.files);
                         setInvalidFiles([]);
+                        setStatusMessage(null);
                       }}
                       disabled={loading}
                     />
@@ -227,6 +236,18 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
                         : "Haz clic o arrastra los PDFs aquí"}
                     </Text>
                   </div>
+                  {statusMessage && (
+                    <div className={`mt-2 p-2 rounded-lg flex items-center gap-2 ${
+                      statusMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-100' : 
+                      statusMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 
+                      'bg-blue-50 text-blue-700 border border-blue-100'
+                    }`}>
+                      {statusMessage.type === 'error' ? <XCircle size={14} /> : 
+                       statusMessage.type === 'success' ? <CheckCircle2 size={14} /> : 
+                       <AlertCircle size={14} />}
+                      <Text className="text-[11px] font-bold">{statusMessage.text}</Text>
+                    </div>
+                  )}
                   {invalidFiles.length > 0 && (
                     <div className="mt-2 p-3 bg-red-100 border border-red-200 rounded-lg">
                       <div className="flex items-center gap-2 mb-2 text-red-700">
