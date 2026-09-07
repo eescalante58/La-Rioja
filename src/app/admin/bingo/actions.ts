@@ -199,6 +199,27 @@ async function logUploadActivityInternal(
 
 export const logUploadActivity = withRole(8, withCompanyAccess(logUploadActivityInternal, 0));
 
+/**
+ * Verifies the number of cards in the database for a given event.
+ */
+async function verifyUploadInternal(
+  companyId: number,
+  eventId: string,
+  context: { user: any }
+) {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("cards")
+    .select("*", { count: 'exact', head: true })
+    .eq("company_id", companyId)
+    .eq("event_id", eventId);
+
+  if (error) return { error: error.message };
+  return { success: true, count: count || 0 };
+}
+
+export const verifyUpload = withRole(4, withCompanyAccess(verifyUploadInternal, 0));
+
 async function getBingoDataInternal(context: { user: any, level: number }) {
   const { user, level } = context;
   const supabase = await createClient();
