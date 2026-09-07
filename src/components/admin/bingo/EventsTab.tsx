@@ -105,7 +105,7 @@ export default function EventsTab({
                     color={
                       event.status === "Activo"
                         ? "emerald"
-                        : event.status === "Realizado"
+                        : event.status === "Realizado" || event.status === "Cerrado"
                           ? "blue"
                           : event.status === "Cancelado"
                             ? "rose"
@@ -114,7 +114,7 @@ export default function EventsTab({
                     icon={
                       event.status === "Activo"
                         ? CheckCircle
-                        : event.status === "Realizado"
+                        : event.status === "Realizado" || event.status === "Cerrado"
                           ? CheckCircle
                           : AlertCircle
                     }

@@ -6,7 +6,7 @@ export const eventSchema = z.object({
   event_name: z.string().min(3, "El nombre del evento debe tener al menos 3 caracteres"),
   event_date: z.string().min(1, "Fecha de evento requerida"),
   card_value: z.number().min(0, "El valor del cartón no puede ser negativo"),
-  status: z.enum(["Activo", "Inactivo", "Finalizado"]).default("Inactivo"),
+  status: z.enum(["Activo", "Inactivo", "Realizado", "Cancelado", "Cerrado", "Finalizado"]).default("Inactivo"),
   event_manager: z.string().min(1, "Responsable del evento requerido"),
   event_goal: z.number().nullable().optional(),
   event_cartons_number: z.number().int().nullable().optional(),
