@@ -83,26 +83,19 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
     setInvalidFiles([]);
     setStatusMessage({ type: 'success', text: "Validación exitosa. Iniciando proceso de carga..." });
     
-    // Give user time to see the success message before starting
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Set loading true BEFORE the wait so UI feedback is immediate
+    setLoading(true);
+    setCurrentFileIndex(0);
+    setUploadSummary(null);
+
+    // Give user a moment to see the success message
+    await new Promise(resolve => setTimeout(resolve, 1000));
     setStatusMessage(null);
 
     const price = parseFloat(
       (e.currentTarget.elements.namedItem("card_price") as HTMLInputElement).value,
     );
     const deleteExisting = (e.currentTarget.elements.namedItem("delete_existing_upload") as HTMLInputElement).checked;
-
-    const confirmMessage = deleteExisting
-      ? `¿Estás seguro de ELIMINAR los cartones disponibles existentes y subir estos ${uploadingFiles.length} nuevos?`
-      : `¿Deseas subir estos ${uploadingFiles.length} cartones?`;
-
-    if (!confirm(confirmMessage)) {
-      return;
-    }
-
-    setLoading(true);
-    setCurrentFileIndex(0);
-    setUploadSummary(null);
 
     try {
       // 1. If requested, clear existing cards first
