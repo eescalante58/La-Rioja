@@ -37,6 +37,7 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
   const [uploadingFiles, setUploadingFiles] = useState<FileList | null>(null);
   const [currentFileIndex, setCurrentFileIndex] = useState<number>(0);
   const [currentCardNumber, setCurrentCardNumber] = useState<number | null>(null);
+  const [invalidFiles, setInvalidFiles] = useState<string[]>([]);
   const [uploadSummary, setUploadSummary] = useState<{
     success: number;
     errors: number;
@@ -61,6 +62,23 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
       return;
     }
 
+    // 1. Pre-validation of all filenames
+    const invalid: string[] = [];
+    const expectedPattern = new RegExp(`^SERIAL_${event.event_id}_Carton_\\d+\\.pdf$`, "i");
+
+    for (let i = 0; i < uploadingFiles.length; i++) {
+      const fileName = uploadingFiles[i].name;
+      if (!expectedPattern.test(fileName)) {
+        invalid.push(fileName);
+      }
+    }
+
+    if (invalid.length > 0) {
+      setInvalidFiles(invalid);
+      return;
+    }
+
+    setInvalidFiles([]);
     const price = parseFloat(
       (e.currentTarget.elements.namedItem("card_price") as HTMLInputElement).value,
     );
@@ -190,22 +208,47 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
                   <Text className="text-xs font-bold uppercase text-gray-500">
                     Seleccionar archivos PDF
                   </Text>
-                  <div className="border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-6 text-center hover:border-larioja-azul transition-colors cursor-pointer relative">
+                  <div className={`border-2 border-dashed ${invalidFiles.length > 0 ? 'border-red-300 bg-red-50' : 'border-gray-200 dark:border-gray-800'} rounded-xl p-6 text-center hover:border-larioja-azul transition-colors cursor-pointer relative`}>
                     <input
                       type="file"
                       multiple
                       accept=".pdf"
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      onChange={(e) => setUploadingFiles(e.target.files)}
+                      onChange={(e) => {
+                        setUploadingFiles(e.target.files);
+                        setInvalidFiles([]);
+                      }}
                       disabled={loading}
                     />
-                    <FileIcon className="mx-auto text-gray-400 mb-2" size={32} />
+                    <FileIcon className={`mx-auto ${invalidFiles.length > 0 ? 'text-red-400' : 'text-gray-400'} mb-2`} size={32} />
                     <Text className="text-sm">
                       {uploadingFiles
                         ? `${uploadingFiles.length} archivos seleccionados`
                         : "Haz clic o arrastra los PDFs aquí"}
                     </Text>
                   </div>
+                  {invalidFiles.length > 0 && (
+                    <div className="mt-2 p-3 bg-red-100 border border-red-200 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2 text-red-700">
+                        <XCircle size={16} />
+                        <Text className="text-xs font-bold text-red-700">FORMATO INVÁLIDO DETECTADO</Text>
+                      </div>
+                      <Text className="text-[10px] text-red-600 mb-2">
+                        Los siguientes {invalidFiles.length} archivos no cumplen con el patrón: <br/>
+                        <span className="font-mono bg-white/50 px-1 italic">SERIAL_{event?.event_id}_Carton_#.pdf</span>
+                      </Text>
+                      <ul className="max-h-24 overflow-y-auto space-y-1 pl-2 border-l-2 border-red-200">
+                        {invalidFiles.map((name, idx) => (
+                          <li key={idx} className="text-[9px] text-red-500 font-mono truncate">
+                            • {name}
+                          </li>
+                        ))}
+                      </ul>
+                      <Text className="text-[9px] text-red-700 mt-2 font-medium italic">
+                        Por favor, renombra los archivos y vuelve a seleccionarlos.
+                      </Text>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 pt-2">
