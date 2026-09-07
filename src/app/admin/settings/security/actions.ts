@@ -1,12 +1,13 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { withRole } from "@/lib/auth/guards";
 
 /**
  * Server action to fetch security advisors from the database.
  * This now queries the database directly to get real-time info.
  */
-export async function getSecurityAdvisors() {
+async function getSecurityAdvisorsInternal() {
   const supabase = await createClient();
 
   // Query to find views with SECURITY DEFINER
@@ -46,10 +47,12 @@ export async function getSecurityAdvisors() {
   return advisors;
 }
 
+export const getSecurityAdvisors = withRole(10, getSecurityAdvisorsInternal);
+
 /**
  * Server action to fetch security policies for a specific table.
  */
-export async function getTablePolicies(tableName: string) {
+async function getTablePoliciesInternal(tableName: string) {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_table_policies", {
     t_name: tableName,
@@ -61,10 +64,12 @@ export async function getTablePolicies(tableName: string) {
   return data;
 }
 
+export const getTablePolicies = withRole(10, getTablePoliciesInternal);
+
 /**
  * Server action to fetch RLS status for all tables.
  */
-export async function getRLSStatus() {
+async function getRLSStatusInternal() {
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("get_tables_rls_status");
@@ -77,10 +82,12 @@ export async function getRLSStatus() {
   return data;
 }
 
+export const getRLSStatus = withRole(10, getRLSStatusInternal);
+
 /**
  * Server action to fetch all views in the public schema.
  */
-export async function getViewsStatus() {
+async function getViewsStatusInternal() {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_views_status");
 
@@ -90,3 +97,5 @@ export async function getViewsStatus() {
   }
   return data;
 }
+
+export const getViewsStatus = withRole(10, getViewsStatusInternal);

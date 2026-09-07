@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { withRole } from "@/lib/auth/guards";
 
 /**
  * Helper to log user activity.
@@ -71,11 +72,8 @@ export async function getCompanies() {
 /**
  * Server action to save a company (create or update).
  */
-export async function saveCompany(formData: FormData) {
-  if (!(await checkMinLevel(9))) {
-    return { error: "No tienes permisos para gestionar empresas." };
-  }
-
+async function saveCompanyInternal(formData: FormData, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
   const id = formData.get("id");
   const name = formData.get("company_name") as string;
@@ -134,16 +132,13 @@ export async function saveCompany(formData: FormData) {
   return { success: true };
 }
 
+export const saveCompany = withRole(8, saveCompanyInternal);
+
 /**
  * Server action to delete a company.
  */
-export async function deleteCompany(id: number) {
-  if (!(await checkMinLevel(10))) {
-    return {
-      error: "Solo los Super Administradores pueden eliminar empresas.",
-    };
-  }
-
+async function deleteCompanyInternal(id: number, context: { user: any }) {
+  const { user } = context;
   const supabase = await createClient();
   const { error } = await supabase
     .from("companies")
@@ -159,3 +154,5 @@ export async function deleteCompany(id: number) {
   revalidatePath("/admin/settings/companies");
   return { success: true };
 }
+
+export const deleteCompany = withRole(10, deleteCompanyInternal);
