@@ -39,6 +39,7 @@ export const generateCardsSchema = z.object({
   start: z.number().int().min(1),
   end: z.number().int().min(1),
   price: z.number().min(0),
+  card_type: z.enum(["Virtual", "Fisico"]),
   deleteExisting: z.boolean().default(false),
 });
 
