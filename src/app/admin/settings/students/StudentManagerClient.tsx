@@ -313,7 +313,15 @@ export default function StudentManagerClient({
 
   const handleDownloadAssignments = async () => {
     try {
-      const data = await getAllAssignedCards();
+      const res = await getAllAssignedCards();
+      
+      if ("error" in res) {
+        alert(`Error al obtener asignaciones: ${res.error}`);
+        return;
+      }
+
+      const data = res as any[];
+
       if (data.length === 0) {
         alert("No hay cartones asignados para descargar.");
         return;
@@ -326,7 +334,7 @@ export default function StudentManagerClient({
         "company_id",
         "event_id",
       ];
-      const rows = data.map((d) => [
+      const rows = data.map((d: any) => [
         d.card_number,
         d.student_name,
         d.student_level,
