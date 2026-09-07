@@ -346,8 +346,14 @@ async function saveEventInternal(formData: FormData, context: { user: any }) {
     event_start_promotion_date: formData.get("event_start_promotion_date") || null,
   };
 
+  // Add is_active logic based on status
+  const finalRawData = {
+    ...rawData,
+    is_active: rawData.status === "Activo",
+  };
+
   // Validation with Zod
-  const validation = eventSchema.safeParse(rawData);
+  const validation = eventSchema.safeParse(finalRawData);
   if (!validation.success) {
     return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
   }
