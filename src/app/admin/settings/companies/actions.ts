@@ -81,12 +81,33 @@ async function saveCompanyInternal(formData: FormData, context: { user: any }) {
   const phone_number = formData.get("phone_number") as string;
   const timeoutStr = formData.get("session_timeout_minutes") as string;
   const session_timeout = timeoutStr ? parseInt(timeoutStr) : 30;
+  const def_dash_event_id = formData.get("def_dash_event_id") as string;
+
+  // Validation: if def_dash_event_id is provided, check if it exists in events table
+  if (def_dash_event_id) {
+    const { data: eventExists, error: eventError } = await supabase
+      .from("events")
+      .select("event_id")
+      .eq("event_id", def_dash_event_id)
+      .maybeSingle();
+
+    if (eventError) {
+      return { error: `Error al validar el evento: ${eventError.message}` };
+    }
+
+    if (!eventExists) {
+      return {
+        error: `El ID de evento "${def_dash_event_id}" no existe en la tabla de eventos.`,
+      };
+    }
+  }
 
   const companyData = {
     company_name: name,
     phone_code_area: phone_code,
     phone_number: phone_number,
     session_timeout_minutes: session_timeout,
+    def_dash_event_id: def_dash_event_id || null,
     updated_at: new Date().toISOString(),
   };
 
