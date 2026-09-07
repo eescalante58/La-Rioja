@@ -95,22 +95,6 @@ async function uploadSingleCardImageInternal(
       return { error: `Archivo ${fileName}: Error al crear registro en BD (${insertError.message}).` };
     }
 
-    // Update event cartons count if this is a new maximum
-    const { data: eventData } = await supabase
-      .from("events")
-      .select("event_cartons_number")
-      .eq("company_id", companyId)
-      .eq("event_id", eventId)
-      .single();
-
-    if (eventData && (eventData.event_cartons_number || 0) < cardNumber) {
-      await supabase
-        .from("events")
-        .update({ event_cartons_number: cardNumber })
-        .eq("company_id", companyId)
-        .eq("event_id", eventId);
-    }
-
     return { success: true, cardNumber };
   } catch (err: any) {
     return { error: `Archivo ${fileName}: Error inesperado (${err.message}).` };
@@ -149,7 +133,12 @@ async function clearEventCardsInternal(
       .filter((path): path is string => path !== null);
 
     if (filesToDelete.length > 0) {
-      await supabase.storage.from("cards_images").remove(filesToDelete);
+      // Delete in chunks of 100 to avoid timeouts
+      const chunkSize = 100;
+      for (let i = 0; i < filesToDelete.length; i += chunkSize) {
+        const chunk = filesToDelete.slice(i, i + chunkSize);
+        await supabase.storage.from("cards_images").remove(chunk);
+      }
     }
 
     const { error: dbError } = await supabase
@@ -180,6 +169,22 @@ async function logUploadActivityInternal(
   const supabase = await createClient();
 
   if (user) {
+    // Update event cartons count based on actual cards in DB
+    const { data: cards } = await supabase
+      .from("cards")
+      .select("card_number")
+      .eq("company_id", companyId)
+      .eq("event_id", eventId);
+
+    if (cards && cards.length > 0) {
+      const maxCardNumber = Math.max(...cards.map((c) => Number(c.card_number)));
+      await supabase
+        .from("events")
+        .update({ event_cartons_number: maxCardNumber })
+        .eq("company_id", companyId)
+        .eq("event_id", eventId);
+    }
+
     await supabase.from("user_activity_log").insert({
       user_id: user.id,
       action: "UPLOAD_CARDS_IMAGES",
@@ -471,14 +476,11 @@ async function generateCardsInternal(
 
       // 3. Delete from Storage
       if (filesToDelete.length > 0) {
-        const { data: removedFiles, error: storageError } =
-          await supabase.storage.from("cards_images").remove(filesToDelete);
-
-        if (storageError) {
-          console.warn(
-            "Some storage files could not be deleted:",
-            storageError,
-          );
+        // Delete in chunks of 100 to avoid timeouts
+        const chunkSize = 100;
+        for (let i = 0; i < filesToDelete.length; i += chunkSize) {
+          const chunk = filesToDelete.slice(i, i + chunkSize);
+          await supabase.storage.from("cards_images").remove(chunk);
         }
       }
 
@@ -525,24 +527,24 @@ async function generateCardsInternal(
     return { error: error.message };
   }
 
-  // Update the event's total cartons number if it has increased
-  const { data: event } = await supabase
-    .from("events")
-    .select("event_cartons_number")
-    .eq("company_id", data.company_id)
-    .eq("event_id", data.event_id)
-    .single();
-
-  if (event && (event.event_cartons_number || 0) < data.end) {
-    await supabase
-      .from("events")
-      .update({ event_cartons_number: data.end })
-      .eq("company_id", data.company_id)
-      .eq("event_id", data.event_id);
-  }
-
   // Log activity
   if (user) {
+    // Update event cartons count based on actual cards in DB
+    const { data: cardsRes } = await supabase
+      .from("cards")
+      .select("card_number")
+      .eq("company_id", data.company_id)
+      .eq("event_id", data.event_id);
+
+    if (cardsRes && cardsRes.length > 0) {
+      const maxCardNumber = Math.max(...cardsRes.map((c) => Number(c.card_number)));
+      await supabase
+        .from("events")
+        .update({ event_cartons_number: maxCardNumber })
+        .eq("company_id", data.company_id)
+        .eq("event_id", data.event_id);
+    }
+
     await supabase.from("user_activity_log").insert({
       user_id: user.id,
       action: "GENERATE_CARDS",
