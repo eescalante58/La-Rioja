@@ -20,7 +20,7 @@ export const invoiceSchema = z.object({
   invoice_number: z.string().min(1, "Número de factura requerido"),
   invoice_date: z.string().min(1, "Fecha de factura requerida"),
   customer_name: z.string().min(3, "Nombre del cliente requerido"),
-  customer_email: z.string().email("Email de cliente inválido"),
+  customer_email: z.string().email("Email de cliente inválido").or(z.literal("")).optional(),
   phone_area: z.string().optional(),
   phone_number: z.string().optional(),
   whatsapp_number: z.string().optional(),
@@ -28,8 +28,8 @@ export const invoiceSchema = z.object({
   cards_number: z.number().int().positive("Debe seleccionar al menos 1 cartón"),
   card_price: z.number().positive(),
   total_amount: z.number().positive(),
-  payment_method: z.string().min(1, "Método de pago requerido"),
-  status: z.string().default("Pagado"),
+  payment_method: z.string().default("efectivo"),
+  status: z.string().default("pagada"),
   associated_cards: z.array(z.number().int()).min(1, "Debe asociar al menos un cartón"),
 });
 
