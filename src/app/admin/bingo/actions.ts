@@ -1096,15 +1096,24 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
     url_invoice = publicUrl;
   }
 
+  const { associated_cards, ...invoiceFields } = data;
+
   const invoiceData = {
-    ...data,
-    invoice_number: sanitizeInput(data.invoice_number),
-    customer_name: sanitizeInput(data.customer_name),
-    customer_email: sanitizeInput(data.customer_email || ""),
-    phone_area: sanitizeInput(data.phone_area || ""),
-    phone_number: sanitizeInput(data.phone_number || ""),
-    whatsapp_number: sanitizeInput(data.whatsapp_number || ""),
-    manager_name: sanitizeInput(data.manager_name),
+    company_id: invoiceFields.company_id,
+    event_id: invoiceFields.event_id,
+    invoice_number: sanitizeInput(invoiceFields.invoice_number),
+    invoice_date: invoiceFields.invoice_date,
+    customer_name: sanitizeInput(invoiceFields.customer_name),
+    customer_email: sanitizeInput(invoiceFields.customer_email || ""),
+    phone_area: sanitizeInput(invoiceFields.phone_area || ""),
+    phone_number: sanitizeInput(invoiceFields.phone_number || ""),
+    whatsapp_number: sanitizeInput(invoiceFields.whatsapp_number || ""),
+    manager_name: sanitizeInput(invoiceFields.manager_name),
+    cards_number: invoiceFields.cards_number,
+    card_price: invoiceFields.card_price,
+    total_amount: invoiceFields.total_amount,
+    payment_method: invoiceFields.payment_method,
+    status: invoiceFields.status,
     url_invoice,
     updated_at: new Date().toISOString(),
   };
@@ -1262,18 +1271,27 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
     url_invoice = publicUrl;
   }
 
-  const invoiceData = {
-    ...data,
-    invoice_number: sanitizeInput(data.invoice_number || ""),
-    customer_name: sanitizeInput(data.customer_name || ""),
-    customer_email: sanitizeInput(data.customer_email || ""),
-    phone_area: sanitizeInput(data.phone_area || ""),
-    phone_number: sanitizeInput(data.phone_number || ""),
-    whatsapp_number: sanitizeInput(data.whatsapp_number || ""),
-    manager_name: sanitizeInput(data.manager_name || ""),
-    url_invoice,
+  const { associated_cards, ...invoiceFields } = data;
+
+  const invoiceData: Record<string, any> = {
     updated_at: new Date().toISOString(),
   };
+  if (invoiceFields.company_id !== undefined) invoiceData.company_id = invoiceFields.company_id;
+  if (invoiceFields.event_id !== undefined) invoiceData.event_id = invoiceFields.event_id;
+  if (invoiceFields.invoice_number !== undefined) invoiceData.invoice_number = sanitizeInput(invoiceFields.invoice_number || "");
+  if (invoiceFields.invoice_date !== undefined) invoiceData.invoice_date = invoiceFields.invoice_date;
+  if (invoiceFields.customer_name !== undefined) invoiceData.customer_name = sanitizeInput(invoiceFields.customer_name || "");
+  if (invoiceFields.customer_email !== undefined) invoiceData.customer_email = sanitizeInput(invoiceFields.customer_email || "");
+  if (invoiceFields.phone_area !== undefined) invoiceData.phone_area = sanitizeInput(invoiceFields.phone_area || "");
+  if (invoiceFields.phone_number !== undefined) invoiceData.phone_number = sanitizeInput(invoiceFields.phone_number || "");
+  if (invoiceFields.whatsapp_number !== undefined) invoiceData.whatsapp_number = sanitizeInput(invoiceFields.whatsapp_number || "");
+  if (invoiceFields.manager_name !== undefined) invoiceData.manager_name = sanitizeInput(invoiceFields.manager_name || "");
+  if (invoiceFields.cards_number !== undefined) invoiceData.cards_number = invoiceFields.cards_number;
+  if (invoiceFields.card_price !== undefined) invoiceData.card_price = invoiceFields.card_price;
+  if (invoiceFields.total_amount !== undefined) invoiceData.total_amount = invoiceFields.total_amount;
+  if (invoiceFields.payment_method !== undefined) invoiceData.payment_method = invoiceFields.payment_method;
+  if (invoiceFields.status !== undefined) invoiceData.status = invoiceFields.status;
+  if (url_invoice) invoiceData.url_invoice = url_invoice;
 
   // 3. Update Invoice
   const { error: invoiceError } = await supabase
