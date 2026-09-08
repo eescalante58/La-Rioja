@@ -99,7 +99,7 @@ export default function GenerateCardsDialog({
     }
 
     const message = deleteExisting
-      ? `¿Estás seguro de ELIMINAR TODOS los cartones existentes de este evento y generar ${end - start + 1} cartones nuevos de tipo ${type}? Esta acción no se puede deshacer.`
+      ? `¿Estás seguro de ELIMINAR los cartones disponibles existentes en el rango (#${start} al #${end}) y generar ${end - start + 1} cartones nuevos de tipo ${type}? Esta acción no se puede deshacer.`
       : `¿Estás seguro de generar ${end - start + 1} cartones de tipo ${type}? Si ya existen en este rango, sus valores se actualizarán.`;
 
     if (confirm(message)) {
@@ -252,7 +252,7 @@ export default function GenerateCardsDialog({
                 htmlFor="delete_existing"
                 className="text-sm text-gray-600 font-medium cursor-pointer"
               >
-                Limpiar cartones existentes antes de generar
+                Limpiar cartones existentes en el rango antes de generar
               </label>
             </div>
 

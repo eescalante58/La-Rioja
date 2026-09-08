@@ -247,7 +247,12 @@ export default function UploadCardsDialog({
       if (deletePrevious) {
         setIsClearing(true);
         setProcessSteps(prev => ({ ...prev, clearing: 'running' }));
-        const clearResult = await clearEventCards(currentEvent.company_id, currentEvent.event_id);
+        const clearResult = await clearEventCards(
+          currentEvent.company_id,
+          currentEvent.event_id,
+          start,
+          end
+        );
         setIsClearing(false);
         if (clearResult.error) {
           alert("Error al limpiar cartones previos: " + clearResult.error);
@@ -502,7 +507,9 @@ export default function UploadCardsDialog({
                         2. Eliminación de registros previos
                       </h4>
                       <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug mt-0.5">
-                        Se eliminan los registros existentes en el sistema para evitar duplicados.
+                        {deleteExisting
+                          ? `Se eliminan únicamente los registros e imágenes de cartones disponibles en el rango (#${startNumber} al #${endNumber}).`
+                          : "Omitido según la configuración seleccionada."}
                       </p>
                     </div>
                   </div>
@@ -763,7 +770,7 @@ export default function UploadCardsDialog({
                       if (e.target.checked) {
                         setStatusMessage({ 
                           type: 'info', 
-                          text: "¡ATENCIÓN! Se eliminarán permanentemente los registros e imágenes de los cartones actuales antes de subir los nuevos." 
+                          text: `¡ATENCIÓN! Se eliminarán permanentemente los registros e imágenes de los cartones disponibles en el rango (#${startNumber} al #${endNumber}) antes de subir.` 
                         });
                       } else {
                         setStatusMessage(null);
@@ -776,7 +783,7 @@ export default function UploadCardsDialog({
                     htmlFor="delete_existing_upload"
                     className="text-sm text-gray-600 font-medium cursor-pointer"
                   >
-                    Limpiar cartones existentes antes de subir
+                    Limpiar cartones existentes en el rango antes de subir
                   </label>
                 </div>
 
