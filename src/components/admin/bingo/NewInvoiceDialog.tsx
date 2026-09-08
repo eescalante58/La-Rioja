@@ -48,6 +48,8 @@ export default function NewInvoiceDialog({
   const [sellers, setSellers] = useState<string[]>([]);
   const [selectedCards, setSelectedInvoiceCards] = useState<number[]>([]);
   const [availableCards, setAvailableCardsForInvoice] = useState<any[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<string>("efectivo");
+  const [status, setStatus] = useState<string>("pagada");
 
   useEffect(() => {
     if (invoice) {
@@ -57,6 +59,8 @@ export default function NewInvoiceDialog({
       setPhoneNumber(invoice.phone_number || "");
       setWhatsappNumber(invoice.whatsapp_number || "");
       setInvoiceManagerName(invoice.manager_name || "");
+      setPaymentMethod(invoice.payment_method || "efectivo");
+      setStatus(invoice.status || "pagada");
     } else if (currentEvent) {
       setCardPrice(currentEvent.cardValue);
       setCardsNumber(1);
@@ -64,6 +68,8 @@ export default function NewInvoiceDialog({
       setPhoneNumber("");
       setWhatsappNumber("");
       setInvoiceManagerName("");
+      setPaymentMethod("efectivo");
+      setStatus("pagada");
     }
   }, [invoice, currentEvent]);
 
@@ -115,6 +121,15 @@ export default function NewInvoiceDialog({
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (selectedCards.length === 0) {
+      alert("Debe asociar al menos un cartón a la factura.");
+      return;
+    }
+    if (selectedCards.length !== cardsNumber) {
+      alert(`Debe asociar exactamente ${cardsNumber} cartones (actualmente hay ${selectedCards.length} seleccionados).`);
+      return;
+    }
+
     setLoading(true);
     const formData = new FormData(e.currentTarget);
 
@@ -277,7 +292,7 @@ export default function NewInvoiceDialog({
                 </datalist>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Imagen de Factura</Text>
                   <input
@@ -288,11 +303,22 @@ export default function NewInvoiceDialog({
                   />
                 </div>
                 <div className="space-y-1">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Método de Pago</Text>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod} enableClear={false}>
+                    <SelectItem value="efectivo">Efectivo</SelectItem>
+                    <SelectItem value="transferencia">Transferencia</SelectItem>
+                    <SelectItem value="tarjeta debito">Tarjeta Débito</SelectItem>
+                    <SelectItem value="tarjeta credito">Tarjeta Crédito</SelectItem>
+                  </Select>
+                  <input type="hidden" name="payment_method" value={paymentMethod} />
+                </div>
+                <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Estado</Text>
-                  <Select name="status" defaultValue={invoice?.status || "pagada"} enableClear={false}>
+                  <Select value={status} onValueChange={setStatus} enableClear={false}>
                     <SelectItem value="pagada">Pagada</SelectItem>
                     <SelectItem value="pendiente">Pendiente</SelectItem>
                   </Select>
+                  <input type="hidden" name="status" value={status} />
                 </div>
               </div>
 
@@ -357,6 +383,7 @@ export default function NewInvoiceDialog({
                     ))}
                   </div>
                 </div>
+                <input type="hidden" name="associated_cards" value={JSON.stringify(selectedCards)} />
                 <input type="hidden" name="selected_cards" value={JSON.stringify(selectedCards)} />
               </div>
             </div>

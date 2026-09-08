@@ -272,16 +272,16 @@ export default function UploadCardsDialog({
       let errorCount = 0;
       const errors: string[] = [];
 
-      // 5. Sort files in DESCENDING order by card number (e.g. 600, 599, ..., 1)
+      // 5. Sort files in ASCENDING order by card number (e.g. 1, 2, ..., 600)
       const sortedFiles: File[] = Array.from(filesList).sort((a, b) => {
         const matchA = a.name.match(/_Carton_(\d+)\.pdf$/i);
         const matchB = b.name.match(/_Carton_(\d+)\.pdf$/i);
         const numA = matchA ? parseInt(matchA[1], 10) : 0;
         const numB = matchB ? parseInt(matchB[1], 10) : 0;
         if (numA !== numB) {
-          return numB - numA; // Mayor a menor (descendente)
+          return numA - numB; // Menor a mayor (ascendente)
         }
-        return b.name.localeCompare(a.name);
+        return a.name.localeCompare(b.name);
       });
 
       // Upload files in parallel batches using a worker pool for maximum throughput
@@ -306,9 +306,10 @@ export default function UploadCardsDialog({
           const batch = batches[currentBatchIdx];
 
           // Set current card number being processed from the batch for real-time feedback
-          const firstMatch = batch[0].name.match(/_Carton_(\d+)\.pdf$/i);
-          if (firstMatch) {
-            setCurrentCardNumber(parseInt(firstMatch[1], 10));
+          const lastMatch = batch[batch.length - 1].name.match(/_Carton_(\d+)\.pdf$/i);
+          if (lastMatch) {
+            const cardNum = parseInt(lastMatch[1], 10);
+            setCurrentCardNumber((prev) => Math.max(prev || 0, cardNum));
           }
 
           const formData = new FormData();
@@ -329,10 +330,10 @@ export default function UploadCardsDialog({
             successCount += result.successCount || 0;
             errorCount += result.errorCount || 0;
             if (result.errors) errors.push(...result.errors);
-            if (result.minCardNumber !== undefined && result.minCardNumber !== null) {
-              setCurrentCardNumber(result.minCardNumber);
-            } else if (result.maxCardNumber) {
-              setCurrentCardNumber(result.maxCardNumber);
+            if (result.maxCardNumber !== undefined && result.maxCardNumber !== null) {
+              setCurrentCardNumber((prev) => Math.max(prev || 0, result.maxCardNumber!));
+            } else if (result.minCardNumber) {
+              setCurrentCardNumber((prev) => Math.max(prev || 0, result.minCardNumber!));
             }
           } else {
             errorCount += batch.length;
@@ -561,7 +562,7 @@ export default function UploadCardsDialog({
                       </p>
                       {processSteps.uploading === 'running' && (
                         <p className="text-[11px] font-semibold text-blue-600 mt-1">
-                          Cargando cartón {currentCardNumber ? `#${currentCardNumber}` : ''} ({currentFileIndex}/{uploadingFiles?.length})
+                          Cargando cartón {currentCardNumber ? `#${currentCardNumber}` : ''} ({currentFileIndex} de {uploadingFiles?.length} archivos • {Math.round((currentFileIndex / (uploadingFiles?.length || 1)) * 100)}%)
                         </p>
                       )}
                     </div>

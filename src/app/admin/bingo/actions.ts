@@ -50,7 +50,7 @@ async function uploadCardsBatchInternal(
     const matchB = b.name.match(/_Carton_(\d+)\.pdf$/i);
     const numA = matchA ? parseInt(matchA[1], 10) : 0;
     const numB = matchB ? parseInt(matchB[1], 10) : 0;
-    return numB - numA;
+    return numA - numB;
   });
 
   if (!files || files.length === 0) {
@@ -1024,23 +1024,35 @@ export const getInvoices = withRole(4, withCompanyAccess(getInvoicesInternal, 0)
 
 async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
   const { user } = context;
+
+  const associatedCardsRaw =
+    (formData.get("associated_cards") as string) ||
+    (formData.get("selected_cards") as string) ||
+    "[]";
+  let associatedCards: number[] = [];
+  try {
+    associatedCards = JSON.parse(associatedCardsRaw);
+  } catch (e) {
+    associatedCards = [];
+  }
+
   const rawData = {
     company_id: parseInt(formData.get("company_id") as string),
     event_id: formData.get("event_id") as string,
     invoice_number: formData.get("invoice_number") as string,
     invoice_date: formData.get("invoice_date") as string,
     customer_name: formData.get("customer_name") as string,
-    customer_email: formData.get("customer_email") as string,
-    phone_area: formData.get("phone_area") as string,
-    phone_number: formData.get("phone_number") as string,
-    whatsapp_number: formData.get("whatsapp_number") as string,
+    customer_email: (formData.get("customer_email") as string) || "",
+    phone_area: (formData.get("phone_area") as string) || "",
+    phone_number: (formData.get("phone_number") as string) || "",
+    whatsapp_number: (formData.get("whatsapp_number") as string) || "",
     manager_name: formData.get("manager_name") as string,
     cards_number: parseInt(formData.get("cards_number") as string),
     card_price: parseFloat(formData.get("card_price") as string),
     total_amount: parseFloat(formData.get("total_amount") as string),
-    payment_method: formData.get("payment_method") as string,
-    status: (formData.get("status") as string) || "Pagado",
-    associated_cards: JSON.parse((formData.get("associated_cards") as string) || "[]"),
+    payment_method: (formData.get("payment_method") as string) || "efectivo",
+    status: (formData.get("status") as string) || "pagada",
+    associated_cards: associatedCards,
   };
 
   // Validation with Zod
@@ -1088,7 +1100,7 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
     ...data,
     invoice_number: sanitizeInput(data.invoice_number),
     customer_name: sanitizeInput(data.customer_name),
-    customer_email: sanitizeInput(data.customer_email),
+    customer_email: sanitizeInput(data.customer_email || ""),
     phone_area: sanitizeInput(data.phone_area || ""),
     phone_number: sanitizeInput(data.phone_number || ""),
     whatsapp_number: sanitizeInput(data.whatsapp_number || ""),
@@ -1157,23 +1169,35 @@ export const saveInvoice = withRole(4, withCompanyAccess(saveInvoiceInternal, 0)
 async function updateInvoiceInternal(formData: FormData, context: { user: any }) {
   const { user } = context;
   const id = formData.get("id") as string;
+
+  const associatedCardsRaw =
+    (formData.get("associated_cards") as string) ||
+    (formData.get("selected_cards") as string) ||
+    "[]";
+  let associatedCards: number[] = [];
+  try {
+    associatedCards = JSON.parse(associatedCardsRaw);
+  } catch (e) {
+    associatedCards = [];
+  }
+
   const rawData = {
     company_id: parseInt(formData.get("company_id") as string),
     event_id: formData.get("event_id") as string,
     invoice_number: formData.get("invoice_number") as string,
     invoice_date: formData.get("invoice_date") as string,
     customer_name: formData.get("customer_name") as string,
-    customer_email: formData.get("customer_email") as string,
-    phone_area: formData.get("phone_area") as string,
-    phone_number: formData.get("phone_number") as string,
-    whatsapp_number: formData.get("whatsapp_number") as string,
+    customer_email: (formData.get("customer_email") as string) || "",
+    phone_area: (formData.get("phone_area") as string) || "",
+    phone_number: (formData.get("phone_number") as string) || "",
+    whatsapp_number: (formData.get("whatsapp_number") as string) || "",
     manager_name: formData.get("manager_name") as string,
     cards_number: parseInt(formData.get("cards_number") as string),
     card_price: parseFloat(formData.get("card_price") as string),
     total_amount: parseFloat(formData.get("total_amount") as string),
-    payment_method: formData.get("payment_method") as string,
-    status: (formData.get("status") as string) || "Pagado",
-    associated_cards: JSON.parse((formData.get("associated_cards") as string) || "[]"),
+    payment_method: (formData.get("payment_method") as string) || "efectivo",
+    status: (formData.get("status") as string) || "pagada",
+    associated_cards: associatedCards,
   };
 
   // Validation with Zod
