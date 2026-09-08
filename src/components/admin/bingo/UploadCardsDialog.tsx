@@ -71,24 +71,28 @@ export default function UploadCardsDialog({
   const [currentCardNumber, setCurrentCardNumber] = useState<number | null>(null);
   const [invalidFiles, setInvalidFiles] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
-  const [startNumber, setStartNumber] = useState<number>(initialConfig?.start ?? 1);
-  const [endNumber, setEndNumber] = useState<number>(initialConfig?.end ?? event?.event_cartons_number ?? 1000);
-  const [cardPrice, setCardPrice] = useState<number>(initialConfig?.price ?? event?.card_value ?? 10);
+  const [startNumber, setStartNumber] = useState<string>(initialConfig?.start?.toString() ?? "1");
+  const [endNumber, setEndNumber] = useState<string>(
+    initialConfig?.end?.toString() ?? (event?.event_cartons_number?.toString() ?? "1000")
+  );
+  const [cardPrice, setCardPrice] = useState<string>(
+    initialConfig?.price?.toString() ?? (event?.card_value?.toString() ?? "10")
+  );
   const [cardType, setCardType] = useState<"Virtual" | "Fisico">(initialConfig?.cardType ?? "Virtual");
   const [deleteExisting, setDeleteExisting] = useState<boolean>(initialConfig?.deleteExisting ?? false);
 
   useEffect(() => {
     if (isOpen) {
       if (initialConfig) {
-        setStartNumber(initialConfig.start ?? 1);
-        setEndNumber(initialConfig.end ?? event?.event_cartons_number ?? 1000);
-        setCardPrice(initialConfig.price ?? event?.card_value ?? 10);
+        setStartNumber(initialConfig.start?.toString() ?? "1");
+        setEndNumber(initialConfig.end?.toString() ?? (event?.event_cartons_number?.toString() ?? "1000"));
+        setCardPrice(initialConfig.price?.toString() ?? (event?.card_value?.toString() ?? "10"));
         setCardType(initialConfig.cardType ?? "Virtual");
         setDeleteExisting(initialConfig.deleteExisting ?? false);
       } else if (event) {
-        setStartNumber(1);
-        setEndNumber(event.event_cartons_number || 1000);
-        setCardPrice(event.card_value || 10);
+        setStartNumber("1");
+        setEndNumber(event.event_cartons_number ? event.event_cartons_number.toString() : "1000");
+        setCardPrice(event.card_value ? event.card_value.toString() : "10");
         setCardType("Virtual");
         setDeleteExisting(false);
       }
@@ -98,6 +102,13 @@ export default function UploadCardsDialog({
       setUploadSummary(null);
     }
   }, [isOpen, initialConfig, event]);
+
+  const parsedStart = parseInt(startNumber, 10);
+  const parsedEnd = parseInt(endNumber, 10);
+  const isStartValid = !isNaN(parsedStart) && parsedStart > 0;
+  const isEndValid = !isNaN(parsedEnd) && parsedEnd > 0;
+  const isRangeValid = isStartValid && isEndValid && parsedEnd >= parsedStart;
+  const expectedTotal = isRangeValid ? (parsedEnd - parsedStart + 1) : 0;
 
   const [processSteps, setProcessSteps] = useState<{
     validation: 'pending' | 'running' | 'completed' | 'error';
@@ -132,20 +143,28 @@ export default function UploadCardsDialog({
       return;
     }
 
+    // 0. Range validation
+    if (!isStartValid) {
+      alert("El Número Inicial debe ser un número entero mayor a 0.");
+      return;
+    }
+    if (!isEndValid) {
+      alert("El Número Final debe ser un número entero mayor a 0.");
+      return;
+    }
+    if (parsedEnd < parsedStart) {
+      alert(`El rango de cartones no es válido: El Número Final (${parsedEnd}) debe ser mayor o igual al Número Inicial (${parsedStart}).`);
+      return;
+    }
+
     // 1. Extract values
     const currentEvent = event;
     const filesList = uploadingFiles;
-    const start = startNumber;
-    const end = endNumber;
-    const price = cardPrice;
+    const start = parsedStart;
+    const end = parsedEnd;
+    const price = parseFloat(cardPrice) || 0;
     const type = cardType;
     const deletePrevious = deleteExisting;
-
-    // 0. Range validation
-    if (start <= 0 || end < start) {
-      alert("El rango de cartones no es válido. El número final debe ser mayor o igual al inicial.");
-      return;
-    }
 
     const expectedTotal = end - start + 1;
     if (filesList.length !== expectedTotal) {
@@ -595,8 +614,9 @@ export default function UploadCardsDialog({
                     <TextInput
                       name="start_number"
                       type="number"
-                      value={startNumber.toString()}
-                      onChange={(e) => setStartNumber(parseInt(e.target.value, 10) || 1)}
+                      value={startNumber}
+                      onChange={(e) => setStartNumber(e.target.value)}
+                      min={1}
                       required
                     />
                   </div>
@@ -605,12 +625,22 @@ export default function UploadCardsDialog({
                     <TextInput
                       name="end_number"
                       type="number"
-                      value={endNumber.toString()}
-                      onChange={(e) => setEndNumber(parseInt(e.target.value, 10) || 1)}
+                      value={endNumber}
+                      onChange={(e) => setEndNumber(e.target.value)}
+                      min={1}
                       required
                     />
                   </div>
                 </div>
+
+                {isStartValid && isEndValid && parsedEnd < parsedStart && (
+                  <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 p-2.5 rounded-lg flex items-center gap-2 text-xs text-red-700 dark:text-red-400">
+                    <AlertCircle size={15} className="shrink-0" />
+                    <span>
+                      El <strong>Número Final ({parsedEnd})</strong> debe ser mayor o igual que el <strong>Número Inicial ({parsedStart})</strong>.
+                    </span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -620,8 +650,8 @@ export default function UploadCardsDialog({
                       type="number"
                       step="0.01"
                       icon={DollarSign}
-                      value={cardPrice.toString()}
-                      onChange={(e) => setCardPrice(parseFloat(e.target.value) || 0)}
+                      value={cardPrice}
+                      onChange={(e) => setCardPrice(e.target.value)}
                       required
                     />
                   </div>
@@ -641,7 +671,7 @@ export default function UploadCardsDialog({
                 <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/30 p-2.5 rounded-lg flex items-center justify-between text-xs text-blue-800 dark:text-blue-300">
                   <span className="font-medium">Total de cartones a subir:</span>
                   <span className="font-bold bg-blue-200/60 dark:bg-blue-800/60 px-2 py-0.5 rounded">
-                    {Math.max(0, endNumber - startNumber + 1)} cartones (#{startNumber} al #{endNumber})
+                    {isRangeValid ? `${expectedTotal} cartones (#${parsedStart} al #${parsedEnd})` : "Rango inválido"}
                   </span>
                 </div>
 
@@ -665,18 +695,22 @@ export default function UploadCardsDialog({
                     <FileIcon className={`mx-auto ${invalidFiles.length > 0 ? 'text-red-400' : 'text-gray-400'} mb-2`} size={32} />
                     <Text className="text-sm">
                       {uploadingFiles
-                        ? `${uploadingFiles.length} de ${Math.max(0, endNumber - startNumber + 1)} archivos seleccionados`
+                        ? `${uploadingFiles.length} de ${isRangeValid ? expectedTotal : '?'} archivos seleccionados`
                         : "Haz clic o arrastra los PDFs aquí"}
                     </Text>
                     {uploadingFiles && (
                       <div className="mt-1.5 flex justify-center">
-                        {uploadingFiles.length === (endNumber - startNumber + 1) ? (
+                        {!isRangeValid ? (
+                          <span className="text-[11px] font-bold text-red-700 bg-red-100/80 border border-red-300 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                            <AlertCircle size={12} /> Configura un rango válido para validar archivos
+                          </span>
+                        ) : uploadingFiles.length === expectedTotal ? (
                           <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-300 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
                             <CheckCircle2 size={12} /> Coincide exactamente con el rango ({uploadingFiles.length} cartones)
                           </span>
                         ) : (
                           <span className="text-[11px] font-bold text-amber-800 bg-amber-100/80 border border-amber-300 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                            <AlertCircle size={12} /> No coincide: {uploadingFiles.length} seleccionados vs {Math.max(0, endNumber - startNumber + 1)} esperados
+                            <AlertCircle size={12} /> No coincide: {uploadingFiles.length} seleccionados vs {expectedTotal} esperados
                           </span>
                         )}
                       </div>
@@ -753,8 +787,8 @@ export default function UploadCardsDialog({
                   <Button
                     type="submit"
                     loading={loading}
-                    className="bg-larioja-azul"
-                    disabled={!uploadingFiles || uploadingFiles.length === 0}
+                    className="bg-larioja-azul disabled:opacity-50"
+                    disabled={!uploadingFiles || uploadingFiles.length === 0 || !isRangeValid}
                   >
                     Subir Cartones
                   </Button>
