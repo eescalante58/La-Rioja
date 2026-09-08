@@ -75,7 +75,7 @@ export default function RoleDialog({
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="secondary" onClick={onClose} disabled={loading}>Cancelar</Button>
-              <Button icon={Save} color="blue" loading={loading} type="submit">{role ? "Actualizar" : "Crear"} Rol</Button>
+              <Button icon={Save} className="bg-larioja-azul text-white hover:bg-larioja-azul/90" loading={loading} type="submit">{role ? "Actualizar" : "Crear"} Rol</Button>
             </div>
           </form>
         </DialogPanel>
