@@ -136,7 +136,7 @@ export default function FAQSectionModal({
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="secondary" onClick={onClose} disabled={isSaving}>Cancelar</Button>
-              <Button icon={Save} color="blue" loading={isSaving} type="submit">
+              <Button icon={Save} className="bg-larioja-azul text-white hover:bg-larioja-azul/90" loading={isSaving} type="submit">
                 {section ? "Actualizar" : "Crear"} Sección
               </Button>
             </div>

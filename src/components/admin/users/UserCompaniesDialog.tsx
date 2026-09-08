@@ -145,7 +145,7 @@ export default function UserCompaniesDialog({
                 </SelectItem>
               ))}
             </Select>
-            <Button color="blue" loading={loading} type="submit">
+            <Button className="bg-larioja-azul text-white hover:bg-larioja-azul/90" loading={loading} type="submit">
               Asignar
             </Button>
           </form>
