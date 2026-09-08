@@ -18,7 +18,7 @@ export async function getDashboardData() {
 
   try {
     // 1. Fetch company info and general stats in parallel
-    const [companyRes, cmsRes, customersRes, contactsRes, allEventsRes] =
+    const [companyRes, cmsRes, customersRes, contactsRes, allEventsRes, recentInvoicesRes] =
       await Promise.all([
         supabase
           .from("companies")
@@ -43,6 +43,12 @@ export async function getDashboardData() {
             "event_date, total_amount_solded, event_id, is_active, status",
           )
           .eq("company_id", companyId),
+        supabase
+          .from("invoices")
+          .select("id, invoice_number, customer_name, cards_number, total_amount, created_at, status, invoice_date")
+          .eq("company_id", companyId)
+          .order("created_at", { ascending: false, nullsFirst: false })
+          .limit(10),
       ]);
 
     const { data: company, error: companyError } = companyRes;
@@ -50,6 +56,7 @@ export async function getDashboardData() {
     const { count: customersCount } = customersRes;
     const { data: recentContacts, error: contactError } = contactsRes;
     const { data: allEvents, error: allEventsError } = allEventsRes;
+    const { data: recentInvoices, error: recentInvoicesError } = recentInvoicesRes;
 
     if (companyError || !company) {
       console.error("Error fetching company dash settings:", companyError);
@@ -62,6 +69,10 @@ export async function getDashboardData() {
 
     if (allEventsError) {
       console.error("Error fetching events for yearly sales:", allEventsError);
+    }
+
+    if (recentInvoicesError) {
+      console.error("Error fetching recent invoices:", recentInvoicesError);
     }
 
     const eventId = company.def_dash_event_id;
@@ -77,6 +88,7 @@ export async function getDashboardData() {
           customersCount: customersCount || 0,
         },
         recentContacts: recentContacts || [],
+        recentInvoices: recentInvoices || [],
       };
     }
 
@@ -184,6 +196,7 @@ export async function getDashboardData() {
         customersCount: customersCount || 0,
       },
       recentContacts: recentContacts || [],
+      recentInvoices: recentInvoices || [],
     };
   } catch (error: any) {
     console.error("Unexpected error in getDashboardData:", error);
