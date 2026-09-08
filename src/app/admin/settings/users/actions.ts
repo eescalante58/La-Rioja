@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
 import { withRole } from "@/lib/auth/guards";
@@ -99,9 +99,16 @@ async function createNewUserInternal(rawInput: UserInput) {
   const data = validation.data;
 
   // Need a special client with Service Role Key for admin operations
-  const supabaseAdmin = await createClient(
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-  );
+  let supabaseAdmin;
+  try {
+    supabaseAdmin = createAdminClient();
+  } catch (clientErr: any) {
+    console.error("Error creating supabase admin client:", clientErr);
+    return {
+      error:
+        "Error de configuración: Clave de servicio de Supabase no disponible en el servidor.",
+    };
+  }
 
   // 1. Create user in Supabase Auth
   const { data: authUser, error: authError } =
@@ -119,17 +126,21 @@ async function createNewUserInternal(rawInput: UserInput) {
   // 2. Profile update (public.users)
   const { error: profileError } = await supabaseAdmin
     .from("users")
-    .update({
+    .upsert({
+      id: authUser.user.id,
+      email: data.email,
       full_name: data.full_name,
       secondary_email: data.secondary_email,
       phone: data.phone,
       role_id: data.role_id,
       avatar_url: data.avatar_url,
       status: "active",
-    })
-    .eq("id", authUser.user.id);
+      updated_at: new Date().toISOString(),
+    });
 
   if (profileError) {
+    // Rollback auth user creation if profile fails
+    await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
     return { error: profileError.message };
   }
 

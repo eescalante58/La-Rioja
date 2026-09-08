@@ -1,5 +1,34 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+
+/**
+ * Creates an administrative Supabase client using the Service Role Key.
+ * This client bypasses RLS and can call admin auth functions (e.g. auth.admin.createUser).
+ * MUST ONLY BE USED IN SERVER-SIDE CODE.
+ */
+export function createAdminClient() {
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    throw new Error(
+      "No se encontró la clave de servicio (SUPABASE_SERVICE_ROLE_KEY o NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY) en las variables de entorno.",
+    );
+  }
+
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    serviceRoleKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
+}
 
 /**
  * Creates a static Supabase client that doesn't use cookies.
