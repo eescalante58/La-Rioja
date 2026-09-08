@@ -35,10 +35,16 @@ async function uploadCardsBatchInternal(
   companyId: number,
   eventId: string,
   cardPrice: number,
+  cardType: string,
   formData: FormData,
   context: { user: any }
 ) {
   const supabase = await createClient();
+  const normalizedCardType =
+    cardType === "Fisico" || cardType === "Físico" || formData.get("card_type") === "Fisico" || formData.get("card_type") === "Físico"
+      ? "Fisico"
+      : "Virtual";
+
   const files = (formData.getAll("files") as File[]).sort((a, b) => {
     const matchA = a.name.match(/_Carton_(\d+)\.pdf$/i);
     const matchB = b.name.match(/_Carton_(\d+)\.pdf$/i);
@@ -96,7 +102,7 @@ async function uploadCardsBatchInternal(
         event_id: eventId,
         card_number: cardNumber,
         card_price: cardPrice,
-        card_type: "Virtual",
+        card_type: normalizedCardType,
         card_status: "Disponible",
         image_url: publicUrl,
         updated_at: new Date().toISOString(),
@@ -161,12 +167,15 @@ async function uploadSingleCardImageInternal(
   companyId: number,
   eventId: string,
   cardPrice: number,
+  cardType: string,
   fileName: string,
   file: File,
   context: { user: any }
 ) {
   const { user } = context;
   const supabase = await createClient();
+  const normalizedCardType =
+    cardType === "Fisico" || cardType === "Físico" ? "Fisico" : "Virtual";
 
   try {
     // 1. Extract info from filename
@@ -207,7 +216,7 @@ async function uploadSingleCardImageInternal(
       event_id: eventId,
       card_number: cardNumber,
       card_price: cardPrice,
-      card_type: "Virtual",
+      card_type: normalizedCardType,
       card_status: "Disponible",
       image_url: publicUrl,
       updated_at: new Date().toISOString(),
