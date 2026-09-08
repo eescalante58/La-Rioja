@@ -239,20 +239,34 @@ async function uploadSingleCardImageInternal(
 export const uploadSingleCardImage = withRole(8, withCompanyAccess(uploadSingleCardImageInternal, 0));
 
 /**
- * Delete all 'Disponible' cards for an event before a new upload batch.
+ * Delete 'Disponible' cards for an event within a specified range before a new upload batch.
  */
 async function clearEventCardsInternal(
   companyId: number,
   eventId: string,
-  context: { user: any }
+  start?: number | any,
+  end?: number | any,
+  ...rest: any[]
 ) {
+  const parsedStart = typeof start === "number" && !isNaN(start) ? start : undefined;
+  const parsedEnd = typeof end === "number" && !isNaN(end) ? end : undefined;
+
   const supabase = await createClient();
-  const { data: cardsToDelete, error: fetchError } = await supabase
+  let query = supabase
     .from("cards")
     .select("card_number, image_url")
     .eq("company_id", companyId)
     .eq("event_id", eventId)
     .eq("card_status", "Disponible");
+
+  if (parsedStart !== undefined) {
+    query = query.gte("card_number", parsedStart);
+  }
+  if (parsedEnd !== undefined) {
+    query = query.lte("card_number", parsedEnd);
+  }
+
+  const { data: cardsToDelete, error: fetchError } = await query;
 
   if (fetchError) return { error: fetchError.message };
 
@@ -279,12 +293,21 @@ async function clearEventCardsInternal(
       );
     }
 
-    const { error: dbError } = await supabase
+    let deleteQuery = supabase
       .from("cards")
       .delete()
       .eq("company_id", companyId)
       .eq("event_id", eventId)
       .eq("card_status", "Disponible");
+
+    if (parsedStart !== undefined) {
+      deleteQuery = deleteQuery.gte("card_number", parsedStart);
+    }
+    if (parsedEnd !== undefined) {
+      deleteQuery = deleteQuery.lte("card_number", parsedEnd);
+    }
+
+    const { error: dbError } = await deleteQuery;
 
     if (dbError) return { error: dbError.message };
   }
@@ -577,15 +600,17 @@ async function generateCardsInternal(
     return { error: "No se pueden generar más de 5,000 cartones a la vez." };
   }
 
-  // If requested, delete existing cards for this event first
+  // If requested, delete existing cards for this event within the specified range first
   if (data.deleteExisting) {
-    // 1. Get cards that can be deleted (status = 'Disponible')
+    // 1. Get cards that can be deleted (status = 'Disponible') within range
     const { data: cardsToDelete, error: fetchError } = await supabase
       .from("cards")
       .select("card_number, image_url")
       .eq("company_id", data.company_id)
       .eq("event_id", data.event_id)
-      .eq("card_status", "Disponible");
+      .eq("card_status", "Disponible")
+      .gte("card_number", data.start)
+      .lte("card_number", data.end);
 
     if (fetchError) {
       console.error("Error fetching cards for deletion:", fetchError);
@@ -593,7 +618,7 @@ async function generateCardsInternal(
     }
 
     if (cardsToDelete && cardsToDelete.length > 0) {
-      console.log(`Eliminando ${cardsToDelete.length} cartones previos...`);
+      console.log(`Eliminando ${cardsToDelete.length} cartones previos en rango ${data.start}-${data.end}...`);
       // 2. Identify files to delete in Storage
       const filesToDelete = cardsToDelete
         .map((c) => {
@@ -622,13 +647,15 @@ async function generateCardsInternal(
         }
       }
 
-      // 4. Delete from Database (only those that are 'Disponible')
+      // 4. Delete from Database (only those that are 'Disponible' in the range)
       const { data: deletedRows, error: deleteError } = await supabase
         .from("cards")
         .delete()
         .eq("company_id", data.company_id)
         .eq("event_id", data.event_id)
         .eq("card_status", "Disponible")
+        .gte("card_number", data.start)
+        .lte("card_number", data.end)
         .select();
 
       if (deleteError) {
