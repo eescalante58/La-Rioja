@@ -39,7 +39,13 @@ async function uploadCardsBatchInternal(
   context: { user: any }
 ) {
   const supabase = await createClient();
-  const files = formData.getAll("files") as File[];
+  const files = (formData.getAll("files") as File[]).sort((a, b) => {
+    const matchA = a.name.match(/_Carton_(\d+)\.pdf$/i);
+    const matchB = b.name.match(/_Carton_(\d+)\.pdf$/i);
+    const numA = matchA ? parseInt(matchA[1], 10) : 0;
+    const numB = matchB ? parseInt(matchB[1], 10) : 0;
+    return numB - numA;
+  });
 
   if (!files || files.length === 0) {
     return { success: true, successCount: 0, errorCount: 0, errors: [] };
@@ -49,6 +55,7 @@ async function uploadCardsBatchInternal(
   const errors: string[] = [];
   const cardsToUpsert: any[] = [];
   let maxCardNumber: number | null = null;
+  let minCardNumber: number | null = null;
 
   // 1. Upload files concurrently to Storage
   const uploadPromises = files.map(async (file) => {
@@ -108,6 +115,9 @@ async function uploadCardsBatchInternal(
       if (maxCardNumber === null || res.cardNumber > maxCardNumber) {
         maxCardNumber = res.cardNumber;
       }
+      if (minCardNumber === null || res.cardNumber < minCardNumber) {
+        minCardNumber = res.cardNumber;
+      }
     }
   }
 
@@ -137,6 +147,7 @@ async function uploadCardsBatchInternal(
     errorCount: errors.length,
     errors,
     maxCardNumber,
+    minCardNumber,
   };
 }
 
