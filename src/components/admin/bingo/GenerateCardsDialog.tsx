@@ -11,7 +11,7 @@ import {
   Select,
   SelectItem,
 } from "@tremor/react";
-import { DollarSign, Upload } from "lucide-react";
+import { DollarSign, Upload, AlertCircle } from "lucide-react";
 import { generateCards } from "@/app/admin/bingo/actions";
 
 interface Event {
@@ -45,30 +45,51 @@ export default function GenerateCardsDialog({
   onOpenUpload,
 }: GenerateCardsDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [startNumber, setStartNumber] = useState<number>(1);
-  const [endNumber, setEndNumber] = useState<number>(event?.event_cartons_number || 1000);
-  const [cardPrice, setCardPrice] = useState<number>(event?.card_value || 10);
+  const [startNumber, setStartNumber] = useState<string>("1");
+  const [endNumber, setEndNumber] = useState<string>(event?.event_cartons_number?.toString() || "1000");
+  const [cardPrice, setCardPrice] = useState<string>(event?.card_value?.toString() || "10");
   const [cardType, setCardType] = useState<string>("Virtual");
   const [deleteExisting, setDeleteExisting] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen && event) {
-      setStartNumber(1);
-      setEndNumber(event.event_cartons_number || 1000);
-      setCardPrice(event.card_value || 10);
+      setStartNumber("1");
+      setEndNumber(event.event_cartons_number ? event.event_cartons_number.toString() : "1000");
+      setCardPrice(event.card_value ? event.card_value.toString() : "10");
       setCardType("Virtual");
       setDeleteExisting(false);
     }
   }, [isOpen, event]);
 
+  const parsedStart = parseInt(startNumber, 10);
+  const parsedEnd = parseInt(endNumber, 10);
+  const isStartValid = !isNaN(parsedStart) && parsedStart > 0;
+  const isEndValid = !isNaN(parsedEnd) && parsedEnd > 0;
+  const isRangeValid = isStartValid && isEndValid && parsedEnd >= parsedStart;
+
   const handleGenerateCards = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!event) return;
 
+    if (!isStartValid) {
+      alert("El Número Inicial debe ser un número entero mayor a 0.");
+      return;
+    }
+
+    if (!isEndValid) {
+      alert("El Número Final debe ser un número entero mayor a 0.");
+      return;
+    }
+
+    if (parsedEnd < parsedStart) {
+      alert(`El Número Final (${parsedEnd}) debe ser mayor o igual que el Número Inicial (${parsedStart}).`);
+      return;
+    }
+
     setLoading(true);
-    const start = startNumber;
-    const end = endNumber;
-    const price = cardPrice;
+    const start = parsedStart;
+    const end = parsedEnd;
+    const price = parseFloat(cardPrice) || 0;
     const type = cardType as "Virtual" | "Fisico";
 
     if (end - start + 1 > 5000) {
@@ -111,10 +132,25 @@ export default function GenerateCardsDialog({
   };
 
   const handleOpenUpload = () => {
+    if (!isStartValid) {
+      alert("El Número Inicial debe ser un número entero mayor a 0.");
+      return;
+    }
+
+    if (!isEndValid) {
+      alert("El Número Final debe ser un número entero mayor a 0.");
+      return;
+    }
+
+    if (parsedEnd < parsedStart) {
+      alert(`El Número Final (${parsedEnd}) debe ser mayor o igual que el Número Inicial (${parsedStart}).`);
+      return;
+    }
+
     onOpenUpload({
-      start: startNumber,
-      end: endNumber,
-      price: cardPrice,
+      start: parsedStart,
+      end: parsedEnd,
+      price: parseFloat(cardPrice) || 0,
       cardType: (cardType === "Fisico" || cardType === "Físico") ? "Fisico" : "Virtual",
       deleteExisting,
     });
@@ -144,8 +180,9 @@ export default function GenerateCardsDialog({
                 <TextInput
                   name="start"
                   type="number"
-                  value={startNumber.toString()}
-                  onChange={(e) => setStartNumber(parseInt(e.target.value, 10) || 1)}
+                  value={startNumber}
+                  onChange={(e) => setStartNumber(e.target.value)}
+                  min={1}
                   required
                 />
               </div>
@@ -154,12 +191,31 @@ export default function GenerateCardsDialog({
                 <TextInput
                   name="end"
                   type="number"
-                  value={endNumber.toString()}
-                  onChange={(e) => setEndNumber(parseInt(e.target.value, 10) || 1)}
+                  value={endNumber}
+                  onChange={(e) => setEndNumber(e.target.value)}
+                  min={1}
                   required
                 />
               </div>
             </div>
+
+            {isStartValid && isEndValid && parsedEnd < parsedStart && (
+              <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 p-2.5 rounded-lg flex items-center gap-2 text-xs text-red-700 dark:text-red-400">
+                <AlertCircle size={15} className="shrink-0" />
+                <span>
+                  El <strong>Número Final ({parsedEnd})</strong> debe ser mayor o igual que el <strong>Número Inicial ({parsedStart})</strong>.
+                </span>
+              </div>
+            )}
+
+            {isRangeValid && (
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/30 p-2.5 rounded-lg flex items-center justify-between text-xs text-blue-800 dark:text-blue-300">
+                <span className="font-medium">Total de cartones a generar:</span>
+                <span className="font-bold bg-blue-200/60 dark:bg-blue-800/60 px-2 py-0.5 rounded">
+                  {parsedEnd - parsedStart + 1} cartones (#{parsedStart} al #{parsedEnd})
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -169,8 +225,8 @@ export default function GenerateCardsDialog({
                   type="number"
                   step="0.01"
                   icon={DollarSign}
-                  value={cardPrice.toString()}
-                  onChange={(e) => setCardPrice(parseFloat(e.target.value) || 0)}
+                  value={cardPrice}
+                  onChange={(e) => setCardPrice(e.target.value)}
                   required
                 />
               </div>
@@ -208,7 +264,8 @@ export default function GenerateCardsDialog({
                   icon={Upload}
                   onClick={handleOpenUpload}
                   type="button"
-                  className="bg-larioja-azul text-white hover:bg-blue-800"
+                  disabled={!isRangeValid}
+                  className="bg-larioja-azul text-white hover:bg-blue-800 disabled:opacity-50"
                 >
                   Subir PDFs
                 </Button>
@@ -218,7 +275,12 @@ export default function GenerateCardsDialog({
                 <Button variant="secondary" onClick={onClose} disabled={loading} type="button">
                   Cancelar
                 </Button>
-                <Button type="submit" loading={loading} className="bg-larioja-verde">
+                <Button 
+                  type="submit" 
+                  loading={loading} 
+                  disabled={!isRangeValid}
+                  className="bg-larioja-verde"
+                >
                   Generar
                 </Button>
               </div>
