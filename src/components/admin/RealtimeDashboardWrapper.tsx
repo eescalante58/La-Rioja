@@ -474,42 +474,114 @@ export default function RealtimeDashboardWrapper({
             <Text className="dark:text-slate-400">
               Últimas interacciones registradas.
             </Text>
-            <div className="mt-6 space-y-3">
-              {data.recentContacts?.length > 0 ? (
-                data.recentContacts.map((contact: any) => (
-                  <Flex
-                    key={contact.id}
-                    className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/50 hover:border-blue-200 dark:hover:border-blue-700 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400">
-                        <MessageSquare size={16} />
-                      </div>
-                      <div>
-                        <Text className="font-semibold text-gray-900 dark:text-slate-200">
-                          Nuevo mensaje: {contact.name}
-                        </Text>
-                        <Text className="text-xs dark:text-slate-500">
-                          {new Date(contact.created_at).toLocaleString()}
-                        </Text>
-                      </div>
+            <div className="mt-6 space-y-3 max-h-[380px] overflow-y-auto pr-1">
+              {(() => {
+                const recentActivities = [
+                  ...(data.recentInvoices || []).map((inv: any) => ({
+                    type: "invoice" as const,
+                    id: inv.id || inv.invoice_number,
+                    invoice_number: inv.invoice_number,
+                    customer_name: inv.customer_name,
+                    cards_number: inv.cards_number,
+                    total_amount: inv.total_amount,
+                    status: inv.status,
+                    date: inv.created_at || inv.invoice_date,
+                  })),
+                  ...(data.recentContacts || []).map((contact: any) => ({
+                    type: "contact" as const,
+                    id: contact.id,
+                    name: contact.name,
+                    date: contact.created_at,
+                  })),
+                ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                if (recentActivities.length === 0) {
+                  return (
+                    <div className="py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl">
+                      <Text className="italic text-gray-400">
+                        No hay actividad reciente registrada.
+                      </Text>
                     </div>
-                    <Badge
-                      color="blue"
-                      size="xs"
-                      className="dark:bg-blue-500/10 dark:text-blue-400 border-none"
+                  );
+                }
+
+                return recentActivities.map((activity: any) => {
+                  if (activity.type === "invoice") {
+                    return (
+                      <Flex
+                        key={`invoice-${activity.id}`}
+                        className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/40 hover:border-emerald-200 dark:hover:border-emerald-700 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400 shrink-0">
+                            <Ticket size={18} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Text className="font-bold text-gray-900 dark:text-slate-100 text-sm">
+                                Factura #{activity.invoice_number}
+                              </Text>
+                              <span className="text-xs text-gray-400">•</span>
+                              <Text className="text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-300 truncate">
+                                {activity.customer_name}
+                              </Text>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                              <span className="font-medium text-gray-600 dark:text-gray-300">
+                                {activity.cards_number} {activity.cards_number === 1 ? "cartón" : "cartones"}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                {activity.date ? new Date(activity.date).toLocaleString() : ""}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <Text className="font-bold text-emerald-600 dark:text-emerald-400 text-sm sm:text-base">
+                            {formatCurrency(activity.total_amount)}
+                          </Text>
+                          <Badge
+                            color="emerald"
+                            size="xs"
+                            className="dark:bg-emerald-500/10 dark:text-emerald-400 border-none mt-0.5"
+                          >
+                            Venta
+                          </Badge>
+                        </div>
+                      </Flex>
+                    );
+                  }
+
+                  return (
+                    <Flex
+                      key={`contact-${activity.id}`}
+                      className="p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/50 hover:border-blue-200 dark:hover:border-blue-700 transition-colors"
                     >
-                      Web
-                    </Badge>
-                  </Flex>
-                ))
-              ) : (
-                <div className="py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl">
-                  <Text className="italic text-gray-400">
-                    No hay mensajes de contacto recientes.
-                  </Text>
-                </div>
-              )}
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
+                          <MessageSquare size={16} />
+                        </div>
+                        <div>
+                          <Text className="font-semibold text-gray-900 dark:text-slate-200 text-sm">
+                            Nuevo mensaje: {activity.name}
+                          </Text>
+                          <Text className="text-xs dark:text-slate-500">
+                            {activity.date ? new Date(activity.date).toLocaleString() : ""}
+                          </Text>
+                        </div>
+                      </div>
+                      <Badge
+                        color="blue"
+                        size="xs"
+                        className="dark:bg-blue-500/10 dark:text-blue-400 border-none"
+                      >
+                        Web
+                      </Badge>
+                    </Flex>
+                  );
+                });
+              })()}
             </div>
           </Card>
 
