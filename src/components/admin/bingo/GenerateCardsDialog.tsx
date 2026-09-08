@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogPanel,
@@ -23,11 +23,19 @@ interface Event {
   event_cartons_number?: number;
 }
 
+export interface GenerateConfig {
+  start: number;
+  end: number;
+  price: number;
+  cardType: "Virtual" | "Fisico";
+  deleteExisting: boolean;
+}
+
 interface GenerateCardsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   event: Event | null;
-  onOpenUpload: () => void;
+  onOpenUpload: (config: GenerateConfig) => void;
 }
 
 export default function GenerateCardsDialog({
@@ -37,19 +45,31 @@ export default function GenerateCardsDialog({
   onOpenUpload,
 }: GenerateCardsDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [startNumber, setStartNumber] = useState<number>(1);
+  const [endNumber, setEndNumber] = useState<number>(event?.event_cartons_number || 1000);
+  const [cardPrice, setCardPrice] = useState<number>(event?.card_value || 10);
   const [cardType, setCardType] = useState<string>("Virtual");
+  const [deleteExisting, setDeleteExisting] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isOpen && event) {
+      setStartNumber(1);
+      setEndNumber(event.event_cartons_number || 1000);
+      setCardPrice(event.card_value || 10);
+      setCardType("Virtual");
+      setDeleteExisting(false);
+    }
+  }, [isOpen, event]);
 
   const handleGenerateCards = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!event) return;
 
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const start = parseInt(formData.get("start") as string);
-    const end = parseInt(formData.get("end") as string);
-    const price = parseFloat(formData.get("price") as string);
+    const start = startNumber;
+    const end = endNumber;
+    const price = cardPrice;
     const type = cardType as "Virtual" | "Fisico";
-    const deleteExisting = formData.get("delete_existing") === "on";
 
     if (end - start + 1 > 5000) {
       alert("Por seguridad, no puedes generar más de 5,000 cartones por lote.");
@@ -90,6 +110,16 @@ export default function GenerateCardsDialog({
     }
   };
 
+  const handleOpenUpload = () => {
+    onOpenUpload({
+      start: startNumber,
+      end: endNumber,
+      price: cardPrice,
+      cardType: (cardType === "Fisico" || cardType === "Físico") ? "Fisico" : "Virtual",
+      deleteExisting,
+    });
+  };
+
   return (
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
@@ -111,15 +141,21 @@ export default function GenerateCardsDialog({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Text className="text-xs font-bold uppercase text-gray-500">Número Inicial</Text>
-                <TextInput name="start" type="number" placeholder="1" defaultValue="1" required />
+                <TextInput
+                  name="start"
+                  type="number"
+                  value={startNumber.toString()}
+                  onChange={(e) => setStartNumber(parseInt(e.target.value, 10) || 1)}
+                  required
+                />
               </div>
               <div className="space-y-1">
                 <Text className="text-xs font-bold uppercase text-gray-500">Número Final</Text>
                 <TextInput
                   name="end"
                   type="number"
-                  placeholder="1000"
-                  defaultValue={event?.event_cartons_number?.toString()}
+                  value={endNumber.toString()}
+                  onChange={(e) => setEndNumber(parseInt(e.target.value, 10) || 1)}
                   required
                 />
               </div>
@@ -133,7 +169,8 @@ export default function GenerateCardsDialog({
                   type="number"
                   step="0.01"
                   icon={DollarSign}
-                  defaultValue={event?.card_value?.toString()}
+                  value={cardPrice.toString()}
+                  onChange={(e) => setCardPrice(parseFloat(e.target.value) || 0)}
                   required
                 />
               </div>
@@ -151,6 +188,8 @@ export default function GenerateCardsDialog({
                 type="checkbox"
                 id="delete_existing"
                 name="delete_existing"
+                checked={deleteExisting}
+                onChange={(e) => setDeleteExisting(e.target.checked)}
                 className="h-4 w-4 text-larioja-azul border-gray-300 rounded focus:ring-larioja-azul"
               />
               <label
@@ -167,7 +206,7 @@ export default function GenerateCardsDialog({
                 <Button
                   variant="secondary"
                   icon={Upload}
-                  onClick={onOpenUpload}
+                  onClick={handleOpenUpload}
                   type="button"
                   className="bg-larioja-azul text-white hover:bg-blue-800"
                 >
@@ -190,3 +229,4 @@ export default function GenerateCardsDialog({
     </Dialog>
   );
 }
+

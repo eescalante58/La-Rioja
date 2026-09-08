@@ -94,6 +94,13 @@ export default function BingoManagerClient({
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [selectedEventForCards, setSelectedEventForCards] =
     useState<Event | null>(null);
+  const [uploadConfig, setUploadConfig] = useState<{
+    start: number;
+    end: number;
+    price: number;
+    cardType: "Virtual" | "Fisico";
+    deleteExisting: boolean;
+  } | null>(null);
 
   // Persistence for the selected tab
   useEffect(() => {
@@ -191,7 +198,8 @@ export default function BingoManagerClient({
         isOpen={isGenerateDialogOpen}
         onClose={() => setIsGenerateDialogOpen(false)}
         event={selectedEventForCards}
-        onOpenUpload={() => {
+        onOpenUpload={(config) => {
+          setUploadConfig(config);
           setIsGenerateDialogOpen(false);
           setIsUploadDialogOpen(true);
         }}
@@ -199,8 +207,12 @@ export default function BingoManagerClient({
 
       <UploadCardsDialog
         isOpen={isUploadDialogOpen}
-        onClose={() => setIsUploadDialogOpen(false)}
+        onClose={() => {
+          setIsUploadDialogOpen(false);
+          setUploadConfig(null);
+        }}
         event={selectedEventForCards}
+        initialConfig={uploadConfig}
       />
     </div>
   );
