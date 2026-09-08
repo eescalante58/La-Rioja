@@ -158,15 +158,27 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
       let errorCount = 0;
       const errors: string[] = [];
 
-      // 5. Upload files in parallel batches using a worker pool for maximum throughput
+      // 5. Sort files in DESCENDING order by card number (e.g. 600, 599, ..., 1)
+      const sortedFiles: File[] = Array.from(filesList).sort((a, b) => {
+        const matchA = a.name.match(/_Carton_(\d+)\.pdf$/i);
+        const matchB = b.name.match(/_Carton_(\d+)\.pdf$/i);
+        const numA = matchA ? parseInt(matchA[1], 10) : 0;
+        const numB = matchB ? parseInt(matchB[1], 10) : 0;
+        if (numA !== numB) {
+          return numB - numA; // Mayor a menor (descendente)
+        }
+        return b.name.localeCompare(a.name);
+      });
+
+      // Upload files in parallel batches using a worker pool for maximum throughput
       const BATCH_SIZE = 10;
       const CONCURRENCY = 4;
 
       const batches: File[][] = [];
-      for (let i = 0; i < filesList.length; i += BATCH_SIZE) {
+      for (let i = 0; i < sortedFiles.length; i += BATCH_SIZE) {
         const chunk: File[] = [];
-        for (let j = i; j < Math.min(i + BATCH_SIZE, filesList.length); j++) {
-          chunk.push(filesList[j]);
+        for (let j = i; j < Math.min(i + BATCH_SIZE, sortedFiles.length); j++) {
+          chunk.push(sortedFiles[j]);
         }
         batches.push(chunk);
       }
@@ -178,6 +190,12 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
         while (nextBatchIndex < batches.length) {
           const currentBatchIdx = nextBatchIndex++;
           const batch = batches[currentBatchIdx];
+
+          // Set current card number being processed from the batch for real-time feedback
+          const firstMatch = batch[0].name.match(/_Carton_(\d+)\.pdf$/i);
+          if (firstMatch) {
+            setCurrentCardNumber(parseInt(firstMatch[1], 10));
+          }
 
           const formData = new FormData();
           for (const file of batch) {
@@ -195,7 +213,9 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
             successCount += result.successCount || 0;
             errorCount += result.errorCount || 0;
             if (result.errors) errors.push(...result.errors);
-            if (result.maxCardNumber) {
+            if (result.minCardNumber !== undefined && result.minCardNumber !== null) {
+              setCurrentCardNumber(result.minCardNumber);
+            } else if (result.maxCardNumber) {
               setCurrentCardNumber(result.maxCardNumber);
             }
           } else {
@@ -204,7 +224,7 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
           }
 
           completedFiles += batch.length;
-          setCurrentFileIndex(Math.min(completedFiles, filesList.length));
+          setCurrentFileIndex(Math.min(completedFiles, sortedFiles.length));
         }
       }
 
