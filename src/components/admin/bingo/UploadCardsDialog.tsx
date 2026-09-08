@@ -9,7 +9,21 @@ import {
   TextInput,
   Button,
 } from "@tremor/react";
-import { DollarSign, Upload, FileIcon } from "lucide-react";
+import {
+  DollarSign,
+  Upload,
+  FileIcon,
+  CheckCircle2,
+  AlertCircle,
+  XCircle,
+  ImageIcon,
+  FileText,
+  Trash2,
+  CloudUpload,
+  Check,
+  Loader2,
+  Minus,
+} from "lucide-react";
 import {
   uploadCardsBatch,
   uploadSingleCardImage,
@@ -17,7 +31,6 @@ import {
   logUploadActivity,
   verifyUpload,
 } from "@/app/admin/bingo/actions";
-import { CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 
 interface Event {
   id: number;
@@ -41,6 +54,15 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
   const [currentCardNumber, setCurrentCardNumber] = useState<number | null>(null);
   const [invalidFiles, setInvalidFiles] = useState<string[]>([]);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+  const [processSteps, setProcessSteps] = useState<{
+    validation: 'pending' | 'running' | 'completed' | 'error';
+    clearing: 'pending' | 'running' | 'completed' | 'skipped';
+    uploading: 'pending' | 'running' | 'completed';
+  }>({
+    validation: 'pending',
+    clearing: 'pending',
+    uploading: 'pending',
+  });
   const [uploadSummary, setUploadSummary] = useState<{
     success: number;
     errors: number;
@@ -72,6 +94,17 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
     const price = parseFloat((form.elements.namedItem("card_price") as HTMLInputElement).value);
     const deleteExisting = (form.elements.namedItem("delete_existing_upload") as HTMLInputElement).checked;
 
+    // Switch view to Control Panel
+    setLoading(true);
+    setCurrentFileIndex(0);
+    setUploadSummary(null);
+    setIsClearing(false);
+    setProcessSteps({
+      validation: 'running',
+      clearing: 'pending',
+      uploading: 'pending',
+    });
+
     // 2. Pre-validation of all filenames
     const invalid: string[] = [];
     const expectedPattern = new RegExp(`^SERIAL_${currentEvent.event_id}_Carton_\\d+\\.pdf$`, "i");
@@ -86,26 +119,25 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
     if (invalid.length > 0) {
       setInvalidFiles(invalid);
       setStatusMessage({ type: 'error', text: `Validación fallida: ${invalid.length} archivos no cumplen el formato.` });
+      setProcessSteps({
+        validation: 'error',
+        clearing: 'pending',
+        uploading: 'pending',
+      });
+      setLoading(false);
       return;
     }
 
     setInvalidFiles([]);
-    setStatusMessage({ type: 'success', text: "Validación exitosa. Iniciando proceso de carga..." });
-    
-    // 3. Set states for processing
-    setLoading(true);
-    setCurrentFileIndex(0);
-    setUploadSummary(null);
-    setIsClearing(false);
-
-    // Give user a moment to see the success message
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setStatusMessage(null);
+    setProcessSteps(prev => ({ ...prev, validation: 'completed' }));
+    // Brief pause so user sees Step 1 marked as Completed
+    await new Promise(resolve => setTimeout(resolve, 600));
 
     try {
-      // 4. If requested, clear existing cards first
+      // 4. If requested, clear existing cards first (Step 2)
       if (deleteExisting) {
         setIsClearing(true);
+        setProcessSteps(prev => ({ ...prev, clearing: 'running' }));
         const clearResult = await clearEventCards(currentEvent.company_id, currentEvent.event_id);
         setIsClearing(false);
         if (clearResult.error) {
@@ -113,7 +145,14 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
           setLoading(false);
           return;
         }
+        setProcessSteps(prev => ({ ...prev, clearing: 'completed' }));
+        await new Promise(resolve => setTimeout(resolve, 400));
+      } else {
+        setProcessSteps(prev => ({ ...prev, clearing: 'skipped' }));
       }
+
+      // Step 3: Uploading cards
+      setProcessSteps(prev => ({ ...prev, uploading: 'running' }));
 
       let successCount = 0;
       let errorCount = 0;
@@ -175,11 +214,15 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
       );
       await Promise.all(activeWorkers);
 
-      // 3. Final verification with DB
+      // Step 3 Completed!
+      setProcessSteps(prev => ({ ...prev, uploading: 'completed' }));
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Final verification with DB
       const verifyResult = await verifyUpload(currentEvent.company_id, currentEvent.event_id);
       const dbCount = verifyResult.success ? verifyResult.count : 0;
 
-      // 4. Log the activity summary
+      // Log the activity summary
       if (successCount > 0) {
         await logUploadActivity(currentEvent.company_id, currentEvent.event_id, {
           success_count: successCount,
@@ -207,13 +250,217 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
     }
   };
 
+  const completedStepsCount =
+    (processSteps.validation === "completed" ? 1 : 0) +
+    (processSteps.clearing === "completed" || processSteps.clearing === "skipped" ? 1 : 0) +
+    (processSteps.uploading === "completed" ? 1 : 0);
+
+  let overallProgress = 0;
+  if (processSteps.validation === "running") {
+    overallProgress = 15;
+  } else if (processSteps.validation === "completed") {
+    overallProgress = 33;
+    if (processSteps.clearing === "running") {
+      overallProgress = 50;
+    } else if (processSteps.clearing === "completed" || processSteps.clearing === "skipped") {
+      overallProgress = 66;
+      if (processSteps.uploading === "running") {
+        const total = uploadingFiles?.length || 1;
+        const uploadRatio = currentFileIndex / total;
+        overallProgress = Math.min(98, Math.round(66 + uploadRatio * 34));
+      } else if (processSteps.uploading === "completed") {
+        overallProgress = 100;
+      }
+    }
+  }
+
   return (
     <Dialog open={isOpen} onClose={handleClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300">
-          {!uploadSummary ? (
-            <>
+        <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden p-0">
+          {loading ? (
+            /* PANEL DE CONTROL DEL PROCESO */
+            <div className="w-full">
+              {/* Header */}
+              <div className="bg-[#2563eb] text-white p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="bg-white/20 p-2.5 rounded-xl text-white backdrop-blur-sm">
+                    <ImageIcon size={28} strokeWidth={2.2} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white tracking-tight">Subir imágenes de cartones</h3>
+                    <p className="text-xs text-blue-100 font-medium">Panel de control del proceso</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-blue-900/40 border border-blue-300/30 px-3.5 py-1.5 rounded-full text-xs font-semibold text-white">
+                  <span className={`w-2.5 h-2.5 rounded-full ${processSteps.uploading === 'completed' ? 'bg-emerald-400' : 'bg-emerald-400 animate-pulse'}`}></span>
+                  <span>{processSteps.uploading === 'completed' ? 'Finalizado' : 'En proceso'}</span>
+                </div>
+              </div>
+
+              {/* Body with Steps */}
+              <div className="p-6 bg-white dark:bg-gray-900 space-y-3.5">
+                {/* Step 1: Validación */}
+                <div className="border border-gray-100 dark:border-gray-800 rounded-2xl p-4 bg-white dark:bg-gray-800/40 shadow-sm flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                        processSteps.validation === 'completed'
+                          ? 'bg-emerald-500 text-white'
+                          : processSteps.validation === 'running'
+                          ? 'border-2 border-blue-500 text-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                          : 'border-2 border-gray-300 dark:border-gray-700 bg-transparent'
+                      }`}
+                    >
+                      {processSteps.validation === 'completed' && <Check size={20} strokeWidth={3} />}
+                      {processSteps.validation === 'running' && <Loader2 size={18} className="animate-spin text-blue-600" />}
+                    </div>
+                    <div className="text-gray-700 dark:text-gray-300 shrink-0">
+                      <FileText size={32} strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-snug">
+                        1. Validación de nombres de archivo
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug mt-0.5">
+                        Se verifican los nombres de los archivos para cumplir con el formato requerido.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    {processSteps.validation === 'completed' ? (
+                      <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5">
+                        <CheckCircle2 size={14} /> Completado
+                      </span>
+                    ) : processSteps.validation === 'running' ? (
+                      <span className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5 animate-pulse">
+                        <Loader2 size={14} className="animate-spin" /> En ejecución
+                      </span>
+                    ) : (
+                      <span className="bg-gray-50 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full px-3 py-1 text-xs font-medium">
+                        Pendiente
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Step 2: Eliminación */}
+                <div className="border border-gray-100 dark:border-gray-800 rounded-2xl p-4 bg-white dark:bg-gray-800/40 shadow-sm flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                        processSteps.clearing === 'completed'
+                          ? 'bg-emerald-500 text-white'
+                          : processSteps.clearing === 'running'
+                          ? 'border-2 border-blue-500 text-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                          : processSteps.clearing === 'skipped'
+                          ? 'bg-gray-100 text-gray-400 dark:bg-gray-800'
+                          : 'border-2 border-gray-300 dark:border-gray-700 bg-transparent'
+                      }`}
+                    >
+                      {processSteps.clearing === 'completed' && <Check size={20} strokeWidth={3} />}
+                      {processSteps.clearing === 'running' && <Loader2 size={18} className="animate-spin text-blue-600" />}
+                      {processSteps.clearing === 'skipped' && <Minus size={18} strokeWidth={2.5} />}
+                    </div>
+                    <div className="text-gray-700 dark:text-gray-300 shrink-0">
+                      <Trash2 size={32} strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-snug">
+                        2. Eliminación de registros previos
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug mt-0.5">
+                        Se eliminan los registros existentes en el sistema para evitar duplicados.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    {processSteps.clearing === 'completed' ? (
+                      <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5">
+                        <CheckCircle2 size={14} /> Completado
+                      </span>
+                    ) : processSteps.clearing === 'running' ? (
+                      <span className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5 animate-pulse">
+                        <Loader2 size={14} className="animate-spin" /> En ejecución
+                      </span>
+                    ) : processSteps.clearing === 'skipped' ? (
+                      <span className="bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full px-3 py-1 text-xs font-medium">
+                        Omitido
+                      </span>
+                    ) : (
+                      <span className="bg-gray-50 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full px-3 py-1 text-xs font-medium">
+                        Pendiente
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Step 3: Subiendo cartones */}
+                <div className="border border-gray-100 dark:border-gray-800 rounded-2xl p-4 bg-white dark:bg-gray-800/40 shadow-sm flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                        processSteps.uploading === 'completed'
+                          ? 'bg-emerald-500 text-white'
+                          : processSteps.uploading === 'running'
+                          ? 'border-2 border-blue-500 text-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                          : 'border-2 border-gray-300 dark:border-gray-700 bg-transparent'
+                      }`}
+                    >
+                      {processSteps.uploading === 'completed' && <Check size={20} strokeWidth={3} />}
+                      {processSteps.uploading === 'running' && <Loader2 size={18} className="animate-spin text-blue-600" />}
+                    </div>
+                    <div className="text-gray-700 dark:text-gray-300 shrink-0">
+                      <CloudUpload size={32} strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-gray-900 dark:text-white leading-snug">
+                        3. Subiendo cartones
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug mt-0.5">
+                        Se están subiendo las imágenes de los cartones a la plataforma.
+                      </p>
+                      {processSteps.uploading === 'running' && (
+                        <p className="text-[11px] font-semibold text-blue-600 mt-1">
+                          Cargando cartón {currentCardNumber ? `#${currentCardNumber}` : ''} ({currentFileIndex}/{uploadingFiles?.length})
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    {processSteps.uploading === 'completed' ? (
+                      <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5">
+                        <CheckCircle2 size={14} /> Completado
+                      </span>
+                    ) : processSteps.uploading === 'running' ? (
+                      <span className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-full px-3 py-1 text-xs font-semibold flex items-center gap-1.5 animate-pulse">
+                        <Loader2 size={14} className="animate-spin" /> En ejecución
+                      </span>
+                    ) : (
+                      <span className="bg-gray-50 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full px-3 py-1 text-xs font-medium">
+                        Pendiente
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress Bar & Steps Count at Bottom */}
+                <div className="pt-4 flex items-center gap-4">
+                  <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className="bg-blue-600 h-full rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${overallProgress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {completedStepsCount} de 3 pasos completados
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : !uploadSummary ? (
+            <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-larioja-azul/10 p-2 rounded-lg text-larioja-azul">
                   <Upload size={24} />
@@ -329,21 +576,6 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6">
-                  {loading && (
-                    <div className="flex-1 flex flex-col justify-center">
-                      <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
-                        <div 
-                          className="bg-larioja-azul h-1.5 rounded-full transition-all duration-300" 
-                          style={{ width: isClearing ? '100%' : `${(currentFileIndex / (uploadingFiles?.length || 1)) * 100}%` }}
-                        ></div>
-                      </div>
-                      <Text className={`text-[10px] mt-1 font-bold ${isClearing ? 'text-orange-500 animate-pulse' : 'text-larioja-azul'}`}>
-                        {isClearing 
-                          ? "Limpiando cartones anteriores (esto puede tardar unos segundos)..." 
-                          : `Cargando cartón ${currentCardNumber ? `#${currentCardNumber}` : ""} (${currentFileIndex}/${uploadingFiles?.length})`}
-                      </Text>
-                    </div>
-                  )}
                   <Button variant="secondary" onClick={onClose} disabled={loading} type="button">
                     Cancelar
                   </Button>
@@ -357,9 +589,9 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
                   </Button>
                 </div>
               </form>
-            </>
+            </div>
           ) : (
-            <div className="py-2">
+            <div className="p-6">
               <div className="flex items-center gap-3 mb-6">
                 {uploadSummary.errors === 0 ? (
                   <div className="bg-larioja-verde/10 p-2 rounded-lg text-larioja-verde">
