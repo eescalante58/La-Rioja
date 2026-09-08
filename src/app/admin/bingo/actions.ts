@@ -28,8 +28,123 @@ function sanitizeInput(str: string): string {
  * Upload card images and create card records.
  */
 /**
+ * Upload a batch of card images and create their records in the database.
+ * Highly optimized: uploads files in parallel to storage, then bulk upserts all cards in ONE single SQL query.
+ */
+async function uploadCardsBatchInternal(
+  companyId: number,
+  eventId: string,
+  cardPrice: number,
+  formData: FormData,
+  context: { user: any }
+) {
+  const supabase = await createClient();
+  const files = formData.getAll("files") as File[];
+
+  if (!files || files.length === 0) {
+    return { success: true, successCount: 0, errorCount: 0, errors: [] };
+  }
+
+  const uploadedStoragePaths: string[] = [];
+  const errors: string[] = [];
+  const cardsToUpsert: any[] = [];
+  let maxCardNumber: number | null = null;
+
+  // 1. Upload files concurrently to Storage
+  const uploadPromises = files.map(async (file) => {
+    const fileName = file.name;
+    const match = fileName.match(/^SERIAL_(\d{14})_Carton_(\d+)\.pdf$/i);
+    if (!match) {
+      return { error: `Archivo ${fileName}: El nombre no sigue el patrón SERIAL_EventoID_Carton_Numero.pdf` };
+    }
+
+    const fileEventId = match[1];
+    const cardNumber = parseInt(match[2]);
+
+    if (fileEventId !== eventId) {
+      return { error: `Archivo ${fileName}: El ID de evento (${fileEventId}) no coincide con el seleccionado.` };
+    }
+
+    const storagePath = `${companyId}/${eventId}/${fileName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("cards_images")
+      .upload(storagePath, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      return { error: `Archivo ${fileName}: Error al subir a Storage (${uploadError.message})` };
+    }
+
+    uploadedStoragePaths.push(storagePath);
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("cards_images").getPublicUrl(storagePath);
+
+    return {
+      card: {
+        company_id: companyId,
+        event_id: eventId,
+        card_number: cardNumber,
+        card_price: cardPrice,
+        card_type: "Virtual",
+        card_status: "Disponible",
+        image_url: publicUrl,
+        updated_at: new Date().toISOString(),
+      },
+      cardNumber,
+    };
+  });
+
+  const uploadResults = await Promise.all(uploadPromises);
+
+  for (const res of uploadResults) {
+    if ("error" in res && res.error) {
+      errors.push(res.error);
+    } else if ("card" in res && res.card) {
+      cardsToUpsert.push(res.card);
+      if (maxCardNumber === null || res.cardNumber > maxCardNumber) {
+        maxCardNumber = res.cardNumber;
+      }
+    }
+  }
+
+  // 2. Bulk upsert all cards in a single database query
+  if (cardsToUpsert.length > 0) {
+    const { error: dbError } = await supabase.from("cards").upsert(cardsToUpsert, {
+      onConflict: "company_id,event_id,card_number",
+    });
+
+    if (dbError) {
+      if (uploadedStoragePaths.length > 0) {
+        await supabase.storage.from("cards_images").remove(uploadedStoragePaths);
+      }
+      return {
+        success: false,
+        error: `Error al registrar en BD: ${dbError.message}`,
+        successCount: 0,
+        errorCount: files.length,
+        errors: [`Error en BD: ${dbError.message}`],
+      };
+    }
+  }
+
+  return {
+    success: true,
+    successCount: cardsToUpsert.length,
+    errorCount: errors.length,
+    errors,
+    maxCardNumber,
+  };
+}
+
+export const uploadCardsBatch = withRole(8, withCompanyAccess(uploadCardsBatchInternal, 0));
+
+/**
  * Upload a single card image and create its record in the database.
- * This is used to track progress in the UI.
+ * Kept for single-card fallback.
  */
 async function uploadSingleCardImageInternal(
   companyId: number,
@@ -133,12 +248,15 @@ async function clearEventCardsInternal(
       .filter((path): path is string => path !== null);
 
     if (filesToDelete.length > 0) {
-      // Delete in chunks of 100 to avoid timeouts
+      // Delete in parallel chunks of 100 to maximize throughput and avoid timeouts
       const chunkSize = 100;
+      const chunks: string[][] = [];
       for (let i = 0; i < filesToDelete.length; i += chunkSize) {
-        const chunk = filesToDelete.slice(i, i + chunkSize);
-        await supabase.storage.from("cards_images").remove(chunk);
+        chunks.push(filesToDelete.slice(i, i + chunkSize));
       }
+      await Promise.all(
+        chunks.map((chunk) => supabase.storage.from("cards_images").remove(chunk))
+      );
     }
 
     const { error: dbError } = await supabase

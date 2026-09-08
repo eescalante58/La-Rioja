@@ -11,6 +11,7 @@ import {
 } from "@tremor/react";
 import { DollarSign, Upload, FileIcon } from "lucide-react";
 import {
+  uploadCardsBatch,
   uploadSingleCardImage,
   clearEventCards,
   logUploadActivity,
@@ -65,16 +66,18 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
     }
 
     // 1. Extract values IMMEDIATELY before any async await
+    const currentEvent = event;
+    const filesList = uploadingFiles;
     const form = e.currentTarget;
     const price = parseFloat((form.elements.namedItem("card_price") as HTMLInputElement).value);
     const deleteExisting = (form.elements.namedItem("delete_existing_upload") as HTMLInputElement).checked;
 
     // 2. Pre-validation of all filenames
     const invalid: string[] = [];
-    const expectedPattern = new RegExp(`^SERIAL_${event.event_id}_Carton_\\d+\\.pdf$`, "i");
+    const expectedPattern = new RegExp(`^SERIAL_${currentEvent.event_id}_Carton_\\d+\\.pdf$`, "i");
 
-    for (let i = 0; i < uploadingFiles.length; i++) {
-      const fileName = uploadingFiles[i].name;
+    for (let i = 0; i < filesList.length; i++) {
+      const fileName = filesList[i].name;
       if (!expectedPattern.test(fileName)) {
         invalid.push(fileName);
       }
@@ -103,7 +106,7 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
       // 4. If requested, clear existing cards first
       if (deleteExisting) {
         setIsClearing(true);
-        const clearResult = await clearEventCards(event.company_id, event.event_id);
+        const clearResult = await clearEventCards(currentEvent.company_id, currentEvent.event_id);
         setIsClearing(false);
         if (clearResult.error) {
           alert("Error al limpiar cartones previos: " + clearResult.error);
@@ -116,44 +119,73 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
       let errorCount = 0;
       const errors: string[] = [];
 
-      // 5. Upload files one by one to track progress
-      for (let i = 0; i < uploadingFiles.length; i++) {
-        const file = uploadingFiles[i];
-        setCurrentFileIndex(i + 1);
-        
-        // Extract card number for UI feedback
-        const match = file.name.match(/_Carton_(\d+)\.pdf$/i);
-        if (match) {
-          setCurrentCardNumber(parseInt(match[1]));
+      // 5. Upload files in parallel batches using a worker pool for maximum throughput
+      const BATCH_SIZE = 10;
+      const CONCURRENCY = 4;
+
+      const batches: File[][] = [];
+      for (let i = 0; i < filesList.length; i += BATCH_SIZE) {
+        const chunk: File[] = [];
+        for (let j = i; j < Math.min(i + BATCH_SIZE, filesList.length); j++) {
+          chunk.push(filesList[j]);
         }
+        batches.push(chunk);
+      }
 
-        const result = await uploadSingleCardImage(
-          event.company_id,
-          event.event_id,
-          price,
-          file.name,
-          file
-        );
+      let completedFiles = 0;
+      let nextBatchIndex = 0;
 
-        if (result.success) {
-          successCount++;
-        } else {
-          errorCount++;
-          errors.push(result.error || `Error en archivo ${file.name}`);
+      async function worker(): Promise<void> {
+        while (nextBatchIndex < batches.length) {
+          const currentBatchIdx = nextBatchIndex++;
+          const batch = batches[currentBatchIdx];
+
+          const formData = new FormData();
+          for (const file of batch) {
+            formData.append("files", file);
+          }
+
+          const result = await uploadCardsBatch(
+            currentEvent.company_id,
+            currentEvent.event_id,
+            price,
+            formData
+          );
+
+          if (result.success) {
+            successCount += result.successCount || 0;
+            errorCount += result.errorCount || 0;
+            if (result.errors) errors.push(...result.errors);
+            if (result.maxCardNumber) {
+              setCurrentCardNumber(result.maxCardNumber);
+            }
+          } else {
+            errorCount += batch.length;
+            errors.push(result.error || `Error en lote ${currentBatchIdx + 1}`);
+          }
+
+          completedFiles += batch.length;
+          setCurrentFileIndex(Math.min(completedFiles, filesList.length));
         }
       }
 
+      const activeWorkers = Array.from(
+        { length: Math.min(CONCURRENCY, batches.length) },
+        () => worker()
+      );
+      await Promise.all(activeWorkers);
+
       // 3. Final verification with DB
-      const verifyResult = await verifyUpload(event.company_id, event.event_id);
+      const verifyResult = await verifyUpload(currentEvent.company_id, currentEvent.event_id);
       const dbCount = verifyResult.success ? verifyResult.count : 0;
 
       // 4. Log the activity summary
       if (successCount > 0) {
-        await logUploadActivity(event.company_id, event.event_id, {
+        await logUploadActivity(currentEvent.company_id, currentEvent.event_id, {
           success_count: successCount,
           error_count: errorCount,
           deleted_previous: deleteExisting,
-          total_files: uploadingFiles.length,
+          total_files: filesList.length,
           verified_db_count: dbCount,
         });
       }
@@ -161,7 +193,7 @@ export default function UploadCardsDialog({ isOpen, onClose, event }: UploadCard
       setUploadSummary({
         success: successCount,
         errors: errorCount,
-        total: uploadingFiles.length,
+        total: filesList.length,
         dbCount: dbCount as number,
         errorList: errors,
       });
