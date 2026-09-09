@@ -340,7 +340,7 @@ async function assignUserToCompanyInternal(
   companyId: number,
   roleId: number,
 ) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data: roleData, error: roleError } = await supabase
     .from("roles")
@@ -383,7 +383,7 @@ export const assignUserToCompany = withRole(8, assignUserToCompanyInternal);
  * @returns {Promise<{ success?: boolean; error?: string }>} Resultado de la eliminación.
  */
 async function removeUserFromCompanyInternal(userId: string, companyId: number) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { error } = await supabase
     .from("user_companies")
     .delete()
@@ -415,7 +415,7 @@ async function updateUserCompanyRoleInternal(
   companyId: number,
   roleId: number,
 ) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data: roleData, error: roleError } = await supabase
     .from("roles")
