@@ -328,17 +328,36 @@ async function deleteRoleInternal(roleId: number) {
 
 export const deleteRole = withRole(10, deleteRoleInternal);
 
+/**
+ * Asigna una empresa a un usuario con un rol específico.
+ * @param {string} userId - ID del usuario.
+ * @param {number} companyId - ID de la empresa.
+ * @param {number} roleId - ID del rol en la empresa.
+ * @returns {Promise<{ success?: boolean; error?: string }>} Resultado de la asignación.
+ */
 async function assignUserToCompanyInternal(
   userId: string,
   companyId: number,
   roleId: number,
 ) {
   const supabase = await createClient();
+
+  const { data: roleData, error: roleError } = await supabase
+    .from("roles")
+    .select("name")
+    .eq("role_id", roleId)
+    .single();
+
+  if (roleError || !roleData) {
+    return { error: "El rol seleccionado no es válido o no existe." };
+  }
+
   const { error } = await supabase.from("user_companies").insert([
     {
       user_id: userId,
       company_id: companyId,
       role_id: roleId,
+      role: roleData.name,
     },
   ]);
 
@@ -357,6 +376,12 @@ async function assignUserToCompanyInternal(
 
 export const assignUserToCompany = withRole(8, assignUserToCompanyInternal);
 
+/**
+ * Remueve la asignación de una empresa a un usuario.
+ * @param {string} userId - ID del usuario.
+ * @param {number} companyId - ID de la empresa.
+ * @returns {Promise<{ success?: boolean; error?: string }>} Resultado de la eliminación.
+ */
 async function removeUserFromCompanyInternal(userId: string, companyId: number) {
   const supabase = await createClient();
   const { error } = await supabase
@@ -378,16 +403,35 @@ async function removeUserFromCompanyInternal(userId: string, companyId: number) 
 
 export const removeUserFromCompany = withRole(8, removeUserFromCompanyInternal);
 
+/**
+ * Actualiza el rol de un usuario dentro de una empresa asignada.
+ * @param {string} userId - ID del usuario.
+ * @param {number} companyId - ID de la empresa.
+ * @param {number} roleId - ID del nuevo rol.
+ * @returns {Promise<{ success?: boolean; error?: string }>} Resultado de la actualización.
+ */
 async function updateUserCompanyRoleInternal(
   userId: string,
   companyId: number,
   roleId: number,
 ) {
   const supabase = await createClient();
+
+  const { data: roleData, error: roleError } = await supabase
+    .from("roles")
+    .select("name")
+    .eq("role_id", roleId)
+    .single();
+
+  if (roleError || !roleData) {
+    return { error: "El rol seleccionado no es válido o no existe." };
+  }
+
   const { error } = await supabase
     .from("user_companies")
     .update({
       role_id: roleId,
+      role: roleData.name,
       updated_at: new Date().toISOString(),
     })
     .match({ user_id: userId, company_id: companyId });
