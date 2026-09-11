@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import {
   requireRoleLevel,
@@ -1061,39 +1061,43 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
     return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const data = validation.data;
   const invoice_file = formData.get("invoice_file") as File;
-  let url_invoice = "";
+  let url_invoice = null;
 
   // 1. Handle File Upload if present
-  if (invoice_file && invoice_file.size > 0) {
-    const fileExt = invoice_file.name.split(".").pop();
-    const fileName = `${data.invoice_number}_${Date.now()}.${fileExt}`;
-    const storagePath = `${data.company_id}/${data.event_id}/${fileName}`;
+  if (invoice_file && invoice_file instanceof File && invoice_file.size > 0) {
+    try {
+      const fileExt = invoice_file.name.split(".").pop();
+      const fileName = `${data.invoice_number}_${Date.now()}.${fileExt}`;
+      const storagePath = `${data.company_id}/${data.event_id}/${fileName}`;
 
-    // Convert File to ArrayBuffer for Supabase Storage in Node.js environment
-    const arrayBuffer = await invoice_file.arrayBuffer();
+      const arrayBuffer = await invoice_file.arrayBuffer();
 
-    const { error: uploadError } = await supabase.storage
-      .from("invoices_images")
-      .upload(storagePath, arrayBuffer, {
-        cacheControl: "3600",
-        upsert: true,
-        contentType: invoice_file.type,
-      });
+      const { error: uploadError } = await supabase.storage
+        .from("invoices_images")
+        .upload(storagePath, arrayBuffer, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: invoice_file.type,
+        });
 
-    if (uploadError) {
-      return {
-        error: `Error al subir imagen de factura: ${uploadError.message}`,
-      };
+      if (uploadError) {
+        return {
+          error: `Error al subir imagen de factura: ${uploadError.message}`,
+        };
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("invoices_images").getPublicUrl(storagePath);
+      url_invoice = publicUrl;
+    } catch (err: any) {
+      console.error("Error processing invoice file:", err);
+      return { error: `Error procesando archivo de factura: ${err.message}` };
     }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("invoices_images").getPublicUrl(storagePath);
-    url_invoice = publicUrl;
   }
 
   const { associated_cards, ...invoiceFields } = data;
@@ -1216,7 +1220,7 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
   }
 
   const data = validation.data;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // 1. Get current invoice to handle file cleanup if needed
   const { data: currentInvoice } = await supabase
@@ -1225,50 +1229,54 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
     .eq("id", id)
     .single();
 
-  let url_invoice = currentInvoice?.url_invoice || "";
+  let url_invoice = currentInvoice?.url_invoice || null;
 
   // 2. Handle File Upload if present
   const invoice_file = formData.get("invoice_file") as File;
-  if (invoice_file && invoice_file.size > 0) {
-    const fileExt = invoice_file.name.split(".").pop();
-    const fileName = `${data.invoice_number}_${Date.now()}.${fileExt}`;
-    const storagePath = `${data.company_id}/${data.event_id}/${fileName}`;
+  if (invoice_file && invoice_file instanceof File && invoice_file.size > 0) {
+    try {
+      const fileExt = invoice_file.name.split(".").pop();
+      const fileName = `${data.invoice_number}_${Date.now()}.${fileExt}`;
+      const storagePath = `${data.company_id}/${data.event_id}/${fileName}`;
 
-    // Convert File to ArrayBuffer for Supabase Storage in Node.js environment
-    const arrayBuffer = await invoice_file.arrayBuffer();
+      const arrayBuffer = await invoice_file.arrayBuffer();
 
-    const { error: uploadError } = await supabase.storage
-      .from("invoices_images")
-      .upload(storagePath, arrayBuffer, {
-        cacheControl: "3600",
-        upsert: true,
-        contentType: invoice_file.type,
-      });
+      const { error: uploadError } = await supabase.storage
+        .from("invoices_images")
+        .upload(storagePath, arrayBuffer, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: invoice_file.type,
+        });
 
-    if (uploadError) {
-      return {
-        error: `Error al subir imagen de factura: ${uploadError.message}`,
-      };
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("invoices_images").getPublicUrl(storagePath);
-
-    // Cleanup: Delete old file from Storage if it exists
-    if (currentInvoice?.url_invoice) {
-      try {
-        const oldUrlParts = currentInvoice.url_invoice.split("/invoices_images/");
-        if (oldUrlParts.length > 1) {
-          const oldStoragePath = oldUrlParts[1];
-          await supabase.storage.from("invoices_images").remove([oldStoragePath]);
-        }
-      } catch (cleanupError) {
-        console.warn("Error cleaning up old invoice:", cleanupError);
+      if (uploadError) {
+        return {
+          error: `Error al subir imagen de factura: ${uploadError.message}`,
+        };
       }
-    }
 
-    url_invoice = publicUrl;
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("invoices_images").getPublicUrl(storagePath);
+
+      // Cleanup: Delete old file from Storage if it exists
+      if (currentInvoice?.url_invoice) {
+        try {
+          const oldUrlParts = currentInvoice.url_invoice.split("/invoices_images/");
+          if (oldUrlParts.length > 1) {
+            const oldStoragePath = oldUrlParts[1];
+            await supabase.storage.from("invoices_images").remove([oldStoragePath]);
+          }
+        } catch (cleanupError) {
+          console.warn("Error cleaning up old invoice:", cleanupError);
+        }
+      }
+
+      url_invoice = publicUrl;
+    } catch (err: any) {
+      console.error("Error processing invoice file update:", err);
+      return { error: `Error procesando archivo de factura: ${err.message}` };
+    }
   }
 
   const { associated_cards, ...invoiceFields } = data;

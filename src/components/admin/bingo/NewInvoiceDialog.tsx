@@ -143,8 +143,9 @@ export default function NewInvoiceDialog({
       } else {
         alert("Error: " + result.error);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving invoice:", error);
+      alert("Error inesperado: " + (error.message || "Consulte la consola para más detalles"));
     } finally {
       setLoading(false);
     }
