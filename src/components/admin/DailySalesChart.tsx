@@ -47,8 +47,12 @@ export default function DailySalesChart({
     xAxis: {
       type: "category",
       data: data.map((d) => {
+        // La fecha viene como YYYY-MM-DD. new Date("YYYY-MM-DD") se interpreta como UTC.
+        // Para evitar desfases por zona horaria, usamos los métodos UTC.
         const date = new Date(d.date);
-        return `${date.getDate()}/${date.getMonth() + 1}`;
+        const day = date.getUTCDate();
+        const month = date.getUTCMonth() + 1;
+        return `${day}/${month}`;
       }),
       axisLine: { lineStyle: { color: "#334155" } },
       axisLabel: {
