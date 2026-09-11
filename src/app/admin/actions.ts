@@ -154,7 +154,7 @@ export async function getDashboardData() {
     const yearlySalesMap = allEvents?.reduce((acc: any, ev) => {
       let year = "";
       if (ev.event_date) {
-        year = new Date(ev.event_date).getFullYear().toString();
+        year = new Date(ev.event_date).getUTCFullYear().toString();
       } else if (ev.event_id && ev.event_id.length >= 4) {
         // Fallback: extract year from event_id prefix (YYYYMMDD...)
         const possibleYear = ev.event_id.substring(0, 4);
