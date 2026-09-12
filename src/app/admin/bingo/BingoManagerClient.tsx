@@ -81,10 +81,12 @@ export default function BingoManagerClient({
   initialEvents,
   companies,
   countries,
+  selectedCompanyId,
 }: {
   initialEvents: Event[];
   companies: Company[];
   countries: Country[];
+  selectedCompanyId?: number;
 }) {
   const [events] = useState(initialEvents);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -182,7 +184,9 @@ export default function BingoManagerClient({
           </TabPanel>
 
           <TabPanel>
-            <PromotionalTab companyId={companies[0]?.company_id} />
+            <PromotionalTab
+              companyId={selectedCompanyId ?? companies[0]?.company_id}
+            />
           </TabPanel>
         </TabPanels>
       </TabGroup>
