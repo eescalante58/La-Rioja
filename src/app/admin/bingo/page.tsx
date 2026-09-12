@@ -1,5 +1,6 @@
 import { getBingoData } from "./actions";
 import BingoManagerClient from "./BingoManagerClient";
+import { cookies } from "next/headers";
 
 /**
  * Bingo Management page for administrators.
@@ -7,6 +8,12 @@ import BingoManagerClient from "./BingoManagerClient";
  */
 export default async function BingoPage() {
   const { events, companies, countries, error } = await getBingoData();
+
+  // Empresa seleccionada al login (cookie establecida en select-company)
+  const cookieStore = await cookies();
+  const selectedCompanyId = Number(
+    cookieStore.get("selected_company_id")?.value,
+  );
 
   if (error) {
     return (
@@ -21,6 +28,9 @@ export default async function BingoPage() {
       initialEvents={events}
       companies={companies}
       countries={countries}
+      selectedCompanyId={
+        Number.isNaN(selectedCompanyId) ? undefined : selectedCompanyId
+      }
     />
   );
 }
