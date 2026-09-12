@@ -179,12 +179,17 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
   };
 
   const handleSyncCustomers = async () => {
+    if (!companyId) return;
     setLoadingCustomers(true);
     try {
-      const result = await syncCustomers();
+      const result = await syncCustomers(companyId);
       if (result.success) {
         await loadCustomers(companyId);
-        alert("Sincronización completada con éxito.");
+        alert(
+          `Sincronización completada. ${result.imported ?? 0} clientes importados.`,
+        );
+      } else {
+        alert("Error en sincronización: " + (result.error || "desconocido"));
       }
     } finally {
       setLoadingCustomers(false);

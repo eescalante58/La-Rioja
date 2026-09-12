@@ -1655,14 +1655,93 @@ async function getBatchDetailsInternal(batchId: string) {
 
 export const getBatchDetails = withRole(4, getBatchDetailsInternal);
 
-async function syncCustomersInternal() {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("sync_customers_from_cards");
-  if (error) return { success: false, error: error.message };
-  return { success: true };
+/**
+ * Sincroniza clientes promocionales desde las facturas (invoices) del evento
+ * por defecto de la empresa (companies.def_dash_event_id).
+ * Inserta en customer_phone_number solo los teléfonos que no existan aún.
+ */
+async function syncCustomersInternal(companyId: number) {
+  const supabase = createAdminClient();
+
+  // 1. Obtener el evento por defecto de la empresa
+  const { data: company, error: companyError } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (companyError) return { success: false, error: companyError.message };
+  if (!company?.def_dash_event_id) {
+    return {
+      success: false,
+      error:
+        "La empresa no tiene un evento por defecto configurado (def_dash_event_id).",
+    };
+  }
+
+  // 2. Obtener facturas del evento por defecto
+  const { data: invoices, error: invError } = await supabase
+    .from("invoices")
+    .select("customer_name, whatsapp_number, phone_area, phone_number")
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id);
+
+  if (invError) return { success: false, error: invError.message };
+
+  // 3. Construir lista única de clientes por teléfono
+  //    Prioriza whatsapp_number; si no existe, usa phone_area + phone_number
+  const phoneMap = new Map<string, string>();
+  for (const inv of invoices || []) {
+    const rawPhone =
+      (inv.whatsapp_number || "").trim() ||
+      `${inv.phone_area || ""}${inv.phone_number || ""}`.trim();
+    const phone = rawPhone.replace(/\D/g, "");
+    const name = (inv.customer_name || "").trim();
+    if (phone && name && !phoneMap.has(phone)) {
+      phoneMap.set(phone, name);
+    }
+  }
+
+  if (phoneMap.size === 0) {
+    return { success: true, imported: 0 };
+  }
+
+  // 4. Obtener teléfonos ya registrados para evitar duplicados
+  const { data: existing, error: existError } = await supabase
+    .from("customer_phone_number")
+    .select("phone_number")
+    .eq("company_id", companyId);
+
+  if (existError) return { success: false, error: existError.message };
+
+  const existingPhones = new Set(
+    (existing || []).map((c: any) =>
+      (c.phone_number || "").replace(/\D/g, ""),
+    ),
+  );
+
+  const toInsert = [...phoneMap.entries()]
+    .filter(([phone]) => !existingPhones.has(phone))
+    .map(([phone, name]) => ({
+      company_id: companyId,
+      customer_name: name,
+      phone_number: phone,
+    }));
+
+  if (toInsert.length > 0) {
+    const { error: insertError } = await supabase
+      .from("customer_phone_number")
+      .insert(toInsert);
+    if (insertError) return { success: false, error: insertError.message };
+  }
+
+  return { success: true, imported: toInsert.length };
 }
 
-export const syncCustomers = withRole(8, syncCustomersInternal);
+export const syncCustomers = withRole(
+  8,
+  withCompanyAccess(syncCustomersInternal, 0),
+);
 
 async function uploadPromoImageInternal(formData: FormData) {
   const supabase = await createClient();
