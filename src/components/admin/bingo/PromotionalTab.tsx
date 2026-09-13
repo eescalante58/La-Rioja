@@ -156,9 +156,15 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
         setEditingCustomer(null);
         setCustomerFormName("");
         setCustomerFormPhone("");
+      } else {
+        alert("Error al guardar cliente: " + (result.error || "desconocido"));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving customer:", error);
+      alert(
+        "Error inesperado: " +
+          (error.message || "Consulte la consola para más detalles"),
+      );
     } finally {
       setLoadingCustomers(false);
     }

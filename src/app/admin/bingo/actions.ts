@@ -1555,10 +1555,15 @@ async function saveCustomerInternal(payload: {
   customer_name: string;
   phone_number: string;
 }) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
+
+  // Si no hay id (cliente nuevo), se omite para que upsert haga INSERT
+  const { id, ...rest } = payload;
+  const record = id ? { id, ...rest } : rest;
+
   const { data, error } = await supabase
     .from("customer_phone_number")
-    .upsert(payload)
+    .upsert(record)
     .select()
     .single();
 
