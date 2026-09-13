@@ -1378,20 +1378,67 @@ export const updateInvoice = withRole(4, withCompanyAccess(updateInvoiceInternal
 
 export const sendWhatsAppAutomation = withRole(4, sendWhatsAppAutomationInternal);
 
+/**
+ * Delete an invoice and release its associated cards.
+ * Cards linked to the invoice are reset to "Disponible" and all
+ * invoice-derived fields are cleared to keep referential integrity.
+ */
 async function deleteInvoiceInternal(id: string, context: { user: any }) {
   const { user } = context;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
-  const { data: invoice } = await supabase
+  // 1. Get invoice data needed to release cards and cleanup storage
+  const { data: invoice, error: fetchError } = await supabase
     .from("invoices")
-    .select("invoice_number, event_id")
+    .select("invoice_number, event_id, company_id, url_invoice")
     .eq("id", id)
     .single();
 
+  if (fetchError) return { error: fetchError.message };
+  if (!invoice) return { error: "Factura no encontrada." };
+
+  // 2. Release associated cards BEFORE deleting (idempotent: if the
+  //    delete fails and the user retries, this update matches 0 rows)
+  const { error: cardsError } = await supabase
+    .from("cards")
+    .update({
+      card_status: "Disponible",
+      invoice_number: null,
+      sales_price: null,
+      sold_by: null,
+      player_name: null,
+      player_phone_number: null,
+      player_email: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("company_id", invoice.company_id)
+    .eq("event_id", invoice.event_id)
+    .eq("invoice_number", invoice.invoice_number);
+
+  if (cardsError) {
+    return {
+      error: `Error al liberar cartones asociados: ${cardsError.message}`,
+    };
+  }
+
+  // 3. Delete invoice image from Storage if present
+  if (invoice.url_invoice) {
+    try {
+      const urlParts = invoice.url_invoice.split("/invoices_images/");
+      if (urlParts.length > 1) {
+        await supabase.storage.from("invoices_images").remove([urlParts[1]]);
+      }
+    } catch (cleanupError) {
+      console.warn("Error cleaning up invoice image:", cleanupError);
+    }
+  }
+
+  // 4. Delete the invoice record
   const { error } = await supabase.from("invoices").delete().eq("id", id);
 
   if (error) return { error: error.message };
 
+  // 5. Log activity for audit
   if (user) {
     await supabase.from("user_activity_log").insert({
       user_id: user.id,
@@ -1399,8 +1446,9 @@ async function deleteInvoiceInternal(id: string, context: { user: any }) {
       entity: "invoices",
       metadata: {
         invoice_id: id,
-        invoice_number: invoice?.invoice_number,
-        event_id: invoice?.event_id,
+        invoice_number: invoice.invoice_number,
+        event_id: invoice.event_id,
+        cards_released: true,
         timestamp: new Date().toISOString(),
       },
     });

@@ -16,7 +16,7 @@ import {
   TableCell,
   Badge,
 } from "@tremor/react";
-import { Plus, TrendingUp, Eye } from "lucide-react";
+import { Plus, TrendingUp, Eye, Edit, Trash2 } from "lucide-react";
 import { getInvoices, deleteInvoice } from "@/app/admin/bingo/actions";
 import InvoiceDetailsDialog from "./InvoiceDetailsDialog";
 import NewInvoiceDialog from "./NewInvoiceDialog";
@@ -59,13 +59,20 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar esta factura?")) return;
+    if (
+      !confirm(
+        "¿Eliminar esta factura? Los cartones asociados serán liberados.",
+      )
+    )
+      return;
     const result = await deleteInvoice(id);
     if (result.success) {
       alert("Factura eliminada");
       setIsDetailsOpen(false);
       if (currentEventInfo)
         loadInvoices(currentEventInfo.companyId, currentEventInfo.eventId);
+    } else {
+      alert("Error al eliminar: " + (result.error || "desconocido"));
     }
   };
 
@@ -183,7 +190,36 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="light" icon={Eye} size="xs" />
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="light"
+                            icon={Eye}
+                            size="xs"
+                            tooltip="Ver detalles"
+                          />
+                          <Button
+                            variant="light"
+                            icon={Edit}
+                            size="xs"
+                            tooltip="Editar factura"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedInvoice(inv);
+                              setIsNewInvoiceOpen(true);
+                            }}
+                          />
+                          <Button
+                            variant="light"
+                            icon={Trash2}
+                            size="xs"
+                            color="rose"
+                            tooltip="Eliminar factura"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(inv.id);
+                            }}
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
