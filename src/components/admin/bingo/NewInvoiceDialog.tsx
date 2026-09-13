@@ -102,12 +102,20 @@ export default function NewInvoiceDialog({
     }
 
     if (typeof cardsRes === "object" && "data" in cardsRes) {
-      setAvailableCardsForInvoice(
-        (cardsRes.data || []).filter(
-          (c: any) =>
-            c.card_status === "Disponible" || (invoice && c.invoice_number === invoice.invoice_number),
-        ),
+      const eligible = (cardsRes.data || []).filter(
+        (c: any) =>
+          c.card_status === "Disponible" || (invoice && c.invoice_number === invoice.invoice_number),
       );
+
+      // En edición: primero los cartones asignados a esta factura,
+      // luego los disponibles; ambos grupos ordenados por card_number
+      eligible.sort((a: any, b: any) => {
+        const aLinked = invoice && a.invoice_number === invoice.invoice_number ? 0 : 1;
+        const bLinked = invoice && b.invoice_number === invoice.invoice_number ? 0 : 1;
+        return aLinked - bLinked || a.card_number - b.card_number;
+      });
+
+      setAvailableCardsForInvoice(eligible);
       if (invoice) {
         const linked = (cardsRes.data || [])
           .filter((c: any) => c.invoice_number === invoice.invoice_number)
