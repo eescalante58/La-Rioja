@@ -11,7 +11,7 @@ import {
   SelectItem,
   Button,
 } from "@tremor/react";
-import { Smartphone, MessageCircle, DollarSign, CheckCircle } from "lucide-react";
+import { Smartphone, MessageCircle, DollarSign, CheckCircle, Eye } from "lucide-react";
 import {
   saveInvoice,
   updateInvoice,
@@ -310,6 +310,16 @@ export default function NewInvoiceDialog({
                     accept="image/*,.pdf"
                     className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:bg-larioja-azul/10 file:text-larioja-azul hover:file:bg-larioja-azul/20"
                   />
+                  {invoice?.url_invoice && (
+                    <a
+                      href={invoice.url_invoice}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-larioja-azul hover:underline mt-1"
+                    >
+                      <Eye size={12} /> Ver imagen actual
+                    </a>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Método de Pago</Text>
