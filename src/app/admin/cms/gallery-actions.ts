@@ -51,6 +51,16 @@ async function bulkUploadGalleryImagesInternal(
   const results: any[] = [];
   const errors: string[] = [];
 
+  // 1. Obtener el orden máximo actual para este evento
+  const { data: maxOrderData } = await supabase
+    .from("event_gallery")
+    .select("content_order")
+    .eq("event_id", eventId)
+    .order("content_order", { ascending: false })
+    .limit(1);
+
+  let currentOrder = maxOrderData && maxOrderData.length > 0 ? (maxOrderData[0].content_order + 1) : 1;
+
   for (const file of files) {
     if (!(file instanceof File) || file.size === 0) continue;
 
@@ -82,7 +92,7 @@ async function bulkUploadGalleryImagesInternal(
             event_id: eventId,
             image_url: publicUrl,
             thumbnail_url: publicUrl,
-            content_order: 0,
+            content_order: currentOrder++,
             is_active: true,
           },
         ])
