@@ -47,14 +47,26 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
     setDraggedIndex(index);
   };
 
-  const handleDragEnter = (index: number) => {
-    setDragOverIndex(index);
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
   };
 
-  const handleDragEnd = async () => {
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    await finalizeReordering();
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const finalizeReordering = async () => {
     if (draggedIndex === null || dragOverIndex === null || draggedIndex === dragOverIndex) {
-      setDraggedIndex(null);
-      setDragOverIndex(null);
+      handleDragEnd();
       return;
     }
     
@@ -80,11 +92,11 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
     const finalImages = [...otherImages, ...updatedFiltered].sort((a, b) => a.content_order - b.content_order);
 
     setImages(finalImages);
-    setDraggedIndex(null);
-    setDragOverIndex(null);
+    const updates = updatedFiltered.map(img => ({ id: img.id, content_order: img.content_order }));
+    
+    handleDragEnd();
 
     setIsReordering(true);
-    const updates = updatedFiltered.map(img => ({ id: img.id, content_order: img.content_order }));
     const result = await updateGalleryImagesOrder(updates);
     
     if (!result.success) {
@@ -222,14 +234,14 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
             <Card 
               key={img.id} 
               className={`p-0 overflow-hidden relative group border-2 transition-all cursor-move
-                ${draggedIndex === index ? 'opacity-50 scale-95 border-larioja-azul' : 'border-gray-100'}
-                ${dragOverIndex === index && draggedIndex !== index ? 'border-dashed border-larioja-azul bg-blue-50/30' : ''}
+                ${draggedIndex === index ? 'opacity-40 scale-95 border-larioja-azul rotate-1 shadow-inner' : 'border-gray-100'}
+                ${dragOverIndex === index && draggedIndex !== index ? 'border-larioja-amarillo bg-yellow-50/20 scale-105 z-10' : ''}
               `}
               draggable
               onDragStart={() => handleDragStart(index)}
-              onDragEnter={() => handleDragEnter(index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDrop={(e) => handleDrop(e)}
               onDragEnd={handleDragEnd}
-              onDragOver={(e) => e.preventDefault()}
             >
               <div className="aspect-square relative">
                 <Image
