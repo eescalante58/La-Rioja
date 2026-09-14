@@ -40,11 +40,12 @@ async function bulkUploadGalleryImagesInternal(
   context: { user: any }
 ) {
   const { user } = context;
+  const companyId = parseInt(formData.get("company_id") as string);
   const eventId = formData.get("event_id") as string;
   const files = formData.getAll("files") as File[];
   
-  if (!eventId || files.length === 0) {
-    return { success: false, error: "Event ID y archivos son requeridos." };
+  if (isNaN(companyId) || !eventId || files.length === 0) {
+    return { success: false, error: "Company ID, Event ID y archivos son requeridos." };
   }
 
   const supabase = createAdminClient();
@@ -55,8 +56,8 @@ async function bulkUploadGalleryImagesInternal(
     if (!(file instanceof File) || file.size === 0) continue;
 
     const fileExt = file.name.split(".").pop();
-    const fileName = `${eventId}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const storagePath = `gallery/${eventId}/${fileName}`;
+    const fileName = `${companyId}_${eventId}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const storagePath = `gallery/${companyId}/${eventId}/${fileName}`;
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -78,9 +79,10 @@ async function bulkUploadGalleryImagesInternal(
         .from("event_gallery")
         .insert([
           {
+            company_id: companyId,
             event_id: eventId,
             image_url: publicUrl,
-            thumbnail_url: publicUrl, // Por ahora igual, se podría procesar miniatura
+            thumbnail_url: publicUrl,
             content_order: 0,
             is_active: true,
           },

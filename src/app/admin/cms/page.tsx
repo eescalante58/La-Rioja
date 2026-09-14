@@ -42,7 +42,7 @@ export default async function CMSManager() {
 
   const { data: events } = await supabase
     .from("events")
-    .select("event_id, event_name")
+    .select("company_id, event_id, event_name")
     .order("created_at", { ascending: false });
 
   const { data: galleryImages } = await supabase

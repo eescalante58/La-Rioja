@@ -18,6 +18,7 @@ import Image from "next/image";
 
 interface GalleryImage {
   id: string;
+  company_id: number;
   event_id: string;
   image_url: string;
   is_active: boolean;
@@ -29,7 +30,9 @@ interface GalleryManagementProps {
 }
 
 export default function GalleryManagement({ events, initialImages }: GalleryManagementProps) {
-  const [selectedEvent, setSelectedEvent] = useState<string>(events[0]?.event_id || "");
+  const [selectedEventKey, setSelectedEventKey] = useState<string>(
+    events.length > 0 ? `${events[0].company_id}|${events[0].event_id}` : ""
+  );
   const [images, setImages] = useState<GalleryImage[]>(initialImages);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -38,13 +41,16 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !selectedEvent) return;
+    if (!files || files.length === 0 || !selectedEventKey) return;
+
+    const [cId, eId] = selectedEventKey.split("|");
 
     setUploading(true);
     setMessage(null);
 
     const formData = new FormData();
-    formData.append("event_id", selectedEvent);
+    formData.append("company_id", cId);
+    formData.append("event_id", eId);
     Array.from(files).forEach(file => {
       formData.append("files", file);
     });
@@ -53,7 +59,6 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
       const result = await bulkUploadGalleryImages(formData);
       if (result.success) {
         setMessage({ text: `Se subieron ${result.count} imágenes con éxito.`, type: 'success' });
-        // Recargar imágenes (idealmente traer las nuevas del server)
         window.location.reload();
       } else {
         setMessage({ text: result.error || "Error al subir imágenes", type: 'error' });
@@ -84,7 +89,10 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
     }
   };
 
-  const filteredImages = images.filter(img => img.event_id === selectedEvent);
+  const [selCompanyId, selEventId] = selectedEventKey.split("|");
+  const filteredImages = images.filter(
+    img => img.company_id === parseInt(selCompanyId) && img.event_id === selEventId
+  );
 
   return (
     <div className="space-y-6">
@@ -97,13 +105,13 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
           
           <div className="flex items-center gap-3">
             <Select 
-              value={selectedEvent} 
-              onValueChange={setSelectedEvent}
+              value={selectedEventKey} 
+              onValueChange={setSelectedEventKey}
               placeholder="Seleccionar evento..."
-              className="min-w-[200px]"
+              className="min-w-[250px]"
             >
               {events.map((ev) => (
-                <SelectItem key={ev.event_id} value={ev.event_id}>
+                <SelectItem key={`${ev.company_id}-${ev.event_id}`} value={`${ev.company_id}|${ev.event_id}`}>
                   {ev.event_id} - {ev.event_name}
                 </SelectItem>
               ))}
@@ -123,7 +131,7 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
               onClick={() => fileInputRef.current?.click()}
               loading={uploading}
               className="bg-larioja-azul"
-              disabled={!selectedEvent}
+              disabled={!selectedEventKey}
             >
               Subir Fotos
             </Button>
