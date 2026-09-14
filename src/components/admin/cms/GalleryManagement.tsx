@@ -160,18 +160,17 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
                   className="object-cover"
                 />
               </div>
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <Badge color="emerald" size="xs">Activa</Badge>
                 <Button
                   size="xs"
-                  variant="secondary"
+                  variant="light"
                   color="rose"
                   icon={Trash2}
                   onClick={() => handleDelete(img.id)}
                   loading={deletingId === img.id}
+                  tooltip="Eliminar imagen"
                 />
-              </div>
-              <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
-                <Badge color="emerald" size="xs">Activa</Badge>
               </div>
             </Card>
           ))
