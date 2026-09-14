@@ -38,44 +38,40 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isReordering, setIsReordering] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragItem = useRef<number | null>(null);
-  const dragOverItem = useRef<number | null>(null);
 
   const handleDragStart = (index: number) => {
-    dragItem.current = index;
+    setDraggedIndex(index);
   };
 
   const handleDragEnter = (index: number) => {
-    dragOverItem.current = index;
+    setDragOverIndex(index);
   };
 
   const handleDragEnd = async () => {
-    if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
-      dragItem.current = null;
-      dragOverItem.current = null;
+    if (draggedIndex === null || dragOverIndex === null || draggedIndex === dragOverIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
       return;
     }
     
-    // 1. Obtener la lista actual filtrada
     const [cId, eId] = selectedEventKey.split("|");
     const currentFiltered = images.filter(
       img => img.company_id === parseInt(cId) && img.event_id === eId
     );
 
-    // 2. Reordenar la lista filtrada
     const newFiltered = [...currentFiltered];
-    const draggedItem = newFiltered[dragItem.current];
-    newFiltered.splice(dragItem.current, 1);
-    newFiltered.splice(dragOverItem.current, 0, draggedItem);
+    const draggedItem = newFiltered[draggedIndex];
+    newFiltered.splice(draggedIndex, 1);
+    newFiltered.splice(dragOverIndex, 0, draggedItem);
     
-    // 3. Crear el nuevo array total de imágenes preservando las no filtradas
     const otherImages = images.filter(
       img => !(img.company_id === parseInt(cId) && img.event_id === eId)
     );
 
-    // 4. Asignar nuevos órdenes correlativos
     const updatedFiltered = newFiltered.map((img, idx) => ({
       ...img,
       content_order: idx
@@ -84,10 +80,9 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
     const finalImages = [...otherImages, ...updatedFiltered].sort((a, b) => a.content_order - b.content_order);
 
     setImages(finalImages);
-    dragItem.current = null;
-    dragOverItem.current = null;
+    setDraggedIndex(null);
+    setDragOverIndex(null);
 
-    // 5. Guardar en DB
     setIsReordering(true);
     const updates = updatedFiltered.map(img => ({ id: img.id, content_order: img.content_order }));
     const result = await updateGalleryImagesOrder(updates);
@@ -173,6 +168,7 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
               onValueChange={setSelectedEventKey}
               placeholder="Seleccionar evento..."
               className="min-w-[250px]"
+              onMouseDown={(e) => e.stopPropagation()}
             >
               {events.map((ev) => (
                 <SelectItem key={`${ev.company_id}-${ev.event_id}`} value={`${ev.company_id}|${ev.event_id}`}>
@@ -192,6 +188,7 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
             
             <Button
               icon={Upload}
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={() => fileInputRef.current?.click()}
               loading={uploading}
               className="bg-larioja-azul"
@@ -224,22 +221,25 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
           filteredImages.map((img, index) => (
             <Card 
               key={img.id} 
-              className="p-0 overflow-hidden relative group border-gray-100 cursor-move transition-all active:scale-95 active:rotate-1"
+              className={`p-0 overflow-hidden relative group border-2 transition-all cursor-move
+                ${draggedIndex === index ? 'opacity-50 scale-95 border-larioja-azul' : 'border-gray-100'}
+                ${dragOverIndex === index && draggedIndex !== index ? 'border-dashed border-larioja-azul bg-blue-50/30' : ''}
+              `}
               draggable
               onDragStart={() => handleDragStart(index)}
               onDragEnter={() => handleDragEnter(index)}
               onDragEnd={handleDragEnd}
               onDragOver={(e) => e.preventDefault()}
             >
-              <div className="aspect-square relative pointer-events-none">
+              <div className="aspect-square relative">
                 <Image
                   src={img.image_url}
                   alt="Gallery"
                   fill
-                  className="object-cover"
+                  className="object-cover pointer-events-none"
                 />
-                <div className="absolute top-2 left-2 p-1.5 bg-white/80 backdrop-blur-md rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                  <GripVertical size={16} className="text-gray-500" />
+                <div className="absolute top-2 left-2 p-1.5 bg-white/90 backdrop-blur-sm rounded-lg shadow-md group-hover:scale-110 transition-transform">
+                  <GripVertical size={18} className="text-larioja-azul" />
                 </div>
               </div>
               <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
@@ -252,6 +252,7 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
                   variant="light"
                   color="rose"
                   icon={Trash2}
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(img.id);
