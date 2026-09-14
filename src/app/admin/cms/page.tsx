@@ -40,15 +40,24 @@ export default async function CMSManager() {
     .select("*")
     .order("content_order", { ascending: true });
 
-  const { data: events } = await supabase
+  // Consultas con manejo de error individual para evitar crash de página
+  const { data: events, error: eventsError } = await supabase
     .from("events")
-    .select("company_id, event_id, event_name")
+    .select("*") // Seleccionamos todo para evitar error por nombre de columna específico
     .order("created_at", { ascending: false });
 
-  const { data: galleryImages } = await supabase
+  if (eventsError) {
+    console.error("Error loading events for CMS:", eventsError);
+  }
+
+  const { data: galleryImages, error: galleryError } = await supabase
     .from("event_gallery")
     .select("*")
     .order("created_at", { ascending: false });
+
+  if (galleryError) {
+    console.error("Error loading gallery for CMS:", galleryError);
+  }
 
   return (
     <div className="space-y-6">
