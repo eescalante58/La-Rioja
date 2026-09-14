@@ -138,28 +138,55 @@ async function deleteGalleryImageInternal(id: string, context: { user: any }) {
   const { user } = context;
   const supabase = createAdminClient();
 
-  // 1. Obtener URL para borrar del storage
-  const { data: item } = await supabase
+  // 1. Obtener la URL de la imagen antes de borrar el registro
+  const { data: item, error: fetchError } = await supabase
     .from("event_gallery")
     .select("image_url")
     .eq("id", id)
     .single();
 
-  if (item?.image_url) {
+  if (fetchError || !item) {
+    return { success: false, error: "No se encontró la imagen en la base de datos." };
+  }
+
+  // 2. Intentar borrar del Storage
+  if (item.image_url) {
     try {
-      const parts = item.image_url.split("/event_gallery_images/");
+      // Extraer el path relativo al bucket
+      // La URL suele ser: .../public/event_gallery_images/path/to/file.ext
+      const bucketName = "event_gallery_images";
+      const parts = item.image_url.split(`/${bucketName}/`);
+      
       if (parts.length > 1) {
-        const path = parts[1].split("?")[0];
-        await supabase.storage.from("event_gallery_images").remove([path]);
+        // El path es todo lo que viene después del nombre del bucket
+        const storagePath = parts[1].split("?")[0]; // Quitar query params si existen
+        
+        console.log(`Intentando borrar de storage: ${storagePath} en bucket ${bucketName}`);
+        
+        const { data: removeData, error: removeError } = await supabase.storage
+          .from(bucketName)
+          .remove([storagePath]);
+
+        if (removeError) {
+          console.error("Error al borrar del bucket:", removeError);
+        } else {
+          console.log("Borrado de storage exitoso:", removeData);
+        }
+      } else {
+        console.warn("No se pudo extraer el path del storage de la URL:", item.image_url);
       }
     } catch (err) {
-      console.error("Error deleting image from storage:", err);
+      console.error("Error inesperado al intentar borrar del storage:", err);
     }
   }
 
-  const { error } = await supabase.from("event_gallery").delete().eq("id", id);
+  // 3. Borrar el registro de la base de datos
+  const { error: dbError } = await supabase.from("event_gallery").delete().eq("id", id);
 
-  if (error) return { success: false, error: error.message };
+  if (dbError) {
+    console.error("Error al borrar registro de base de datos:", dbError);
+    return { success: false, error: dbError.message };
+  }
 
   if (user) {
     await supabase.from("user_activity_log").insert({
