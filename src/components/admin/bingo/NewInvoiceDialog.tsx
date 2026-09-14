@@ -175,8 +175,13 @@ export default function NewInvoiceDialog({
             <Title className="text-larioja-azul dark:text-larioja-amarillo">
               {invoice ? "Editar Factura" : "Nueva Factura"}
             </Title>
-            <div className="text-xs font-bold text-gray-500">
-              EVENTO: {currentEvent?.eventId}
+            <div className="text-right text-xs font-bold text-gray-500 space-y-0.5">
+              <div>EVENTO: {currentEvent?.eventId}</div>
+              {invoice && (
+                <div className="text-larioja-azul dark:text-larioja-amarillo">
+                  FACTURA #{invoice.invoice_number} — {invoice.customer_name}
+                </div>
+              )}
             </div>
           </div>
 
