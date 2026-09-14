@@ -52,26 +52,44 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
   };
 
   const handleDragEnd = async () => {
-    if (dragItem.current === null || dragOverItem.current === null) return;
+    if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
+      dragItem.current = null;
+      dragOverItem.current = null;
+      return;
+    }
     
-    const newImages = [...images];
-    const draggedItemContent = newImages[dragItem.current];
-    newImages.splice(dragItem.current, 1);
-    newImages.splice(dragOverItem.current, 0, draggedItemContent);
+    // 1. Obtener la lista actual filtrada
+    const [cId, eId] = selectedEventKey.split("|");
+    const currentFiltered = images.filter(
+      img => img.company_id === parseInt(cId) && img.event_id === eId
+    );
+
+    // 2. Reordenar la lista filtrada
+    const newFiltered = [...currentFiltered];
+    const draggedItem = newFiltered[dragItem.current];
+    newFiltered.splice(dragItem.current, 1);
+    newFiltered.splice(dragOverItem.current, 0, draggedItem);
     
-    // Re-asignar content_order basado en la nueva posición
-    const updatedImages = newImages.map((img, idx) => ({
+    // 3. Crear el nuevo array total de imágenes preservando las no filtradas
+    const otherImages = images.filter(
+      img => !(img.company_id === parseInt(cId) && img.event_id === eId)
+    );
+
+    // 4. Asignar nuevos órdenes correlativos
+    const updatedFiltered = newFiltered.map((img, idx) => ({
       ...img,
       content_order: idx
     }));
 
-    setImages(updatedImages);
+    const finalImages = [...otherImages, ...updatedFiltered].sort((a, b) => a.content_order - b.content_order);
+
+    setImages(finalImages);
     dragItem.current = null;
     dragOverItem.current = null;
 
-    // Guardar nuevo orden en la DB
+    // 5. Guardar en DB
     setIsReordering(true);
-    const updates = updatedImages.map(img => ({ id: img.id, content_order: img.content_order }));
+    const updates = updatedFiltered.map(img => ({ id: img.id, content_order: img.content_order }));
     const result = await updateGalleryImagesOrder(updates);
     
     if (!result.success) {
