@@ -90,12 +90,19 @@ async function bulkUploadGalleryImagesInternal(
         .select()
         .single();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error("Database error details:", dbError);
+        throw new Error(`Error en BD: ${dbError.message} - ${dbError.details || ''}`);
+      }
       results.push(inserted);
     } catch (err: any) {
       console.error(`Error uploading file ${file.name}:`, err);
       errors.push(`${file.name}: ${err.message}`);
     }
+  }
+
+  if (errors.length > 0 && results.length === 0) {
+    return { success: false, error: errors.join(" | ") };
   }
 
   if (user) {
