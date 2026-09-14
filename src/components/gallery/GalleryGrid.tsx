@@ -16,20 +16,19 @@ export default function GalleryGrid({ images }: { images: GalleryImage[] }) {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 py-8">
-      {/* Masonry Layout using CSS Columns */}
-      <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+      {/* Grid Layout to preserve horizontal order */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {images.map((image) => (
           <div
             key={image.id}
-            className="relative group cursor-pointer break-inside-avoid rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-800 animate-fade-in"
+            className="relative group cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-800 animate-fade-in aspect-[4/5]"
             onClick={() => setSelectedImage(image)}
           >
             <Image
               src={image.image_url}
               alt={image.caption || "Bingo La Rioja 2026"}
-              width={500}
-              height={700}
-              className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-500"
+              fill
+              className="object-cover transform group-hover:scale-105 transition-transform duration-500"
               placeholder="blur"
               blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/+F9PQAI8wNPvd7POQAAAABJRU5ErkJggg=="
             />
