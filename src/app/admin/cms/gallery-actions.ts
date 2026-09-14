@@ -176,3 +176,42 @@ async function deleteGalleryImageInternal(id: string, context: { user: any }) {
 }
 
 export const deleteGalleryImage = withRole(8, deleteGalleryImageInternal);
+
+/**
+ * Actualiza el orden de las imágenes en la galería.
+ */
+async function updateGalleryImagesOrderInternal(
+  updates: { id: string; content_order: number }[],
+  context: { user: any }
+) {
+  const { user } = context;
+  const supabase = createAdminClient();
+
+  // Actualización en lote usando una promesa para cada item
+  const results = await Promise.all(
+    updates.map(item => 
+      supabase
+        .from("event_gallery")
+        .update({ content_order: item.content_order })
+        .eq("id", item.id)
+    )
+  );
+
+  const error = results.find(r => r.error);
+  if (error) return { success: false, error: error.error?.message };
+
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "REORDER_GALLERY",
+      entity: "event_gallery",
+      metadata: { count: updates.length, timestamp: new Date().toISOString() },
+    });
+  }
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/bingo");
+  return { success: true };
+}
+
+export const updateGalleryImagesOrder = withRole(8, updateGalleryImagesOrderInternal);
