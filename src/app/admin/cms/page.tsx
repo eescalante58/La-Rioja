@@ -13,85 +13,87 @@ export const dynamic = "force-dynamic";
  * @returns {Promise<JSX.Element>} The CMS management interface.
  */
 export default async function CMSManager() {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const { data: content, error } = await supabase
-    .from("site_content")
-    .select("*")
-    .order("page", { ascending: true })
-    .order("section_key", { ascending: true })
-    .order("content_order", { ascending: true });
+    const { data: content, error } = await supabase
+      .from("site_content")
+      .select("*")
+      .order("page", { ascending: true })
+      .order("section_key", { ascending: true })
+      .order("content_order", { ascending: true });
 
-  if (error) {
+    if (error) throw error;
+
+    const { data: faqs } = await supabase
+      .from("faqs")
+      .select("*, faq_sections(title)")
+      .order("content_order", { ascending: true });
+
+    const { data: faqSections } = await supabase
+      .from("faq_sections")
+      .select("*")
+      .order("content_order", { ascending: true });
+
+    const { data: events } = await supabase
+      .from("events")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    const { data: galleryImages } = await supabase
+      .from("event_gallery")
+      .select("*")
+      .order("created_at", { ascending: false });
+
     return (
-      <div className="p-6 bg-red-50 text-red-600 rounded-xl">
-        Error al cargar el CMS: {error.message}
+      <div className="space-y-6">
+        <TabGroup defaultValue="1">
+          <TabList variant="line" color="blue">
+            <Tab value="1" icon={List}>Contenido General</Tab>
+            <Tab value="2" icon={HelpCircle}>Preguntas Frecuentes (FAQ)</Tab>
+            <Tab value="3" icon={ImageIcon}>Galería de Fotos</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel>
+              <div className="mt-6">
+                <CMSManagerClient initialContent={content || []} />
+              </div>
+            </TabPanel>
+            <TabPanel>
+              <div className="mt-6">
+                <FAQManager
+                  initialFaqs={faqs || []}
+                  faqSections={faqSections || []}
+                />
+              </div>
+            </TabPanel>
+            <TabPanel>
+              <div className="mt-6">
+                <GalleryManagement 
+                  events={events || []} 
+                  initialImages={galleryImages || []} 
+                />
+              </div>
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
+      </div>
+    );
+  } catch (err: any) {
+    console.error("Critical error in CMS Manager:", err);
+    return (
+      <div className="p-10 text-center">
+        <div className="bg-red-50 text-red-700 p-6 rounded-2xl border border-red-100 max-w-2xl mx-auto">
+          <h2 className="text-lg font-bold mb-2">Error de Carga</h2>
+          <p className="text-sm opacity-80 mb-4">
+            No se pudo cargar el panel de administración debido a un problema técnico.
+          </p>
+          <code className="text-xs bg-red-100/50 p-2 rounded block text-left overflow-auto">
+            {err.message || "Error desconocido"}
+          </code>
+        </div>
       </div>
     );
   }
-
-  const { data: faqs } = await supabase
-    .from("faqs")
-    .select("*, faq_sections(title)")
-    .order("content_order", { ascending: true });
-
-  const { data: faqSections } = await supabase
-    .from("faq_sections")
-    .select("*")
-    .order("content_order", { ascending: true });
-
-  // Consultas con manejo de error individual para evitar crash de página
-  const { data: events, error: eventsError } = await supabase
-    .from("events")
-    .select("*") // Seleccionamos todo para evitar error por nombre de columna específico
-    .order("created_at", { ascending: false });
-
-  if (eventsError) {
-    console.error("Error loading events for CMS:", eventsError);
-  }
-
-  const { data: galleryImages, error: galleryError } = await supabase
-    .from("event_gallery")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (galleryError) {
-    console.error("Error loading gallery for CMS:", galleryError);
-  }
-
-  return (
-    <div className="space-y-6">
-      <TabGroup defaultValue="1">
-        <TabList variant="line" color="blue">
-          <Tab value="1" icon={List}>Contenido General</Tab>
-          <Tab value="2" icon={HelpCircle}>Preguntas Frecuentes (FAQ)</Tab>
-          <Tab value="3" icon={ImageIcon}>Galería de Fotos</Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel>
-            <div className="mt-6">
-              <CMSManagerClient initialContent={content || []} />
-            </div>
-          </TabPanel>
-          <TabPanel>
-            <div className="mt-6">
-              <FAQManager
-                initialFaqs={faqs || []}
-                faqSections={faqSections || []}
-              />
-            </div>
-          </TabPanel>
-          <TabPanel>
-            <div className="mt-6">
-              <GalleryManagement 
-                events={events || []} 
-                initialImages={galleryImages || []} 
-              />
-            </div>
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
-    </div>
-  );
 }
 

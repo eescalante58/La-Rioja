@@ -31,7 +31,7 @@ interface GalleryManagementProps {
 
 export default function GalleryManagement({ events, initialImages }: GalleryManagementProps) {
   const [selectedEventKey, setSelectedEventKey] = useState<string>(
-    events.length > 0 ? `${events[0].company_id}|${events[0].event_id}` : ""
+    events && events.length > 0 ? `${events[0].company_id}|${events[0].event_id}` : ""
   );
   const [images, setImages] = useState<GalleryImage[]>(initialImages);
   const [uploading, setUploading] = useState(false);
