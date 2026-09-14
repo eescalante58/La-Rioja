@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import CMSManagerClient from "./CMSManagerClient";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
-import { List, HelpCircle } from "lucide-react";
+import { List, HelpCircle, Image as ImageIcon } from "lucide-react";
 import FAQManager from "@/components/admin/FAQManager";
+import GalleryManagement from "@/components/admin/cms/GalleryManagement";
 
 // Force dynamic rendering to avoid build-time RLS issues
 export const dynamic = "force-dynamic";
@@ -39,12 +40,23 @@ export default async function CMSManager() {
     .select("*")
     .order("content_order", { ascending: true });
 
+  const { data: events } = await supabase
+    .from("events")
+    .select("event_id, event_name")
+    .order("created_at", { ascending: false });
+
+  const { data: galleryImages } = await supabase
+    .from("event_gallery")
+    .select("*")
+    .order("created_at", { ascending: false });
+
   return (
     <div className="space-y-6">
       <TabGroup defaultValue="1">
         <TabList variant="line" color="blue">
-          <Tab value="1">Contenido General</Tab>
-          <Tab value="2">Preguntas Frecuentes (FAQ)</Tab>
+          <Tab value="1" icon={List}>Contenido General</Tab>
+          <Tab value="2" icon={HelpCircle}>Preguntas Frecuentes (FAQ)</Tab>
+          <Tab value="3" icon={ImageIcon}>Galería de Fotos</Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
@@ -60,8 +72,17 @@ export default async function CMSManager() {
               />
             </div>
           </TabPanel>
+          <TabPanel>
+            <div className="mt-6">
+              <GalleryManagement 
+                events={events || []} 
+                initialImages={galleryImages || []} 
+              />
+            </div>
+          </TabPanel>
         </TabPanels>
       </TabGroup>
     </div>
   );
 }
+
