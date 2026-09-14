@@ -118,7 +118,12 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
       const result = await bulkUploadGalleryImages(formData);
       if (result.success) {
         setMessage({ text: `Se subieron ${result.count} imágenes con éxito.`, type: 'success' });
-        window.location.reload();
+        // Actualizar el estado local con las nuevas imágenes si el server las devuelve
+        // o simplemente refrescar la lista de imágenes actual
+        if (result.data) {
+          const newImgs = Array.isArray(result.data) ? result.data : [result.data];
+          setImages(prev => [...prev, ...newImgs].sort((a, b) => a.content_order - b.content_order));
+        }
       } else {
         setMessage({ text: result.error || "Error al subir imágenes", type: 'error' });
       }
