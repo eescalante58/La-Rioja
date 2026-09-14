@@ -14,6 +14,7 @@ async function getGalleryImagesInternal(eventId?: string) {
     .from("event_gallery")
     .select("*")
     .eq("is_active", true)
+    .order("event_id", { ascending: false })
     .order("content_order", { ascending: true });
 
   if (eventId) {
