@@ -62,7 +62,7 @@ async function bulkUploadGalleryImagesInternal(
     try {
       const arrayBuffer = await file.arrayBuffer();
       const { error: uploadError } = await supabase.storage
-        .from("event_gallery")
+        .from("event_gallery_images")
         .upload(storagePath, arrayBuffer, {
           cacheControl: "3600",
           upsert: true,
@@ -72,7 +72,7 @@ async function bulkUploadGalleryImagesInternal(
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from("event_gallery")
+        .from("event_gallery_images")
         .getPublicUrl(storagePath);
 
       const { data: inserted, error: dbError } = await supabase
@@ -140,10 +140,10 @@ async function deleteGalleryImageInternal(id: string, context: { user: any }) {
 
   if (item?.image_url) {
     try {
-      const parts = item.image_url.split("/event_gallery/");
+      const parts = item.image_url.split("/event_gallery_images/");
       if (parts.length > 1) {
         const path = parts[1].split("?")[0];
-        await supabase.storage.from("event_gallery").remove([path]);
+        await supabase.storage.from("event_gallery_images").remove([path]);
       }
     } catch (err) {
       console.error("Error deleting image from storage:", err);
