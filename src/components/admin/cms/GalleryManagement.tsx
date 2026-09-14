@@ -12,8 +12,8 @@ import {
   Grid,
   Col
 } from "@tremor/react";
-import { Upload, Trash2, Image as ImageIcon, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
-import { bulkUploadGalleryImages, deleteGalleryImage } from "@/app/admin/cms/gallery-actions";
+import { Upload, Trash2, Image as ImageIcon, CheckCircle, AlertCircle, Loader2, GripVertical } from "lucide-react";
+import { bulkUploadGalleryImages, deleteGalleryImage, updateGalleryImagesOrder } from "@/app/admin/cms/gallery-actions";
 import Image from "next/image";
 
 interface GalleryImage {
@@ -22,6 +22,7 @@ interface GalleryImage {
   event_id: string;
   image_url: string;
   is_active: boolean;
+  content_order: number;
 }
 
 interface GalleryManagementProps {
@@ -33,11 +34,51 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
   const [selectedEventKey, setSelectedEventKey] = useState<string>(
     events && events.length > 0 ? `${events[0].company_id}|${events[0].event_id}` : ""
   );
-  const [images, setImages] = useState<GalleryImage[]>(initialImages);
+  const [images, setImages] = useState<GalleryImage[]>(initialImages.sort((a, b) => a.content_order - b.content_order));
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    dragItem.current = index;
+  };
+
+  const handleDragEnter = (index: number) => {
+    dragOverItem.current = index;
+  };
+
+  const handleDragEnd = async () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    
+    const newImages = [...images];
+    const draggedItemContent = newImages[dragItem.current];
+    newImages.splice(dragItem.current, 1);
+    newImages.splice(dragOverItem.current, 0, draggedItemContent);
+    
+    // Re-asignar content_order basado en la nueva posición
+    const updatedImages = newImages.map((img, idx) => ({
+      ...img,
+      content_order: idx
+    }));
+
+    setImages(updatedImages);
+    dragItem.current = null;
+    dragOverItem.current = null;
+
+    // Guardar nuevo orden en la DB
+    setIsReordering(true);
+    const updates = updatedImages.map(img => ({ id: img.id, content_order: img.content_order }));
+    const result = await updateGalleryImagesOrder(updates);
+    
+    if (!result.success) {
+      alert("Error al guardar el nuevo orden: " + result.error);
+    }
+    setIsReordering(false);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -146,28 +187,52 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
             {message.text}
           </div>
         )}
+
+        {isReordering && (
+          <div className="mt-4 p-2 bg-blue-50 text-blue-700 rounded-lg flex items-center gap-2 text-xs font-semibold animate-pulse">
+            <Loader2 size={14} className="animate-spin" />
+            Guardando nuevo orden...
+          </div>
+        )}
       </Card>
 
       <Grid numItemsMd={2} numItemsLg={4} className="gap-4">
         {filteredImages.length > 0 ? (
-          filteredImages.map((img) => (
-            <Card key={img.id} className="p-0 overflow-hidden relative group border-gray-100">
-              <div className="aspect-square relative">
+          filteredImages.map((img, index) => (
+            <Card 
+              key={img.id} 
+              className="p-0 overflow-hidden relative group border-gray-100 cursor-move transition-all active:scale-95 active:rotate-1"
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragEnter={() => handleDragEnter(index)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => e.preventDefault()}
+            >
+              <div className="aspect-square relative pointer-events-none">
                 <Image
                   src={img.image_url}
                   alt="Gallery"
                   fill
                   className="object-cover"
                 />
+                <div className="absolute top-2 left-2 p-1.5 bg-white/80 backdrop-blur-md rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                  <GripVertical size={16} className="text-gray-500" />
+                </div>
               </div>
               <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <Badge color="emerald" size="xs">Activa</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge color="emerald" size="xs">Activa</Badge>
+                  <span className="text-[10px] text-gray-400 font-mono">#{index + 1}</span>
+                </div>
                 <Button
                   size="xs"
                   variant="light"
                   color="rose"
                   icon={Trash2}
-                  onClick={() => handleDelete(img.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(img.id);
+                  }}
                   loading={deletingId === img.id}
                   tooltip="Eliminar imagen"
                 />
