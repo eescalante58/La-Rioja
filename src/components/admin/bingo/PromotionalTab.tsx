@@ -47,6 +47,7 @@ import {
   getBatchDetails,
   uploadPromoImage,
   sendWhatsAppAutomation,
+  checkWhatsAppInstanceStatus,
 } from "@/app/admin/bingo/actions";
 
 interface Customer {
@@ -252,6 +253,23 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
     const batchId = crypto.randomUUID();
     setCurrentBatchId(batchId);
 
+    // Verificar primero que la instancia de Ultramsg esté activa para
+    // no iterar clientes cuando el servicio está caído o suspendido.
+    const instanceStatus = await checkWhatsAppInstanceStatus();
+    if (!instanceStatus.success) {
+      setSendingBulk(false);
+      alert(
+        "No se pueden enviar mensajes: " +
+          (instanceStatus.error ||
+            "La instancia de WhatsApp no está disponible."),
+      );
+      return;
+    }
+
+    let successCount = 0;
+    let errorCount = 0;
+    let firstError: string | null = null;
+
     for (let i = 0; i < selectedCustomers.length; i++) {
       const customer = selectedCustomers[i];
       let personalizedMessage = promoMessage.replace(
@@ -265,6 +283,13 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
         templateImage: promoImage || undefined,
         cardUrls: [],
       });
+
+      if (res.success) {
+        successCount++;
+      } else {
+        errorCount++;
+        if (!firstError) firstError = res.error || "Error desconocido";
+      }
 
       await logPromoMessage({
         batch_id: batchId,
@@ -282,7 +307,11 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
 
     setSendingBulk(false);
     loadBatchLogs(companyId);
-    alert("Envío masivo finalizado.");
+    alert(
+      errorCount === 0
+        ? `Envío masivo finalizado: ${successCount} mensajes enviados con éxito.`
+        : `Envío masivo finalizado: ${successCount} exitosos, ${errorCount} con error.\n\nPrimer error: ${firstError}`,
+    );
   };
 
   return (
@@ -795,6 +824,7 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
                     <TableHeaderCell>Cliente</TableHeaderCell>
                     <TableHeaderCell>Teléfono</TableHeaderCell>
                     <TableHeaderCell>Estado</TableHeaderCell>
+                    <TableHeaderCell>Error</TableHeaderCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -811,6 +841,11 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
                         >
                           {detail.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Text className="text-xs text-rose-600 dark:text-rose-400 max-w-[260px]">
+                          {detail.error_message || "—"}
+                        </Text>
                       </TableCell>
                     </TableRow>
                   ))}
