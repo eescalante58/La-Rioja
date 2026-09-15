@@ -1834,6 +1834,80 @@ async function uploadPromoImageInternal(formData: FormData) {
 
 export const uploadPromoImage = withRole(4, uploadPromoImageInternal);
 
+/**
+ * Envía un POST a la API de Ultramsg y evalúa la respuesta.
+ * La API reporta errores en el body ({"error": "..."} o {"sent": "false"})
+ * incluso cuando el HTTP status es 200, por lo que hay que leerlo siempre.
+ */
+async function ultramsgPost(
+  url: string,
+  params: Record<string, string>,
+): Promise<{ ok: boolean; status: number; error?: string }> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams(params),
+  });
+  const data = await res.json().catch(() => null);
+
+  const error =
+    data?.error ||
+    (data?.sent === "false" || data?.sent === false
+      ? data?.message || "Ultramsg rechazó el envío"
+      : null) ||
+    (!res.ok ? `Error HTTP ${res.status} de Ultramsg` : null);
+
+  return { ok: !error, status: res.status, error: error || undefined };
+}
+
+/**
+ * Consulta el estado de la instancia de Ultramsg para detectar suspensión
+ * por falta de pago, desconexión u otros errores de la API antes de enviar.
+ */
+async function checkWhatsAppInstanceStatusInternal() {
+  const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
+  const token = process.env.ULTRAMSG_TOKEN;
+
+  if (!instanceId || !token) {
+    return { success: false, error: "Ultramsg credentials not configured." };
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.ultramsg.com/${instanceId}/instance/status?token=${token}`,
+    );
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || data?.error) {
+      return {
+        success: false,
+        error: data?.error || `Error HTTP ${res.status} consultando la instancia.`,
+      };
+    }
+
+    const accountStatus =
+      data?.status?.accountStatus?.status ??
+      data?.status?.accountStatus ??
+      null;
+
+    if (
+      typeof accountStatus === "string" &&
+      !/authenticated|normal|connected|standby/i.test(accountStatus)
+    ) {
+      return {
+        success: false,
+        error: `La instancia de Ultramsg no está activa (estado: ${accountStatus}).`,
+      };
+    }
+
+    return { success: true, status: accountStatus };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export const checkWhatsAppInstanceStatus = withRole(4, checkWhatsAppInstanceStatusInternal);
+
 async function sendWhatsAppAutomationInternal(payload: {
   to: string;
   message: string;
@@ -1850,71 +1924,83 @@ async function sendWhatsAppAutomationInternal(payload: {
 
   const baseUrl = `https://api.ultramsg.com/${instanceId}/messages`;
 
+  // 0. Verificar que la instancia esté activa antes de enviar
+  const status = await checkWhatsAppInstanceStatusInternal();
+  if (!status.success) {
+    return { success: false, error: status.error };
+  }
+
   try {
-    const results = [];
+    const steps: { step: string; url: string; params: Record<string, string> }[] = [];
 
     // 1. Send Template Image (if provided)
     if (payload.templateImage) {
-      const imgRes = await fetch(`${baseUrl}/image`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
+      steps.push({
+        step: "template_image",
+        url: `${baseUrl}/image`,
+        params: {
           token,
           to: payload.to,
           image: payload.templateImage,
           caption: "Bingo La Rioja",
           priority: "10",
-        }),
+        },
       });
-      results.push({ step: "template_image", status: imgRes.status });
     }
 
     // 2. Send Text Message
-    const textRes = await fetch(`${baseUrl}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
+    steps.push({
+      step: "text",
+      url: `${baseUrl}/chat`,
+      params: {
         token,
         to: payload.to,
         body: payload.message,
         priority: "10",
-      }),
+      },
     });
-    results.push({ step: "text", status: textRes.status });
 
     // 3. Send Invoice PDF (if provided)
     if (payload.invoiceUrl) {
-      const invRes = await fetch(`${baseUrl}/document`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
+      steps.push({
+        step: "invoice_pdf",
+        url: `${baseUrl}/document`,
+        params: {
           token,
           to: payload.to,
           document: payload.invoiceUrl,
           filename: "Factura_Bingo.pdf",
           caption: "Factura de Compra",
           priority: "10",
-        }),
+        },
       });
-      results.push({ step: "invoice_pdf", status: invRes.status });
     }
 
     // 4. Send Card PDFs
-    for (let index = 0; index < payload.cardUrls.length; index++) {
-      const cardUrl = payload.cardUrls[index];
-      const cardRes = await fetch(`${baseUrl}/document`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
+    payload.cardUrls.forEach((cardUrl, index) => {
+      steps.push({
+        step: `card_pdf_${index + 1}`,
+        url: `${baseUrl}/document`,
+        params: {
           token,
           to: payload.to,
           document: cardUrl,
           filename: `Carton_Bingo_${index + 1}.pdf`,
           caption: `Cartón de Bingo #${index + 1}`,
           priority: "10",
-        }),
+        },
       });
-      results.push({ step: `card_pdf_${index + 1}`, status: cardRes.status });
+    });
+
+    const results = [];
+    for (const s of steps) {
+      const r = await ultramsgPost(s.url, s.params);
+      results.push({ step: s.step, status: r.status, error: r.error });
+      // Abortar al primer error: si la instancia está caída o el número es
+      // inválido, los siguientes pasos fallarán igual.
+      if (!r.ok) {
+        return { success: false, error: r.error, results };
+      }
     }
 
     return { success: true, results };
