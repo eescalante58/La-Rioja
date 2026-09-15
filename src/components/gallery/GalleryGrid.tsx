@@ -16,19 +16,23 @@ export default function GalleryGrid({ images }: { images: GalleryImage[] }) {
 
   return (
     <div className="w-full max-w-[1600px] mx-auto px-4 py-8">
-      {/* Grid Layout to preserve horizontal order */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {/* Grid Layout to preserve horizontal order. Sin aspect fijo ni
+          object-cover: cada ventana se adapta al tamaño real de la imagen
+          (vertical u horizontal) sin recortarla. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 items-start">
         {images.map((image) => (
           <div
             key={image.id}
-            className="relative group cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-800 animate-fade-in aspect-[4/5]"
+            className="relative group cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-800 animate-fade-in"
             onClick={() => setSelectedImage(image)}
           >
             <Image
               src={image.image_url}
               alt={image.caption || "Bingo La Rioja 2026"}
-              fill
-              className="object-cover transform group-hover:scale-105 transition-transform duration-500"
+              width={0}
+              height={0}
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="w-full h-auto transform group-hover:scale-105 transition-transform duration-500"
               placeholder="blur"
               blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/+F9PQAI8wNPvd7POQAAAABJRU5ErkJggg=="
             />
