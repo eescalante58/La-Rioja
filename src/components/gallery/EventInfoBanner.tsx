@@ -121,7 +121,7 @@ export default function EventInfoBanner({
             className="inline-flex items-center gap-3 rounded-full bg-larioja-verde px-8 py-4 font-montserrat text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-larioja-verde/90 md:text-base"
           >
             <WhatsAppIcon className="h-6 w-6 shrink-0" />
-            Para más información acerca del Bingo La Rioja envíanos un mensaje vía WhatsApp
+            Para más información acerca del Bingo La Rioja, envíanos un mensaje vía WhatsApp
           </a>
         </div>
       )}
