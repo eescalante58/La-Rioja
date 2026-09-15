@@ -11,7 +11,7 @@ import {
   SelectItem,
   Button,
 } from "@tremor/react";
-import { DollarSign, TrendingUp, Hash, MapPin } from "lucide-react";
+import { DollarSign, TrendingUp, Hash, MapPin, CreditCard } from "lucide-react";
 import { saveEvent } from "@/app/admin/bingo/actions";
 
 interface Event {
@@ -27,6 +27,7 @@ interface Event {
   event_manager?: string;
   event_goal?: number;
   event_venue?: string;
+  Method_of_payment?: string | null;
 }
 
 interface Company {
@@ -44,6 +45,7 @@ interface EventDialogProps {
 export default function EventDialog({ isOpen, onClose, event, companies }: EventDialogProps) {
   const [loading, setLoading] = useState(false);
   const [statusValue, setStatusValue] = useState<string>("Inactivo");
+  const [paymentMethodValue, setPaymentMethodValue] = useState<string>("");
   const [selectedCompany, setSelectedCompany] = useState<string>("");
   const [cardValueStr, setCardValueStr] = useState("");
   const [eventGoalStr, setEventGoalStr] = useState("");
@@ -77,11 +79,13 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
   useEffect(() => {
     if (event) {
       setStatusValue(event.status || "Inactivo");
+      setPaymentMethodValue(event.Method_of_payment || "");
       setSelectedCompany(event.company_id.toString());
       setCardValueStr(formatCurrency(event.card_value));
       setEventGoalStr(formatCurrency(event.event_goal));
     } else {
       setStatusValue("Inactivo");
+      setPaymentMethodValue("");
       setSelectedCompany(companies[0]?.company_id.toString() || "");
       setCardValueStr("");
       setEventGoalStr("");
@@ -171,6 +175,23 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
                 icon={MapPin}
                 defaultValue={event?.event_venue}
               />
+            </div>
+
+            <div className="space-y-1">
+              <Text className="text-xs font-bold uppercase text-gray-500">Método de Pago</Text>
+              <input type="hidden" name="Method_of_payment" value={paymentMethodValue} />
+              <Select
+                value={paymentMethodValue}
+                onValueChange={setPaymentMethodValue}
+                placeholder="Seleccionar método..."
+                icon={CreditCard}
+                enableClear
+              >
+                <SelectItem value="efectivo">Efectivo</SelectItem>
+                <SelectItem value="transferencia">Transferencia</SelectItem>
+                <SelectItem value="tarjeta debito">Tarjeta Débito</SelectItem>
+                <SelectItem value="tarjeta credito">Tarjeta Crédito</SelectItem>
+              </Select>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
