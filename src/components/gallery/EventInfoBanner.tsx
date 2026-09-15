@@ -1,4 +1,5 @@
 import { CalendarDays, MapPin, Sparkles, Ticket } from "lucide-react";
+import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 
 interface GalleryEvent {
   event_name?: string | null;
@@ -37,7 +38,13 @@ function formatEventDate(eventDate: string): string {
  * Banner informativo previo a la galería: muestra la cuenta regresiva en una
  * cinta con desplazamiento (marquee), la fecha y el lugar del evento.
  */
-export default function EventInfoBanner({ event }: { event: GalleryEvent }) {
+export default function EventInfoBanner({
+  event,
+  whatsappLink,
+}: {
+  event: GalleryEvent;
+  whatsappLink?: string;
+}) {
   const daysLeft = event.event_date ? getDaysLeft(event.event_date) : null;
 
   const countdownText =
@@ -49,7 +56,8 @@ export default function EventInfoBanner({ event }: { event: GalleryEvent }) {
           ? "¡HOY ES EL GRAN EVENTO!"
           : "¡EL EVENTO YA SE REALIZÓ!";
 
-  if (!countdownText && !event.event_date && !event.event_venue && !event.Method_of_payment) return null;
+  if (!countdownText && !event.event_date && !event.event_venue && !event.Method_of_payment && !whatsappLink)
+    return null;
 
   return (
     <section className="w-full">
@@ -101,6 +109,20 @@ export default function EventInfoBanner({ event }: { event: GalleryEvent }) {
           <p className="mt-2 whitespace-pre-line text-sm font-medium text-gray-600 dark:text-gray-300 md:text-base">
             {event.Method_of_payment}
           </p>
+        </div>
+      )}
+
+      {whatsappLink && (
+        <div className="mx-auto mt-8 max-w-[1600px] px-6 pb-8 text-center">
+          <a
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 rounded-full bg-[#25D366] px-8 py-4 font-montserrat text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 md:text-base"
+          >
+            <WhatsAppIcon className="h-6 w-6 shrink-0" />
+            Para más información acerca del Bingo La Rioja envíanos un mensaje vía WhatsApp
+          </a>
         </div>
       )}
     </section>
