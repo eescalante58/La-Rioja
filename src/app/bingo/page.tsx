@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Navbar } from "@/components/layout/Navbar";
 import GalleryGrid from "@/components/gallery/GalleryGrid";
 import GalleryHeader from "@/components/gallery/GalleryHeader";
 import EventInfoBanner from "@/components/gallery/EventInfoBanner";
@@ -23,7 +24,11 @@ export default async function BingoPage() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-black font-inter">
-      <GalleryHeader eventName={event?.event_name} />
+      <Navbar solid />
+
+      <div className="pt-20">
+        <GalleryHeader eventName={event?.event_name} images={images} />
+      </div>
 
       {event && <EventInfoBanner event={event} />}
 
