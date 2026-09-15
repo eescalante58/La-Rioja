@@ -11,7 +11,7 @@ import {
   SelectItem,
   Button,
 } from "@tremor/react";
-import { DollarSign, TrendingUp, Hash } from "lucide-react";
+import { DollarSign, TrendingUp, Hash, MapPin } from "lucide-react";
 import { saveEvent } from "@/app/admin/bingo/actions";
 
 interface Event {
@@ -26,6 +26,7 @@ interface Event {
   event_start_promotion_date?: string;
   event_manager?: string;
   event_goal?: number;
+  event_venue?: string;
 }
 
 interface Company {
@@ -159,6 +160,16 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
                 placeholder="Gran Bingo Anual"
                 defaultValue={event?.event_name}
                 required
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Text className="text-xs font-bold uppercase text-gray-500">Lugar del Evento</Text>
+              <TextInput
+                name="event_venue"
+                placeholder="Ej: Gimnasio Municipal"
+                icon={MapPin}
+                defaultValue={event?.event_venue}
               />
             </div>
 

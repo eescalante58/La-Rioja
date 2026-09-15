@@ -9,6 +9,7 @@ export const eventSchema = z.object({
   status: z.enum(["Activo", "Inactivo", "Realizado", "Cancelado", "Cerrado", "Finalizado"]).default("Inactivo"),
   is_active: z.boolean().default(true),
   event_manager: z.string().min(1, "Responsable del evento requerido"),
+  event_venue: z.string().nullable().optional(),
   event_goal: z.number().nullable().optional(),
   event_cartons_number: z.number().int().nullable().optional(),
   event_start_promotion_date: z.string().nullable().optional(),
