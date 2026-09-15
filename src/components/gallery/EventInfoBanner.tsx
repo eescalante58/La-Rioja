@@ -53,7 +53,7 @@ export default function EventInfoBanner({ event }: { event: GalleryEvent }) {
   return (
     <section className="w-full">
       {countdownText && (
-        <div className="relative overflow-hidden bg-larioja-azul py-3 border-y-4 border-larioja-amarillo">
+        <div className="relative overflow-hidden bg-larioja-azul py-3 border-y-4 border-larioja-verde">
           <div className="flex w-max animate-marquee">
             {[0, 1].map((half) => (
               <div key={half} className="flex shrink-0 items-center" aria-hidden={half === 1}>

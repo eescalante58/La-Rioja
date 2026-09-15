@@ -12,10 +12,14 @@ import { createClient } from "@/lib/supabase/client";
 /**
  * Mobile navigation component with hamburger menu.
  */
-export function Navbar() {
+export function Navbar({ solid = false }: { solid?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState<string>("#");
+
+  // `solid` fuerza el estilo "scrolled" (fondo sólido y texto legible) en
+  // páginas con fondo claro donde el texto blanco transparente no se vería.
+  const navSolid = isScrolled || solid;
 
   // Fetch WhatsApp link from CMS
   useEffect(() => {
@@ -64,7 +68,7 @@ export function Navbar() {
       {/* Desktop & Mobile Fixed Navbar container */}
       <nav
         className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${
-          isScrolled
+          navSolid
             ? "bg-white/80 dark:bg-larioja-azul/80 backdrop-blur-lg shadow-lg py-1"
             : "bg-transparent py-4"
         }`}
@@ -74,7 +78,7 @@ export function Navbar() {
           <Link href="/" className="relative z-[110] p-2 transition-colors">
             <div
               className={`relative transition-all duration-500 ${
-                isScrolled
+                navSolid
                   ? "h-8 w-24 sm:h-10 sm:w-32 md:h-12 md:w-36 lg:h-14 lg:w-56"
                   : "h-10 w-28 sm:h-12 sm:w-36 md:h-16 md:w-48 lg:h-20 lg:w-72"
               }`}
@@ -95,7 +99,7 @@ export function Navbar() {
             <Link
               href="/about"
               className={`font-bold text-sm transition-all ${
-                isScrolled
+                navSolid
                   ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
                   : "text-white hover:text-larioja-amarillo"
               }`}
@@ -105,7 +109,7 @@ export function Navbar() {
             <Link
               href="/contact"
               className={`font-bold text-sm transition-all ${
-                isScrolled
+                navSolid
                   ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
                   : "text-white hover:text-larioja-amarillo"
               }`}
@@ -115,7 +119,7 @@ export function Navbar() {
             <Link
               href="/programs"
               className={`font-bold text-sm transition-all ${
-                isScrolled
+                navSolid
                   ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
                   : "text-white hover:text-larioja-amarillo"
               }`}
@@ -125,7 +129,7 @@ export function Navbar() {
             <Link
               href="/faq"
               className={`font-bold text-sm transition-all ${
-                isScrolled
+                navSolid
                   ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
                   : "text-white hover:text-larioja-amarillo"
               }`}
@@ -135,7 +139,7 @@ export function Navbar() {
             <Link
               href="/bingo"
               className={`font-bold text-sm transition-all ${
-                isScrolled
+                navSolid
                   ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
                   : "text-white hover:text-larioja-verde"
               }`}
@@ -145,7 +149,7 @@ export function Navbar() {
             <Link
               href="/admin"
               className={`font-bold py-2 px-6 rounded-full text-xs transition-all ${
-                isScrolled
+                navSolid
                   ? "bg-larioja-azul text-white hover:bg-larioja-azul/90"
                   : "text-white hover:text-larioja-amarillo"
               }`}
@@ -158,7 +162,7 @@ export function Navbar() {
                 <button
                   onClick={openModal}
                   className={`flex items-center gap-2 font-bold py-2 px-6 rounded-full text-xs transition-all ${
-                    isScrolled
+                    navSolid
                       ? "bg-larioja-verde text-white hover:bg-larioja-verde/90"
                       : "bg-white text-larioja-azul hover:bg-larioja-amarillo hover:text-larioja-azul"
                   }`}
@@ -174,7 +178,7 @@ export function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               className={`flex items-center justify-center w-9 h-9 rounded-full transition-all ${
-                isScrolled
+                navSolid
                   ? "bg-larioja-verde text-white hover:scale-110"
                   : "bg-white/10 text-white hover:bg-larioja-verde hover:scale-110 backdrop-blur-md"
               }`}
@@ -196,7 +200,7 @@ export function Navbar() {
             <button
               onClick={toggleMenu}
               className={`p-2 rounded-lg transition-all border ${
-                isScrolled
+                navSolid
                   ? "bg-larioja-azul text-white border-larioja-azul shadow-md"
                   : "bg-white/10 backdrop-blur-md border-white/30 text-white"
               }`}
