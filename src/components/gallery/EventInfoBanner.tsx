@@ -1,9 +1,10 @@
-import { CalendarDays, MapPin, Sparkles } from "lucide-react";
+import { CalendarDays, MapPin, Sparkles, Ticket } from "lucide-react";
 
 interface GalleryEvent {
   event_name?: string | null;
   event_date?: string | null;
   event_venue?: string | null;
+  Method_of_payment?: string | null;
 }
 
 /**
@@ -48,7 +49,7 @@ export default function EventInfoBanner({ event }: { event: GalleryEvent }) {
           ? "¡HOY ES EL GRAN EVENTO!"
           : "¡EL EVENTO YA SE REALIZÓ!";
 
-  if (!countdownText && !event.event_date && !event.event_venue) return null;
+  if (!countdownText && !event.event_date && !event.event_venue && !event.Method_of_payment) return null;
 
   return (
     <section className="w-full">
@@ -88,6 +89,18 @@ export default function EventInfoBanner({ event }: { event: GalleryEvent }) {
               <span className="text-sm font-semibold md:text-base">{event.event_venue}</span>
             </div>
           )}
+        </div>
+      )}
+
+      {event.Method_of_payment && (
+        <div className="mx-auto max-w-[1600px] px-6 pb-6 text-center">
+          <p className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-larioja-azul dark:text-white md:text-base">
+            <Ticket size={18} className="text-larioja-verde" />
+            Los cartones los puede comprar:
+          </p>
+          <p className="mt-2 whitespace-pre-line text-sm font-medium text-gray-600 dark:text-gray-300 md:text-base">
+            {event.Method_of_payment}
+          </p>
         </div>
       )}
     </section>

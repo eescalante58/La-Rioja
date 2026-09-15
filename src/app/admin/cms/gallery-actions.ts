@@ -41,7 +41,7 @@ async function getGalleryEventInternal(companyId: number, eventId: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("events")
-    .select("event_name, event_date, event_venue")
+    .select('event_name, event_date, event_venue, "Method_of_payment"')
     .eq("company_id", companyId)
     .eq("event_id", eventId)
     .single();
