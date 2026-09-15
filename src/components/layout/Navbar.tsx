@@ -210,8 +210,10 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             </button>
           </div>
         </div>
+      </nav>
 
-        {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay — fuera de <nav> para que el backdrop-blur no lo
+          confine (backdrop-filter crea un containing block para fixed). */}
         <div
           className={`lg:hidden fixed inset-0 bg-larioja-azul/98 backdrop-blur-2xl transition-all duration-500 z-[115] ${
             isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
@@ -301,7 +303,6 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             </div>
           </div>
         </div>
-      </nav>
     </>
   );
 }
