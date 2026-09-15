@@ -34,7 +34,10 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
         .single();
 
       if (data?.description) {
-        setWhatsappLink(data.description);
+        // Normaliza a https://wa.me/<solo dígitos>: un "+" o espacios en el
+        // valor del CMS hacen que WhatsApp reporte "el número no existe".
+        const digits = data.description.match(/(\d{6,15})/);
+        setWhatsappLink(digits ? `https://wa.me/${digits[1]}` : data.description);
       }
     };
     fetchWhatsApp();
@@ -288,8 +291,6 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
 
               <a
                 href={whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
                 onClick={() => setIsOpen(false)}
                 className="text-xl sm:text-2xl font-medium text-white hover:text-larioja-verde transition-all py-3 sm:py-4 flex items-center justify-center gap-3 border-t border-white/10"
               >
