@@ -12,6 +12,23 @@ import {
   Grid
 } from "@tremor/react";
 import { Upload, Trash2, Image as ImageIcon, CheckCircle, AlertCircle, Loader2, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { bulkUploadGalleryImages, deleteGalleryImage, updateGalleryImagesOrder } from "@/app/admin/cms/gallery-actions";
 import Image from "next/image";
 
@@ -29,6 +46,83 @@ interface GalleryManagementProps {
   initialImages: GalleryImage[];
 }
 
+interface SortableImageCardProps {
+  img: GalleryImage;
+  index: number;
+  deletingId: string | null;
+  onDelete: (id: string) => void;
+}
+
+/**
+ * Card individual de imagen con soporte de reordenamiento mediante dnd-kit.
+ * El arrastre solo se inicia desde el handle (GripVertical), que recibe los
+ * listeners y atributos de accesibilidad de `useSortable`.
+ */
+function SortableImageCard({ img, index, deletingId, onDelete }: SortableImageCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: img.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${isDragging ? "z-20 opacity-40" : ""}`}
+    >
+      <Card
+        className={`p-0 overflow-hidden relative group border-2 transition-colors
+          ${isDragging ? "border-larioja-azul" : "border-gray-100"}
+        `}
+      >
+        <div className="aspect-square relative pointer-events-none">
+          <Image
+            src={img.image_url}
+            alt="Gallery"
+            fill
+            className="object-cover"
+          />
+        </div>
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-2 left-2 p-1.5 bg-white/90 backdrop-blur-sm rounded-lg shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform z-10 touch-none"
+          title="Arrastra para reordenar"
+        >
+          <GripVertical size={18} className="text-larioja-azul" />
+        </div>
+        <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge color="emerald" size="xs">Activa</Badge>
+            <span className="text-[10px] text-gray-400 font-mono">#{index + 1}</span>
+          </div>
+          <Button
+            size="xs"
+            variant="light"
+            color="rose"
+            icon={Trash2}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(img.id);
+            }}
+            loading={deletingId === img.id}
+            tooltip="Eliminar imagen"
+          />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export default function GalleryManagement({ events, initialImages }: GalleryManagementProps) {
   const [selectedEventKey, setSelectedEventKey] = useState<string>(
     events && events.length > 0 ? `${events[0].company_id}|${events[0].event_id}` : ""
@@ -37,60 +131,41 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isReordering, setIsReordering] = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [dragEnabledId, setDragEnabledId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", index.toString());
-  };
+  /**
+   * Sensores de dnd-kit:
+   * - PointerSensor cubre mouse, touch y stylus (a diferencia del DnD nativo de HTML5,
+   *   que no funciona en dispositivos táctiles).
+   * - KeyboardSensor permite reordenar con teclado desde el handle enfocable.
+   * `activationConstraint.distance` evita que un click simple inicie un arrastre.
+   */
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Crítico para permitir el drop
-  };
+  /**
+   * Finaliza el arrastre: reordena el array filtrado por evento con `arrayMove`,
+   * reasigna `content_order` secuencialmente, aplica un optimistic update en el
+   * estado local y persiste el nuevo orden en el servidor.
+   */
+  const handleDndDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-  const handleDragEnter = (index: number) => {
-    if (dragOverIndex !== index) {
-      setDragOverIndex(index);
-    }
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-    setDragOverIndex(null);
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    await finalizeReordering();
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-    setDragEnabledId(null);
-  };
-
-  const finalizeReordering = async () => {
-    if (draggedIndex === null || dragOverIndex === null || draggedIndex === dragOverIndex) {
-      handleDragEnd();
-      return;
-    }
-    
     const [cId, eId] = selectedEventKey.split("|");
     const currentFiltered = images.filter(
       img => img.company_id === parseInt(cId) && img.event_id === eId
     );
 
-    const newFiltered = [...currentFiltered];
-    const draggedItem = newFiltered[draggedIndex];
-    newFiltered.splice(draggedIndex, 1);
-    newFiltered.splice(dragOverIndex, 0, draggedItem);
-    
+    const oldIndex = currentFiltered.findIndex(img => img.id === active.id);
+    const newIndex = currentFiltered.findIndex(img => img.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newFiltered = arrayMove(currentFiltered, oldIndex, newIndex);
+
     const otherImages = images.filter(
       img => !(img.company_id === parseInt(cId) && img.event_id === eId)
     );
@@ -104,12 +179,10 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
 
     setImages(finalImages);
     const updates = updatedFiltered.map(img => ({ id: img.id, content_order: img.content_order }));
-    
-    handleDragEnd();
 
     setIsReordering(true);
     const result = await updateGalleryImagesOrder(updates);
-    
+
     if (!result.success) {
       alert("Error al guardar el nuevo orden: " + result.error);
     }
@@ -239,72 +312,41 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
         )}
       </Card>
 
-      <Grid 
-        numItemsMd={2} 
-        numItemsLg={4} 
-        className="gap-4"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDndDragEnd}
       >
-        {filteredImages.length > 0 ? (
-          filteredImages.map((img, index) => (
-            <Card 
-              key={img.id} 
-              className={`p-0 overflow-hidden relative group border-2 transition-all
-                ${draggedIndex === index ? 'opacity-30 border-larioja-azul grayscale scale-95' : 'border-gray-100'}
-                ${dragOverIndex === index && draggedIndex !== index ? 'border-dashed border-larioja-azul bg-blue-50/50 scale-[1.02]' : ''}
-              `}
-              draggable={dragEnabledId === img.id}
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragEnter={() => handleDragEnter(index)}
-              onDragEnd={handleDragEnd}
-            >
-              <div className="aspect-square relative pointer-events-none">
-                <Image
-                  src={img.image_url}
-                  alt="Gallery"
-                  fill
-                  className="object-cover"
+        <SortableContext
+          items={filteredImages.map(img => img.id)}
+          strategy={rectSortingStrategy}
+        >
+          <Grid 
+            numItemsMd={2} 
+            numItemsLg={4} 
+            className="gap-4"
+          >
+            {filteredImages.length > 0 ? (
+              filteredImages.map((img, index) => (
+                <SortableImageCard
+                  key={img.id}
+                  img={img}
+                  index={index}
+                  deletingId={deletingId}
+                  onDelete={handleDelete}
                 />
-              </div>
-              <div 
-                className="absolute top-2 left-2 p-1.5 bg-white/90 backdrop-blur-sm rounded-lg shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform z-10"
-                onMouseDown={() => setDragEnabledId(img.id)}
-                onMouseUp={() => setDragEnabledId(null)}
-                title="Arrastra para reordenar"
-              >
-                <GripVertical size={18} className="text-larioja-azul" />
-              </div>
-              <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge color="emerald" size="xs">Activa</Badge>
-                  <span className="text-[10px] text-gray-400 font-mono">#{index + 1}</span>
+              ))
+            ) : (
+              <div className="lg:col-span-4">
+                <div className="py-20 text-center bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+                  <ImageIcon size={48} className="mx-auto text-gray-300 mb-4" />
+                  <Text className="text-gray-500">No hay fotos en este evento.</Text>
                 </div>
-                <Button
-                  size="xs"
-                  variant="light"
-                  color="rose"
-                  icon={Trash2}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(img.id);
-                  }}
-                  loading={deletingId === img.id}
-                  tooltip="Eliminar imagen"
-                />
               </div>
-            </Card>
-          ))
-        ) : (
-          <div className="lg:col-span-4">
-            <div className="py-20 text-center bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800">
-              <ImageIcon size={48} className="mx-auto text-gray-300 mb-4" />
-              <Text className="text-gray-500">No hay fotos en este evento.</Text>
-            </div>
-          </div>
-        )}
-      </Grid>
+            )}
+          </Grid>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 }
