@@ -9,8 +9,7 @@ import {
   Select, 
   SelectItem,
   Badge,
-  Grid,
-  Col
+  Grid
 } from "@tremor/react";
 import { Upload, Trash2, Image as ImageIcon, CheckCircle, AlertCircle, Loader2, GripVertical } from "lucide-react";
 import { bulkUploadGalleryImages, deleteGalleryImage, updateGalleryImagesOrder } from "@/app/admin/cms/gallery-actions";
@@ -40,18 +39,29 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
   const [isReordering, setIsReordering] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragEnabledId, setDragEnabledId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDragStart = (index: number) => {
+  const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Crítico para permitir el drop
+  };
+
+  const handleDragEnter = (index: number) => {
     if (dragOverIndex !== index) {
       setDragOverIndex(index);
     }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setDragOverIndex(null);
   };
 
   const handleDrop = async (e: React.DragEvent) => {
@@ -62,6 +72,7 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
   const handleDragEnd = () => {
     setDraggedIndex(null);
     setDragOverIndex(null);
+    setDragEnabledId(null);
   };
 
   const finalizeReordering = async () => {
@@ -86,7 +97,7 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
 
     const updatedFiltered = newFiltered.map((img, idx) => ({
       ...img,
-      content_order: idx
+      content_order: idx + 1
     }));
 
     const finalImages = [...otherImages, ...updatedFiltered].sort((a, b) => a.content_order - b.content_order);
@@ -228,31 +239,42 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
         )}
       </Card>
 
-      <Grid numItemsMd={2} numItemsLg={4} className="gap-4">
+      <Grid 
+        numItemsMd={2} 
+        numItemsLg={4} 
+        className="gap-4"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         {filteredImages.length > 0 ? (
           filteredImages.map((img, index) => (
             <Card 
               key={img.id} 
-              className={`p-0 overflow-hidden relative group border-2 transition-all cursor-move
-                ${draggedIndex === index ? 'opacity-40 scale-95 border-larioja-azul rotate-1 shadow-inner' : 'border-gray-100'}
-                ${dragOverIndex === index && draggedIndex !== index ? 'border-larioja-amarillo bg-yellow-50/20 scale-105 z-10' : ''}
+              className={`p-0 overflow-hidden relative group border-2 transition-all
+                ${draggedIndex === index ? 'opacity-30 border-larioja-azul grayscale scale-95' : 'border-gray-100'}
+                ${dragOverIndex === index && draggedIndex !== index ? 'border-dashed border-larioja-azul bg-blue-50/50 scale-[1.02]' : ''}
               `}
-              draggable
-              onDragStart={() => handleDragStart(index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDrop={(e) => handleDrop(e)}
+              draggable={dragEnabledId === img.id}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragEnter={() => handleDragEnter(index)}
               onDragEnd={handleDragEnd}
             >
-              <div className="aspect-square relative">
+              <div className="aspect-square relative pointer-events-none">
                 <Image
                   src={img.image_url}
                   alt="Gallery"
                   fill
-                  className="object-cover pointer-events-none"
+                  className="object-cover"
                 />
-                <div className="absolute top-2 left-2 p-1.5 bg-white/90 backdrop-blur-sm rounded-lg shadow-md group-hover:scale-110 transition-transform">
-                  <GripVertical size={18} className="text-larioja-azul" />
-                </div>
+              </div>
+              <div 
+                className="absolute top-2 left-2 p-1.5 bg-white/90 backdrop-blur-sm rounded-lg shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform z-10"
+                onMouseDown={() => setDragEnabledId(img.id)}
+                onMouseUp={() => setDragEnabledId(null)}
+                title="Arrastra para reordenar"
+              >
+                <GripVertical size={18} className="text-larioja-azul" />
               </div>
               <div className="p-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -264,7 +286,6 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
                   variant="light"
                   color="rose"
                   icon={Trash2}
-                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete(img.id);
