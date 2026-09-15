@@ -446,6 +446,7 @@ async function saveEventInternal(formData: FormData, context: { user: any }) {
     status: (formData.get("status") as string) || "Inactivo",
     event_manager: formData.get("event_manager") as string,
     event_venue: (formData.get("event_venue") as string) || null,
+    Method_of_payment: (formData.get("Method_of_payment") as string) || null,
     event_goal: formData.get("event_goal") ? parseFloat(formData.get("event_goal") as string) : null,
     event_cartons_number: formData.get("event_cartons_number") ? parseInt(formData.get("event_cartons_number") as string) : null,
     event_start_promotion_date: formData.get("event_start_promotion_date") || null,
@@ -467,6 +468,7 @@ async function saveEventInternal(formData: FormData, context: { user: any }) {
     event_id: sanitizeInput(validation.data.event_id),
     event_name: sanitizeInput(validation.data.event_name),
     event_venue: validation.data.event_venue ? sanitizeInput(validation.data.event_venue) : null,
+    Method_of_payment: validation.data.Method_of_payment ? sanitizeInput(validation.data.Method_of_payment) : null,
     updated_at: new Date().toISOString(),
   };
 
