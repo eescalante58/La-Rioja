@@ -7,11 +7,12 @@ import {
   Title,
   Text,
   TextInput,
+  Textarea,
   Select,
   SelectItem,
   Button,
 } from "@tremor/react";
-import { DollarSign, TrendingUp, Hash, MapPin, CreditCard } from "lucide-react";
+import { DollarSign, TrendingUp, Hash, MapPin } from "lucide-react";
 import { saveEvent } from "@/app/admin/bingo/actions";
 
 interface Event {
@@ -176,11 +177,11 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
 
             <div className="space-y-1">
               <Text className="text-xs font-bold uppercase text-gray-500">Método de Pago</Text>
-              <TextInput
+              <Textarea
                 name="Method_of_payment"
-                placeholder="Ej: Efectivo, Transferencia, Tarjeta"
-                icon={CreditCard}
+                placeholder={"Ej:\nEfectivo\nTransferencia\nTarjeta"}
                 defaultValue={event?.Method_of_payment ?? ""}
+                rows={3}
               />
             </div>
 
