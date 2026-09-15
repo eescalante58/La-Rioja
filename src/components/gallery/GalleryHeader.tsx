@@ -1,5 +1,6 @@
-import { Camera, Share2 } from "lucide-react";
+import { Camera } from "lucide-react";
 import SlideshowButton from "@/components/gallery/SlideshowButton";
+import ShareButton from "@/components/gallery/ShareButton";
 
 interface GalleryImage {
   id: string;
@@ -32,9 +33,7 @@ export default function GalleryHeader({ eventName, images }: GalleryHeaderProps)
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 dark:border-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900 transition-all">
-            <Share2 size={16} /> Compartir
-          </button>
+          <ShareButton eventName={eventName} />
           <SlideshowButton images={images} />
         </div>
       </div>
