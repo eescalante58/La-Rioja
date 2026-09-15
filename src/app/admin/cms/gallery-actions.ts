@@ -32,6 +32,29 @@ async function getGalleryImagesInternal(eventId?: string) {
 }
 
 /**
+ * Obtiene los datos públicos de un evento (nombre, fecha y lugar) para la
+ * página pública de la galería. Usa el cliente admin porque la tabla
+ * `events` puede no tener política de lectura pública; solo se exponen
+ * columnas no sensibles.
+ */
+async function getGalleryEventInternal(companyId: number, eventId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select("event_name, event_date, event_venue")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching gallery event:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data };
+}
+
+/**
  * Sube múltiples imágenes a la galería.
  */
 async function bulkUploadGalleryImagesInternal(
@@ -252,5 +275,6 @@ async function updateGalleryImagesOrderInternal(
 
 export const bulkUploadGalleryImages = withRole(4, bulkUploadGalleryImagesInternal);
 export const getGalleryImages = getGalleryImagesInternal;
+export const getGalleryEvent = getGalleryEventInternal;
 export const updateGalleryImagesOrder = withRole(4, updateGalleryImagesOrderInternal);
 export const deleteGalleryImage = withRole(4, deleteGalleryImageInternal);

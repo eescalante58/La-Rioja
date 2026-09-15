@@ -1,16 +1,20 @@
 import { Camera, Share2, Play } from "lucide-react";
 
-export default function GalleryHeader() {
+/**
+ * Encabezado de la página pública de la galería. El título corresponde al
+ * `event_name` del evento del que provienen las imágenes.
+ */
+export default function GalleryHeader({ eventName }: { eventName?: string }) {
   return (
     <header className="w-full bg-white dark:bg-black py-12 px-6 border-b border-gray-100 dark:border-gray-900">
       <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
           <h1 className="text-4xl md:text-5xl font-montserrat font-black tracking-tighter text-larioja-azul dark:text-white uppercase">
-            LA RIOJA <span className="text-larioja-amarillo">2026</span>
+            {eventName || "LA RIOJA 2026"}
           </h1>
           <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium">
             <Camera size={18} className="text-larioja-verde" />
-            <span className="tracking-widest uppercase text-xs">Marlon Photographer</span>
+            <span className="tracking-widest uppercase text-xs">Galería</span>
           </div>
         </div>
 
