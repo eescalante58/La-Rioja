@@ -1,7 +1,8 @@
 import { Metadata } from "next";
 import GalleryGrid from "@/components/gallery/GalleryGrid";
 import GalleryHeader from "@/components/gallery/GalleryHeader";
-import { getGalleryImages } from "@/app/admin/cms/gallery-actions";
+import EventInfoBanner from "@/components/gallery/EventInfoBanner";
+import { getGalleryImages, getGalleryEvent } from "@/app/admin/cms/gallery-actions";
 
 export const metadata: Metadata = {
   title: "Galería La Rioja 2026",
@@ -11,10 +12,21 @@ export const metadata: Metadata = {
 export default async function BingoPage() {
   const { data: images = [] } = await getGalleryImages();
 
+  // Los datos del evento se obtienen del event_id del que provienen las imágenes
+  // (la primera imagen activa, ordenada por event_id descendente).
+  let event = null;
+  if (images && images.length > 0) {
+    const { company_id, event_id } = images[0];
+    const { data } = await getGalleryEvent(company_id, event_id);
+    event = data ?? null;
+  }
+
   return (
     <main className="min-h-screen bg-white dark:bg-black font-inter">
-      <GalleryHeader />
-      
+      <GalleryHeader eventName={event?.event_name} />
+
+      {event && <EventInfoBanner event={event} />}
+
       {images.length > 0 ? (
         <GalleryGrid images={images} />
       ) : (
@@ -22,7 +34,7 @@ export default async function BingoPage() {
           <p className="text-gray-500 italic">No hay fotos publicadas en la galería aún.</p>
         </div>
       )}
-      
+
       {/* Footer minimalista */}
       <footer className="py-12 border-t border-gray-100 dark:border-gray-900 text-center">
         <p className="text-xs text-gray-400 uppercase tracking-[0.2em]">
