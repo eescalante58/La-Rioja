@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole } from "@/lib/auth/guards";
 
@@ -183,13 +183,28 @@ export const deleteStudent = withRole(8, deleteStudentInternal);
  */
 async function importStudentsInternal(students: any[], context: { user: any }) {
   const { user } = context;
-  const supabase = await createClient();
+  // Se usa el cliente admin porque la importación hace UPSERT, que requiere
+  // políticas de INSERT *y* UPDATE en RLS. El acceso ya está protegido a
+  // nivel aplicación por withRole(8); el patrón coincide con gallery-actions.
+  const supabase = createAdminClient();
 
-  // Clean data for import (remove id to let db generate it)
-  const cleanedStudents = students.map(({ id, event, ...rest }) => ({
-    ...rest,
+  // Sanitizar: solo columnas reales de la tabla students. Un export JSON
+  // incluye campos derivados (cards_count, event) que romperían el insert.
+  const cleanedStudents = students.map((s) => ({
+    student_id: parseInt(s.student_id) || 0,
+    student_name: s.student_name,
+    student_level: s.student_level,
+    company_id: parseInt(s.company_id) || 0,
+    event_id: s.event_id,
     updated_at: new Date().toISOString(),
   }));
+
+  const invalid = cleanedStudents.some(
+    (s) => !s.student_id || !s.student_name || !s.company_id || !s.event_id
+  );
+  if (invalid) {
+    return { error: "Hay filas sin student_id, student_name, company_id o event_id válidos." };
+  }
 
   const { error } = await supabase.from("students").upsert(cleanedStudents, {
     onConflict: "company_id, event_id, student_id",
