@@ -46,6 +46,36 @@ interface GalleryManagementProps {
   initialImages: GalleryImage[];
 }
 
+/**
+ * Comprime una imagen en el navegador (WebP, lado mayor máx. 1920px) antes de
+ * subirla. Las funciones serverless de Vercel rechazan requests de más de
+ * ~4.5MB, así que fotos pesadas deben reducirse del lado del cliente.
+ * Si la compresión falla o no reduce el tamaño, devuelve el archivo original.
+ */
+async function compressImage(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/webp", 0.85)
+    );
+    if (!blob || blob.size >= file.size) return file;
+
+    const name = file.name.replace(/\.[^.]+$/, "") + ".webp";
+    return new File([blob], name, { type: "image/webp" });
+  } catch {
+    return file;
+  }
+}
+
 interface SortableImageCardProps {
   img: GalleryImage;
   index: number;
@@ -201,7 +231,8 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
     const formData = new FormData();
     formData.append("company_id", cId);
     formData.append("event_id", eId);
-    Array.from(files).forEach(file => {
+    const compressed = await Promise.all(Array.from(files).map(compressImage));
+    compressed.forEach(file => {
       formData.append("files", file);
     });
 
@@ -219,7 +250,9 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
         setMessage({ text: result.error || "Error al subir imágenes", type: 'error' });
       }
     } catch (error) {
-      setMessage({ text: "Error inesperado durante la subida", type: 'error' });
+      console.error("Error durante la subida:", error);
+      const detail = error instanceof Error ? error.message : "error desconocido";
+      setMessage({ text: `Error inesperado durante la subida: ${detail}`, type: 'error' });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
