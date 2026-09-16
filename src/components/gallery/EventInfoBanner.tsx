@@ -9,13 +9,18 @@ interface GalleryEvent {
 }
 
 /**
- * Calcula los días restantes hasta la fecha del evento en hora local.
- * Se usa mediodía para la fecha del evento y medianoche para hoy a fin de
- * evitar desfases por zona horaria en cadenas tipo "YYYY-MM-DD".
+ * Calcula los días restantes hasta la fecha del evento.
+ * "Hoy" se obtiene en la zona horaria de El Salvador (UTC-6) para evitar que
+ * el servidor en UTC adelante la fecha a partir de las 6pm hora local.
  */
 function getDaysLeft(eventDate: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todaySv = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/El_Salvador",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const today = new Date(`${todaySv}T00:00:00`);
   const target = new Date(`${eventDate}T00:00:00`);
   return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
 }
