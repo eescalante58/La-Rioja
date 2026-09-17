@@ -51,13 +51,15 @@ export default function InventoryDetailsDialog({
       const soldBy = (card.sold_by || "").toLowerCase();
       const invoiceNum = (card.invoice_number || "").toLowerCase();
       const playerName = (card.player_name || "").toLowerCase();
+      const playerPhone = (card.player_phone_number || "").toLowerCase();
       return (
         cardNum.includes(query) ||
         cardType.includes(query) ||
         cardStatus.includes(query) ||
         soldBy.includes(query) ||
         invoiceNum.includes(query) ||
-        playerName.includes(query)
+        playerName.includes(query) ||
+        playerPhone.includes(query)
       );
     });
   }, [cards, searchQuery]);
@@ -93,7 +95,7 @@ export default function InventoryDetailsDialog({
             </div>
 
             <TextInput
-              placeholder="Buscar por N° Cartón, Factura, Estado, Jugador o Vendedor..."
+              placeholder="Buscar por N° Cartón, Factura, Estado, Jugador, Teléfono o Vendedor..."
               icon={Search}
               value={searchQuery}
               onValueChange={setSearchQuery}
@@ -115,6 +117,7 @@ export default function InventoryDetailsDialog({
                     <TableHeaderCell>N° Factura</TableHeaderCell>
                     <TableHeaderCell>Estado</TableHeaderCell>
                     <TableHeaderCell>Jugador</TableHeaderCell>
+                    <TableHeaderCell>Teléfono</TableHeaderCell>
                     <TableHeaderCell>Vendido por</TableHeaderCell>
                     <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
                   </TableRow>
@@ -158,6 +161,9 @@ export default function InventoryDetailsDialog({
                       </TableCell>
                       <TableCell>
                         <Text className="text-xs">{card.player_name || "—"}</Text>
+                      </TableCell>
+                      <TableCell>
+                        <Text className="text-xs">{card.player_phone_number || "—"}</Text>
                       </TableCell>
                       <TableCell>
                         <Text className="text-xs">{card.sold_by || "N/A"}</Text>
