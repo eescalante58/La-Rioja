@@ -364,7 +364,14 @@ export default function NewInvoiceDialog({
                     name="cards_number"
                     type="number"
                     value={cardsNumber.toString()}
-                    onValueChange={(v) => setCardsNumber(parseInt(v) || 0)}
+                    onValueChange={(v) => {
+                      const n = parseInt(v) || 0;
+                      setCardsNumber(n);
+                      // Si el nuevo tope es menor, conservar solo los primeros N seleccionados
+                      setSelectedInvoiceCards((prev) =>
+                        prev.length > n ? prev.slice(0, Math.max(0, n)) : prev,
+                      );
+                    }}
                     required
                   />
                 </div>
