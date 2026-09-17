@@ -545,6 +545,7 @@ async function getAllAssignedCardsInternal() {
         student_level
       ),
       cards:cards!fk_students_cards_card (
+        card_type,
         card_status
       )
     `,
@@ -562,6 +563,7 @@ async function getAllAssignedCardsInternal() {
     student_name: (item.student as any)?.student_name,
     student_level: (item.student as any)?.student_level,
     card_number: item.card_number,
+    card_type: (item.cards as any)?.card_type,
     card_status: (item.cards as any)?.card_status,
     company_id: item.company_id,
     event_id: item.event_id,
