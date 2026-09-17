@@ -6,6 +6,7 @@ import {
   getDashboardData,
   getInvoicesByDate,
   getSalesByManager,
+  getInvoicesByManager,
 } from "@/app/admin/actions";
 import {
   Card,
@@ -34,6 +35,7 @@ import {
   DollarSign,
   User,
   MessageSquare,
+  ArrowLeft,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -85,6 +87,8 @@ export default function RealtimeDashboardWrapper({
   const [isManagerDetailOpen, setIsManagerDetailOpen] = useState(false);
   const [managerBreakdown, setManagerBreakdown] = useState<any[]>([]);
   const [isLoadingDrillDown, setIsLoadingDrillDown] = useState(false);
+  const [selectedManager, setSelectedManager] = useState<string | null>(null);
+  const [managerInvoices, setManagerInvoices] = useState<any[]>([]);
 
   const supabase = createClient();
 
@@ -115,9 +119,23 @@ export default function RealtimeDashboardWrapper({
     const res = await getSalesByManager();
     if (res.success && res.data) {
       setManagerBreakdown(res.data);
+      setSelectedManager(null);
+      setManagerInvoices([]);
       setIsManagerDetailOpen(true);
     } else {
       alert("Error al cargar desglose: " + (res.error || "Sin datos"));
+    }
+    setIsLoadingDrillDown(false);
+  };
+
+  const handleManagerInvoices = async (managerName: string) => {
+    setIsLoadingDrillDown(true);
+    const res = await getInvoicesByManager(managerName);
+    if (res.success && res.data) {
+      setSelectedManager(managerName);
+      setManagerInvoices(res.data);
+    } else {
+      alert("Error al cargar facturas: " + (res.error || "Sin datos"));
     }
     setIsLoadingDrillDown(false);
   };
@@ -371,50 +389,141 @@ export default function RealtimeDashboardWrapper({
       {/* Modal: Desglose por Vendedor */}
       <Dialog
         open={isManagerDetailOpen}
-        onClose={() => setIsManagerDetailOpen(false)}
+        onClose={() => {
+          setIsManagerDetailOpen(false);
+          setSelectedManager(null);
+          setManagerInvoices([]);
+        }}
         static={true}
       >
         <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
-          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800">
+          <DialogPanel
+            className={`${selectedManager ? "max-w-4xl" : "max-w-md"} w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800`}
+          >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
+                {selectedManager && (
+                  <Button
+                    variant="light"
+                    icon={ArrowLeft}
+                    onClick={() => {
+                      setSelectedManager(null);
+                      setManagerInvoices([]);
+                    }}
+                    tooltip="Volver"
+                  />
+                )}
                 <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">
                   <User size={24} />
                 </div>
-                <Title className="dark:text-white">Ventas por Vendedor</Title>
+                <div>
+                  <Title className="dark:text-white">
+                    {selectedManager ? selectedManager : "Ventas por Vendedor"}
+                  </Title>
+                  {selectedManager && (
+                    <Text className="text-xs dark:text-slate-400">
+                      {managerInvoices.length} factura(s) gestionada(s)
+                    </Text>
+                  )}
+                </div>
               </div>
               <Button
                 variant="light"
                 icon={X}
-                onClick={() => setIsManagerDetailOpen(false)}
+                onClick={() => {
+                  setIsManagerDetailOpen(false);
+                  setSelectedManager(null);
+                  setManagerInvoices([]);
+                }}
               />
             </div>
 
-            <div className="space-y-4">
-              {managerBreakdown.map((m) => (
-                <div key={m.name} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium dark:text-slate-200">
-                      {m.name}
-                    </span>
-                    <span className="font-bold dark:text-white">
-                      {formatCurrency(m.value)}
-                    </span>
+            {!selectedManager ? (
+              <div className="space-y-4">
+                {managerBreakdown.map((m) => (
+                  <div
+                    key={m.name}
+                    className="space-y-1 cursor-pointer group"
+                    onClick={() => handleManagerInvoices(m.name)}
+                  >
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium dark:text-slate-200 group-hover:text-larioja-verde group-hover:underline">
+                        {m.name}
+                      </span>
+                      <span className="font-bold dark:text-white">
+                        {formatCurrency(m.value)}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-larioja-azul dark:bg-blue-600 rounded-full"
+                        style={{ width: `${(m.value / data.realized) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-larioja-azul dark:bg-blue-600 rounded-full"
-                      style={{ width: `${(m.value / data.realized) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="max-h-[60vh] overflow-y-auto">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Cliente</TableHeaderCell>
+                      <TableHeaderCell>Teléfono</TableHeaderCell>
+                      <TableHeaderCell>N° Factura</TableHeaderCell>
+                      <TableHeaderCell>Fecha</TableHeaderCell>
+                      <TableHeaderCell className="text-right">
+                        N° Cartones
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-right">
+                        Valor Cartón
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-right">
+                        Total
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {managerInvoices.map((inv, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{inv.customer_name}</TableCell>
+                        <TableCell>
+                          {inv.whatsapp_number ||
+                            `${inv.phone_area || ""}${inv.phone_number || ""}` ||
+                            "—"}
+                        </TableCell>
+                        <TableCell>{inv.invoice_number}</TableCell>
+                        <TableCell>
+                          {inv.invoice_date
+                            ? new Date(
+                                `${inv.invoice_date}T12:00:00`,
+                              ).toLocaleDateString("es-SV")
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {inv.cards_number}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(Number(inv.card_price || 0))}
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {formatCurrency(Number(inv.total_amount || 0))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
 
             <div className="mt-8">
               <Button
-                onClick={() => setIsManagerDetailOpen(false)}
+                onClick={() => {
+                  setIsManagerDetailOpen(false);
+                  setSelectedManager(null);
+                  setManagerInvoices([]);
+                }}
                 className="w-full bg-larioja-azul"
               >
                 Cerrar

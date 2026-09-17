@@ -272,3 +272,44 @@ export async function getSalesByManager() {
 
   return { success: true, data: breakdownData };
 }
+
+/**
+ * Fetches invoice details for a specific manager in the current event
+ * (Drill down from "Ventas por Vendedor").
+ */
+export async function getInvoicesByManager(managerName: string) {
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
+
+  if (!companyId) return { success: false, error: "No company" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  let query = supabase
+    .from("invoices")
+    .select(
+      "invoice_number, invoice_date, customer_name, phone_area, phone_number, whatsapp_number, cards_number, card_price, total_amount",
+    )
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id)
+    .eq("status", "pagada");
+
+  query =
+    managerName === "Sin asignar"
+      ? query.is("manager_name", null)
+      : query.eq("manager_name", managerName);
+
+  const { data, error } = await query.order("invoice_date", {
+    ascending: false,
+  });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
