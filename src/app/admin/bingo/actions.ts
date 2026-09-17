@@ -1775,8 +1775,10 @@ async function getBatchDetailsInternal(batchId: string) {
 export const getBatchDetails = withRole(4, getBatchDetailsInternal);
 
 /**
- * Sincroniza clientes promocionales desde las facturas (invoices) del evento
- * por defecto de la empresa (companies.def_dash_event_id).
+ * Sincroniza clientes promocionales desde dos fuentes:
+ * 1. Facturas (invoices) del evento por defecto de la empresa
+ *    (companies.def_dash_event_id).
+ * 2. Jugadores registrados en los cartones (cards) de la empresa.
  * Inserta en customer_phone_number solo los teléfonos que no existan aún.
  */
 async function syncCustomersInternal(companyId: number) {
@@ -1798,24 +1800,39 @@ async function syncCustomersInternal(companyId: number) {
     };
   }
 
-  // 2. Obtener facturas del evento por defecto
-  const { data: invoices, error: invError } = await supabase
-    .from("invoices")
-    .select("customer_name, whatsapp_number, phone_area, phone_number")
-    .eq("company_id", companyId)
-    .eq("event_id", company.def_dash_event_id);
+  // 2. Obtener facturas del evento por defecto y jugadores de cartones
+  const [invRes, cardsRes] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select("customer_name, whatsapp_number, phone_area, phone_number")
+      .eq("company_id", companyId)
+      .eq("event_id", company.def_dash_event_id),
+    supabase
+      .from("cards")
+      .select("player_name, player_phone_number")
+      .eq("company_id", companyId),
+  ]);
 
-  if (invError) return { success: false, error: invError.message };
+  if (invRes.error) return { success: false, error: invRes.error.message };
+  if (cardsRes.error) return { success: false, error: cardsRes.error.message };
 
   // 3. Construir lista única de clientes por teléfono
-  //    Prioriza whatsapp_number; si no existe, usa phone_area + phone_number
+  //    Facturas: prioriza whatsapp_number; si no, usa phone_area + phone_number
+  //    Cartones: usa player_phone_number
   const phoneMap = new Map<string, string>();
-  for (const inv of invoices || []) {
+  for (const inv of invRes.data || []) {
     const rawPhone =
       (inv.whatsapp_number || "").trim() ||
       `${inv.phone_area || ""}${inv.phone_number || ""}`.trim();
     const phone = rawPhone.replace(/\D/g, "");
     const name = (inv.customer_name || "").trim();
+    if (phone && name && !phoneMap.has(phone)) {
+      phoneMap.set(phone, name);
+    }
+  }
+  for (const card of cardsRes.data || []) {
+    const phone = (card.player_phone_number || "").replace(/\D/g, "");
+    const name = (card.player_name || "").trim();
     if (phone && name && !phoneMap.has(phone)) {
       phoneMap.set(phone, name);
     }
