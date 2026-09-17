@@ -1778,7 +1778,7 @@ export const getBatchDetails = withRole(4, getBatchDetailsInternal);
  * Sincroniza clientes promocionales desde dos fuentes:
  * 1. Facturas (invoices) del evento por defecto de la empresa
  *    (companies.def_dash_event_id).
- * 2. Jugadores registrados en los cartones (cards) de la empresa.
+ * 2. Jugadores registrados en los cartones (cards) del mismo evento.
  * Inserta en customer_phone_number solo los teléfonos que no existan aún.
  */
 async function syncCustomersInternal(companyId: number) {
@@ -1810,7 +1810,8 @@ async function syncCustomersInternal(companyId: number) {
     supabase
       .from("cards")
       .select("player_name, player_phone_number")
-      .eq("company_id", companyId),
+      .eq("company_id", companyId)
+      .eq("event_id", company.def_dash_event_id),
   ]);
 
   if (invRes.error) return { success: false, error: invRes.error.message };
