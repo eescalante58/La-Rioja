@@ -557,3 +557,186 @@ async function getAllAssignedCardsInternal() {
 }
 
 export const getAllAssignedCards = withRole(4, getAllAssignedCardsInternal);
+
+/**
+ * Obtiene estadísticas de cartones de un evento: total, número máximo y
+ * cantidad disponible. Sirve para validar rangos en la asignación.
+ */
+async function getEventCardsInfoInternal(companyId: number, eventId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("cards")
+    .select("card_number, card_status")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId);
+
+  if (error) {
+    console.error("Error fetching event cards info:", error);
+    return { error: error.message };
+  }
+
+  const max = (data || []).reduce((m, c) => Math.max(m, c.card_number), 0);
+  const available = (data || []).filter(
+    (c) => c.card_status === "Disponible",
+  ).length;
+
+  return { success: true, max, total: data?.length || 0, available };
+}
+
+export const getEventCardsInfo = withRole(4, getEventCardsInfoInternal);
+
+/**
+ * Asigna un rango de cartones [fromCard, toCard] a un alumno.
+ * Valida que el rango exista en el evento, que ningún cartón esté asignado a
+ * otro alumno y que todos estén disponibles antes de insertar.
+ */
+async function assignCardRangeToStudentInternal(
+  studentId: number,
+  companyId: number,
+  eventId: string,
+  fromCard: number,
+  toCard: number,
+  context: { user: any },
+) {
+  const { user } = context;
+  const supabase = await createClient();
+
+  if (isNaN(fromCard) || isNaN(toCard) || toCard <= fromCard) {
+    return { error: "El cartón 'hasta' debe ser mayor que el cartón 'desde'." };
+  }
+
+  // 1. El 'hasta' no puede superar el número de cartones del evento
+  const { data: maxData } = await supabase
+    .from("cards")
+    .select("card_number")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .order("card_number", { ascending: false })
+    .limit(1);
+
+  const maxCard = maxData?.[0]?.card_number || 0;
+  if (toCard > maxCard) {
+    return {
+      error: `El cartón 'hasta' (${toCard}) supera el número de cartones del evento (máx. ${maxCard}).`,
+    };
+  }
+
+  // 2. Verificar que todos los cartones del rango existan y estén disponibles
+  const { data: cardsData, error: cardsError } = await supabase
+    .from("cards")
+    .select("card_number, card_status")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .gte("card_number", fromCard)
+    .lte("card_number", toCard);
+
+  if (cardsError) return { error: cardsError.message };
+
+  const statusByNumber = new Map(
+    (cardsData || []).map((c) => [c.card_number, c.card_status]),
+  );
+  const missing: number[] = [];
+  const unavailable: number[] = [];
+  for (let n = fromCard; n <= toCard; n++) {
+    const status = statusByNumber.get(n);
+    if (!status) missing.push(n);
+    else if (status !== "Disponible") unavailable.push(n);
+  }
+
+  if (missing.length > 0) {
+    return {
+      error: `Los cartones ${missing.join(", ")} no existen en este evento.`,
+    };
+  }
+
+  // 3. Verificar que ningún cartón del rango esté asignado a otro alumno
+  const { data: assignedRows } = await supabase
+    .from("students_cards")
+    .select("card_number, student_id")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .gte("card_number", fromCard)
+    .lte("card_number", toCard);
+
+  const assignedToOthers = (assignedRows || []).filter(
+    (r) => r.student_id !== studentId,
+  );
+  if (assignedToOthers.length > 0) {
+    return {
+      error: `Los cartones ${assignedToOthers
+        .map((r) => r.card_number)
+        .join(", ")} ya están asignados a otro alumno.`,
+    };
+  }
+
+  if (unavailable.length > 0) {
+    return {
+      error: `Los cartones ${unavailable.join(", ")} no están disponibles.`,
+    };
+  }
+
+  // 4. Insertar solo los que aún no estén asignados a este mismo alumno
+  const alreadyMine = new Set(
+    (assignedRows || [])
+      .filter((r) => r.student_id === studentId)
+      .map((r) => r.card_number),
+  );
+  const toInsert = [];
+  for (let n = fromCard; n <= toCard; n++) {
+    if (!alreadyMine.has(n)) {
+      toInsert.push({
+        student_id: studentId,
+        company_id: companyId,
+        event_id: eventId,
+        card_number: n,
+      });
+    }
+  }
+
+  if (toInsert.length === 0) {
+    return {
+      error: "Todos los cartones del rango ya están asignados a este alumno.",
+    };
+  }
+
+  const { error: insertError } = await supabase
+    .from("students_cards")
+    .insert(toInsert);
+
+  if (insertError) return { error: insertError.message };
+
+  // 5. Marcar los cartones como 'Asignado'
+  await supabase
+    .from("cards")
+    .update({ card_status: "Asignado", updated_at: new Date().toISOString() })
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .gte("card_number", fromCard)
+    .lte("card_number", toCard);
+
+  if (user) {
+    await supabase.from("user_activity_log").insert({
+      user_id: user.id,
+      action: "ASSIGN_CARD_RANGE",
+      entity: "students_cards",
+      metadata: {
+        student_id: studentId,
+        company_id: companyId,
+        event_id: eventId,
+        from_card: fromCard,
+        to_card: toCard,
+        count: toInsert.length,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  revalidatePath("/admin/settings/students");
+  return { success: true, count: toInsert.length };
+}
+
+export const assignCardRangeToStudent = withRole(
+  8,
+  assignCardRangeToStudentInternal,
+);

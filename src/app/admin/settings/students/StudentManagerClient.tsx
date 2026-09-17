@@ -52,6 +52,8 @@ import {
   unassignCardFromStudent,
   bulkAssignCards,
   getAllAssignedCards,
+  getEventCardsInfo,
+  assignCardRangeToStudent,
 } from "./actions";
 
 interface Student {
@@ -99,6 +101,19 @@ export default function StudentManagerClient({
   const [assignFormLoading, setAssignFormLoading] = useState(false);
   const [quickCardNumber, setQuickCardNumber] = useState("");
   const [isProcessingAssignment, setIsProcessingAssignment] = useState(false);
+
+  // Estado del flujo de asignación por rango: el evento se mantiene fijo
+  // durante todo el proceso; luego se busca el alumno y el rango de cartones.
+  const [assignEventKey, setAssignEventKey] = useState("");
+  const [assignStudentSearch, setAssignStudentSearch] = useState("");
+  const [assignStudent, setAssignStudent] = useState<Student | null>(null);
+  const [assignCardFrom, setAssignCardFrom] = useState("");
+  const [assignCardTo, setAssignCardTo] = useState("");
+  const [assignEventInfo, setAssignEventInfo] = useState<{
+    max: number;
+    total: number;
+    available: number;
+  } | null>(null);
 
   // Sync state if initialData changes
   useEffect(() => {
@@ -444,34 +459,119 @@ export default function StudentManagerClient({
     }
   };
 
-  const handleAssignSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  /**
+   * Alumnos del evento seleccionado filtrados por nombre o ID.
+   */
+  const assignStudents = useMemo(() => {
+    if (!assignEventKey) return [];
+    const [cId, eId] = assignEventKey.split("|");
+    const term = assignStudentSearch.toLowerCase().trim();
+    return students
+      .filter(
+        (s) => s.company_id === parseInt(cId) && s.event_id === eId,
+      )
+      .filter(
+        (s) =>
+          !term ||
+          s.student_name.toLowerCase().includes(term) ||
+          String(s.student_id).includes(term),
+      )
+      .sort((a, b) => a.student_name.localeCompare(b.student_name));
+  }, [students, assignEventKey, assignStudentSearch]);
+
+  /**
+   * Al elegir el evento se cargan sus estadísticas de cartones y se limpian
+   * alumno y rango. El evento se mantiene hasta cerrar el diálogo.
+   */
+  const handleAssignEventChange = async (key: string) => {
+    setAssignEventKey(key);
+    setAssignStudent(null);
+    setAssignStudentSearch("");
+    setAssignCardFrom("");
+    setAssignCardTo("");
+    setAssignEventInfo(null);
+
+    if (!key) return;
+    const [cId, eId] = key.split("|");
+    const info = await getEventCardsInfo(parseInt(cId), eId);
+    if (info.success) {
+      setAssignEventInfo(info as any);
+    } else {
+      alert("Error al consultar cartones del evento: " + info.error);
+    }
+  };
+
+  /**
+   * Reinicia el estado del flujo de asignación al cerrar el diálogo.
+   */
+  const closeAssignDialog = () => {
+    setIsAssignDialogOpen(false);
+    setAssignEventKey("");
+    setAssignStudent(null);
+    setAssignStudentSearch("");
+    setAssignCardFrom("");
+    setAssignCardTo("");
+    setAssignEventInfo(null);
+  };
+
+  /**
+   * Asigna el rango [desde, hasta] al alumno seleccionado manteniendo el
+   * evento fijo para permitir asignaciones consecutivas.
+   */
+  const handleRangeAssign = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!assignEventKey || !assignStudent) return;
+
+    const from = parseInt(assignCardFrom);
+    const to = parseInt(assignCardTo);
+
+    if (isNaN(from) || isNaN(to)) {
+      alert("Ingresa los números de cartón 'desde' y 'hasta'.");
+      return;
+    }
+    if (to <= from) {
+      alert("El cartón 'hasta' debe ser mayor que el cartón 'desde'.");
+      return;
+    }
+    if (assignEventInfo && to > assignEventInfo.max) {
+      alert(
+        `El cartón 'hasta' supera el número de cartones del evento (máx. ${assignEventInfo.max}).`,
+      );
+      return;
+    }
+
+    const [cId, eId] = assignEventKey.split("|");
     setAssignFormLoading(true);
 
     try {
-      const formData = new FormData(e.currentTarget);
-      const mode = formData.get("mode") as string;
+      const result = await assignCardRangeToStudent(
+        assignStudent.student_id,
+        parseInt(cId),
+        eId,
+        from,
+        to,
+      );
 
-      if (mode === "single") {
-        const studentId = parseInt(formData.get("student_id") as string);
-        const cardNumber = parseInt(formData.get("card_number") as string);
-        const eventIdInfo = formData.get("event_id_info") as string;
-        const [companyId, eventId] = eventIdInfo.split("|");
-
-        const result = await assignCardToStudent(
-          studentId,
-          parseInt(companyId),
-          eventId,
-          cardNumber,
+      if (result.success) {
+        alert(
+          `Se asignaron ${result.count} cartones (${from}-${to}) a ${assignStudent.student_name}.`,
         );
-
-        if (result.success) {
-          alert("Cartón asignado exitosamente.");
-          setIsAssignDialogOpen(false);
-          window.location.reload();
-        } else {
-          alert("Error: " + result.error);
-        }
+        // Mantener el evento; limpiar alumno y rango para la siguiente asignación
+        setAssignStudent(null);
+        setAssignStudentSearch("");
+        setAssignCardFrom("");
+        setAssignCardTo("");
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.id === assignStudent.id
+              ? { ...s, cards_count: (s.cards_count || 0) + (result.count || 0) }
+              : s,
+          ),
+        );
+        const info = await getEventCardsInfo(parseInt(cId), eId);
+        if (info.success) setAssignEventInfo(info as any);
+      } else {
+        alert("Error: " + result.error);
       }
     } catch (err) {
       alert("Error al procesar la asignación.");
@@ -847,7 +947,7 @@ export default function StudentManagerClient({
       </Dialog>
       <Dialog
         open={isAssignDialogOpen}
-        onClose={() => setIsAssignDialogOpen(false)}
+        onClose={closeAssignDialog}
         static={true}
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
@@ -878,29 +978,13 @@ export default function StudentManagerClient({
             </div>
 
             {assignMode === "single" ? (
-              <form onSubmit={handleAssignSubmit} className="space-y-4">
-                <input type="hidden" name="mode" value="single" />
-
-                <div className="space-y-1">
-                  <Text className="text-xs font-bold uppercase">Alumno</Text>
-                  <select
-                    name="student_id"
-                    required
-                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                  >
-                    <option value="">Selecciona un alumno...</option>
-                    {students.map((s) => (
-                      <option key={s.id} value={s.student_id}>
-                        {s.student_name} (ID: {s.student_id})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
+              <form onSubmit={handleRangeAssign} className="space-y-4">
+                {/* Paso 1: evento (se mantiene durante todo el proceso) */}
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase">Evento</Text>
                   <select
-                    name="event_id_info"
+                    value={assignEventKey}
+                    onChange={(e) => handleAssignEventChange(e.target.value)}
                     required
                     className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
                   >
@@ -914,34 +998,104 @@ export default function StudentManagerClient({
                       </option>
                     ))}
                   </select>
+                  {assignEventInfo && (
+                    <Text className="text-xs text-gray-500 dark:text-gray-400">
+                      {assignEventInfo.total} cartones (máx. N°{" "}
+                      {assignEventInfo.max}) — {assignEventInfo.available}{" "}
+                      disponibles
+                    </Text>
+                  )}
                 </div>
 
+                {/* Paso 2: buscar alumno por nombre o ID */}
                 <div className="space-y-1">
                   <Text className="text-xs font-bold uppercase">
-                    Número de Cartón
+                    Alumno (nombre o ID)
                   </Text>
                   <TextInput
-                    name="card_number"
-                    placeholder="Ej: 1025"
-                    type="number"
-                    required
+                    placeholder="Escribe para buscar..."
+                    value={assignStudentSearch}
+                    onChange={(e) => setAssignStudentSearch(e.target.value)}
+                    disabled={!assignEventKey}
+                    icon={Search}
                   />
+                  <select
+                    value={assignStudent?.id ?? ""}
+                    onChange={(e) => {
+                      const found = assignStudents.find(
+                        (s) => s.id === parseInt(e.target.value),
+                      );
+                      setAssignStudent(found || null);
+                    }}
+                    required
+                    disabled={!assignEventKey}
+                    className="w-full p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                  >
+                    <option value="">
+                      {assignEventKey
+                        ? assignStudents.length > 0
+                          ? "Selecciona un alumno..."
+                          : "Sin alumnos en este evento"
+                        : "Primero selecciona un evento"}
+                    </option>
+                    {assignStudents.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.student_name} (ID: {s.student_id}) —{" "}
+                        {s.cards_count || 0} cartones
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Paso 3: rango de cartones */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Text className="text-xs font-bold uppercase">
+                      Desde Cartón
+                    </Text>
+                    <TextInput
+                      placeholder="Ej: 1000"
+                      type="number"
+                      min={1}
+                      value={assignCardFrom}
+                      onChange={(e) => setAssignCardFrom(e.target.value)}
+                      disabled={!assignStudent}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Text className="text-xs font-bold uppercase">
+                      Hasta Cartón
+                    </Text>
+                    <TextInput
+                      placeholder={
+                        assignEventInfo ? `Máx. ${assignEventInfo.max}` : "Ej: 1050"
+                      }
+                      type="number"
+                      min={1}
+                      value={assignCardTo}
+                      onChange={(e) => setAssignCardTo(e.target.value)}
+                      disabled={!assignStudent}
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 mt-8">
                   <Button
                     variant="secondary"
-                    onClick={() => setIsAssignDialogOpen(false)}
+                    onClick={closeAssignDialog}
                     disabled={assignFormLoading}
                   >
-                    Cancelar
+                    Finalizar
                   </Button>
                   <Button
                     type="submit"
                     loading={assignFormLoading}
                     color="amber"
+                    disabled={!assignStudent}
                   >
-                    Asignar Cartón
+                    Asignar Cartones
                   </Button>
                 </div>
               </form>
@@ -981,10 +1135,7 @@ export default function StudentManagerClient({
                 )}
 
                 <div className="flex justify-end mt-4">
-                  <Button
-                    variant="secondary"
-                    onClick={() => setIsAssignDialogOpen(false)}
-                  >
+                  <Button variant="secondary" onClick={closeAssignDialog}>
                     Cerrar
                   </Button>
                 </div>
