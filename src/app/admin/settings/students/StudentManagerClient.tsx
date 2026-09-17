@@ -529,8 +529,8 @@ export default function StudentManagerClient({
       alert("Ingresa los números de cartón 'desde' y 'hasta'.");
       return;
     }
-    if (to <= from) {
-      alert("El cartón 'hasta' debe ser mayor que el cartón 'desde'.");
+    if (to < from) {
+      alert("El cartón 'hasta' debe ser igual o mayor que el cartón 'desde'.");
       return;
     }
     if (assignEventInfo && to > assignEventInfo.max) {
