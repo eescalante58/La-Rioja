@@ -655,7 +655,15 @@ async function assignCardRangeToStudentInternal(
   // 3. Verificar que ningún cartón del rango esté asignado a otro alumno
   const { data: assignedRows } = await supabase
     .from("students_cards")
-    .select("card_number, student_id")
+    .select(
+      `
+      card_number,
+      student_id,
+      student:students!fk_students_cards_student (
+        student_name
+      )
+    `,
+    )
     .eq("company_id", companyId)
     .eq("event_id", eventId)
     .gte("card_number", fromCard)
@@ -665,10 +673,14 @@ async function assignCardRangeToStudentInternal(
     (r) => r.student_id !== studentId,
   );
   if (assignedToOthers.length > 0) {
+    const details = assignedToOthers
+      .map(
+        (r) =>
+          `${r.card_number} → ID ${r.student_id} (${(r.student as any)?.student_name || "desconocido"})`,
+      )
+      .join(", ");
     return {
-      error: `Los cartones ${assignedToOthers
-        .map((r) => r.card_number)
-        .join(", ")} ya están asignados a otro alumno.`,
+      error: `Cartones ya asignados a otros alumnos: ${details}.`,
     };
   }
 
