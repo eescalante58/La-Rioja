@@ -173,6 +173,7 @@ export default function StudentManagerClient({
       "student_level",
       "company_id",
       "event_id",
+      "cards_count",
     ];
     const rows = students.map((s) => [
       s.student_id,
@@ -180,6 +181,7 @@ export default function StudentManagerClient({
       s.student_level,
       s.company_id,
       s.event_id,
+      s.cards_count || 0,
     ]);
 
     const csvContent =
