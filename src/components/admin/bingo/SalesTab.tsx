@@ -172,7 +172,9 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                         {inv.invoice_number}
                       </TableCell>
                       <TableCell>
-                        {new Date(inv.invoice_date).toLocaleDateString()}
+                        {/* "YYYY-MM-DD" se interpreta como UTC; se fuerza
+                            hora local para no mostrar el día anterior */}
+                        {new Date(`${inv.invoice_date}T12:00:00`).toLocaleDateString("es-SV")}
                       </TableCell>
                       <TableCell>{inv.customer_name}</TableCell>
                       <TableCell className="capitalize">
