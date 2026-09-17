@@ -50,6 +50,12 @@ export default function NewInvoiceDialog({
   const [availableCards, setAvailableCardsForInvoice] = useState<any[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<string>("efectivo");
   const [status, setStatus] = useState<string>("pagada");
+  const [invoiceDate, setInvoiceDate] = useState<string>("");
+
+  /**
+   * Fecha de hoy en formato YYYY-MM-DD usando la hora local del navegador.
+   */
+  const todayLocal = () => new Date().toLocaleDateString("en-CA");
 
   useEffect(() => {
     if (invoice) {
@@ -61,6 +67,7 @@ export default function NewInvoiceDialog({
       setInvoiceManagerName(invoice.manager_name || "");
       setPaymentMethod(invoice.payment_method || "efectivo");
       setStatus(invoice.status || "pagada");
+      setInvoiceDate(invoice.invoice_date || todayLocal());
     } else if (currentEvent) {
       setCardPrice(currentEvent.cardValue);
       setCardsNumber(1);
@@ -70,6 +77,7 @@ export default function NewInvoiceDialog({
       setInvoiceManagerName("");
       setPaymentMethod("efectivo");
       setStatus("pagada");
+      setInvoiceDate(todayLocal());
     }
   }, [invoice, currentEvent]);
 
@@ -208,7 +216,8 @@ export default function NewInvoiceDialog({
                   <input
                     name="invoice_date"
                     type="date"
-                    defaultValue={invoice?.invoice_date}
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
                     required
                     className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul"
                   />
