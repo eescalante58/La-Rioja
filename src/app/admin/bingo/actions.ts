@@ -901,22 +901,26 @@ async function updateSingleCardInternal(
   context: { user: any }
 ) {
   const { user } = context;
-  const rawData = {
-    card_type: formData.get("card_type") as string,
-    card_status: formData.get("card_status") as string,
-    card_price: parseFloat(formData.get("card_price") as string),
-    sales_price: formData.get("sales_price") ? parseFloat(formData.get("sales_price") as string) : null,
-    sold_by: formData.get("sold_by") as string,
-    player_name: formData.get("player_name") as string,
-    player_phone_number: formData.get("player_phone_number") as string,
-    player_email: formData.get("player_email") as string,
-    prize: formData.get("prize") as string,
-    comment: formData.get("comment") as string,
-    invoice_number: formData.get("invoice_number") as string,
-  };
 
-  // Validation with Zod
-  const validation = singleCardSchema.safeParse(rawData);
+  // El diálogo de edición solo envía un subconjunto de campos (datos del
+  // jugador). Se construye rawData únicamente con lo presente en el
+  // FormData y se valida con el esquema parcial para no exigir campos
+  // que el formulario no envía ni sobrescribirlos con null.
+  const rawData: Record<string, any> = {};
+  formData.forEach((value, key) => {
+    if (key !== "file") rawData[key] = value;
+  });
+  if (rawData.card_price !== undefined) {
+    rawData.card_price = parseFloat(rawData.card_price as string);
+  }
+  if (rawData.sales_price !== undefined) {
+    rawData.sales_price = rawData.sales_price
+      ? parseFloat(rawData.sales_price as string)
+      : null;
+  }
+
+  // Validation with Zod (parcial: solo campos enviados)
+  const validation = singleCardSchema.partial().safeParse(rawData);
   if (!validation.success) {
     return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
   }
@@ -937,17 +941,26 @@ async function updateSingleCardInternal(
     return { error: "No se encontró el cartón original." };
   }
 
-  const updates: any = {
-    ...data,
-    sold_by: sanitizeInput(data.sold_by || ""),
-    player_name: sanitizeInput(data.player_name || ""),
-    player_phone_number: sanitizeInput(data.player_phone_number || ""),
-    player_email: sanitizeInput(data.player_email || ""),
-    prize: sanitizeInput(data.prize || ""),
-    comment: sanitizeInput(data.comment || ""),
-    invoice_number: sanitizeInput(data.invoice_number || ""),
-    updated_at: new Date().toISOString(),
-  };
+  const updates: any = { updated_at: new Date().toISOString() };
+  const sanitizedKeys = [
+    "sold_by",
+    "player_name",
+    "player_phone_number",
+    "player_email",
+    "prize",
+    "comment",
+    "invoice_number",
+  ] as const;
+  for (const key of sanitizedKeys) {
+    if (data[key] !== undefined) {
+      updates[key] = sanitizeInput(data[key] || "");
+    }
+  }
+  for (const key of ["card_type", "card_status", "card_price", "sales_price"] as const) {
+    if (data[key] !== undefined) {
+      updates[key] = data[key];
+    }
+  }
 
   const file = formData.get("file") as File;
 
