@@ -1181,6 +1181,71 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
 export const saveInvoice = withRole(4, withCompanyAccess(saveInvoiceInternal, 0));
 
 /**
+ * Libera los cartones vinculados a una factura limpiando los datos de venta.
+ * Cada cartón vuelve a "Asignado" si está ligado a un alumno en
+ * students_cards; en caso contrario queda "Disponible".
+ */
+async function releaseInvoiceCards(
+  supabase: any,
+  companyId: number,
+  eventId: string,
+  invoiceNumber: string,
+) {
+  const { data: linkedCards } = await supabase
+    .from("cards")
+    .select("card_number")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .eq("invoice_number", invoiceNumber);
+
+  const numbers = (linkedCards || []).map((c: any) => c.card_number);
+  if (numbers.length === 0) return;
+
+  // Cuáles de esos cartones siguen asignados a un alumno
+  const { data: assigned } = await supabase
+    .from("students_cards")
+    .select("card_number")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .in("card_number", numbers);
+
+  const assignedSet = new Set(
+    (assigned || []).map((r: any) => r.card_number),
+  );
+
+  const releaseFields = {
+    invoice_number: null,
+    sales_price: null,
+    sold_by: null,
+    player_name: null,
+    player_phone_number: null,
+    player_email: null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const toAssigned = numbers.filter((n: number) => assignedSet.has(n));
+  const toAvailable = numbers.filter((n: number) => !assignedSet.has(n));
+
+  if (toAssigned.length > 0) {
+    await supabase
+      .from("cards")
+      .update({ ...releaseFields, card_status: "Asignado" })
+      .eq("company_id", companyId)
+      .eq("event_id", eventId)
+      .in("card_number", toAssigned);
+  }
+  if (toAvailable.length > 0) {
+    const { error } = await supabase
+      .from("cards")
+      .update({ ...releaseFields, card_status: "Disponible" })
+      .eq("company_id", companyId)
+      .eq("event_id", eventId)
+      .in("card_number", toAvailable);
+    if (error) throw error;
+  }
+}
+
+/**
  * Update an existing invoice and associated cards.
  */
 async function updateInvoiceInternal(formData: FormData, context: { user: any }) {
@@ -1314,23 +1379,15 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
   if (invoiceError) return { error: invoiceError.message };
 
   // 4. Update Associated Cards
-  // First, clear previous cards linked to this invoice number
+  // First, clear previous cards linked to this invoice number. Cada cartón
+  // vuelve a "Asignado" si pertenece a un alumno, si no a "Disponible".
   if (currentInvoice?.invoice_number) {
-    await supabase
-      .from("cards")
-      .update({
-        card_status: "Disponible",
-        invoice_number: null,
-        sales_price: null,
-        sold_by: null,
-        player_name: null,
-        player_phone_number: null,
-        player_email: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("company_id", data.company_id || 0)
-      .eq("event_id", data.event_id || "")
-      .eq("invoice_number", currentInvoice.invoice_number);
+    await releaseInvoiceCards(
+      supabase,
+      data.company_id || 0,
+      data.event_id || "",
+      currentInvoice.invoice_number,
+    );
   }
 
   // Now link the new selection
@@ -1402,24 +1459,16 @@ async function deleteInvoiceInternal(id: string, context: { user: any }) {
   if (!invoice) return { error: "Factura no encontrada." };
 
   // 2. Release associated cards BEFORE deleting (idempotent: if the
-  //    delete fails and the user retries, this update matches 0 rows)
-  const { error: cardsError } = await supabase
-    .from("cards")
-    .update({
-      card_status: "Disponible",
-      invoice_number: null,
-      sales_price: null,
-      sold_by: null,
-      player_name: null,
-      player_phone_number: null,
-      player_email: null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("company_id", invoice.company_id)
-    .eq("event_id", invoice.event_id)
-    .eq("invoice_number", invoice.invoice_number);
-
-  if (cardsError) {
+  //    delete fails and the user retries, this update matches 0 rows).
+  //    Los cartones asignados a un alumno vuelven a "Asignado".
+  try {
+    await releaseInvoiceCards(
+      supabase,
+      invoice.company_id,
+      invoice.event_id,
+      invoice.invoice_number,
+    );
+  } catch (cardsError: any) {
     return {
       error: `Error al liberar cartones asociados: ${cardsError.message}`,
     };
