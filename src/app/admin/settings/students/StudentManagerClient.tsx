@@ -244,7 +244,9 @@ export default function StudentManagerClient({
         setLoading(true);
         const result = await importStudents(data);
         if (result.success) {
-          alert("Importación exitosa de " + data.length + " alumnos");
+          alert(
+            `Importación exitosa: ${result.inserted} alumnos nuevos, ${result.updated} ya existían (se actualizaron)`
+          );
           window.location.reload();
         } else {
           alert("Error en la importación: " + result.error);

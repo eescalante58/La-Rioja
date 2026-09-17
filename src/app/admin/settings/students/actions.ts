@@ -206,6 +206,25 @@ async function importStudentsInternal(students: any[], context: { user: any }) {
     return { error: "Hay filas sin student_id, student_name, company_id o event_id válidos." };
   }
 
+  // Contar cuántas filas ya existen para reportar nuevos vs. actualizados.
+  const companyIds = [...new Set(cleanedStudents.map((s) => s.company_id))];
+  const eventIds = [...new Set(cleanedStudents.map((s) => s.event_id))];
+  const { data: existingRows } = await supabase
+    .from("students")
+    .select("company_id, event_id, student_id")
+    .in("company_id", companyIds)
+    .in("event_id", eventIds);
+
+  const existingKeys = new Set(
+    (existingRows || []).map(
+      (r) => `${r.company_id}|${r.event_id}|${r.student_id}`
+    )
+  );
+  const updatedCount = cleanedStudents.filter((s) =>
+    existingKeys.has(`${s.company_id}|${s.event_id}|${s.student_id}`)
+  ).length;
+  const insertedCount = cleanedStudents.length - updatedCount;
+
   const { error } = await supabase.from("students").upsert(cleanedStudents, {
     onConflict: "company_id, event_id, student_id",
   });
@@ -225,7 +244,7 @@ async function importStudentsInternal(students: any[], context: { user: any }) {
   }
 
   revalidatePath("/admin/settings/students");
-  return { success: true };
+  return { success: true, inserted: insertedCount, updated: updatedCount };
 }
 
 export const importStudents = withRole(8, importStudentsInternal);
