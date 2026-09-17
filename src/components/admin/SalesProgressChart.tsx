@@ -83,10 +83,10 @@ export default function SalesProgressChart({
         barGap: "-100%",
         cursor: "pointer",
         itemStyle: {
-          color: "#012060", // larioja-azul
+          color: "#1E9922", // larioja-verde
           borderRadius: 10,
           shadowBlur: 10,
-          shadowColor: "rgba(1, 32, 96, 0.5)",
+          shadowColor: "rgba(30, 153, 34, 0.5)",
         },
         data: [realized],
         z: 2,
@@ -150,7 +150,7 @@ export default function SalesProgressChart({
           <Text className="text-[10px] font-bold uppercase text-slate-500">
             Real
           </Text>
-          <p className="text-sm font-bold text-larioja-azul dark:text-blue-400">
+          <p className="text-sm font-bold text-larioja-verde dark:text-green-400">
             {formatCurrency(realized)}
           </p>
         </div>
