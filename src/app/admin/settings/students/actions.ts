@@ -532,15 +532,25 @@ export const bulkAssignCards = withRole(8, bulkAssignCardsInternal);
 async function getAllAssignedCardsInternal() {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.from("students_cards").select(`
+  const { data, error } = await supabase
+    .from("students_cards")
+    .select(
+      `
       card_number,
+      student_id,
       company_id,
       event_id,
       student:students!fk_students_cards_student (
         student_name,
         student_level
+      ),
+      cards:cards!fk_students_cards_card (
+        card_status
       )
-    `);
+    `,
+    )
+    .order("student_id", { ascending: true })
+    .order("card_number", { ascending: true });
 
   if (error) {
     console.error("Error fetching all assigned cards:", error);
@@ -548,11 +558,13 @@ async function getAllAssignedCardsInternal() {
   }
 
   return data.map((item) => ({
-    card_number: item.card_number,
-    company_id: item.company_id,
-    event_id: item.event_id,
+    student_id: item.student_id,
     student_name: (item.student as any)?.student_name,
     student_level: (item.student as any)?.student_level,
+    card_number: item.card_number,
+    card_status: (item.cards as any)?.card_status,
+    company_id: item.company_id,
+    event_id: item.event_id,
   }));
 }
 

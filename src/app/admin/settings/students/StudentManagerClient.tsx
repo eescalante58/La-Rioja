@@ -347,16 +347,20 @@ export default function StudentManagerClient({
       }
 
       const headers = [
-        "card_number",
+        "student_id",
         "student_name",
         "student_level",
+        "card_number",
+        "card_status",
         "company_id",
         "event_id",
       ];
       const rows = data.map((d: any) => [
-        d.card_number,
+        d.student_id,
         d.student_name,
         d.student_level,
+        d.card_number,
+        d.card_status,
         d.company_id,
         d.event_id,
       ]);
