@@ -1111,6 +1111,22 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
   const supabase = createAdminClient();
 
   const data = validation.data;
+
+  // Verificar que el número de factura no esté duplicado en el evento
+  const { data: duplicate } = await supabase
+    .from("invoices")
+    .select("id")
+    .eq("company_id", data.company_id)
+    .eq("event_id", data.event_id)
+    .eq("invoice_number", data.invoice_number)
+    .maybeSingle();
+
+  if (duplicate) {
+    return {
+      error: `Ya existe una factura con el número ${data.invoice_number} en este evento.`,
+    };
+  }
+
   const invoice_file = formData.get("invoice_file") as File;
   let url_invoice = null;
 
@@ -1340,6 +1356,27 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
     .select("url_invoice, invoice_number")
     .eq("id", id)
     .single();
+
+  // Si el número de factura cambió, verificar que no esté duplicado en el evento
+  if (
+    data.invoice_number &&
+    data.invoice_number !== currentInvoice?.invoice_number
+  ) {
+    const { data: duplicate } = await supabase
+      .from("invoices")
+      .select("id")
+      .eq("company_id", data.company_id || 0)
+      .eq("event_id", data.event_id || "")
+      .eq("invoice_number", data.invoice_number)
+      .neq("id", id)
+      .maybeSingle();
+
+    if (duplicate) {
+      return {
+        error: `Ya existe una factura con el número ${data.invoice_number} en este evento.`,
+      };
+    }
+  }
 
   let url_invoice = currentInvoice?.url_invoice || null;
 
