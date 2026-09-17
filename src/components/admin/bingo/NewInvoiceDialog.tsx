@@ -104,7 +104,9 @@ export default function NewInvoiceDialog({
     if (typeof cardsRes === "object" && "data" in cardsRes) {
       const eligible = (cardsRes.data || []).filter(
         (c: any) =>
-          c.card_status === "Disponible" || (invoice && c.invoice_number === invoice.invoice_number),
+          c.card_status === "Disponible" ||
+          c.card_status === "Asignado" ||
+          (invoice && c.invoice_number === invoice.invoice_number),
       );
 
       // En edición: primero los cartones asignados a esta factura,
@@ -389,10 +391,17 @@ export default function NewInvoiceDialog({
                     {availableCards.map((card) => (
                       <div
                         key={card.card_number}
-                        className={`flex items-center justify-center p-2 rounded border cursor-pointer transition-colors text-xs font-bold ${
+                        title={
+                          card.card_status === "Asignado"
+                            ? "Asignado a un alumno"
+                            : undefined
+                        }
+                        className={`flex items-center justify-center gap-1 p-2 rounded border cursor-pointer transition-colors text-xs font-bold ${
                           selectedCards.includes(card.card_number)
                             ? "bg-larioja-azul text-white border-larioja-azul"
-                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-larioja-azul"
+                            : card.card_status === "Asignado"
+                              ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 hover:border-larioja-azul"
+                              : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-larioja-azul"
                         }`}
                         onClick={() => {
                           if (selectedCards.includes(card.card_number)) {
@@ -403,6 +412,10 @@ export default function NewInvoiceDialog({
                         }}
                       >
                         #{card.card_number}
+                        {card.card_status === "Asignado" &&
+                          !selectedCards.includes(card.card_number) && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                          )}
                       </div>
                     ))}
                   </div>
