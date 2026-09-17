@@ -49,11 +49,15 @@ export default function InventoryDetailsDialog({
       const cardType = (card.card_type || "").toLowerCase();
       const cardStatus = (card.card_status || "").toLowerCase();
       const soldBy = (card.sold_by || "").toLowerCase();
+      const invoiceNum = (card.invoice_number || "").toLowerCase();
+      const playerName = (card.player_name || "").toLowerCase();
       return (
         cardNum.includes(query) ||
         cardType.includes(query) ||
         cardStatus.includes(query) ||
-        soldBy.includes(query)
+        soldBy.includes(query) ||
+        invoiceNum.includes(query) ||
+        playerName.includes(query)
       );
     });
   }, [cards, searchQuery]);
@@ -89,7 +93,7 @@ export default function InventoryDetailsDialog({
             </div>
 
             <TextInput
-              placeholder="Buscar por N° Cartón, Tipo, Estado o Vendedor..."
+              placeholder="Buscar por N° Cartón, Factura, Estado, Jugador o Vendedor..."
               icon={Search}
               value={searchQuery}
               onValueChange={setSearchQuery}
@@ -108,7 +112,9 @@ export default function InventoryDetailsDialog({
                   <TableRow>
                     <TableHeaderCell>N° Cartón</TableHeaderCell>
                     <TableHeaderCell>Tipo</TableHeaderCell>
+                    <TableHeaderCell>N° Factura</TableHeaderCell>
                     <TableHeaderCell>Estado</TableHeaderCell>
+                    <TableHeaderCell>Jugador</TableHeaderCell>
                     <TableHeaderCell>Vendido por</TableHeaderCell>
                     <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
                   </TableRow>
@@ -134,6 +140,9 @@ export default function InventoryDetailsDialog({
                         </div>
                       </TableCell>
                       <TableCell>
+                        <Text className="text-xs">{card.invoice_number || "—"}</Text>
+                      </TableCell>
+                      <TableCell>
                         <Badge
                           color={
                             card.card_status === "Vendido"
@@ -146,6 +155,9 @@ export default function InventoryDetailsDialog({
                         >
                           {card.card_status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Text className="text-xs">{card.player_name || "—"}</Text>
                       </TableCell>
                       <TableCell>
                         <Text className="text-xs">{card.sold_by || "N/A"}</Text>
