@@ -552,15 +552,45 @@ async function deleteEventInternal(id: number, context: { user: any }) {
 
 export const deleteEvent = withRole(10, deleteEventInternal);
 
+/**
+ * Obtiene todas las filas de una tabla filtradas por empresa/evento,
+ * paginando en bloques de 1000 (límite por consulta de PostgREST).
+ */
+async function fetchAllRows(
+  supabase: any,
+  table: string,
+  columns: string,
+  companyId: number,
+  eventId: string,
+  orderBy: string,
+) {
+  const pageSize = 1000;
+  const all: any[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(columns)
+      .eq("company_id", companyId)
+      .eq("event_id", eventId)
+      .order(orderBy, { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) return { data: null, error };
+    all.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
+  return { data: all, error: null as any };
+}
+
 async function getEventCardsInternal(companyId: number, eventId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("cards")
-    .select("*")
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .order("card_number", { ascending: true });
-
+  const { data, error } = await fetchAllRows(
+    supabase,
+    "cards",
+    "*",
+    companyId,
+    eventId,
+    "card_number",
+  );
   if (error) return { error: error.message };
   return { data };
 }
@@ -1803,17 +1833,24 @@ async function syncCustomersInternal(companyId: number) {
   }
 
   // 2. Obtener facturas del evento por defecto y jugadores de cartones
+  //    (paginado: el evento puede superar el límite de 1000 filas por consulta)
   const [invRes, cardsRes] = await Promise.all([
-    supabase
-      .from("invoices")
-      .select("customer_name, whatsapp_number, phone_area, phone_number")
-      .eq("company_id", companyId)
-      .eq("event_id", company.def_dash_event_id),
-    supabase
-      .from("cards")
-      .select("player_name, player_phone_number")
-      .eq("company_id", companyId)
-      .eq("event_id", company.def_dash_event_id),
+    fetchAllRows(
+      supabase,
+      "invoices",
+      "customer_name, whatsapp_number, phone_area, phone_number",
+      companyId,
+      company.def_dash_event_id,
+      "invoice_number",
+    ),
+    fetchAllRows(
+      supabase,
+      "cards",
+      "player_name, player_phone_number",
+      companyId,
+      company.def_dash_event_id,
+      "card_number",
+    ),
   ]);
 
   if (invRes.error) return { success: false, error: invRes.error.message };
