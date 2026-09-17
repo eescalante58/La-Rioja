@@ -193,7 +193,9 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
       if (result.success) {
         await loadCustomers(companyId);
         alert(
-          `Sincronización completada. ${result.imported ?? 0} clientes importados.`,
+          `Sincronización completada. ${result.imported ?? 0} clientes importados` +
+            (result.updated ? `, ${result.updated} actualizados` : "") +
+            ".",
         );
       } else {
         alert("Error en sincronización: " + (result.error || "desconocido"));

@@ -1780,6 +1780,8 @@ export const getBatchDetails = withRole(4, getBatchDetailsInternal);
  *    (companies.def_dash_event_id).
  * 2. Jugadores registrados en los cartones (cards) del mismo evento.
  * Inserta en customer_phone_number solo los teléfonos que no existan aún.
+ * Registra en table_data_source el origen del dato:
+ * "invoices", "cards" o "ambas" si el teléfono aparece en ambas fuentes.
  */
 async function syncCustomersInternal(companyId: number) {
   const supabase = createAdminClient();
@@ -1817,36 +1819,47 @@ async function syncCustomersInternal(companyId: number) {
   if (invRes.error) return { success: false, error: invRes.error.message };
   if (cardsRes.error) return { success: false, error: cardsRes.error.message };
 
-  // 3. Construir lista única de clientes por teléfono
+  // 3. Construir lista única de clientes por teléfono, rastreando la fuente
   //    Facturas: prioriza whatsapp_number; si no, usa phone_area + phone_number
   //    Cartones: usa player_phone_number
-  const phoneMap = new Map<string, string>();
+  const phoneMap = new Map<string, { name: string; sources: Set<string> }>();
+  const addPhone = (phone: string, name: string, source: string) => {
+    const entry = phoneMap.get(phone);
+    if (entry) {
+      entry.sources.add(source);
+    } else if (phone && name) {
+      phoneMap.set(phone, { name, sources: new Set([source]) });
+    }
+  };
   for (const inv of invRes.data || []) {
     const rawPhone =
       (inv.whatsapp_number || "").trim() ||
       `${inv.phone_area || ""}${inv.phone_number || ""}`.trim();
-    const phone = rawPhone.replace(/\D/g, "");
-    const name = (inv.customer_name || "").trim();
-    if (phone && name && !phoneMap.has(phone)) {
-      phoneMap.set(phone, name);
-    }
+    addPhone(
+      rawPhone.replace(/\D/g, ""),
+      (inv.customer_name || "").trim(),
+      "invoices",
+    );
   }
   for (const card of cardsRes.data || []) {
-    const phone = (card.player_phone_number || "").replace(/\D/g, "");
-    const name = (card.player_name || "").trim();
-    if (phone && name && !phoneMap.has(phone)) {
-      phoneMap.set(phone, name);
-    }
+    addPhone(
+      (card.player_phone_number || "").replace(/\D/g, ""),
+      (card.player_name || "").trim(),
+      "cards",
+    );
   }
 
   if (phoneMap.size === 0) {
-    return { success: true, imported: 0 };
+    return { success: true, imported: 0, updated: 0 };
   }
+
+  const sourceLabel = (sources: Set<string>) =>
+    sources.size > 1 ? "ambas" : [...sources][0];
 
   // 4. Obtener teléfonos ya registrados para evitar duplicados
   const { data: existing, error: existError } = await supabase
     .from("customer_phone_number")
-    .select("phone_number")
+    .select("id, phone_number, table_data_source")
     .eq("company_id", companyId);
 
   if (existError) return { success: false, error: existError.message };
@@ -1857,12 +1870,14 @@ async function syncCustomersInternal(companyId: number) {
     ),
   );
 
+  // 5. Insertar solo teléfonos nuevos, con su fuente de origen
   const toInsert = [...phoneMap.entries()]
     .filter(([phone]) => !existingPhones.has(phone))
-    .map(([phone, name]) => ({
+    .map(([phone, entry]) => ({
       company_id: companyId,
-      customer_name: name,
+      customer_name: entry.name,
       phone_number: phone,
+      table_data_source: sourceLabel(entry.sources),
     }));
 
   if (toInsert.length > 0) {
@@ -1872,7 +1887,38 @@ async function syncCustomersInternal(companyId: number) {
     if (insertError) return { success: false, error: insertError.message };
   }
 
-  return { success: true, imported: toInsert.length };
+  // 6. Actualizar table_data_source de registros existentes cuyo teléfono
+  //    ahora también aparece en la otra fuente (ej. "invoices" -> "ambas")
+  const parseSources = (value: string | null): Set<string> => {
+    if (value === "ambas") return new Set(["invoices", "cards"]);
+    return new Set(
+      (value || "").split(/[,+|]/).filter((s) => s === "invoices" || s === "cards"),
+    );
+  };
+
+  let updated = 0;
+  const updates = (existing || [])
+    .map((row: any) => {
+      const phone = (row.phone_number || "").replace(/\D/g, "");
+      const entry = phoneMap.get(phone);
+      if (!entry) return null;
+      const merged = parseSources(row.table_data_source);
+      entry.sources.forEach((s) => merged.add(s));
+      const label = merged.size > 0 ? sourceLabel(merged) : null;
+      return label !== row.table_data_source ? { id: row.id, label } : null;
+    })
+    .filter(Boolean) as { id: number; label: string }[];
+
+  for (const u of updates) {
+    const { error: updateError } = await supabase
+      .from("customer_phone_number")
+      .update({ table_data_source: u.label })
+      .eq("id", u.id);
+    if (updateError) return { success: false, error: updateError.message };
+    updated++;
+  }
+
+  return { success: true, imported: toInsert.length, updated };
 }
 
 export const syncCustomers = withRole(
