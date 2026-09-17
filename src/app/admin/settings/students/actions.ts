@@ -602,8 +602,10 @@ async function assignCardRangeToStudentInternal(
   const { user } = context;
   const supabase = await createClient();
 
-  if (isNaN(fromCard) || isNaN(toCard) || toCard <= fromCard) {
-    return { error: "El cartón 'hasta' debe ser mayor que el cartón 'desde'." };
+  if (isNaN(fromCard) || isNaN(toCard) || toCard < fromCard) {
+    return {
+      error: "El cartón 'hasta' debe ser igual o mayor que el cartón 'desde'.",
+    };
   }
 
   // 1. El 'hasta' no puede superar el número de cartones del evento
