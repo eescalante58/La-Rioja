@@ -532,42 +532,66 @@ export const bulkAssignCards = withRole(8, bulkAssignCardsInternal);
 async function getAllAssignedCardsInternal() {
   const supabase = await createClient();
 
+  // Se consulta desde students con left join para incluir también a los
+  // alumnos que no tienen ningún cartón asignado.
   const { data, error } = await supabase
-    .from("students_cards")
+    .from("students")
     .select(
       `
-      card_number,
       student_id,
+      student_name,
+      student_level,
       company_id,
       event_id,
-      student:students!fk_students_cards_student (
-        student_name,
-        student_level
-      ),
-      cards:cards!fk_students_cards_card (
-        card_type,
-        card_status
+      students_cards:students_cards!fk_students_cards_student (
+        card_number,
+        cards:cards!fk_students_cards_card (
+          card_type,
+          card_status
+        )
       )
     `,
     )
-    .order("student_id", { ascending: true })
-    .order("card_number", { ascending: true });
+    .order("event_id", { ascending: true })
+    .order("student_id", { ascending: true });
 
   if (error) {
     console.error("Error fetching all assigned cards:", error);
     return [];
   }
 
-  return data.map((item) => ({
-    student_id: item.student_id,
-    student_name: (item.student as any)?.student_name,
-    student_level: (item.student as any)?.student_level,
-    card_number: item.card_number,
-    card_type: (item.cards as any)?.card_type,
-    card_status: (item.cards as any)?.card_status,
-    company_id: item.company_id,
-    event_id: item.event_id,
-  }));
+  const rows: any[] = [];
+  for (const s of data || []) {
+    const cards = ((s as any).students_cards as any[]) || [];
+    const base = {
+      student_id: s.student_id,
+      student_name: s.student_name,
+      student_level: s.student_level,
+      company_id: s.company_id,
+      event_id: s.event_id,
+    };
+
+    if (cards.length === 0) {
+      rows.push({
+        ...base,
+        card_number: "",
+        card_type: "",
+        card_status: "Sin asignar",
+      });
+    } else {
+      cards.sort((a, b) => a.card_number - b.card_number);
+      for (const c of cards) {
+        rows.push({
+          ...base,
+          card_number: c.card_number,
+          card_type: c.cards?.card_type,
+          card_status: c.cards?.card_status,
+        });
+      }
+    }
+  }
+
+  return rows;
 }
 
 export const getAllAssignedCards = withRole(4, getAllAssignedCardsInternal);
