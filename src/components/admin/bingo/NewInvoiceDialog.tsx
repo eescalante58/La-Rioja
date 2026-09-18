@@ -27,6 +27,7 @@ interface NewInvoiceDialogProps {
   countries: any[];
   onSuccess: () => void;
   onWhatsApp: (invoice: any) => void;
+  readOnly?: boolean;
 }
 
 export default function NewInvoiceDialog({
@@ -37,6 +38,7 @@ export default function NewInvoiceDialog({
   countries,
   onSuccess,
   onWhatsApp,
+  readOnly = false,
 }: NewInvoiceDialogProps) {
   const [loading, setLoading] = useState(false);
   const [cardsNumber, setCardsNumber] = useState<number>(1);
@@ -183,7 +185,7 @@ export default function NewInvoiceDialog({
         <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]">
           <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
             <Title className="text-larioja-azul dark:text-larioja-amarillo">
-              {invoice ? "Editar Factura" : "Nueva Factura"}
+              {readOnly ? "Consulta de Factura" : (invoice ? "Editar Factura" : "Nueva Factura")}
             </Title>
             <div className="text-right text-xs font-bold text-gray-500 space-y-0.5">
               <div>EVENTO: {currentEvent?.eventId}</div>
@@ -209,6 +211,7 @@ export default function NewInvoiceDialog({
                     placeholder="F001-000001"
                     defaultValue={invoice?.invoice_number}
                     required
+                    disabled={readOnly}
                   />
                 </div>
                 <div className="space-y-1">
@@ -219,7 +222,8 @@ export default function NewInvoiceDialog({
                     value={invoiceDate}
                     onChange={(e) => setInvoiceDate(e.target.value)}
                     required
-                    className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul"
+                    disabled={readOnly}
+                    className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -243,6 +247,7 @@ export default function NewInvoiceDialog({
                     placeholder="Juan Pérez"
                     defaultValue={invoice?.customer_name}
                     required
+                    disabled={readOnly}
                   />
                 </div>
                 <div className="space-y-1">
@@ -252,6 +257,7 @@ export default function NewInvoiceDialog({
                     type="email"
                     placeholder="juan@ejemplo.com"
                     defaultValue={invoice?.customer_email}
+                    disabled={readOnly}
                   />
                 </div>
               </div>
@@ -259,7 +265,7 @@ export default function NewInvoiceDialog({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Área</Text>
-                  <Select value={phoneArea} onValueChange={setPhoneArea} enableClear={false}>
+                  <Select value={phoneArea} onValueChange={setPhoneArea} enableClear={false} disabled={readOnly}>
                     {countries.map((country) => (
                       <SelectItem key={`${country.name}-${country.phone_code}`} value={country.phone_code}>
                         <div className="flex items-center gap-2">
@@ -278,6 +284,7 @@ export default function NewInvoiceDialog({
                     placeholder="1234567"
                     value={phoneNumber}
                     onValueChange={setPhoneNumber}
+                    disabled={readOnly}
                   />
                 </div>
                 <div className="space-y-1">
@@ -288,6 +295,7 @@ export default function NewInvoiceDialog({
                       value={whatsappNumber}
                       onValueChange={setWhatsappNumber}
                       icon={Smartphone}
+                      disabled={readOnly}
                     />
                     <Button
                       type="button"
@@ -308,9 +316,10 @@ export default function NewInvoiceDialog({
                   value={managerName}
                   onChange={(e) => setInvoiceManagerName(e.target.value)}
                   required
+                  disabled={readOnly}
                   list="sellers-list-final"
                   autoComplete="off"
-                  className="w-full text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2 text-gray-900 dark:text-gray-100"
+                  className="w-full text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2 text-gray-900 dark:text-gray-100 disabled:opacity-50"
                 />
                 <datalist id="sellers-list-final">
                   {sellers.map((s) => <option key={s} value={s} />)}
@@ -320,12 +329,14 @@ export default function NewInvoiceDialog({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Imagen de Factura</Text>
-                  <input
-                    type="file"
-                    name="invoice_file"
-                    accept="image/*,.pdf"
-                    className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:bg-larioja-azul/10 file:text-larioja-azul hover:file:bg-larioja-azul/20"
-                  />
+                  {!readOnly && (
+                    <input
+                      type="file"
+                      name="invoice_file"
+                      accept="image/*,.pdf"
+                      className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:bg-larioja-azul/10 file:text-larioja-azul hover:file:bg-larioja-azul/20"
+                    />
+                  )}
                   {invoice?.url_invoice && (
                     <a
                       href={invoice.url_invoice}
@@ -339,7 +350,7 @@ export default function NewInvoiceDialog({
                 </div>
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Método de Pago</Text>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod} enableClear={false}>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod} enableClear={false} disabled={readOnly}>
                     <SelectItem value="efectivo">Efectivo</SelectItem>
                     <SelectItem value="transferencia">Transferencia</SelectItem>
                     <SelectItem value="tarjeta debito">Tarjeta Débito</SelectItem>
@@ -349,7 +360,7 @@ export default function NewInvoiceDialog({
                 </div>
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Estado</Text>
-                  <Select value={status} onValueChange={setStatus} enableClear={false}>
+                  <Select value={status} onValueChange={setStatus} enableClear={false} disabled={readOnly}>
                     <SelectItem value="pagada">Pagada</SelectItem>
                     <SelectItem value="pendiente">Pendiente</SelectItem>
                   </Select>
@@ -373,6 +384,7 @@ export default function NewInvoiceDialog({
                       );
                     }}
                     required
+                    disabled={readOnly}
                   />
                 </div>
                 <div className="space-y-1">
@@ -385,6 +397,7 @@ export default function NewInvoiceDialog({
                     value={cardPrice.toString()}
                     onValueChange={(v) => setCardPrice(parseFloat(v) || 0)}
                     required
+                    disabled={readOnly}
                   />
                 </div>
                 <div className="space-y-1">
@@ -420,6 +433,7 @@ export default function NewInvoiceDialog({
                               : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-larioja-azul"
                         }`}
                         onClick={() => {
+                          if (readOnly) return;
                           if (selectedCards.includes(card.card_number)) {
                             setSelectedInvoiceCards(selectedCards.filter((n) => n !== card.card_number));
                           } else if (selectedCards.length < cardsNumber) {
@@ -443,11 +457,13 @@ export default function NewInvoiceDialog({
 
             <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-shrink-0 bg-gray-50/50">
               <Button variant="secondary" onClick={onClose} disabled={loading} type="button">
-                Cancelar
+                {readOnly ? "Cerrar" : "Cancelar"}
               </Button>
-              <Button type="submit" loading={loading} className="bg-larioja-azul">
-                {invoice ? "Actualizar Factura" : "Guardar Factura"}
-              </Button>
+              {!readOnly && (
+                <Button type="submit" loading={loading} className="bg-larioja-azul">
+                  {invoice ? "Actualizar Factura" : "Guardar Factura"}
+                </Button>
+              )}
             </div>
           </form>
         </DialogPanel>
