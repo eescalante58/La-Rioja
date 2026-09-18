@@ -96,7 +96,7 @@ export async function getDashboardData() {
     const [eventRes, invoicesRes, dailySalesRes] = await Promise.all([
       supabase
         .from("events")
-        .select("event_name, event_goal")
+        .select("event_name, event_goal, card_value, event_id")
         .eq("event_id", eventId)
         .eq("company_id", companyId)
         .single(),
@@ -185,7 +185,9 @@ export async function getDashboardData() {
       companyId,
       companyName: company.company_name,
       hasEvent: true,
+      eventId: event.event_id,
       eventName: event.event_name,
+      cardValue: Number(event.card_value || 10), // Assuming card_value exists or default to 10
       goal,
       realized,
       percentage,
@@ -642,4 +644,63 @@ export async function getStudentCards(studentId: number) {
 
   if (cardsError) return { success: false, error: cardsError.message };
   return { success: true, data: cards };
+}
+
+/**
+ * Fetches full details of a single invoice by its number.
+ */
+export async function getInvoiceByNumber(invoiceNumber: string) {
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
+
+  if (!companyId) return { success: false, error: "No company selected" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  const { data: invoice, error } = await supabase
+    .from("invoices")
+    .select("*")
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id)
+    .eq("invoice_number", invoiceNumber)
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  // Also get the associated cards
+  const { data: cards } = await supabase
+    .from("cards")
+    .select("card_number")
+    .eq("invoice_number", invoiceNumber)
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id);
+
+  return {
+    success: true,
+    data: {
+      ...invoice,
+      associated_cards: (cards || []).map((c) => c.card_number),
+    },
+  };
+}
+
+/**
+ * Fetches country codes for phone selects.
+ */
+export async function getBingoCountries() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("country_codes")
+    .select("name, phone_code, flag_emoji, iso2")
+    .order("name", { ascending: true });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
 }

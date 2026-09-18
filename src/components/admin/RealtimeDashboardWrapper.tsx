@@ -13,6 +13,8 @@ import {
   getAssignmentByLevel,
   getStudentCards,
   globalSearch,
+  getInvoiceByNumber,
+  getBingoCountries,
 } from "@/app/admin/actions";
 import {
   Card,
@@ -49,6 +51,8 @@ import {
   Search,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import NewInvoiceDialog from "./bingo/NewInvoiceDialog";
+import WhatsAppPopup from "./bingo/WhatsAppPopup";
 
 // Dynamic imports for charts
 const SalesProgressChart = dynamic(
@@ -120,6 +124,12 @@ export default function RealtimeDashboardWrapper({
   const [isQuickCardDetailOpen, setIsQuickCardDetailOpen] = useState(false);
   const [quickCardDetail, setQuickCardDetail] = useState<any>(null);
 
+  const [countries, setCountries] = useState<any[]>([]);
+  const [isConsultInvoiceOpen, setIsConsultInvoiceOpen] = useState(false);
+  const [consultingInvoice, setConsultingInvoice] = useState<any>(null);
+  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+  const [whatsAppInvoice, setWhatsAppInvoice] = useState<any>(null);
+
   const supabase = createClient();
 
   // Function to refresh data from server
@@ -143,9 +153,15 @@ export default function RealtimeDashboardWrapper({
     if (res.success && res.data) setAssignmentByLevel(res.data);
   };
 
+  const loadCountries = async () => {
+    const res = await getBingoCountries();
+    if (res.success && res.data) setCountries(res.data);
+  };
+
   useEffect(() => {
     loadCardTypeSummary();
     loadAssignmentByLevel();
+    loadCountries();
   }, []);
 
   const handleDateDrillDown = async (date: string) => {
@@ -283,10 +299,15 @@ export default function RealtimeDashboardWrapper({
     setSearchQuery("");
 
     if (result.type === "invoice") {
-      const manager = result.raw.manager_name || "Sin asignar";
-      await handleManagerDrillDown();
-      await handleManagerInvoices(manager);
-      await handleInvoiceCards(result.id);
+      setIsLoadingDrillDown(true);
+      const res = await getInvoiceByNumber(result.id);
+      if (res.success && res.data) {
+        setConsultingInvoice(res.data);
+        setIsConsultInvoiceOpen(true);
+      } else {
+        alert("Error al cargar detalles de factura: " + (res.error || "Sin datos"));
+      }
+      setIsLoadingDrillDown(false);
     } else if (result.type === "card") {
       setQuickCardDetail(result.raw);
       setIsQuickCardDetailOpen(true);
@@ -1117,14 +1138,16 @@ export default function RealtimeDashboardWrapper({
                       <button 
                         className="flex items-center gap-2 text-larioja-verde font-black hover:underline"
                         onClick={async () => {
-                          const res = await globalSearch(quickCardDetail.invoice_number);
-                          if (res.success && res.results) {
-                            const inv = res.results.find((r: any) => r.type === 'invoice');
-                            if (inv) {
-                              setIsQuickCardDetailOpen(false);
-                              handleSearchResultClick(inv);
-                            }
+                          setIsLoadingDrillDown(true);
+                          const res = await getInvoiceByNumber(quickCardDetail.invoice_number);
+                          if (res.success && res.data) {
+                            setIsQuickCardDetailOpen(false);
+                            setConsultingInvoice(res.data);
+                            setIsConsultInvoiceOpen(true);
+                          } else {
+                            alert("Error al cargar detalles de factura: " + (res.error || "Sin datos"));
                           }
+                          setIsLoadingDrillDown(false);
                         }}
                       >
                         #{quickCardDetail.invoice_number}
@@ -1317,7 +1340,18 @@ export default function RealtimeDashboardWrapper({
                     return (
                       <Flex
                         key={`invoice-${activity.id}`}
-                        className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/40 hover:border-emerald-200 dark:hover:border-emerald-700 transition-colors"
+                        className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/40 hover:border-emerald-200 dark:hover:border-emerald-700 transition-all cursor-pointer group"
+                        onClick={async () => {
+                          setIsLoadingDrillDown(true);
+                          const res = await getInvoiceByNumber(activity.invoice_number);
+                          if (res.success && res.data) {
+                            setConsultingInvoice(res.data);
+                            setIsConsultInvoiceOpen(true);
+                          } else {
+                            alert("Error al cargar detalles de factura: " + (res.error || "Sin datos"));
+                          }
+                          setIsLoadingDrillDown(false);
+                        }}
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400 shrink-0">
@@ -1412,6 +1446,34 @@ export default function RealtimeDashboardWrapper({
           </Card>
         </div>
       </section>
+
+      {/* Consultación de Factura (desde búsqueda) */}
+      <NewInvoiceDialog
+        isOpen={isConsultInvoiceOpen}
+        onClose={() => {
+          setIsConsultInvoiceOpen(false);
+          setConsultingInvoice(null);
+        }}
+        invoice={consultingInvoice}
+        currentEvent={{
+          companyId: data.companyId,
+          eventId: data.eventId,
+          cardValue: data.cardValue,
+        }}
+        countries={countries}
+        readOnly={true}
+        onSuccess={() => {}}
+        onWhatsApp={(inv) => {
+          setWhatsAppInvoice(inv);
+          setIsWhatsAppOpen(true);
+        }}
+      />
+
+      <WhatsAppPopup
+        isOpen={isWhatsAppOpen}
+        onClose={() => setIsWhatsAppOpen(false)}
+        invoice={whatsAppInvoice}
+      />
     </div>
   );
 }
