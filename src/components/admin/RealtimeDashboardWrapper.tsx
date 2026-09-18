@@ -10,6 +10,7 @@ import {
   getInvoiceCards,
   getCardTypeSummary,
   getAssignmentByLevel,
+  getStudentCards,
 } from "@/app/admin/actions";
 import {
   Card,
@@ -100,6 +101,9 @@ export default function RealtimeDashboardWrapper({
   const [cardTypeSummary, setCardTypeSummary] = useState<any[]>([]);
   const [assignmentByLevel, setAssignmentByLevel] = useState<any[]>([]);
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
+  const [isStudentDetailOpen, setIsStudentDetailOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [studentCards, setStudentCards] = useState<any[]>([]);
 
   const supabase = createClient();
 
@@ -180,6 +184,19 @@ export default function RealtimeDashboardWrapper({
       setInvoiceCards(res.data);
     } else {
       alert("Error al cargar cartones: " + (res.error || "Sin datos"));
+    }
+    setIsLoadingDrillDown(false);
+  };
+
+  const handleStudentDrillDown = async (student: any) => {
+    setIsLoadingDrillDown(true);
+    const res = await getStudentCards(student.id);
+    if (res.success && res.data) {
+      setSelectedStudent(student);
+      setStudentCards(res.data);
+      setIsStudentDetailOpen(true);
+    } else {
+      alert("Error al cargar cartones del alumno: " + (res.error || "Sin datos"));
     }
     setIsLoadingDrillDown(false);
   };
@@ -364,6 +381,12 @@ export default function RealtimeDashboardWrapper({
                   Asignación de Cartones por Nivel
                 </Title>
               </div>
+              <div className="px-4 py-2 bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800">
+                <Text className="text-xs font-bold text-larioja-azul dark:text-blue-400">
+                  Click en el nombre del alumno para consultar detalle de
+                  cartones asignados.
+                </Text>
+              </div>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHead>
@@ -419,8 +442,13 @@ export default function RealtimeDashboardWrapper({
                               key={idx}
                               className="hover:bg-gray-50 dark:hover:bg-slate-800/50"
                             >
-                              <TableCell className="pl-12 text-sm text-gray-600 dark:text-slate-300">
-                                {student.name}
+                              <TableCell className="pl-12 text-sm">
+                                <button
+                                  onClick={() => handleStudentDrillDown(student)}
+                                  className="text-gray-600 dark:text-slate-300 font-medium hover:text-larioja-verde hover:underline text-left"
+                                >
+                                  {student.name}
+                                </button>
                               </TableCell>
                               <TableCell className="text-right text-sm text-gray-500">
                                 {student.card_count}
@@ -867,6 +895,82 @@ export default function RealtimeDashboardWrapper({
                     closeManagerModal();
                   }
                 }}
+                className="w-full bg-larioja-azul"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Modal: Detalle de Cartones por Alumno */}
+      <Dialog
+        open={isStudentDetailOpen}
+        onClose={() => setIsStudentDetailOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
+          <DialogPanel className="max-w-5xl w-full bg-gray-100 dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
+                  <Ticket size={24} />
+                </div>
+                <div>
+                  <Title className="dark:text-white">
+                    {selectedStudent?.name}
+                  </Title>
+                  <Text className="text-xs dark:text-slate-400">
+                    ID Alumno: {selectedStudent?.id} — Nivel: {selectedStudent?.level}
+                  </Text>
+                </div>
+              </div>
+              <Button
+                variant="light"
+                icon={X}
+                onClick={() => setIsStudentDetailOpen(false)}
+              />
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>N° Cartón</TableHeaderCell>
+                    <TableHeaderCell>Tipo</TableHeaderCell>
+                    <TableHeaderCell>Estado</TableHeaderCell>
+                    <TableHeaderCell>Jugador</TableHeaderCell>
+                    <TableHeaderCell>Teléfono</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {studentCards.map((card, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-bold">
+                        {card.card_number}
+                      </TableCell>
+                      <TableCell>{card.card_type}</TableCell>
+                      <TableCell>{card.card_status}</TableCell>
+                      <TableCell>{card.player_name || "—"}</TableCell>
+                      <TableCell>{card.player_phone_number || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                  {studentCards.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center italic py-8">
+                        No hay cartones asignados a este alumno.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="mt-8">
+              <Button
+                onClick={() => setIsStudentDetailOpen(false)}
                 className="w-full bg-larioja-azul"
               >
                 Cerrar
