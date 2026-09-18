@@ -30,6 +30,7 @@ import {
   Info,
   PlusSquare,
   MinusSquare,
+  LayoutGrid,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -220,19 +221,50 @@ export default function DashboardManualPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="order-2 md:order-1 space-y-4 text-lg">
             <p>
-              <span className="font-bold text-larioja-azul">Segmentación</span>: Clasifica los cartones por <strong>Tipo</strong> (Físico/Virtual) y <strong>Estado</strong> (Disponible, Asignado, Vendido).
+              <span className="font-bold text-larioja-azul">Vista Consolidada</span>: Agrupa los cartones por <strong>Tipo</strong> (Físico/Virtual). Use los iconos <strong>[+]</strong> o <strong>[-]</strong> para ver el desglose por estado.
             </p>
-            <p>
-              La tabla incluye subtotales por modalidad y un <strong>Total General</strong> al final para verificar el inventario completo del evento.
+            <p className="text-slate-600">
+              Cada categoría muestra automáticamente su subtotal de cartones y montos vendidos, facilitando el balance de inventario.
             </p>
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border-l-4 border-indigo-500">
+              <p className="text-sm font-bold text-indigo-800 dark:text-indigo-300 leading-relaxed">
+                <span className="uppercase tracking-wider">💡 Análisis de Estados</span>:
+                Al expandir un tipo, visualizará la distribución exacta entre cartones <em>Disponibles, Asignados y Vendidos</em>, permitiendo identificar rápidamente dónde se encuentra la carga operativa del evento.
+              </p>
+            </div>
           </div>
-          <Card className="order-1 md:order-2 p-0 overflow-hidden border-2 border-indigo-200">
-            <div className="bg-indigo-50 p-10 flex justify-center">
-              <img
-                src="https://img.icons8.com/fluency/96/000000/ticket.png"
-                alt="Tickets"
-                className="w-24 h-24"
-              />
+          <Card className="order-1 md:order-2 p-0 overflow-hidden border-2 border-indigo-200 shadow-lg">
+            <div className="bg-indigo-50 p-6 space-y-4">
+              <div className="flex items-center gap-2 border-b border-indigo-200 pb-2">
+                <PlusSquare size={16} className="text-larioja-azul" />
+                <span className="font-bold text-xs text-larioja-azul uppercase">Cartón Físico</span>
+                <div className="ml-auto h-3 w-16 bg-larioja-azul/20 rounded"></div>
+              </div>
+              <div className="flex items-center gap-2 border-b border-indigo-200 pb-2">
+                <MinusSquare size={16} className="text-larioja-azul" />
+                <span className="font-bold text-xs text-larioja-azul uppercase">Cartón Virtual</span>
+                <div className="ml-auto h-3 w-16 bg-larioja-azul/20 rounded"></div>
+              </div>
+              <div className="pl-8 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-20 bg-slate-300 rounded italic"></div>
+                  <div className="ml-auto h-2 w-10 bg-slate-200 rounded"></div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-20 bg-slate-300 rounded italic"></div>
+                  <div className="ml-auto h-2 w-10 bg-slate-200 rounded"></div>
+                </div>
+              </div>
+              <div className="bg-larioja-azul/10 p-2 rounded flex items-center justify-between">
+                <span className="font-black text-[10px] text-larioja-azul uppercase">Total General</span>
+                <div className="h-3 w-20 bg-larioja-azul/30 rounded"></div>
+              </div>
+            </div>
+            <div className="p-4 bg-white border-t border-indigo-100 text-center">
+              <Flex justifyContent="center" className="gap-2">
+                <LayoutGrid size={16} className="text-indigo-600" />
+                <Text className="text-[10px] font-bold uppercase text-indigo-700">Resumen Jerárquico de Inventario</Text>
+              </Flex>
             </div>
           </Card>
         </div>
