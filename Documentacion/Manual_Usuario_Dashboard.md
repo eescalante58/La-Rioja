@@ -4,14 +4,17 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ---
 
-## 1. 📈 Avance de Ventas y Metas
-*Seguimiento visual del objetivo económico.*
+## 1. � Buscador Universal
+*Central de búsqueda inteligente para localización inmediata.*
 
-![Progreso](https://img.icons8.com/fluency/48/000000/sales-performance.png)
+![Búsqueda](https://img.icons8.com/fluency/48/000000/search.png)
 
-*   **¿Qué es?**: Una barra de progreso dinámica en **verde La Rioja** que compara lo vendido contra la meta establecida.
-*   **Drill-Down (Detalle)**: Haga clic en la barra para desglosar las ventas por **Vendedor**.
-    *   *Nota*: Dentro del detalle por vendedor, puede hacer clic en el **N° de Factura** para ver exactamente qué cartones componen esa venta.
+*   **¿Qué es?**: Una barra de búsqueda prominente en el encabezado del Dashboard.
+*   **Capacidades**:
+    *   **Facturas**: Busque por número correlativo o nombre del cliente.
+    *   **Cartones**: Encuentre un número de cartón específico o por el nombre del jugador.
+*   **Navegación Directa**: Haga clic en un resultado para abrir la *Ficha de Consulta* de la factura o el detalle rápido del cartón.
+    *   *Tip*: Si busca un cartón ya vendido, puede saltar a su factura relacionada con un solo clic.
 
 ---
 
@@ -59,7 +62,18 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ---
 
-## 6. 🕒 Actividad Reciente y Contactos
+## 6. 📈 Avance de Ventas y Metas
+*Seguimiento visual del objetivo económico.*
+
+![Progreso](https://img.icons8.com/fluency/48/000000/sales-performance.png)
+
+*   **¿Qué es?**: Una barra de progreso dinámica en **verde La Rioja** que compara lo vendido contra la meta establecida.
+*   **Drill-Down (Detalle)**: Haga clic en la barra para desglosar las ventas por **Vendedor**.
+    *   *Nota*: Dentro del detalle por vendedor, puede hacer clic en el **N° de Factura** para abrir la *Ficha de Consulta* de datos.
+
+---
+
+## 7. 🕒 Actividad Reciente y Contactos
 *Bitácora de interacciones en tiempo real.*
 
 ![Actividad](https://img.icons8.com/fluency/48/000000/activity-feed.png)
