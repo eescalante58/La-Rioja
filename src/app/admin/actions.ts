@@ -404,3 +404,101 @@ export async function getCardTypeSummary() {
 
   return { success: true, data };
 }
+
+/**
+ * Fetches card assignments by level and student for the current event.
+ */
+export async function getAssignmentByLevel() {
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
+
+  if (!companyId) return { success: false, error: "No company selected" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  // Join students with students_cards and cards
+  const { data, error } = await supabase
+    .from("students")
+    .select(
+      `
+      student_name,
+      student_level,
+      students_cards(
+        cards(
+          card_price,
+          sales_price,
+          card_status
+        )
+      )
+    `,
+    )
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id);
+
+  if (error) return { success: false, error: error.message };
+
+  // Group by level
+  const levelsMap = new Map<string, any>();
+
+  for (const student of data || []) {
+    const levelName = student.student_level || "Sin nivel";
+    const levelData = levelsMap.get(levelName) || {
+      level: levelName,
+      subtotal_assigned: 0,
+      subtotal_sold: 0,
+      subtotal_cards: 0,
+      students: [],
+    };
+
+    let studentAssigned = 0;
+    let studentSold = 0;
+    let studentCards = 0;
+
+    const assignments = Array.isArray(student.students_cards)
+      ? student.students_cards
+      : [student.students_cards].filter(Boolean);
+
+    for (const sc of assignments as any[]) {
+      const card = sc.cards;
+      if (card) {
+        studentCards++;
+        studentAssigned += Number(card.card_price || 0);
+        if (card.card_status === "Vendido") {
+          studentSold += Number(card.sales_price || 0);
+        }
+      }
+    }
+
+    levelData.subtotal_assigned += studentAssigned;
+    levelData.subtotal_sold += studentSold;
+    levelData.subtotal_cards += studentCards;
+
+    levelData.students.push({
+      name: student.student_name,
+      assigned: studentAssigned,
+      sold: studentSold,
+      card_count: studentCards,
+    });
+
+    levelsMap.set(levelName, levelData);
+  }
+
+  // Sort levels and students
+  const result = [...levelsMap.values()]
+    .sort((a, b) => a.level.localeCompare(b.level))
+    .map((level) => ({
+      ...level,
+      students: level.students.sort((a: any, b: any) =>
+        a.name.localeCompare(b.name),
+      ),
+    }));
+
+  return { success: true, data: result };
+}

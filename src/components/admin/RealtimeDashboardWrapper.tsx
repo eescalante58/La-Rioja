@@ -9,6 +9,7 @@ import {
   getInvoicesByManager,
   getInvoiceCards,
   getCardTypeSummary,
+  getAssignmentByLevel,
 } from "@/app/admin/actions";
 import {
   Card,
@@ -38,6 +39,9 @@ import {
   User,
   MessageSquare,
   ArrowLeft,
+  PlusSquare,
+  MinusSquare,
+  LayoutGrid,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -94,6 +98,8 @@ export default function RealtimeDashboardWrapper({
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [invoiceCards, setInvoiceCards] = useState<any[]>([]);
   const [cardTypeSummary, setCardTypeSummary] = useState<any[]>([]);
+  const [assignmentByLevel, setAssignmentByLevel] = useState<any[]>([]);
+  const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
 
   const supabase = createClient();
 
@@ -105,6 +111,7 @@ export default function RealtimeDashboardWrapper({
       setData(newData);
     }
     loadCardTypeSummary();
+    loadAssignmentByLevel();
   };
 
   const loadCardTypeSummary = async () => {
@@ -112,8 +119,14 @@ export default function RealtimeDashboardWrapper({
     if (res.success && res.data) setCardTypeSummary(res.data);
   };
 
+  const loadAssignmentByLevel = async () => {
+    const res = await getAssignmentByLevel();
+    if (res.success && res.data) setAssignmentByLevel(res.data);
+  };
+
   useEffect(() => {
     loadCardTypeSummary();
+    loadAssignmentByLevel();
   }, []);
 
   const handleDateDrillDown = async (date: string) => {
@@ -177,6 +190,18 @@ export default function RealtimeDashboardWrapper({
     setManagerInvoices([]);
     setSelectedInvoice(null);
     setInvoiceCards([]);
+  };
+
+  const toggleLevel = (levelName: string) => {
+    setExpandedLevels((prev) => {
+      const next = new Set(prev);
+      if (next.has(levelName)) {
+        next.delete(levelName);
+      } else {
+        next.add(levelName);
+      }
+      return next;
+    });
   };
 
   const formatCurrency = (val: number) => {
@@ -330,6 +355,121 @@ export default function RealtimeDashboardWrapper({
             </Card>
           )}
         </div>
+
+        {data.hasEvent && assignmentByLevel.length > 0 && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-0">
+            <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-0 overflow-hidden shadow-md">
+              <div className="bg-[#8ec34b] py-3 px-4 text-center">
+                <Title className="text-white font-bold text-lg uppercase tracking-wider">
+                  Asignación de Cartones por Nivel
+                </Title>
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHead>
+                    <TableRow className="bg-[#d9e1f2] dark:bg-slate-800/80">
+                      <TableHeaderCell className="text-black dark:text-white font-bold">
+                        Nivel
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
+                        Cant. Cartones
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
+                        Valor Asignado Alumno
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
+                        Vendido/Asignado
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {assignmentByLevel.map((lvl) => (
+                      <React.Fragment key={lvl.level}>
+                        <TableRow className="bg-gray-50/50 dark:bg-slate-900/30">
+                          <TableCell className="font-bold">
+                            <Flex justifyContent="start" className="gap-2">
+                              <button
+                                onClick={() => toggleLevel(lvl.level)}
+                                className="text-gray-500 hover:text-larioja-azul transition-colors"
+                              >
+                                {expandedLevels.has(lvl.level) ? (
+                                  <MinusSquare size={18} />
+                                ) : (
+                                  <PlusSquare size={18} />
+                                )}
+                              </button>
+                              <span className="text-larioja-azul dark:text-blue-400">
+                                {lvl.level}
+                              </span>
+                            </Flex>
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            {lvl.subtotal_cards}
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            {formatCurrency(lvl.subtotal_assigned)}
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            {formatCurrency(lvl.subtotal_sold)}
+                          </TableCell>
+                        </TableRow>
+                        {expandedLevels.has(lvl.level) &&
+                          lvl.students.map((student: any, idx: number) => (
+                            <TableRow
+                              key={idx}
+                              className="hover:bg-gray-50 dark:hover:bg-slate-800/50"
+                            >
+                              <TableCell className="pl-12 text-sm text-gray-600 dark:text-slate-300">
+                                {student.name}
+                              </TableCell>
+                              <TableCell className="text-right text-sm text-gray-500">
+                                {student.card_count}
+                              </TableCell>
+                              <TableCell className="text-right text-sm text-gray-500">
+                                {formatCurrency(student.assigned)}
+                              </TableCell>
+                              <TableCell className="text-right text-sm text-gray-500">
+                                {student.sold > 0
+                                  ? formatCurrency(student.sold)
+                                  : "—"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </React.Fragment>
+                    ))}
+                    <TableRow className="bg-[#d9e1f2] dark:bg-slate-800/80">
+                      <TableCell className="font-bold text-black dark:text-white">
+                        Total general
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-black dark:text-white">
+                        {assignmentByLevel.reduce(
+                          (acc, l) => acc + l.subtotal_cards,
+                          0,
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-black dark:text-white">
+                        {formatCurrency(
+                          assignmentByLevel.reduce(
+                            (acc, l) => acc + l.subtotal_assigned,
+                            0,
+                          ),
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-black dark:text-white">
+                        {formatCurrency(
+                          assignmentByLevel.reduce(
+                            (acc, l) => acc + l.subtotal_sold,
+                            0,
+                          ),
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {data.hasEvent && (
           <div className="max-w-6xl mx-auto px-4 sm:px-0">
