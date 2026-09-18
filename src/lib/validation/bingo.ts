@@ -32,6 +32,7 @@ export const invoiceSchema = z.object({
   total_amount: z.number().positive(),
   payment_method: z.string().default("efectivo"),
   status: z.string().default("pagada"),
+  observation: z.string().optional().or(z.literal("")),
   associated_cards: z.array(z.number().int()).min(1, "Debe asociar al menos un cartón"),
 });
 

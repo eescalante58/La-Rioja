@@ -1099,6 +1099,7 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
     total_amount: parseFloat(formData.get("total_amount") as string),
     payment_method: (formData.get("payment_method") as string) || "efectivo",
     status: (formData.get("status") as string) || "pagada",
+    observation: (formData.get("observation") as string) || "",
     associated_cards: associatedCards,
   };
 
@@ -1181,6 +1182,7 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
     total_amount: invoiceFields.total_amount,
     payment_method: invoiceFields.payment_method,
     status: invoiceFields.status,
+    observation: sanitizeInput(invoiceFields.observation || ""),
     url_invoice,
     updated_at: new Date().toISOString(),
   };
@@ -1338,6 +1340,7 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
     total_amount: parseFloat(formData.get("total_amount") as string),
     payment_method: (formData.get("payment_method") as string) || "efectivo",
     status: (formData.get("status") as string) || "pagada",
+    observation: (formData.get("observation") as string) || "",
     associated_cards: associatedCards,
   };
 
@@ -1448,6 +1451,7 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
   if (invoiceFields.total_amount !== undefined) invoiceData.total_amount = invoiceFields.total_amount;
   if (invoiceFields.payment_method !== undefined) invoiceData.payment_method = invoiceFields.payment_method;
   if (invoiceFields.status !== undefined) invoiceData.status = invoiceFields.status;
+  if (invoiceFields.observation !== undefined) invoiceData.observation = sanitizeInput(invoiceFields.observation || "");
   if (url_invoice) invoiceData.url_invoice = url_invoice;
 
   // 3. Update Invoice

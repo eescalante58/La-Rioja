@@ -53,6 +53,7 @@ export default function NewInvoiceDialog({
   const [paymentMethod, setPaymentMethod] = useState<string>("efectivo");
   const [status, setStatus] = useState<string>("pagada");
   const [invoiceDate, setInvoiceDate] = useState<string>("");
+  const [observation, setObservation] = useState<string>("");
 
   /**
    * Fecha de hoy en formato YYYY-MM-DD usando la hora local del navegador.
@@ -70,6 +71,7 @@ export default function NewInvoiceDialog({
       setPaymentMethod(invoice.payment_method || "efectivo");
       setStatus(invoice.status || "pagada");
       setInvoiceDate(invoice.invoice_date || todayLocal());
+      setObservation(invoice.observation || "");
     } else if (currentEvent) {
       setCardPrice(currentEvent.cardValue);
       setCardsNumber(1);
@@ -80,6 +82,7 @@ export default function NewInvoiceDialog({
       setPaymentMethod("efectivo");
       setStatus("pagada");
       setInvoiceDate(todayLocal());
+      setObservation("");
     }
   }, [invoice, currentEvent]);
 
@@ -409,6 +412,18 @@ export default function NewInvoiceDialog({
                   />
                   <input type="hidden" name="total_amount" value={cardsNumber * cardPrice} />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Observación</Text>
+                <textarea
+                  name="observation"
+                  placeholder="Detalles adicionales de la factura..."
+                  value={observation}
+                  onChange={(e) => setObservation(e.target.value)}
+                  disabled={readOnly}
+                  className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul disabled:opacity-50 min-h-[80px] resize-none"
+                />
               </div>
 
               <div className="space-y-1">
