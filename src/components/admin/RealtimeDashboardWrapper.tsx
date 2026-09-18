@@ -16,6 +16,7 @@ import {
   getInvoiceByNumber,
   getBingoCountries,
 } from "@/app/admin/actions";
+import { getCustomers } from "@/app/admin/bingo/actions";
 import {
   Card,
   Title,
@@ -49,6 +50,7 @@ import {
   LayoutGrid,
   BookOpen,
   Search,
+  Smartphone,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import NewInvoiceDialog from "./bingo/NewInvoiceDialog";
@@ -129,6 +131,9 @@ export default function RealtimeDashboardWrapper({
   const [consultingInvoice, setConsultingInvoice] = useState<any>(null);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [whatsAppInvoice, setWhatsAppInvoice] = useState<any>(null);
+
+  const [isCustomerListOpen, setIsCustomerListOpen] = useState(false);
+  const [customerList, setCustomerList] = useState<any[]>([]);
 
   const supabase = createClient();
 
@@ -228,6 +233,19 @@ export default function RealtimeDashboardWrapper({
       setIsStudentDetailOpen(true);
     } else {
       alert("Error al cargar cartones del alumno: " + (res.error || "Sin datos"));
+    }
+    setIsLoadingDrillDown(false);
+  };
+
+  const handleCustomerDrillDown = async () => {
+    if (!data.companyId) return;
+    setIsLoadingDrillDown(true);
+    const res = await getCustomers(Number(data.companyId));
+    if (res.success && res.data) {
+      setCustomerList(res.data);
+      setIsCustomerListOpen(true);
+    } else {
+      alert("Error al cargar clientes: " + (res.error || "Sin datos"));
     }
     setIsLoadingDrillDown(false);
   };
@@ -410,6 +428,7 @@ export default function RealtimeDashboardWrapper({
       metric: data.stats?.customersCount?.toString() || "0",
       icon: Users,
       color: "emerald",
+      onClick: handleCustomerDrillDown,
     },
     {
       title: "Venta Realizada",
@@ -1280,7 +1299,8 @@ export default function RealtimeDashboardWrapper({
           {stats.map((item) => (
             <Card
               key={item.title}
-              className="border-gray-200 dark:border-gray-800 shadow-sm sm:shadow-md"
+              className={`border-gray-200 dark:border-gray-800 shadow-sm sm:shadow-md ${item.onClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" : ""}`}
+              onClick={item.onClick}
             >
               <Flex justifyContent="start" className="gap-4">
                 <div
@@ -1461,6 +1481,79 @@ export default function RealtimeDashboardWrapper({
         onClose={() => setIsWhatsAppOpen(false)}
         invoice={whatsAppInvoice}
       />
+
+      {/* Modal: Listado de Clientes Registrados */}
+      <Dialog
+        open={isCustomerListOpen}
+        onClose={() => setIsCustomerListOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">
+                  <Users size={24} />
+                </div>
+                <div>
+                  <Title className="dark:text-white uppercase tracking-tight">
+                    Clientes Registrados
+                  </Title>
+                  <Text className="text-xs">Base de datos promocional</Text>
+                </div>
+              </div>
+              <Button
+                variant="light"
+                icon={X}
+                onClick={() => setIsCustomerListOpen(false)}
+              />
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Nombre del Cliente</TableHeaderCell>
+                    <TableHeaderCell>Número de Teléfono</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {customerList.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell className="font-medium text-slate-700 dark:text-slate-200">
+                        {customer.customer_name}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                          <Smartphone size={14} />
+                          {customer.phone_number}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {customerList.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-center italic py-8">
+                        No hay clientes registrados aún.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="mt-8">
+              <Button
+                onClick={() => setIsCustomerListOpen(false)}
+                className="w-full bg-larioja-azul"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </div>
   );
 }
