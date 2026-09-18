@@ -64,8 +64,14 @@ export default function DashboardManualPage() {
     <div className="max-w-5xl mx-auto pb-20 space-y-12">
       {/* Header */}
       <div className="text-center space-y-4 pt-10">
-        <div className="inline-flex items-center justify-center p-3 bg-larioja-azul/10 rounded-2xl mb-4">
-          <BookOpen className="text-larioja-azul" size={48} />
+        <div className="inline-flex items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4 transition-transform hover:scale-105">
+          <Image
+            src="/logo.png"
+            alt="La Rioja Logo"
+            width={80}
+            height={80}
+            className="object-contain"
+          />
         </div>
         <Title className="text-3xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
           Manual de Usuario: Dashboard Administrativo
