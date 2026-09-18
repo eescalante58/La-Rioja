@@ -37,12 +37,13 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 ---
 
 ## 4. 🎫 Resumen por Tipo de Cartón
-*Control de inventario y modalidades de juego.*
+*Control jerárquico de inventario y modalidades de juego.*
 
 ![Tickets](https://img.icons8.com/fluency/48/000000/ticket.png)
 
-*   **Segmentación**: Clasifica los cartones por **Tipo** (Físico/Virtual) y **Estado** (Disponible, Asignado, Vendido).
-*   **Totales**: La tabla incluye subtotales por modalidad y un **Total General** al final para verificar que los 1,200 cartones (o el total del evento) estén correctamente contabilizados.
+*   **Vista Consolidada**: Agrupa los cartones por **Tipo** (Físico/Virtual). Use los iconos **[+]** o **[-]** para desplegar el detalle por estado.
+*   **Análisis de Estados**: Al expandir una categoría, podrá visualizar la distribución exacta entre cartones *Disponibles, Asignados y Vendidos*.
+*   **Totales y Subtotales**: Cada fila de tipo de cartón calcula automáticamente su subtotal, y la fila final de **Total General** consolida el inventario completo del evento.
 
 ---
 
