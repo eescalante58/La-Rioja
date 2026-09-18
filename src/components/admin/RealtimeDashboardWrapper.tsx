@@ -354,16 +354,77 @@ export default function RealtimeDashboardWrapper({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {cardTypeSummary.map((row, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="font-bold">{row.card_type}</TableCell>
-                      <TableCell>{row.card_status}</TableCell>
-                      <TableCell className="text-right">{row.count}</TableCell>
-                      <TableCell className="text-right font-bold">
-                        {formatCurrency(row.total)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {(() => {
+                    const byType = new Map<string, any[]>();
+                    for (const row of cardTypeSummary) {
+                      const list = byType.get(row.card_type) || [];
+                      list.push(row);
+                      byType.set(row.card_type, list);
+                    }
+                    const grand = cardTypeSummary.reduce(
+                      (acc, r) => ({
+                        count: acc.count + r.count,
+                        total: acc.total + r.total,
+                      }),
+                      { count: 0, total: 0 },
+                    );
+                    return (
+                      <>
+                        {[...byType.entries()].map(([type, rows]) => {
+                          const sub = rows.reduce(
+                            (acc, r) => ({
+                              count: acc.count + r.count,
+                              total: acc.total + r.total,
+                            }),
+                            { count: 0, total: 0 },
+                          );
+                          return (
+                            <React.Fragment key={type}>
+                              {rows.map((row, idx) => (
+                                <TableRow key={idx}>
+                                  <TableCell className="font-bold">
+                                    {row.card_type}
+                                  </TableCell>
+                                  <TableCell>{row.card_status}</TableCell>
+                                  <TableCell className="text-right">
+                                    {row.count}
+                                  </TableCell>
+                                  <TableCell className="text-right font-bold">
+                                    {formatCurrency(row.total)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                              <TableRow className="bg-slate-50 dark:bg-slate-800/50">
+                                <TableCell className="font-bold" colSpan={2}>
+                                  Subtotal {type}
+                                </TableCell>
+                                <TableCell className="text-right font-bold">
+                                  {sub.count}
+                                </TableCell>
+                                <TableCell className="text-right font-bold">
+                                  {formatCurrency(sub.total)}
+                                </TableCell>
+                              </TableRow>
+                            </React.Fragment>
+                          );
+                        })}
+                        <TableRow className="bg-larioja-azul/10 dark:bg-blue-900/30">
+                          <TableCell
+                            className="font-black text-larioja-azul dark:text-white"
+                            colSpan={2}
+                          >
+                            TOTAL
+                          </TableCell>
+                          <TableCell className="text-right font-black text-larioja-azul dark:text-white">
+                            {grand.count}
+                          </TableCell>
+                          <TableCell className="text-right font-black text-larioja-azul dark:text-white">
+                            {formatCurrency(grand.total)}
+                          </TableCell>
+                        </TableRow>
+                      </>
+                    );
+                  })()}
                 </TableBody>
               </Table>
             </Card>
