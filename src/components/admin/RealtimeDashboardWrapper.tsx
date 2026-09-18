@@ -573,7 +573,10 @@ export default function RealtimeDashboardWrapper({
                   </TableHead>
                   <TableBody>
                     {invoiceCards.map((card, idx) => {
-                      const student = card.students_cards?.[0]?.students;
+                      const sc = Array.isArray(card.students_cards)
+                        ? card.students_cards[0]
+                        : card.students_cards;
+                      const student = sc?.students;
                       return (
                         <TableRow key={idx}>
                           <TableCell className="font-bold">
