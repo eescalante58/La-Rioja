@@ -265,22 +265,28 @@ export default function RealtimeDashboardWrapper({
   };
 
   useEffect(() => {
+    let isMounted = true;
     const timer = setTimeout(async () => {
       if (searchQuery.trim().length >= 2) {
         setIsSearching(true);
         const res = await globalSearch(searchQuery);
-        if (res.success && res.results) {
-          setSearchResults(res.results);
-          setShowSearchResults(true);
+        if (isMounted) {
+          if (res.success && res.results) {
+            setSearchResults(res.results);
+            setShowSearchResults(true);
+          }
+          setIsSearching(false);
         }
-        setIsSearching(false);
       } else {
         setSearchResults([]);
         setShowSearchResults(false);
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [searchQuery]);
 
   useEffect(() => {
