@@ -941,6 +941,7 @@ export default function RealtimeDashboardWrapper({
                     <TableHeaderCell>N° Cartón</TableHeaderCell>
                     <TableHeaderCell>Tipo</TableHeaderCell>
                     <TableHeaderCell>Estado</TableHeaderCell>
+                    <TableHeaderCell>N° Factura</TableHeaderCell>
                     <TableHeaderCell>Jugador</TableHeaderCell>
                     <TableHeaderCell>Teléfono</TableHeaderCell>
                   </TableRow>
@@ -953,13 +954,14 @@ export default function RealtimeDashboardWrapper({
                       </TableCell>
                       <TableCell>{card.card_type}</TableCell>
                       <TableCell>{card.card_status}</TableCell>
+                      <TableCell>{card.invoice_number || "—"}</TableCell>
                       <TableCell>{card.player_name || "—"}</TableCell>
                       <TableCell>{card.player_phone_number || "—"}</TableCell>
                     </TableRow>
                   ))}
                   {studentCards.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center italic py-8">
+                      <TableCell colSpan={6} className="text-center italic py-8">
                         No hay cartones asignados a este alumno.
                       </TableCell>
                     </TableRow>
