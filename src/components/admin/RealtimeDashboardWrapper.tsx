@@ -317,46 +317,8 @@ export default function RealtimeDashboardWrapper({
                 data={data.dailySales || []}
                 onDrillDown={handleDateDrillDown}
               />
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2">
                 <YearlySalesChart data={data.yearlySales || []} />
-                <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
-                  <Title className="text-sm font-bold uppercase tracking-wider text-larioja-azul dark:text-white mb-1">
-                    Resumen por Tipo de Cartón
-                  </Title>
-                  <Text className="text-xs dark:text-slate-400 mb-4">
-                    Cartones del evento actual agrupados por tipo y estado.
-                  </Text>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableHeaderCell>Tipo de Cartón</TableHeaderCell>
-                        <TableHeaderCell>Estado</TableHeaderCell>
-                        <TableHeaderCell className="text-right">
-                          N° Cartones
-                        </TableHeaderCell>
-                        <TableHeaderCell className="text-right">
-                          Venta (sales_price)
-                        </TableHeaderCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {cardTypeSummary.map((row, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="font-bold">
-                            {row.card_type}
-                          </TableCell>
-                          <TableCell>{row.card_status}</TableCell>
-                          <TableCell className="text-right">
-                            {row.count}
-                          </TableCell>
-                          <TableCell className="text-right font-bold">
-                            {formatCurrency(row.total)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </Card>
               </div>
             </>
           ) : (
@@ -368,6 +330,45 @@ export default function RealtimeDashboardWrapper({
             </Card>
           )}
         </div>
+
+        {data.hasEvent && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-0">
+            <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
+              <Title className="text-sm font-bold uppercase tracking-wider text-larioja-azul dark:text-white mb-1">
+                Resumen por Tipo de Cartón
+              </Title>
+              <Text className="text-xs dark:text-slate-400 mb-4">
+                Cartones del evento actual agrupados por tipo y estado.
+              </Text>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Tipo de Cartón</TableHeaderCell>
+                    <TableHeaderCell>Estado</TableHeaderCell>
+                    <TableHeaderCell className="text-right">
+                      N° Cartones
+                    </TableHeaderCell>
+                    <TableHeaderCell className="text-right">
+                      Venta (sales_price)
+                    </TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {cardTypeSummary.map((row, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-bold">{row.card_type}</TableCell>
+                      <TableCell>{row.card_status}</TableCell>
+                      <TableCell className="text-right">{row.count}</TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatCurrency(row.total)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </div>
+        )}
       </section>
 
       {/* Modal: Detalle de Ventas por Fecha */}
