@@ -507,6 +507,97 @@ export async function getAssignmentByLevel() {
 }
 
 /**
+ * Performs a global search for invoices or cards in the current event.
+ */
+export async function globalSearch(query: string) {
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
+
+  if (!companyId) return { success: false, error: "No company selected" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  const cleanQuery = query.trim();
+  if (!cleanQuery) return { success: true, results: [] };
+
+  const isNumeric = /^\d+$/.test(cleanQuery);
+
+  // Search in invoices and cards in parallel
+  const invoicesPromise = supabase
+    .from("invoices")
+    .select("id, invoice_number, customer_name, total_amount, manager_name")
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id)
+    .or(
+      `invoice_number.ilike.%${cleanQuery}%,customer_name.ilike.%${cleanQuery}%`,
+    )
+    .limit(5);
+
+  let cardsPromise;
+  if (isNumeric) {
+    // For numeric queries, search exact card number OR partial player name
+    cardsPromise = supabase
+      .from("cards")
+      .select("card_number, player_name, card_status, card_type, invoice_number")
+      .eq("company_id", companyId)
+      .eq("event_id", company.def_dash_event_id)
+      .or(`card_number.eq.${cleanQuery},player_name.ilike.%${cleanQuery}%`)
+      .limit(5);
+  } else {
+    // For non-numeric, just partial player name
+    cardsPromise = supabase
+      .from("cards")
+      .select("card_number, player_name, card_status, card_type, invoice_number")
+      .eq("company_id", companyId)
+      .eq("event_id", company.def_dash_event_id)
+      .ilike("player_name", `%${cleanQuery}%`)
+      .limit(5);
+  }
+
+  const [invoicesRes, cardsRes] = await Promise.all([
+    invoicesPromise,
+    cardsPromise,
+  ]);
+
+  const results: any[] = [];
+
+  if (invoicesRes.data) {
+    invoicesRes.data.forEach((inv) => {
+      results.push({
+        type: "invoice",
+        id: inv.invoice_number,
+        title: `Factura #${inv.invoice_number}`,
+        subtitle: inv.customer_name,
+        details: `Vendedor: ${inv.manager_name || "N/A"} — Total: $${Number(inv.total_amount).toFixed(2)}`,
+        raw: inv,
+      });
+    });
+  }
+
+  if (cardsRes.data) {
+    cardsRes.data.forEach((card) => {
+      results.push({
+        type: "card",
+        id: card.card_number,
+        title: `Cartón #${card.card_number}`,
+        subtitle: card.player_name || "Sin jugador",
+        details: `Tipo: ${card.card_type} — Estado: ${card.card_status}`,
+        raw: card,
+      });
+    });
+  }
+
+  return { success: true, results };
+}
+
+/**
  * Fetches the cards assigned to a specific student in the current event.
  */
 export async function getStudentCards(studentId: number) {
