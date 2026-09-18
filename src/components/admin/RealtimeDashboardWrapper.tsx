@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
   getDashboardData,
@@ -43,6 +44,7 @@ import {
   PlusSquare,
   MinusSquare,
   LayoutGrid,
+  BookOpen,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -343,6 +345,14 @@ export default function RealtimeDashboardWrapper({
               reciente.
             </Text>
           </div>
+
+          <Link
+            href="/admin/manual"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-xl text-larioja-azul dark:text-blue-400 font-bold text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            <BookOpen size={18} />
+            <span>Manual de Usuario</span>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto px-4 sm:px-0">
