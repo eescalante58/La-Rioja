@@ -7,6 +7,7 @@ import {
   getInvoicesByDate,
   getSalesByManager,
   getInvoicesByManager,
+  getInvoiceCards,
 } from "@/app/admin/actions";
 import {
   Card,
@@ -89,6 +90,8 @@ export default function RealtimeDashboardWrapper({
   const [isLoadingDrillDown, setIsLoadingDrillDown] = useState(false);
   const [selectedManager, setSelectedManager] = useState<string | null>(null);
   const [managerInvoices, setManagerInvoices] = useState<any[]>([]);
+  const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
+  const [invoiceCards, setInvoiceCards] = useState<any[]>([]);
 
   const supabase = createClient();
 
@@ -121,6 +124,8 @@ export default function RealtimeDashboardWrapper({
       setManagerBreakdown(res.data);
       setSelectedManager(null);
       setManagerInvoices([]);
+      setSelectedInvoice(null);
+      setInvoiceCards([]);
       setIsManagerDetailOpen(true);
     } else {
       alert("Error al cargar desglose: " + (res.error || "Sin datos"));
@@ -134,10 +139,32 @@ export default function RealtimeDashboardWrapper({
     if (res.success && res.data) {
       setSelectedManager(managerName);
       setManagerInvoices(res.data);
+      setSelectedInvoice(null);
+      setInvoiceCards([]);
     } else {
       alert("Error al cargar facturas: " + (res.error || "Sin datos"));
     }
     setIsLoadingDrillDown(false);
+  };
+
+  const handleInvoiceCards = async (invoiceNumber: string) => {
+    setIsLoadingDrillDown(true);
+    const res = await getInvoiceCards(invoiceNumber);
+    if (res.success && res.data) {
+      setSelectedInvoice(invoiceNumber);
+      setInvoiceCards(res.data);
+    } else {
+      alert("Error al cargar cartones: " + (res.error || "Sin datos"));
+    }
+    setIsLoadingDrillDown(false);
+  };
+
+  const closeManagerModal = () => {
+    setIsManagerDetailOpen(false);
+    setSelectedManager(null);
+    setManagerInvoices([]);
+    setSelectedInvoice(null);
+    setInvoiceCards([]);
   };
 
   const formatCurrency = (val: number) => {
@@ -389,11 +416,7 @@ export default function RealtimeDashboardWrapper({
       {/* Modal: Desglose por Vendedor */}
       <Dialog
         open={isManagerDetailOpen}
-        onClose={() => {
-          setIsManagerDetailOpen(false);
-          setSelectedManager(null);
-          setManagerInvoices([]);
-        }}
+        onClose={closeManagerModal}
         static={true}
       >
         <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
@@ -408,8 +431,13 @@ export default function RealtimeDashboardWrapper({
                     variant="light"
                     icon={ArrowLeft}
                     onClick={() => {
-                      setSelectedManager(null);
-                      setManagerInvoices([]);
+                      if (selectedInvoice) {
+                        setSelectedInvoice(null);
+                        setInvoiceCards([]);
+                      } else {
+                        setSelectedManager(null);
+                        setManagerInvoices([]);
+                      }
                     }}
                     tooltip="Volver"
                   />
@@ -419,24 +447,26 @@ export default function RealtimeDashboardWrapper({
                 </div>
                 <div>
                   <Title className="dark:text-white">
-                    {selectedManager ? selectedManager : "Ventas por Vendedor"}
+                    {selectedInvoice
+                      ? `Factura N° ${selectedInvoice}`
+                      : selectedManager
+                        ? selectedManager
+                        : "Ventas por Vendedor"}
                   </Title>
-                  {selectedManager && (
+                  {selectedInvoice ? (
                     <Text className="text-xs dark:text-slate-400">
-                      {managerInvoices.length} factura(s) gestionada(s)
+                      {invoiceCards.length} cartón(es) — {selectedManager}
                     </Text>
+                  ) : (
+                    selectedManager && (
+                      <Text className="text-xs dark:text-slate-400">
+                        {managerInvoices.length} factura(s) gestionada(s)
+                      </Text>
+                    )
                   )}
                 </div>
               </div>
-              <Button
-                variant="light"
-                icon={X}
-                onClick={() => {
-                  setIsManagerDetailOpen(false);
-                  setSelectedManager(null);
-                  setManagerInvoices([]);
-                }}
-              />
+              <Button variant="light" icon={X} onClick={closeManagerModal} />
             </div>
 
             {!selectedManager ? (
@@ -468,7 +498,7 @@ export default function RealtimeDashboardWrapper({
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : !selectedInvoice ? (
               <div className="max-h-[60vh] overflow-y-auto">
                 <Table>
                   <TableHead>
@@ -497,7 +527,15 @@ export default function RealtimeDashboardWrapper({
                             `${inv.phone_area || ""}${inv.phone_number || ""}` ||
                             "—"}
                         </TableCell>
-                        <TableCell>{inv.invoice_number}</TableCell>
+                        <TableCell>
+                          <button
+                            type="button"
+                            className="text-larioja-verde font-bold hover:underline"
+                            onClick={() => handleInvoiceCards(inv.invoice_number)}
+                          >
+                            {inv.invoice_number}
+                          </button>
+                        </TableCell>
                         <TableCell>
                           {inv.invoice_date
                             ? new Date(
@@ -519,18 +557,55 @@ export default function RealtimeDashboardWrapper({
                   </TableBody>
                 </Table>
               </div>
+            ) : (
+              <div className="max-h-[60vh] overflow-y-auto">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>N° Cartón</TableHeaderCell>
+                      <TableHeaderCell>Tipo</TableHeaderCell>
+                      <TableHeaderCell>Estado</TableHeaderCell>
+                      <TableHeaderCell>Jugador</TableHeaderCell>
+                      <TableHeaderCell>Teléfono</TableHeaderCell>
+                      <TableHeaderCell>Alumno</TableHeaderCell>
+                      <TableHeaderCell>Nivel</TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {invoiceCards.map((card, idx) => {
+                      const student = card.students_cards?.[0]?.students;
+                      return (
+                        <TableRow key={idx}>
+                          <TableCell className="font-bold">
+                            {card.card_number}
+                          </TableCell>
+                          <TableCell>{card.card_type || "—"}</TableCell>
+                          <TableCell>{card.card_status || "—"}</TableCell>
+                          <TableCell>{card.player_name || "—"}</TableCell>
+                          <TableCell>
+                            {card.player_phone_number || "—"}
+                          </TableCell>
+                          <TableCell>{student?.student_name || "—"}</TableCell>
+                          <TableCell>{student?.student_level || "—"}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             )}
 
             <div className="mt-8">
               <Button
                 onClick={() => {
-                  if (selectedManager) {
+                  if (selectedInvoice) {
+                    setSelectedInvoice(null);
+                    setInvoiceCards([]);
+                  } else if (selectedManager) {
                     setSelectedManager(null);
                     setManagerInvoices([]);
                   } else {
-                    setIsManagerDetailOpen(false);
-                    setSelectedManager(null);
-                    setManagerInvoices([]);
+                    closeManagerModal();
                   }
                 }}
                 className="w-full bg-larioja-azul"
