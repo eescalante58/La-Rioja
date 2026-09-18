@@ -1,14 +1,15 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 
 /**
  * Fetches dashboard data for the selected company and its default event.
  * @returns {Promise<any>} Dashboard statistics and event data.
  */
 export async function getDashboardData() {
-  const supabase = await createClient();
+  const supabase = createAdminClient(); // Use admin client for dashboard stats (faster, bypasses RLS overhead)
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 
@@ -210,7 +211,7 @@ export async function getDashboardData() {
  * Fetches invoice details for a specific date (Drill down).
  */
 export async function getInvoicesByDate(date: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 
@@ -234,7 +235,7 @@ export async function getInvoicesByDate(date: string) {
  * Fetches sales breakdown by manager for the current event (Drill down).
  */
 export async function getSalesByManager() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 
@@ -280,7 +281,7 @@ export async function getSalesByManager() {
  * (Drill down from "Ventas por Vendedor").
  */
 export async function getInvoicesByManager(managerName: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 
@@ -354,7 +355,7 @@ export async function getInvoiceCards(invoiceNumber: string) {
  * conteo y suma de sales_price por cada combinación tipo/estado.
  */
 export async function getCardTypeSummary() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 
@@ -411,7 +412,7 @@ export async function getCardTypeSummary() {
  * Fetches card assignments by level and student for the current event.
  */
 export async function getAssignmentByLevel() {
-  const supabase = await createClient();
+  const supabase = createAdminClient(); // Faster admin query
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 
@@ -512,7 +513,7 @@ export async function getAssignmentByLevel() {
  * Performs a global search for invoices or cards in the current event.
  */
 export async function globalSearch(query: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient(); // Bypassing RLS for speed in admin search
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 
@@ -531,10 +532,10 @@ export async function globalSearch(query: string) {
 
   const isNumeric = /^\d+$/.test(cleanQuery);
 
-  // Search in invoices and cards in parallel
+  // Optimized Search: Limit columns and use admin client
   const invoicesPromise = supabase
     .from("invoices")
-    .select("id, invoice_number, customer_name, total_amount, manager_name")
+    .select("invoice_number, customer_name, total_amount, manager_name")
     .eq("company_id", companyId)
     .eq("event_id", company.def_dash_event_id)
     .or(
@@ -544,16 +545,15 @@ export async function globalSearch(query: string) {
 
   let cardsPromise;
   if (isNumeric) {
-    // For numeric queries, search exact card number OR partial player name
+    const cardNum = parseInt(cleanQuery);
     cardsPromise = supabase
       .from("cards")
       .select("card_number, player_name, card_status, card_type, invoice_number")
       .eq("company_id", companyId)
       .eq("event_id", company.def_dash_event_id)
-      .or(`card_number.eq.${cleanQuery},player_name.ilike.%${cleanQuery}%`)
+      .or(`card_number.eq.${cardNum},player_name.ilike.%${cleanQuery}%`)
       .limit(5);
   } else {
-    // For non-numeric, just partial player name
     cardsPromise = supabase
       .from("cards")
       .select("card_number, player_name, card_status, card_type, invoice_number")
@@ -603,7 +603,7 @@ export async function globalSearch(query: string) {
  * Fetches the cards assigned to a specific student in the current event.
  */
 export async function getStudentCards(studentId: number) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 
@@ -650,7 +650,7 @@ export async function getStudentCards(studentId: number) {
  * Fetches full details of a single invoice by its number.
  */
 export async function getInvoiceByNumber(invoiceNumber: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 

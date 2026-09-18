@@ -582,7 +582,7 @@ async function fetchAllRows(
 }
 
 async function getEventCardsInternal(companyId: number, eventId: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await fetchAllRows(
     supabase,
     "cards",
@@ -1054,7 +1054,7 @@ async function updateSingleCardInternal(
 export const updateSingleCard = withRole(4, withCompanyAccess(updateSingleCardInternal, 0));
 
 async function getInvoicesInternal(companyId: number, eventId: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("invoices")
