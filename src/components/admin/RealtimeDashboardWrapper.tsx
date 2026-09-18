@@ -103,6 +103,9 @@ export default function RealtimeDashboardWrapper({
   const [cardTypeSummary, setCardTypeSummary] = useState<any[]>([]);
   const [assignmentByLevel, setAssignmentByLevel] = useState<any[]>([]);
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
+  const [expandedCardTypes, setExpandedCardTypes] = useState<Set<string>>(
+    new Set(),
+  );
   const [isStudentDetailOpen, setIsStudentDetailOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [studentCards, setStudentCards] = useState<any[]>([]);
@@ -218,6 +221,18 @@ export default function RealtimeDashboardWrapper({
         next.delete(levelName);
       } else {
         next.add(levelName);
+      }
+      return next;
+    });
+  };
+
+  const toggleCardType = (cardType: string) => {
+    setExpandedCardTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardType)) {
+        next.delete(cardType);
+      } else {
+        next.add(cardType);
       }
       return next;
     });
@@ -521,8 +536,7 @@ export default function RealtimeDashboardWrapper({
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableHeaderCell>Tipo de Cartón</TableHeaderCell>
-                    <TableHeaderCell>Estado</TableHeaderCell>
+                    <TableHeaderCell>Tipo / Estado</TableHeaderCell>
                     <TableHeaderCell className="text-right">
                       N° Cartones
                     </TableHeaderCell>
@@ -556,25 +570,26 @@ export default function RealtimeDashboardWrapper({
                             }),
                             { count: 0, total: 0 },
                           );
+                          const isExpanded = expandedCardTypes.has(type);
                           return (
                             <React.Fragment key={type}>
-                              {rows.map((row, idx) => (
-                                <TableRow key={idx}>
-                                  <TableCell className="font-bold">
-                                    {row.card_type}
-                                  </TableCell>
-                                  <TableCell>{row.card_status}</TableCell>
-                                  <TableCell className="text-right">
-                                    {row.count}
-                                  </TableCell>
-                                  <TableCell className="text-right font-bold">
-                                    {formatCurrency(row.total)}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                              <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                                <TableCell className="font-bold" colSpan={2}>
-                                  Subtotal {type}
+                              <TableRow className="bg-gray-50/50 dark:bg-slate-900/30">
+                                <TableCell className="font-bold">
+                                  <Flex justifyContent="start" className="gap-2">
+                                    <button
+                                      onClick={() => toggleCardType(type)}
+                                      className="text-gray-500 hover:text-larioja-azul transition-colors"
+                                    >
+                                      {isExpanded ? (
+                                        <MinusSquare size={18} />
+                                      ) : (
+                                        <PlusSquare size={18} />
+                                      )}
+                                    </button>
+                                    <span className="text-larioja-azul dark:text-blue-400">
+                                      {type}
+                                    </span>
+                                  </Flex>
                                 </TableCell>
                                 <TableCell className="text-right font-bold">
                                   {sub.count}
@@ -583,15 +598,33 @@ export default function RealtimeDashboardWrapper({
                                   {formatCurrency(sub.total)}
                                 </TableCell>
                               </TableRow>
+                              {isExpanded &&
+                                rows.map((row, idx) => (
+                                  <TableRow
+                                    key={idx}
+                                    className="hover:bg-gray-50 dark:hover:bg-slate-800/50"
+                                  >
+                                    <TableCell className="pl-12 text-sm text-gray-600 dark:text-slate-300 italic">
+                                      {row.card_status}
+                                    </TableCell>
+                                    <TableCell className="text-right text-sm text-gray-500">
+                                      {row.count}
+                                    </TableCell>
+                                    <TableCell className="text-right text-sm text-gray-500 font-medium">
+                                      {row.total > 0
+                                        ? formatCurrency(row.total)
+                                        : "—"}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
                             </React.Fragment>
                           );
                         })}
                         <TableRow className="bg-larioja-azul/10 dark:bg-blue-900/30">
                           <TableCell
                             className="font-black text-larioja-azul dark:text-white"
-                            colSpan={2}
                           >
-                            TOTAL
+                            TOTAL GENERAL
                           </TableCell>
                           <TableCell className="text-right font-black text-larioja-azul dark:text-white">
                             {grand.count}
