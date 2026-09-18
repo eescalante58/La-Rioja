@@ -1298,7 +1298,7 @@ export default function RealtimeDashboardWrapper({
           ))}
         </Grid>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 sm:px-0">
+        <div className="px-4 sm:px-0">
           <Card className="border-gray-200 dark:border-gray-800 shadow-sm sm:shadow-md">
             <Title className="dark:text-white">Actividad Reciente</Title>
             <Text className="dark:text-slate-400">
@@ -1423,25 +1423,6 @@ export default function RealtimeDashboardWrapper({
                   );
                 });
               })()}
-            </div>
-          </Card>
-
-          <Card className="border-gray-200 dark:border-gray-800">
-            <Title className="dark:text-white">Información Adicional</Title>
-            <Text className="dark:text-slate-400">
-              Datos complementarios del evento activo.
-            </Text>
-            <div className="mt-6 p-6 rounded-2xl bg-larioja-azul/[0.03] dark:bg-slate-900/20 border border-larioja-azul/10 dark:border-gray-800 flex flex-col items-center justify-center text-center">
-              <Ticket
-                size={40}
-                className="text-larioja-azul dark:text-slate-700 mb-4"
-              />
-              <Text className="dark:text-slate-400">
-                Monitoreando ventas en tiempo real para el evento:
-              </Text>
-              <p className="font-bold text-larioja-azul dark:text-white mt-1">
-                {data.hasEvent ? data.eventName : "N/A"}
-              </p>
             </div>
           </Card>
         </div>

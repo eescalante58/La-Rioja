@@ -14,6 +14,7 @@ import {
   Menu as MenuIcon,
   Building2,
   BookOpen,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useUser } from "@/providers/UserProvider";
 import { signOut } from "../auth/actions";
@@ -49,6 +50,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
 
   const navLinks = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/bingo", label: "Galería", icon: ImageIcon, external: true },
     { href: "/admin/cms", label: "Gestión CMS", icon: FileText },
     { href: "/admin/settings", label: "Configuración", icon: Settings },
     { href: "/admin/bingo", label: "Gestión Bingo", icon: Ticket },
@@ -91,6 +93,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
             <Link
               key={link.href}
               href={link.href}
+              target={link.external ? "_blank" : undefined}
               className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-larioja-azul ${
                 pathname === link.href
                   ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white"
@@ -189,6 +192,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
               <Link
                 key={link.href}
                 href={link.href}
+                target={link.external ? "_blank" : undefined}
                 className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-colors outline-none focus-visible:ring-4 focus-visible:ring-larioja-azul/40 ${
                   pathname === link.href
                     ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-lg shadow-larioja-azul/10"
