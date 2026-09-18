@@ -541,7 +541,9 @@ export async function getStudentCards(studentId: number) {
   // Then get the full card details
   const { data: cards, error: cardsError } = await supabase
     .from("cards")
-    .select("card_number, card_type, card_status, player_name, player_phone_number")
+    .select(
+      "card_number, card_type, card_status, player_name, player_phone_number, invoice_number",
+    )
     .eq("company_id", companyId)
     .eq("event_id", company.def_dash_event_id)
     .in("card_number", cardNumbers)
