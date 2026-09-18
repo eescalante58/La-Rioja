@@ -12,6 +12,7 @@ import {
   getCardTypeSummary,
   getAssignmentByLevel,
   getStudentCards,
+  globalSearch,
 } from "@/app/admin/actions";
 import {
   Card,
@@ -45,6 +46,7 @@ import {
   MinusSquare,
   LayoutGrid,
   BookOpen,
+  Search,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -109,6 +111,14 @@ export default function RealtimeDashboardWrapper({
   const [isStudentDetailOpen, setIsStudentDetailOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [studentCards, setStudentCards] = useState<any[]>([]);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  const [isQuickCardDetailOpen, setIsQuickCardDetailOpen] = useState(false);
+  const [quickCardDetail, setQuickCardDetail] = useState<any>(null);
 
   const supabase = createClient();
 
@@ -238,6 +248,51 @@ export default function RealtimeDashboardWrapper({
     });
   };
 
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setIsSearching(true);
+        const res = await globalSearch(searchQuery);
+        if (res.success && res.results) {
+          setSearchResults(res.results);
+          setShowSearchResults(true);
+        }
+        setIsSearching(false);
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".search-container")) {
+        setShowSearchResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearchResultClick = async (result: any) => {
+    setShowSearchResults(false);
+    setSearchQuery("");
+
+    if (result.type === "invoice") {
+      const manager = result.raw.manager_name || "Sin asignar";
+      await handleManagerDrillDown();
+      await handleManagerInvoices(manager);
+      await handleInvoiceCards(result.id);
+    } else if (result.type === "card") {
+      setQuickCardDetail(result.raw);
+      setIsQuickCardDetailOpen(true);
+    }
+  };
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -351,7 +406,7 @@ export default function RealtimeDashboardWrapper({
       {/* Panel 1: Header y Gráficos */}
       <section className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6 px-4 sm:px-0">
-          <div>
+          <div className="flex-1">
             <Title className="text-xl sm:text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
               {data.hasEvent ? data.eventName : "Sin Evento Configurado"}
             </Title>
@@ -361,9 +416,69 @@ export default function RealtimeDashboardWrapper({
             </Text>
           </div>
 
+          {/* Buscador Universal */}
+          <div className="relative w-full md:w-96 order-3 md:order-2 search-container">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                {isSearching ? (
+                  <div className="h-4 w-4 border-2 border-larioja-azul border-t-transparent animate-spin rounded-full" />
+                ) : (
+                  <Search className="h-4 w-4 text-gray-400" />
+                )}
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-800 rounded-xl leading-5 bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-larioja-azul focus:border-larioja-azul sm:text-sm transition-all shadow-sm"
+                placeholder="Buscar Factura o N° de Cartón..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="absolute z-[100] mt-1 w-full bg-white dark:bg-slate-900 shadow-2xl rounded-xl border border-gray-200 dark:border-gray-800 max-h-96 overflow-y-auto overflow-x-hidden">
+                <div className="p-2 space-y-1">
+                  {searchResults.map((result, idx) => (
+                    <button
+                      key={`${result.type}-${result.id}-${idx}`}
+                      className="w-full flex flex-col items-start px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-left group"
+                      onClick={() => handleSearchResultClick(result)}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        {result.type === "invoice" ? (
+                          <DollarSign className="h-4 w-4 text-emerald-500" />
+                        ) : (
+                          <Ticket className="h-4 w-4 text-blue-500" />
+                        )}
+                        <span className="font-bold text-sm text-gray-900 dark:text-white group-hover:text-larioja-azul transition-colors">
+                          {result.title}
+                        </span>
+                        <Badge size="xs" color={result.type === "invoice" ? "emerald" : "blue"} className="ml-auto">
+                          {result.type === "invoice" ? "Factura" : "Cartón"}
+                        </Badge>
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 dark:text-slate-300 mt-1 uppercase">
+                        {result.subtitle}
+                      </span>
+                      <span className="text-[10px] text-gray-500 dark:text-slate-400">
+                        {result.details}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {showSearchResults && searchResults.length === 0 && searchQuery.length >= 2 && (
+               <div className="absolute z-[100] mt-1 w-full bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-gray-200 dark:border-gray-800 p-4 text-center">
+                  <Text className="text-sm italic text-gray-500">No se encontraron resultados para "{searchQuery}"</Text>
+               </div>
+            )}
+          </div>
+
           <Link
             href="/admin/manual"
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-xl text-larioja-azul dark:text-blue-400 font-bold text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-xl text-larioja-azul dark:text-blue-400 font-bold text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors order-2 md:order-3"
           >
             <BookOpen size={18} />
             <span>Manual de Usuario</span>
@@ -938,6 +1053,97 @@ export default function RealtimeDashboardWrapper({
                     closeManagerModal();
                   }
                 }}
+                className="w-full bg-larioja-azul"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Modal: Detalle Rápido de Cartón (desde búsqueda) */}
+      <Dialog
+        open={isQuickCardDetailOpen}
+        onClose={() => setIsQuickCardDetailOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
+          <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
+                  <Ticket size={24} />
+                </div>
+                <div>
+                  <Title className="dark:text-white uppercase tracking-tight">
+                    Detalle del Cartón
+                  </Title>
+                  <Text className="text-xs">Consulta rápida de estado</Text>
+                </div>
+              </div>
+              <Button
+                variant="light"
+                icon={X}
+                onClick={() => setIsQuickCardDetailOpen(false)}
+              />
+            </div>
+
+            {quickCardDetail && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center bg-gray-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase font-bold text-gray-500">N° Cartón</span>
+                    <span className="text-2xl font-black text-larioja-azul dark:text-white">#{quickCardDetail.card_number}</span>
+                  </div>
+                  <Badge size="xl" color={
+                    quickCardDetail.card_status === 'Vendido' ? 'emerald' : 
+                    quickCardDetail.card_status === 'Asignado' ? 'blue' : 'gray'
+                  }>
+                    {quickCardDetail.card_status}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1">
+                    <Text className="text-[10px] uppercase font-bold text-gray-400">Jugador / Cliente</Text>
+                    <p className="font-bold text-gray-900 dark:text-white">{quickCardDetail.player_name || 'N/A'}</p>
+                  </div>
+                  
+                  {quickCardDetail.invoice_number && (
+                    <div className="space-y-1">
+                      <Text className="text-[10px] uppercase font-bold text-gray-400">Factura Relacionada</Text>
+                      <button 
+                        className="flex items-center gap-2 text-larioja-verde font-black hover:underline"
+                        onClick={async () => {
+                          const res = await globalSearch(quickCardDetail.invoice_number);
+                          if (res.success && res.results) {
+                            const inv = res.results.find((r: any) => r.type === 'invoice');
+                            if (inv) {
+                              setIsQuickCardDetailOpen(false);
+                              handleSearchResultClick(inv);
+                            }
+                          }
+                        }}
+                      >
+                        #{quickCardDetail.invoice_number}
+                        <ArrowLeft className="h-3 w-3 rotate-180" />
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center text-xs">
+                    <span className="text-gray-400 uppercase">Modalidad</span>
+                    <span className="font-bold text-gray-700 dark:text-slate-300">{quickCardDetail.card_type}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-8">
+              <Button
+                onClick={() => setIsQuickCardDetailOpen(false)}
                 className="w-full bg-larioja-azul"
               >
                 Cerrar
