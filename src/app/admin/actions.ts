@@ -428,6 +428,7 @@ export async function getAssignmentByLevel() {
     .from("students")
     .select(
       `
+      student_id,
       student_name,
       student_level,
       students_cards(
@@ -481,7 +482,9 @@ export async function getAssignmentByLevel() {
     levelData.subtotal_cards += studentCards;
 
     levelData.students.push({
+      id: student.student_id,
       name: student.student_name,
+      level: student.student_level,
       assigned: studentAssigned,
       sold: studentSold,
       card_count: studentCards,
@@ -501,4 +504,49 @@ export async function getAssignmentByLevel() {
     }));
 
   return { success: true, data: result };
+}
+
+/**
+ * Fetches the cards assigned to a specific student in the current event.
+ */
+export async function getStudentCards(studentId: number) {
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
+
+  if (!companyId) return { success: false, error: "No company selected" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  // First get the card numbers from students_cards
+  const { data: assignments, error: scError } = await supabase
+    .from("students_cards")
+    .select("card_number")
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id)
+    .eq("student_id", studentId);
+
+  if (scError) return { success: false, error: scError.message };
+  if (!assignments || assignments.length === 0)
+    return { success: true, data: [] };
+
+  const cardNumbers = assignments.map((a: any) => a.card_number);
+
+  // Then get the full card details
+  const { data: cards, error: cardsError } = await supabase
+    .from("cards")
+    .select("card_number, card_type, card_status, player_name, player_phone_number")
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id)
+    .in("card_number", cardNumbers)
+    .order("card_number", { ascending: true });
+
+  if (cardsError) return { success: false, error: cardsError.message };
+  return { success: true, data: cards };
 }
