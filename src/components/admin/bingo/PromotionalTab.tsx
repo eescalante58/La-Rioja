@@ -35,6 +35,7 @@ import {
   FileText,
   Eye,
   Check,
+  Download,
 } from "lucide-react";
 import {
   getCustomers,
@@ -55,6 +56,7 @@ interface Customer {
   company_id: number;
   customer_name: string;
   phone_number: string;
+  table_data_source?: string | null;
 }
 
 interface PromoTemplate {
@@ -205,6 +207,48 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
     }
   };
 
+  const handleDownloadJSON = () => {
+    const dataStr = JSON.stringify(customers, null, 2);
+    const dataUri =
+      "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+
+    const exportFileDefaultName = "clientes.json";
+    const linkElement = document.createElement("a");
+    linkElement.setAttribute("href", dataUri);
+    linkElement.setAttribute("download", exportFileDefaultName);
+    linkElement.click();
+  };
+
+  const handleDownloadCSV = () => {
+    const headers = [
+      "id",
+      "company_id",
+      "customer_name",
+      "phone_number",
+      "table_data_source",
+    ];
+    const rows = customers.map((c) => [
+      c.id,
+      c.company_id,
+      `"${c.customer_name.replace(/"/g, '""')}"`,
+      c.phone_number,
+      c.table_data_source || "",
+    ]);
+
+    const csvContent =
+      "\uFEFF" +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "clientes.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const toggleCustomerSelection = (id: number) => {
     setSelectedCustomerIds((prev) =>
       prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id],
@@ -350,6 +394,20 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="light"
+              icon={Download}
+              size="xs"
+              onClick={handleDownloadCSV}
+              tooltip="Descargar CSV"
+            />
+            <Button
+              variant="light"
+              icon={FileText}
+              size="xs"
+              onClick={handleDownloadJSON}
+              tooltip="Descargar JSON"
+            />
             <Button
               variant="light"
               icon={RefreshCw}
