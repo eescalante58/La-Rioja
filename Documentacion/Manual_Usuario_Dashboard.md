@@ -56,7 +56,7 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 | Funcionalidad | Descripción |
 | :--- | :--- |
 | **Secciones CMS** 📝 | Indica el número de áreas de contenido gestionable en la web pública. |
-| **Clientes Registrados** 👥 | Total de prospectos y compradores en su base de datos promocional. |
+| **Clientes Registrados** 👥 | Total de prospectos y compradores en su base de datos promocional. Haga clic en esta tarjeta para ver el listado detallado (Nombre y Teléfono). |
 | **Venta Realizada** 💰 | Monto acumulado de facturas pagadas en el evento actual. |
 | **Cumplimiento Meta** 🚀 | Porcentaje de avance respecto al objetivo financiero del evento. |
 
