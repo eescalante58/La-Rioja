@@ -188,7 +188,7 @@ export default function DashboardManualPage() {
             <div className="p-4 bg-white border-t border-emerald-100">
               <Flex justifyContent="center" className="gap-2">
                 <Users size={16} className="text-emerald-600" />
-                <Text className="text-[10px] font-bold uppercase text-emerald-700 tracking-tighter">Representación de Jerarquía y Drill-Down</Text>
+                <Text className="text-[10px] font-bold uppercase text-emerald-700 tracking-tighter">Asignación de cartones por estudiante</Text>
               </Flex>
             </div>
           </Card>
