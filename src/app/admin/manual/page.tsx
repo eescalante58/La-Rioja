@@ -64,12 +64,12 @@ export default function DashboardManualPage() {
     <div className="max-w-5xl mx-auto pb-20 space-y-12">
       {/* Header */}
       <div className="text-center space-y-4 pt-10">
-        <div className="inline-flex items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4 transition-transform hover:scale-105">
+        <div className="inline-flex items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800 mb-4 transition-transform hover:scale-105">
           <Image
             src="/logo.png"
             alt="La Rioja Logo"
-            width={80}
-            height={80}
+            width={180}
+            height={180}
             className="object-contain"
           />
         </div>
