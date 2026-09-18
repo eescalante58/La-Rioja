@@ -8,6 +8,7 @@ import {
   getSalesByManager,
   getInvoicesByManager,
   getInvoiceCards,
+  getCardTypeSummary,
 } from "@/app/admin/actions";
 import {
   Card,
@@ -92,6 +93,7 @@ export default function RealtimeDashboardWrapper({
   const [managerInvoices, setManagerInvoices] = useState<any[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [invoiceCards, setInvoiceCards] = useState<any[]>([]);
+  const [cardTypeSummary, setCardTypeSummary] = useState<any[]>([]);
 
   const supabase = createClient();
 
@@ -102,7 +104,17 @@ export default function RealtimeDashboardWrapper({
     if (newData.success) {
       setData(newData);
     }
+    loadCardTypeSummary();
   };
+
+  const loadCardTypeSummary = async () => {
+    const res = await getCardTypeSummary();
+    if (res.success && res.data) setCardTypeSummary(res.data);
+  };
+
+  useEffect(() => {
+    loadCardTypeSummary();
+  }, []);
 
   const handleDateDrillDown = async (date: string) => {
     setSelectedDate(date);
@@ -305,8 +317,46 @@ export default function RealtimeDashboardWrapper({
                 data={data.dailySales || []}
                 onDrillDown={handleDateDrillDown}
               />
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-6">
                 <YearlySalesChart data={data.yearlySales || []} />
+                <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
+                  <Title className="text-sm font-bold uppercase tracking-wider text-larioja-azul dark:text-white mb-1">
+                    Resumen por Tipo de Cartón
+                  </Title>
+                  <Text className="text-xs dark:text-slate-400 mb-4">
+                    Cartones del evento actual agrupados por tipo y estado.
+                  </Text>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>Tipo de Cartón</TableHeaderCell>
+                        <TableHeaderCell>Estado</TableHeaderCell>
+                        <TableHeaderCell className="text-right">
+                          N° Cartones
+                        </TableHeaderCell>
+                        <TableHeaderCell className="text-right">
+                          Venta (sales_price)
+                        </TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {cardTypeSummary.map((row, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="font-bold">
+                            {row.card_type}
+                          </TableCell>
+                          <TableCell>{row.card_status}</TableCell>
+                          <TableCell className="text-right">
+                            {row.count}
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            {formatCurrency(row.total)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Card>
               </div>
             </>
           ) : (
@@ -471,7 +521,7 @@ export default function RealtimeDashboardWrapper({
 
             {!selectedManager ? (
               <div className="space-y-4">
-                <Text className="text-xs text-slate-500 dark:text-slate-400 italic">
+                <Text className="text-xs font-bold text-larioja-azul dark:text-blue-400">
                   Click en el nombre del vendedor para consultar detalle de
                   facturas.
                 </Text>
@@ -500,6 +550,10 @@ export default function RealtimeDashboardWrapper({
               </div>
             ) : !selectedInvoice ? (
               <div className="max-h-[60vh] overflow-y-auto">
+                <Text className="text-xs font-bold text-larioja-azul dark:text-blue-400 mb-2">
+                  Click en el número de factura, para ver el detalle de
+                  cartones.
+                </Text>
                 <Table>
                   <TableHead>
                     <TableRow>

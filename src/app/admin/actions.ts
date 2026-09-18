@@ -346,3 +346,61 @@ export async function getInvoiceCards(invoiceNumber: string) {
   if (error) return { success: false, error: error.message };
   return { success: true, data };
 }
+
+/**
+ * Resumen de cartones por tipo y estado para el evento por defecto:
+ * conteo y suma de sales_price por cada combinación tipo/estado.
+ */
+export async function getCardTypeSummary() {
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
+
+  if (!companyId) return { success: false, error: "No company" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  // Paginar: el evento puede superar el límite de 1000 filas por consulta
+  const pageSize = 1000;
+  const rows: any[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data: page, error } = await supabase
+      .from("cards")
+      .select("card_type, card_status, sales_price")
+      .eq("company_id", companyId)
+      .eq("event_id", company.def_dash_event_id)
+      .order("card_number", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) return { success: false, error: error.message };
+    rows.push(...(page || []));
+    if (!page || page.length < pageSize) break;
+  }
+
+  const grouped = new Map<string, { count: number; total: number }>();
+  for (const c of rows) {
+    const key = `${c.card_type || "—"}|${c.card_status || "—"}`;
+    const g = grouped.get(key) || { count: 0, total: 0 };
+    g.count++;
+    g.total += Number(c.sales_price || 0);
+    grouped.set(key, g);
+  }
+
+  const data = [...grouped.entries()]
+    .map(([key, g]) => {
+      const [card_type, card_status] = key.split("|");
+      return { card_type, card_status, count: g.count, total: g.total };
+    })
+    .sort(
+      (a, b) =>
+        a.card_type.localeCompare(b.card_type) ||
+        a.card_status.localeCompare(b.card_status),
+    );
+
+  return { success: true, data };
+}
