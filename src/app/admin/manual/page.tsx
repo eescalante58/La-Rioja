@@ -28,6 +28,8 @@ import {
   Search,
   CheckCircle2,
   Info,
+  PlusSquare,
+  MinusSquare,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -150,26 +152,52 @@ export default function DashboardManualPage() {
           <Title className="text-2xl font-bold">Asignación de Cartones por Nivel</Title>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          <Card className="p-0 overflow-hidden border-2 border-emerald-200">
-            <div className="bg-emerald-50 p-10 flex justify-center">
-              <img
-                src="https://img.icons8.com/fluency/96/000000/student-registration.png"
-                alt="Estudiantes"
-                className="w-24 h-24"
-              />
+          <Card className="p-0 overflow-hidden border-2 border-emerald-200 shadow-lg">
+            <div className="bg-emerald-50 p-6 space-y-4">
+              <div className="flex items-center gap-2 border-b border-emerald-200 pb-2">
+                <PlusSquare size={16} className="text-larioja-azul" />
+                <div className="h-3 w-32 bg-larioja-azul/20 rounded"></div>
+                <div className="ml-auto h-3 w-10 bg-larioja-azul/20 rounded"></div>
+              </div>
+              <div className="flex items-center gap-2 border-b border-emerald-200 pb-2">
+                <MinusSquare size={16} className="text-larioja-azul" />
+                <div className="h-3 w-32 bg-larioja-azul/20 rounded"></div>
+                <div className="ml-auto h-3 w-10 bg-larioja-azul/20 rounded"></div>
+              </div>
+              <div className="pl-8 flex items-center gap-2">
+                <div className="h-3 w-40 bg-larioja-verde/40 rounded border-b border-larioja-verde"></div>
+                <div className="ml-auto h-3 w-8 bg-gray-300 rounded"></div>
+              </div>
+              <div className="flex justify-center pt-2">
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <Search size={12} className="text-blue-500" />
+                    <div className="h-2 w-20 bg-blue-100 rounded"></div>
+                  </div>
+                  <div className="h-1 w-24 bg-gray-100 rounded"></div>
+                  <div className="h-1 w-24 bg-gray-100 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 bg-white border-t border-emerald-100">
+              <Flex justifyContent="center" className="gap-2">
+                <Users size={16} className="text-emerald-600" />
+                <Text className="text-[10px] font-bold uppercase text-emerald-700 tracking-tighter">Representación de Jerarquía y Drill-Down</Text>
+              </Flex>
             </div>
           </Card>
           <div className="space-y-4 text-lg">
             <p>
-              <span className="font-bold text-larioja-azul">Vista Jerárquica</span>: Los datos se agrupan por niveles (Ej: Terapéutico, Laboral). Use los iconos <strong>[+]</strong> o <strong>[-]</strong> para expandir y ver a los alumnos.
+              <span className="font-bold text-larioja-azul">Vista Jerárquica</span>: Los datos se organizan por niveles educativos. Use los iconos <strong>[+]</strong> o <strong>[-]</strong> para desplegar la lista de alumnos.
             </p>
-            <p>
-              Visualice cuántos cartones tiene cada estudiante, el valor asignado y cuánto ha logrado vender.
+            <p className="text-slate-600">
+              Visualice de un vistazo la carga de cartones asignados, el valor total bajo custodia del alumno y el monto efectivamente vendido.
             </p>
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border-l-4 border-emerald-500">
-              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
-                <span className="font-bold uppercase tracking-wider">💡 Consulta Detallada</span>:
-                Haga clic en el <strong>nombre del alumno</strong> para abrir un reporte detallado con los números de cartón específicos y facturas asociadas a su gestión.
+            <div className="bg-larioja-azul/5 dark:bg-blue-900/20 p-4 rounded-xl border-l-4 border-larioja-azul">
+              <p className="text-sm font-bold text-larioja-azul dark:text-blue-300 leading-relaxed">
+                <span className="uppercase tracking-wider">💡 Consulta Detallada</span>:
+                Haga clic en el <strong className="text-larioja-verde underline">nombre del alumno</strong> para abrir el reporte detallado. 
+                Aquí encontrará el ID, nivel y la lista de cartones con su respectivo <strong>N° de Factura</strong>, asegurando una trazabilidad total de la gestión.
               </p>
             </div>
           </div>
