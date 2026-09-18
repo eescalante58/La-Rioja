@@ -306,9 +306,42 @@ export async function getInvoicesByManager(managerName: string) {
       ? query.is("manager_name", null)
       : query.eq("manager_name", managerName);
 
-  const { data, error } = await query.order("invoice_date", {
-    ascending: false,
+  const { data, error } = await query.order("customer_name", {
+    ascending: true,
   });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
+}
+
+/**
+ * Fetches the cards linked to an invoice, including the assigned student
+ * (if any) via students_cards -> students.
+ */
+export async function getInvoiceCards(invoiceNumber: string) {
+  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
+
+  if (!companyId) return { success: false, error: "No company" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  const { data, error } = await supabase
+    .from("cards")
+    .select(
+      "card_number, card_type, card_status, player_name, player_phone_number, students_cards(students(student_name, student_level))",
+    )
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id)
+    .eq("invoice_number", invoiceNumber)
+    .order("card_number", { ascending: true });
 
   if (error) return { success: false, error: error.message };
   return { success: true, data };
