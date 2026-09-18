@@ -115,18 +115,27 @@ export default function NewInvoiceDialog({
     }
 
     if (typeof cardsRes === "object" && "data" in cardsRes) {
-      const eligible = (cardsRes.data || []).filter(
+      let eligible = (cardsRes.data || []).filter(
         (c: any) =>
           c.card_status === "Disponible" ||
           c.card_status === "Asignado" ||
           (invoice && c.invoice_number === invoice.invoice_number),
       );
 
+      // Si es solo consulta, filtrar solo los que pertenecen a esta factura
+      if (readOnly && invoice) {
+        eligible = (cardsRes.data || []).filter(
+          (c: any) => c.invoice_number === invoice.invoice_number,
+        );
+      }
+
       // En edición: primero los cartones asignados a esta factura,
       // luego los disponibles; ambos grupos ordenados por card_number
       eligible.sort((a: any, b: any) => {
-        const aLinked = invoice && a.invoice_number === invoice.invoice_number ? 0 : 1;
-        const bLinked = invoice && b.invoice_number === invoice.invoice_number ? 0 : 1;
+        const aLinked =
+          invoice && a.invoice_number === invoice.invoice_number ? 0 : 1;
+        const bLinked =
+          invoice && b.invoice_number === invoice.invoice_number ? 0 : 1;
         return aLinked - bLinked || a.card_number - b.card_number;
       });
 
@@ -428,7 +437,7 @@ export default function NewInvoiceDialog({
 
               <div className="space-y-1">
                 <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                  Asociar Cartones ({selectedCards.length} de {cardsNumber})
+                  {readOnly ? "Cartones Vendidos" : "Asociar Cartones"} ({selectedCards.length} de {cardsNumber})
                 </Text>
                 <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
