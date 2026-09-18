@@ -52,7 +52,6 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
     { href: "/admin/cms", label: "Gestión CMS", icon: FileText },
     { href: "/admin/settings", label: "Configuración", icon: Settings },
     { href: "/admin/bingo", label: "Gestión Bingo", icon: Ticket },
-    { href: "/admin/manual", label: "Manual de Usuario", icon: BookOpen },
   ];
 
   const initials = userProfile?.full_name
