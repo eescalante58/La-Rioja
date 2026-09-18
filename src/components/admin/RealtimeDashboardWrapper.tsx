@@ -399,7 +399,7 @@ export default function RealtimeDashboardWrapper({
         <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
           <DialogPanel
-            className={`${selectedManager ? "max-w-4xl" : "max-w-md"} w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800`}
+            className={`${selectedManager ? "max-w-7xl" : "max-w-md"} w-full bg-gray-100 dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800`}
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -441,6 +441,10 @@ export default function RealtimeDashboardWrapper({
 
             {!selectedManager ? (
               <div className="space-y-4">
+                <Text className="text-xs text-slate-500 dark:text-slate-400 italic">
+                  Click en el nombre del vendedor para consultar detalle de
+                  facturas.
+                </Text>
                 {managerBreakdown.map((m) => (
                   <div
                     key={m.name}
@@ -520,9 +524,14 @@ export default function RealtimeDashboardWrapper({
             <div className="mt-8">
               <Button
                 onClick={() => {
-                  setIsManagerDetailOpen(false);
-                  setSelectedManager(null);
-                  setManagerInvoices([]);
+                  if (selectedManager) {
+                    setSelectedManager(null);
+                    setManagerInvoices([]);
+                  } else {
+                    setIsManagerDetailOpen(false);
+                    setSelectedManager(null);
+                    setManagerInvoices([]);
+                  }
                 }}
                 className="w-full bg-larioja-azul"
               >
