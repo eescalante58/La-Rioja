@@ -31,6 +31,7 @@ import {
   PlusSquare,
   MinusSquare,
   LayoutGrid,
+  DollarSign,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -90,33 +91,50 @@ export default function DashboardManualPage() {
           <Badge size="xl" color="blue">
             1
           </Badge>
-          <Title className="text-2xl font-bold">Avance de Ventas y Metas</Title>
+          <Title className="text-2xl font-bold">Buscador Universal</Title>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          <Card className="p-0 overflow-hidden border-2 border-larioja-verde/20">
-            <div className="bg-larioja-verde/10 p-10 flex justify-center">
-              <img
-                src="https://img.icons8.com/fluency/96/000000/sales-performance.png"
-                alt="Progreso"
-                className="w-24 h-24"
-              />
+          <Card className="p-0 overflow-hidden border-2 border-blue-200 shadow-lg">
+            <div className="bg-blue-50 p-6 space-y-4">
+              <div className="relative">
+                <div className="bg-white border border-gray-200 rounded-xl p-3 flex items-center gap-3 shadow-sm">
+                  <Search size={18} className="text-gray-400" />
+                  <div className="h-3 w-48 bg-gray-100 rounded"></div>
+                </div>
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl p-2 space-y-2 z-10">
+                  <div className="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg">
+                    <DollarSign size={14} className="text-emerald-600" />
+                    <div className="h-2 w-24 bg-emerald-200 rounded"></div>
+                    <Badge size="xs" color="emerald" className="ml-auto">Factura</Badge>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg">
+                    <Ticket size={14} className="text-blue-600" />
+                    <div className="h-2 w-24 bg-gray-200 rounded"></div>
+                    <Badge size="xs" color="blue" className="ml-auto">Cartón</Badge>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="p-6">
-              <Text className="italic">
-                Visualización del objetivo económico en tiempo real.
-              </Text>
+            <div className="p-4 bg-white border-t border-blue-100 text-center">
+              <Flex justifyContent="center" className="gap-2">
+                <Search size={16} className="text-blue-600" />
+                <Text className="text-[10px] font-bold uppercase text-blue-700">Central de Búsqueda Inteligente</Text>
+              </Flex>
             </div>
           </Card>
           <div className="space-y-4 text-lg">
             <p>
-              <span className="font-bold text-larioja-azul">¿Qué es?</span>: Una
-              barra de progreso dinámica en <span className="text-larioja-verde font-bold">verde La Rioja</span> que compara lo vendido contra la meta establecida.
+              <span className="font-bold text-larioja-azul">Acceso Instantáneo</span>: Localice cualquier dato del evento sin navegar por múltiples menús.
             </p>
+            <ul className="space-y-2 text-sm text-slate-600 list-disc pl-5">
+              <li><strong>Facturas</strong>: Busque por número correlativo o nombre del cliente.</li>
+              <li><strong>Cartones</strong>: Encuentre un número de cartón específico o por el nombre del jugador.</li>
+              <li><strong>Navegación</strong>: Haga clic en un resultado para abrir la <em>Ficha de Consulta</em> o el detalle de asignación.</li>
+            </ul>
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border-l-4 border-blue-500">
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                <span className="font-bold uppercase tracking-wider">💡 Drill-Down (Detalle)</span>:
-                Haga clic en la barra para desglosar las ventas por <strong>Vendedor</strong>.
-                Dentro del detalle por vendedor, puede hacer clic en el <strong>N° de Factura</strong> para ver exactamente qué cartones componen esa venta.
+              <p className="text-sm font-bold text-blue-800 dark:text-blue-300 leading-relaxed">
+                <span className="uppercase tracking-wider">💡 Tip Pro</span>:
+                Si busca un cartón que ya fue vendido, el sistema le permitirá saltar directamente a la factura relacionada con un solo clic desde la ficha del cartón.
               </p>
             </div>
           </div>
@@ -139,7 +157,7 @@ export default function DashboardManualPage() {
               <span className="font-bold text-larioja-azul">Ventas por Año</span>: Histórico comparativo de ediciones anteriores del Bingo (2021-2026), permitiendo evaluar el crecimiento de la <strong>CFL</strong>.
             </p>
           </div>
-          <Card className="order-1 md:order-2 p-0 overflow-hidden border-2 border-larioja-amarillo/20">
+          <Card className="order-1 md:order-2 p-0 overflow-hidden border-2 border-larioja-amarillo/20 shadow-lg">
             <div className="bg-larioja-amarillo/10 p-10 flex justify-center">
               <img
                 src="https://img.icons8.com/fluency/96/000000/bar-chart.png"
@@ -279,7 +297,7 @@ export default function DashboardManualPage() {
         </div>
         <Grid numItems={1} numItemsSm={2} numItemsLg={4} className="gap-4">
           {kpis.map((kpi) => (
-            <Card key={kpi.title} className="p-4 flex flex-col items-center text-center space-y-2 h-full">
+            <Card key={kpi.title} className="p-4 flex flex-col items-center text-center space-y-2 h-full shadow-md">
               <Icon icon={kpi.icon} variant="light" size="lg" color="blue" />
               <Title className="text-sm font-bold">{kpi.title}</Title>
               <Text className="text-[10px]">{kpi.desc}</Text>
@@ -293,6 +311,44 @@ export default function DashboardManualPage() {
           <Badge size="xl" color="blue">
             6
           </Badge>
+          <Title className="text-2xl font-bold">Avance de Ventas y Metas</Title>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <Card className="p-0 overflow-hidden border-2 border-larioja-verde/20 shadow-lg">
+            <div className="bg-larioja-verde/10 p-10 flex justify-center">
+              <img
+                src="https://img.icons8.com/fluency/96/000000/sales-performance.png"
+                alt="Progreso"
+                className="w-24 h-24"
+              />
+            </div>
+            <div className="p-6">
+              <Text className="italic">
+                Visualización del objetivo económico en tiempo real.
+              </Text>
+            </div>
+          </Card>
+          <div className="space-y-4 text-lg">
+            <p>
+              <span className="font-bold text-larioja-azul">¿Qué es?</span>: Una
+              barra de progreso dinámica en <span className="text-larioja-verde font-bold">verde La Rioja</span> que compara lo vendido contra la meta establecida.
+            </p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border-l-4 border-blue-500">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-300 leading-relaxed">
+                <span className="font-bold uppercase tracking-wider">💡 Drill-Down (Detalle)</span>:
+                Haga clic en la barra para desglosar las ventas por <strong>Vendedor</strong>.
+                Dentro del detalle por vendedor, puede hacer clic en el <strong>N° de Factura</strong> para abrir la <em>Ficha de Consulta</em> de datos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-8">
+        <div className="flex items-center gap-3">
+          <Badge size="xl" color="blue">
+            7
+          </Badge>
           <Title className="text-2xl font-bold">Actividad Reciente y Contactos</Title>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
@@ -304,7 +360,7 @@ export default function DashboardManualPage() {
               <span className="font-bold text-larioja-azul">Mensajes de Contacto</span>: Visualice los últimos prospectos que han escrito a través de la página web para dar seguimiento inmediato.
             </p>
           </div>
-          <Card className="order-1 md:order-2 p-0 overflow-hidden border-2 border-slate-200">
+          <Card className="order-1 md:order-2 p-0 overflow-hidden border-2 border-slate-200 shadow-lg">
             <div className="bg-slate-50 p-10 flex justify-center">
               <img
                 src="https://img.icons8.com/fluency/96/000000/activity-feed.png"
