@@ -17,6 +17,21 @@ export async function getDashboardData() {
     return { success: false, error: "No company selected" };
   }
 
+  // Get current user role to check if they are a reader
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let userLevel = 0;
+  if (user) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("roles:role_id (level)")
+      .eq("id", user.id)
+      .single();
+    userLevel = (userData?.roles as any)?.level || 0;
+  }
+
   try {
     // 1. Fetch company info and general stats in parallel
     const [companyRes, cmsRes, customersRes, contactsRes, allEventsRes, recentInvoicesRes] =
@@ -200,6 +215,7 @@ export async function getDashboardData() {
       },
       recentContacts: recentContacts || [],
       recentInvoices: recentInvoices || [],
+      userLevel,
     };
   } catch (error: any) {
     console.error("Unexpected error in getDashboardData:", error);
