@@ -4,7 +4,7 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ---
 
-## 1. � Buscador Universal
+## 1. 🔍 Buscador Universal
 *Central de búsqueda inteligente para localización inmediata.*
 
 ![Búsqueda](https://img.icons8.com/fluency/48/000000/search.png)
@@ -18,7 +18,18 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ---
 
-## 2. 🗓️ Análisis Temporal de Ventas
+## 2. 📈 Avance de Ventas y Metas
+*Seguimiento visual del objetivo económico.*
+
+![Progreso](https://img.icons8.com/fluency/48/000000/sales-performance.png)
+
+*   **¿Qué es?**: Una barra de progreso dinámica en **verde La Rioja** que compara lo vendido contra la meta establecida.
+*   **Drill-Down (Detalle)**: Haga clic en la barra para desglosar las ventas por **Vendedor**.
+    *   *Nota*: Dentro del detalle por vendedor, puede hacer clic en el **N° de Factura** para abrir la *Ficha de Consulta* de datos.
+
+---
+
+## 3. 🗓️ Análisis Temporal de Ventas
 *Gráficos para entender el comportamiento de compra.*
 
 ![Gráficos](https://img.icons8.com/fluency/48/000000/bar-chart.png)
@@ -28,7 +39,7 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ---
 
-## 3. 🎓 Asignación de Cartones por Nivel
+## 4. 🎓 Asignación de Cartones por Nivel
 *Gestión jerárquica de la fuerza de venta estudiantil.*
 
 ![Estudiantes](https://img.icons8.com/fluency/48/000000/student-registration.png)
@@ -39,7 +50,7 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ---
 
-## 4. 🎫 Resumen por Tipo de Cartón
+## 5. 🎫 Resumen por Tipo de Cartón
 *Control jerárquico de inventario y modalidades de juego.*
 
 ![Tickets](https://img.icons8.com/fluency/48/000000/ticket.png)
@@ -50,7 +61,7 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ---
 
-## 5. 📊 Indicadores Clave de Desempeño (KPIs)
+## 6. 📊 Indicadores Clave de Desempeño (KPIs)
 *Vista rápida del estado general de la plataforma.*
 
 | Funcionalidad | Descripción |
@@ -59,17 +70,6 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 | **Clientes Registrados** 👥 | Total de prospectos y compradores en su base de datos promocional. Haga clic en esta tarjeta para ver el listado detallado (Nombre y Teléfono). |
 | **Venta Realizada** 💰 | Monto acumulado de facturas pagadas en el evento actual. |
 | **Cumplimiento Meta** 🚀 | Porcentaje de avance respecto al objetivo financiero del evento. |
-
----
-
-## 6. 📈 Avance de Ventas y Metas
-*Seguimiento visual del objetivo económico.*
-
-![Progreso](https://img.icons8.com/fluency/48/000000/sales-performance.png)
-
-*   **¿Qué es?**: Una barra de progreso dinámica en **verde La Rioja** que compara lo vendido contra la meta establecida.
-*   **Drill-Down (Detalle)**: Haga clic en la barra para desglosar las ventas por **Vendedor**.
-    *   *Nota*: Dentro del detalle por vendedor, puede hacer clic en el **N° de Factura** para abrir la *Ficha de Consulta* de datos.
 
 ---
 
