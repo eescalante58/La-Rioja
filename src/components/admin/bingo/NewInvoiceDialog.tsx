@@ -110,11 +110,23 @@ export default function NewInvoiceDialog({
 
   const loadInitialData = async () => {
     if (!currentEvent) return;
-    
-    // Si es solo consulta y ya tenemos los datos en la prop invoice,
-    // podemos optimizar o al menos asegurar que no mostramos datos viejos
-    if (readOnly) {
-      setAvailableCardsForInvoice([]);
+
+    /**
+     * Consulta (readOnly): los cartones ya llegan en invoice.associated_cards
+     * con los datos de la factura. Evita descargar el inventario completo del
+     * evento (~1200 filas paginadas) y la lista de vendedores, que aquí no
+     * se utilizan.
+     */
+    if (readOnly && invoice) {
+      const nums = [...(invoice.associated_cards || [])].sort((a, b) => a - b);
+      setSelectedInvoiceCards(nums);
+      setAvailableCardsForInvoice(
+        nums.map((n) => ({
+          card_number: n,
+          invoice_number: invoice.invoice_number,
+        })),
+      );
+      return;
     }
 
     const [sellersRes, cardsRes] = await Promise.all([

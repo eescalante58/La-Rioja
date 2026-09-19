@@ -574,51 +574,6 @@ export async function getStudentCards(studentId: number) {
 }
 
 /**
- * Fetches full details of a single invoice by its number.
- */
-export async function getInvoiceByNumber(invoiceNumber: string) {
-  const supabase = createAdminClient();
-  const cookieStore = await cookies();
-  const companyId = cookieStore.get("selected_company_id")?.value;
-
-  if (!companyId) return { success: false, error: "No company selected" };
-
-  const { data: company } = await supabase
-    .from("companies")
-    .select("def_dash_event_id")
-    .eq("company_id", companyId)
-    .single();
-
-  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
-
-  const { data: invoice, error } = await supabase
-    .from("invoices")
-    .select("*")
-    .eq("company_id", companyId)
-    .eq("event_id", company.def_dash_event_id)
-    .eq("invoice_number", invoiceNumber)
-    .single();
-
-  if (error) return { success: false, error: error.message };
-
-  // Also get the associated cards
-  const { data: cards } = await supabase
-    .from("cards")
-    .select("card_number")
-    .eq("invoice_number", invoiceNumber)
-    .eq("company_id", companyId)
-    .eq("event_id", company.def_dash_event_id);
-
-  return {
-    success: true,
-    data: {
-      ...invoice,
-      associated_cards: (cards || []).map((c) => c.card_number),
-    },
-  };
-}
-
-/**
  * Fetches country codes for phone selects.
  */
 export async function getBingoCountries() {

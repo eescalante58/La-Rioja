@@ -12,7 +12,6 @@ import {
   getCardTypeSummary,
   getAssignmentByLevel,
   getStudentCards,
-  getInvoiceByNumber,
   getBingoCountries,
 } from "@/app/admin/actions";
 import { getCustomers } from "@/app/admin/bingo/actions";
@@ -318,13 +317,25 @@ export default function RealtimeDashboardWrapper({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  /**
+   * Fetches a full invoice (with associated card numbers) via the /api/invoice
+   * route handler. Route handlers return plain JSON and do NOT trigger the
+   * page RSC re-render that server actions cause on every call.
+   */
+  const fetchInvoiceByNumber = async (invoiceNumber: string | number) => {
+    const res = await fetch(
+      `/api/invoice?n=${encodeURIComponent(invoiceNumber)}`,
+    );
+    return res.json();
+  };
+
   const handleSearchResultClick = async (result: any) => {
     setShowSearchResults(false);
     setSearchQuery("");
 
     if (result.type === "invoice") {
       setIsLoadingDrillDown(true);
-      const res = await getInvoiceByNumber(result.id);
+      const res = await fetchInvoiceByNumber(result.id);
       if (res.success && res.data) {
         setConsultingInvoice(res.data);
         setIsConsultInvoiceOpen(true);
@@ -863,7 +874,7 @@ export default function RealtimeDashboardWrapper({
                             className="text-larioja-verde font-bold hover:underline whitespace-nowrap"
                             onClick={async () => {
                               setIsLoadingDrillDown(true);
-                              const res = await getInvoiceByNumber(inv.invoice_number);
+                              const res = await fetchInvoiceByNumber(inv.invoice_number);
                               if (res.success && res.data) {
                                 setIsDateDetailOpen(false);
                                 setConsultingInvoice(res.data);
@@ -1197,7 +1208,7 @@ export default function RealtimeDashboardWrapper({
                         className="flex items-center gap-2 text-larioja-verde font-black hover:underline"
                         onClick={async () => {
                           setIsLoadingDrillDown(true);
-                          const res = await getInvoiceByNumber(quickCardDetail.invoice_number);
+                          const res = await fetchInvoiceByNumber(quickCardDetail.invoice_number);
                           if (res.success && res.data) {
                             setIsQuickCardDetailOpen(false);
                             setConsultingInvoice(res.data);
@@ -1404,7 +1415,7 @@ export default function RealtimeDashboardWrapper({
                         className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/40 hover:border-emerald-200 dark:hover:border-emerald-700 transition-all cursor-pointer group"
                         onClick={async () => {
                           setIsLoadingDrillDown(true);
-                          const res = await getInvoiceByNumber(activity.invoice_number);
+                          const res = await fetchInvoiceByNumber(activity.invoice_number);
                           if (res.success && res.data) {
                             setConsultingInvoice(res.data);
                             setIsConsultInvoiceOpen(true);
