@@ -881,7 +881,7 @@ export default function RealtimeDashboardWrapper({
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center flex-shrink-0">
               <Text className="font-bold">
                 Total:{" "}
                 {formatCurrency(
@@ -908,9 +908,9 @@ export default function RealtimeDashboardWrapper({
         <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
           <DialogPanel
-            className={`${selectedManager ? "max-w-7xl" : "max-w-md"} w-full bg-gray-100 dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800`}
+            className={`${selectedManager ? "max-w-7xl" : "max-w-md"} w-full bg-gray-100 dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 max-h-[90vh] flex flex-col`}
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 flex-shrink-0">
               <div className="flex items-center gap-3">
                 {selectedManager && (
                   <Button
@@ -956,7 +956,7 @@ export default function RealtimeDashboardWrapper({
             </div>
 
             {!selectedManager ? (
-              <div className="space-y-4">
+              <div className="space-y-4 overflow-y-auto pr-1 flex-1 custom-scrollbar">
                 <Text className="text-xs font-bold text-larioja-azul dark:text-blue-400">
                   Click en el nombre del vendedor para consultar detalle de
                   facturas.
@@ -985,7 +985,7 @@ export default function RealtimeDashboardWrapper({
                 ))}
               </div>
             ) : !selectedInvoice ? (
-              <div className="max-h-[60vh] overflow-auto custom-scrollbar">
+              <div className="flex-1 overflow-auto custom-scrollbar">
                 <Text className="text-xs font-bold text-larioja-azul dark:text-blue-400 mb-2">
                   Click en el número de factura, para ver el detalle de
                   cartones.
@@ -1054,7 +1054,7 @@ export default function RealtimeDashboardWrapper({
                 </div>
               </div>
             ) : (
-              <div className="max-h-[60vh] overflow-auto custom-scrollbar">
+              <div className="flex-1 overflow-auto custom-scrollbar">
                 <div className="min-w-[800px] md:min-w-full">
                   <Table>
                     <TableHead>
@@ -1102,7 +1102,7 @@ export default function RealtimeDashboardWrapper({
               </div>
             )}
 
-            <div className="mt-8">
+            <div className="mt-8 flex-shrink-0">
               <Button
                 onClick={() => {
                   if (selectedInvoice) {
@@ -1508,8 +1508,8 @@ export default function RealtimeDashboardWrapper({
       >
         <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between mb-6">
+          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between mb-6 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">
                   <Users size={24} />
@@ -1528,7 +1528,7 @@ export default function RealtimeDashboardWrapper({
               />
             </div>
 
-            <div className="max-h-[60vh] overflow-auto pr-1 custom-scrollbar">
+            <div className="flex-1 overflow-auto pr-1 custom-scrollbar">
               <div className="min-w-[400px] md:min-w-full">
                 <Table>
                   <TableHead>
@@ -1563,7 +1563,7 @@ export default function RealtimeDashboardWrapper({
               </div>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-8 flex-shrink-0">
               <Button
                 onClick={() => setIsCustomerListOpen(false)}
                 className="w-full bg-larioja-azul"
