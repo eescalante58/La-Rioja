@@ -146,6 +146,44 @@ export default function DashboardManualPage() {
           <Badge size="xl" color="blue">
             2
           </Badge>
+          <Title className="text-2xl font-bold">Avance de Ventas y Metas</Title>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <Card className="p-0 overflow-hidden border-2 border-larioja-verde/20 shadow-lg">
+            <div className="bg-larioja-verde/10 p-10 flex justify-center">
+              <img
+                src="https://img.icons8.com/fluency/96/000000/sales-performance.png"
+                alt="Progreso"
+                className="w-24 h-24"
+              />
+            </div>
+            <div className="p-6">
+              <Text className="italic">
+                Visualización del objetivo económico en tiempo real.
+              </Text>
+            </div>
+          </Card>
+          <div className="space-y-4 text-lg">
+            <p>
+              <span className="font-bold text-larioja-azul">¿Qué es?</span>: Una
+              barra de progreso dinámica en <span className="text-larioja-verde font-bold">verde La Rioja</span> que compara lo vendido contra la meta establecida.
+            </p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border-l-4 border-blue-500">
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-300 leading-relaxed">
+                <span className="font-bold uppercase tracking-wider">💡 Drill-Down (Detalle)</span>:
+                Haga clic en la barra para desglosar las ventas por <strong>Vendedor</strong>.
+                Dentro del detalle por vendedor, puede hacer clic en el <strong>N° de Factura</strong> para abrir la <em>Ficha de Consulta</em> de datos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-8">
+        <div className="flex items-center gap-3">
+          <Badge size="xl" color="blue">
+            3
+          </Badge>
           <Title className="text-2xl font-bold">Análisis Temporal de Ventas</Title>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
@@ -172,7 +210,7 @@ export default function DashboardManualPage() {
       <section className="space-y-8">
         <div className="flex items-center gap-3">
           <Badge size="xl" color="blue">
-            3
+            4
           </Badge>
           <Title className="text-2xl font-bold">Asignación de Cartones por Nivel</Title>
         </div>
@@ -232,7 +270,7 @@ export default function DashboardManualPage() {
       <section className="space-y-8">
         <div className="flex items-center gap-3">
           <Badge size="xl" color="blue">
-            4
+            5
           </Badge>
           <Title className="text-2xl font-bold">Resumen por Tipo de Cartón</Title>
         </div>
@@ -291,7 +329,7 @@ export default function DashboardManualPage() {
       <section className="space-y-8">
         <div className="flex items-center gap-3">
           <Badge size="xl" color="blue">
-            5
+            6
           </Badge>
           <Title className="text-2xl font-bold">Indicadores Clave de Desempeño (KPIs)</Title>
         </div>
@@ -304,44 +342,6 @@ export default function DashboardManualPage() {
             </Card>
           ))}
         </Grid>
-      </section>
-
-      <section className="space-y-8">
-        <div className="flex items-center gap-3">
-          <Badge size="xl" color="blue">
-            6
-          </Badge>
-          <Title className="text-2xl font-bold">Avance de Ventas y Metas</Title>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          <Card className="p-0 overflow-hidden border-2 border-larioja-verde/20 shadow-lg">
-            <div className="bg-larioja-verde/10 p-10 flex justify-center">
-              <img
-                src="https://img.icons8.com/fluency/96/000000/sales-performance.png"
-                alt="Progreso"
-                className="w-24 h-24"
-              />
-            </div>
-            <div className="p-6">
-              <Text className="italic">
-                Visualización del objetivo económico en tiempo real.
-              </Text>
-            </div>
-          </Card>
-          <div className="space-y-4 text-lg">
-            <p>
-              <span className="font-bold text-larioja-azul">¿Qué es?</span>: Una
-              barra de progreso dinámica en <span className="text-larioja-verde font-bold">verde La Rioja</span> que compara lo vendido contra la meta establecida.
-            </p>
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border-l-4 border-blue-500">
-              <p className="text-sm font-medium text-blue-800 dark:text-blue-300 leading-relaxed">
-                <span className="font-bold uppercase tracking-wider">💡 Drill-Down (Detalle)</span>:
-                Haga clic en la barra para desglosar las ventas por <strong>Vendedor</strong>.
-                Dentro del detalle por vendedor, puede hacer clic en el <strong>N° de Factura</strong> para abrir la <em>Ficha de Consulta</em> de datos.
-              </p>
-            </div>
-          </div>
-        </div>
       </section>
 
       <section className="space-y-8">
