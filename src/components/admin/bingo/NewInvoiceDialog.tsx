@@ -54,6 +54,8 @@ export default function NewInvoiceDialog({
   const [status, setStatus] = useState<string>("pagada");
   const [invoiceDate, setInvoiceDate] = useState<string>("");
   const [observation, setObservation] = useState<string>("");
+  const [customerName, setCustomerName] = useState<string>("");
+  const [invoiceNumber, setInvoiceNumber] = useState<string>("");
 
   /**
    * Fecha de hoy en formato YYYY-MM-DD usando la hora local del navegador.
@@ -73,6 +75,8 @@ export default function NewInvoiceDialog({
       setInvoiceDate(invoice.invoice_date || todayLocal());
       setObservation(invoice.observation || "");
       setSelectedInvoiceCards(invoice.associated_cards || []);
+      setCustomerName(invoice.customer_name || "");
+      setInvoiceNumber(invoice.invoice_number || "");
     } else if (currentEvent) {
       setCardPrice(currentEvent.cardValue);
       setCardsNumber(1);
@@ -85,6 +89,8 @@ export default function NewInvoiceDialog({
       setInvoiceDate(todayLocal());
       setObservation("");
       setSelectedInvoiceCards([]);
+      setCustomerName("");
+      setInvoiceNumber("");
     }
   }, [invoice, currentEvent]);
 
@@ -214,9 +220,9 @@ export default function NewInvoiceDialog({
             </Title>
             <div className="text-right text-xs font-bold text-gray-500 space-y-0.5">
               <div>EVENTO: {currentEvent?.eventId}</div>
-              {invoice && (
+              {(invoiceNumber || customerName) && (
                 <div className="text-larioja-azul dark:text-larioja-amarillo">
-                  FACTURA #{invoice.invoice_number} — {invoice.customer_name}
+                  FACTURA #{invoiceNumber || "—"} {customerName ? `— ${customerName}` : ""}
                 </div>
               )}
             </div>
@@ -234,7 +240,8 @@ export default function NewInvoiceDialog({
                   <TextInput
                     name="invoice_number"
                     placeholder="F001-000001"
-                    defaultValue={invoice?.invoice_number}
+                    value={invoiceNumber}
+                    onValueChange={setInvoiceNumber}
                     required
                     disabled={readOnly}
                   />
@@ -270,7 +277,8 @@ export default function NewInvoiceDialog({
                   <TextInput
                     name="customer_name"
                     placeholder="Juan Pérez"
-                    defaultValue={invoice?.customer_name}
+                    value={customerName}
+                    onValueChange={setCustomerName}
                     required
                     disabled={readOnly}
                   />

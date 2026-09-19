@@ -25,6 +25,19 @@ function sanitizeInput(str: string): string {
 }
 
 /**
+ * Formats a string to Title Case (SQL INITCAP equivalent).
+ */
+function toTitleCase(str: string): string {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/**
  * Upload card images and create card records.
  */
 /**
@@ -1171,12 +1184,12 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
     event_id: invoiceFields.event_id,
     invoice_number: sanitizeInput(invoiceFields.invoice_number),
     invoice_date: invoiceFields.invoice_date,
-    customer_name: sanitizeInput(invoiceFields.customer_name),
+    customer_name: toTitleCase(sanitizeInput(invoiceFields.customer_name)),
     customer_email: sanitizeInput(invoiceFields.customer_email || ""),
     phone_area: sanitizeInput(invoiceFields.phone_area || ""),
     phone_number: sanitizeInput(invoiceFields.phone_number || ""),
     whatsapp_number: sanitizeInput(invoiceFields.whatsapp_number || ""),
-    manager_name: sanitizeInput(invoiceFields.manager_name),
+    manager_name: toTitleCase(sanitizeInput(invoiceFields.manager_name)),
     cards_number: invoiceFields.cards_number,
     card_price: invoiceFields.card_price,
     total_amount: invoiceFields.total_amount,
@@ -1202,8 +1215,8 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
         card_status: "Vendido",
         invoice_number: data.invoice_number,
         sales_price: data.card_price,
-        sold_by: data.manager_name,
-        player_name: data.customer_name,
+        sold_by: invoiceData.manager_name,
+        player_name: invoiceData.customer_name,
         player_phone_number: data.whatsapp_number,
         player_email: data.customer_email,
         updated_at: new Date().toISOString(),
@@ -1440,12 +1453,12 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
   if (invoiceFields.event_id !== undefined) invoiceData.event_id = invoiceFields.event_id;
   if (invoiceFields.invoice_number !== undefined) invoiceData.invoice_number = sanitizeInput(invoiceFields.invoice_number || "");
   if (invoiceFields.invoice_date !== undefined) invoiceData.invoice_date = invoiceFields.invoice_date;
-  if (invoiceFields.customer_name !== undefined) invoiceData.customer_name = sanitizeInput(invoiceFields.customer_name || "");
+  if (invoiceFields.customer_name !== undefined) invoiceData.customer_name = toTitleCase(sanitizeInput(invoiceFields.customer_name || ""));
   if (invoiceFields.customer_email !== undefined) invoiceData.customer_email = sanitizeInput(invoiceFields.customer_email || "");
   if (invoiceFields.phone_area !== undefined) invoiceData.phone_area = sanitizeInput(invoiceFields.phone_area || "");
   if (invoiceFields.phone_number !== undefined) invoiceData.phone_number = sanitizeInput(invoiceFields.phone_number || "");
   if (invoiceFields.whatsapp_number !== undefined) invoiceData.whatsapp_number = sanitizeInput(invoiceFields.whatsapp_number || "");
-  if (invoiceFields.manager_name !== undefined) invoiceData.manager_name = sanitizeInput(invoiceFields.manager_name || "");
+  if (invoiceFields.manager_name !== undefined) invoiceData.manager_name = toTitleCase(sanitizeInput(invoiceFields.manager_name || ""));
   if (invoiceFields.cards_number !== undefined) invoiceData.cards_number = invoiceFields.cards_number;
   if (invoiceFields.card_price !== undefined) invoiceData.card_price = invoiceFields.card_price;
   if (invoiceFields.total_amount !== undefined) invoiceData.total_amount = invoiceFields.total_amount;
@@ -1482,8 +1495,8 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
         card_status: "Vendido",
         invoice_number: data.invoice_number,
         sales_price: data.card_price,
-        sold_by: data.manager_name,
-        player_name: data.customer_name,
+        sold_by: invoiceData.manager_name || data.manager_name,
+        player_name: invoiceData.customer_name || data.customer_name,
         player_phone_number: data.whatsapp_number,
         player_email: data.customer_email,
         updated_at: new Date().toISOString(),
