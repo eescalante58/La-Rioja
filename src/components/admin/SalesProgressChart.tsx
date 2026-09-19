@@ -32,11 +32,7 @@ export default function SalesProgressChart({
   const option = {
     backgroundColor: "transparent",
     tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      backgroundColor: "#000",
-      borderColor: "#333",
-      textStyle: { color: "#fff" },
+      show: false, // Deshabilitar tooltip para evitar que se quede pegado en móvil al abrir el modal
     },
     grid: {
       left: "3%",
