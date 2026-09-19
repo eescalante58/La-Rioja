@@ -1521,7 +1521,10 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
 
 export const updateInvoice = withRole(4, withCompanyAccess(updateInvoiceInternal, 0));
 
-export const sendWhatsAppAutomation = withRole(4, sendWhatsAppAutomationInternal);
+export const sendWhatsAppAutomation = withRole(
+  6,
+  sendWhatsAppAutomationInternal,
+);
 
 /**
  * Delete an invoice and release its associated cards.
@@ -1756,7 +1759,7 @@ async function saveCustomerInternal(payload: {
   return { success: true, data };
 }
 
-export const saveCustomer = withRole(4, withCompanyAccess(saveCustomerInternal, 0));
+export const saveCustomer = withRole(6, withCompanyAccess(saveCustomerInternal, 0));
 
 async function deleteCustomerInternal(id: number) {
   const supabase = await createClient();
@@ -1769,7 +1772,7 @@ async function deleteCustomerInternal(id: number) {
   return { success: true };
 }
 
-export const deleteCustomer = withRole(4, deleteCustomerInternal);
+export const deleteCustomer = withRole(6, deleteCustomerInternal);
 
 async function getPromoTemplatesInternal() {
   const supabase = await createClient();
@@ -1815,7 +1818,7 @@ async function logPromoMessageInternal(payload: {
   return { success: true };
 }
 
-export const logPromoMessage = withRole(4, logPromoMessageInternal);
+export const logPromoMessage = withRole(6, logPromoMessageInternal);
 
 async function getBatchLogsInternal(companyId: number) {
   const supabase = await createClient();
@@ -2000,7 +2003,7 @@ async function syncCustomersInternal(companyId: number) {
 }
 
 export const syncCustomers = withRole(
-  8,
+  6,
   withCompanyAccess(syncCustomersInternal, 0),
 );
 
@@ -2036,7 +2039,7 @@ async function uploadPromoImageInternal(formData: FormData) {
   }
 }
 
-export const uploadPromoImage = withRole(4, uploadPromoImageInternal);
+export const uploadPromoImage = withRole(6, uploadPromoImageInternal);
 
 /**
  * Envía un POST a la API de Ultramsg y evalúa la respuesta.
@@ -2110,7 +2113,10 @@ async function checkWhatsAppInstanceStatusInternal() {
   }
 }
 
-export const checkWhatsAppInstanceStatus = withRole(4, checkWhatsAppInstanceStatusInternal);
+export const checkWhatsAppInstanceStatus = withRole(
+  6,
+  checkWhatsAppInstanceStatusInternal,
+);
 
 async function sendWhatsAppAutomationInternal(payload: {
   to: string;

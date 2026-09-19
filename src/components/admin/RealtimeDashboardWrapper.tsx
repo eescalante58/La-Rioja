@@ -428,7 +428,7 @@ export default function RealtimeDashboardWrapper({
       metric: data.stats?.customersCount?.toString() || "0",
       icon: Users,
       color: "emerald",
-      onClick: data.userLevel >= 8 ? handleCustomerDrillDown : undefined,
+      onClick: data.userLevel >= 4 ? handleCustomerDrillDown : undefined,
     },
     {
       title: "Venta Realizada",
