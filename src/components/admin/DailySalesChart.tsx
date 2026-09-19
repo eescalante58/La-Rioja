@@ -27,15 +27,7 @@ export default function DailySalesChart({
   const option = {
     backgroundColor: "transparent",
     tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      backgroundColor: "#000",
-      borderColor: "#333",
-      textStyle: { color: "#fff" },
-      formatter: (params: any) => {
-        const item = params[0];
-        return `${item.name}<br/><span style="color:#1E9922;font-weight:bold;">${formatCurrency(item.value)}</span>`;
-      },
+      show: false, // Deshabilitar tooltip para evitar que se quede pegado en móvil al abrir el modal
     },
     grid: {
       left: "3%",
