@@ -832,51 +832,53 @@ export default function RealtimeDashboardWrapper({
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
-                      Factura
-                    </TableHeaderCell>
-                    <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
-                      Cliente
-                    </TableHeaderCell>
-                    <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
-                      Vendedor
-                    </TableHeaderCell>
-                    <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
-                      Pago
-                    </TableHeaderCell>
-                    <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
-                      Monto
-                    </TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {dateInvoices.map((inv) => (
-                    <TableRow key={inv.invoice_number}>
-                      <TableCell className="font-medium text-blue-600 dark:text-blue-400">
-                        #{inv.invoice_number}
-                      </TableCell>
-                      <TableCell className="dark:text-slate-200">
-                        {inv.customer_name}
-                      </TableCell>
-                      <TableCell className="dark:text-slate-400">
-                        {inv.manager_name || "-"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge size="xs" color="slate">
-                          {inv.payment_method}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-bold dark:text-white">
-                        {formatCurrency(inv.total_amount)}
-                      </TableCell>
+            <div className="flex-1 overflow-auto custom-scrollbar">
+              <div className="min-w-[600px] md:min-w-full">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
+                        Factura
+                      </TableHeaderCell>
+                      <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
+                        Cliente
+                      </TableHeaderCell>
+                      <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
+                        Vendedor
+                      </TableHeaderCell>
+                      <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
+                        Pago
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
+                        Monto
+                      </TableHeaderCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {dateInvoices.map((inv) => (
+                      <TableRow key={inv.invoice_number}>
+                        <TableCell className="font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                          #{inv.invoice_number}
+                        </TableCell>
+                        <TableCell className="dark:text-slate-200 truncate max-w-[200px]">
+                          {inv.customer_name}
+                        </TableCell>
+                        <TableCell className="dark:text-slate-400 whitespace-nowrap">
+                          {inv.manager_name || "-"}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge size="xs" color="slate">
+                            {inv.payment_method}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-bold dark:text-white whitespace-nowrap">
+                          {formatCurrency(inv.total_amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
 
             <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
@@ -983,106 +985,120 @@ export default function RealtimeDashboardWrapper({
                 ))}
               </div>
             ) : !selectedInvoice ? (
-              <div className="max-h-[60vh] overflow-y-auto">
+              <div className="max-h-[60vh] overflow-auto custom-scrollbar">
                 <Text className="text-xs font-bold text-larioja-azul dark:text-blue-400 mb-2">
                   Click en el número de factura, para ver el detalle de
                   cartones.
                 </Text>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableHeaderCell>Cliente</TableHeaderCell>
-                      <TableHeaderCell>Teléfono</TableHeaderCell>
-                      <TableHeaderCell>N° Factura</TableHeaderCell>
-                      <TableHeaderCell>Fecha</TableHeaderCell>
-                      <TableHeaderCell className="text-right">
-                        N° Cartones
-                      </TableHeaderCell>
-                      <TableHeaderCell className="text-right">
-                        Valor Cartón
-                      </TableHeaderCell>
-                      <TableHeaderCell className="text-right">
-                        Total
-                      </TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {managerInvoices.map((inv, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{inv.customer_name}</TableCell>
-                        <TableCell>
-                          {inv.whatsapp_number ||
-                            `${inv.phone_area || ""}${inv.phone_number || ""}` ||
-                            "—"}
-                        </TableCell>
-                        <TableCell>
-                          <button
-                            type="button"
-                            className="text-larioja-verde font-bold hover:underline"
-                            onClick={() => handleInvoiceCards(inv.invoice_number)}
-                          >
-                            {inv.invoice_number}
-                          </button>
-                        </TableCell>
-                        <TableCell>
-                          {inv.invoice_date
-                            ? new Date(
-                                `${inv.invoice_date}T12:00:00`,
-                              ).toLocaleDateString("es-SV")
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {inv.cards_number}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(Number(inv.card_price || 0))}
-                        </TableCell>
-                        <TableCell className="text-right font-bold">
-                          {formatCurrency(Number(inv.total_amount || 0))}
-                        </TableCell>
+                <div className="min-w-[800px] md:min-w-full">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>N° Factura</TableHeaderCell>
+                        <TableHeaderCell>Cliente</TableHeaderCell>
+                        <TableHeaderCell>Teléfono</TableHeaderCell>
+                        <TableHeaderCell>Fecha</TableHeaderCell>
+                        <TableHeaderCell className="text-right">
+                          N° Cartones
+                        </TableHeaderCell>
+                        <TableHeaderCell className="text-right">
+                          Valor Cartón
+                        </TableHeaderCell>
+                        <TableHeaderCell className="text-right">
+                          Total
+                        </TableHeaderCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHead>
+                    <TableBody>
+                      {managerInvoices.map((inv, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            <button
+                              type="button"
+                              className="text-larioja-verde font-bold hover:underline whitespace-nowrap"
+                              onClick={() =>
+                                handleInvoiceCards(inv.invoice_number)
+                              }
+                            >
+                              {inv.invoice_number}
+                            </button>
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            {inv.customer_name}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {inv.whatsapp_number ||
+                              `${inv.phone_area || ""}${inv.phone_number || ""}` ||
+                              "—"}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {inv.invoice_date
+                              ? new Date(
+                                  `${inv.invoice_date}T12:00:00`,
+                                ).toLocaleDateString("es-SV")
+                              : "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {inv.cards_number}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(Number(inv.card_price || 0))}
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            {formatCurrency(Number(inv.total_amount || 0))}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             ) : (
-              <div className="max-h-[60vh] overflow-y-auto">
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableHeaderCell>N° Cartón</TableHeaderCell>
-                      <TableHeaderCell>Tipo</TableHeaderCell>
-                      <TableHeaderCell>Estado</TableHeaderCell>
-                      <TableHeaderCell>Jugador</TableHeaderCell>
-                      <TableHeaderCell>Teléfono</TableHeaderCell>
-                      <TableHeaderCell>Alumno</TableHeaderCell>
-                      <TableHeaderCell>Nivel</TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {invoiceCards.map((card, idx) => {
-                      const sc = Array.isArray(card.students_cards)
-                        ? card.students_cards[0]
-                        : card.students_cards;
-                      const student = sc?.students;
-                      return (
-                        <TableRow key={idx}>
-                          <TableCell className="font-bold">
-                            {card.card_number}
-                          </TableCell>
-                          <TableCell>{card.card_type || "—"}</TableCell>
-                          <TableCell>{card.card_status || "—"}</TableCell>
-                          <TableCell>{card.player_name || "—"}</TableCell>
-                          <TableCell>
-                            {card.player_phone_number || "—"}
-                          </TableCell>
-                          <TableCell>{student?.student_name || "—"}</TableCell>
-                          <TableCell>{student?.student_level || "—"}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+              <div className="max-h-[60vh] overflow-auto custom-scrollbar">
+                <div className="min-w-[800px] md:min-w-full">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>N° Cartón</TableHeaderCell>
+                        <TableHeaderCell>Tipo</TableHeaderCell>
+                        <TableHeaderCell>Estado</TableHeaderCell>
+                        <TableHeaderCell>Jugador</TableHeaderCell>
+                        <TableHeaderCell>Teléfono</TableHeaderCell>
+                        <TableHeaderCell>Alumno</TableHeaderCell>
+                        <TableHeaderCell>Nivel</TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {invoiceCards.map((card, idx) => {
+                        const sc = Array.isArray(card.students_cards)
+                          ? card.students_cards[0]
+                          : card.students_cards;
+                        const student = sc?.students;
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell className="font-bold">
+                              {card.card_number}
+                            </TableCell>
+                            <TableCell>{card.card_type || "—"}</TableCell>
+                            <TableCell>{card.card_status || "—"}</TableCell>
+                            <TableCell className="max-w-[150px] truncate">
+                              {card.player_name || "—"}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {card.player_phone_number || "—"}
+                            </TableCell>
+                            <TableCell className="max-w-[150px] truncate">
+                              {student?.student_name || "—"}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {student?.student_level || "—"}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             )}
 
@@ -1231,40 +1247,42 @@ export default function RealtimeDashboardWrapper({
               />
             </div>
 
-            <div className="max-h-[60vh] overflow-y-auto">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>N° Cartón</TableHeaderCell>
-                    <TableHeaderCell>Tipo</TableHeaderCell>
-                    <TableHeaderCell>Estado</TableHeaderCell>
-                    <TableHeaderCell>N° Factura</TableHeaderCell>
-                    <TableHeaderCell>Jugador</TableHeaderCell>
-                    <TableHeaderCell>Teléfono</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {studentCards.map((card, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="font-bold">
-                        {card.card_number}
-                      </TableCell>
-                      <TableCell>{card.card_type}</TableCell>
-                      <TableCell>{card.card_status}</TableCell>
-                      <TableCell>{card.invoice_number || "—"}</TableCell>
-                      <TableCell>{card.player_name || "—"}</TableCell>
-                      <TableCell>{card.player_phone_number || "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                  {studentCards.length === 0 && (
+            <div className="max-h-[60vh] overflow-auto custom-scrollbar">
+              <div className="min-w-[800px] md:min-w-full">
+                <Table>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center italic py-8">
-                        No hay cartones asignados a este alumno.
-                      </TableCell>
+                      <TableHeaderCell>N° Cartón</TableHeaderCell>
+                      <TableHeaderCell>Tipo</TableHeaderCell>
+                      <TableHeaderCell>Estado</TableHeaderCell>
+                      <TableHeaderCell>N° Factura</TableHeaderCell>
+                      <TableHeaderCell>Jugador</TableHeaderCell>
+                      <TableHeaderCell>Teléfono</TableHeaderCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {studentCards.map((card, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell className="font-bold whitespace-nowrap">
+                          {card.card_number}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">{card.card_type}</TableCell>
+                        <TableCell className="whitespace-nowrap">{card.card_status}</TableCell>
+                        <TableCell className="whitespace-nowrap">{card.invoice_number || "—"}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{card.player_name || "—"}</TableCell>
+                        <TableCell className="whitespace-nowrap">{card.player_phone_number || "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                    {studentCards.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center italic py-8">
+                          No hay cartones asignados a este alumno.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
 
             <div className="mt-8">
@@ -1510,37 +1528,39 @@ export default function RealtimeDashboardWrapper({
               />
             </div>
 
-            <div className="max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>Nombre del Cliente</TableHeaderCell>
-                    <TableHeaderCell>Número de Teléfono</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {customerList.map((customer) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-medium text-slate-700 dark:text-slate-200">
-                        {customer.customer_name}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                          <Smartphone size={14} />
-                          {customer.phone_number}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {customerList.length === 0 && (
+            <div className="max-h-[60vh] overflow-auto pr-1 custom-scrollbar">
+              <div className="min-w-[400px] md:min-w-full">
+                <Table>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={2} className="text-center italic py-8">
-                        No hay clientes registrados aún.
-                      </TableCell>
+                      <TableHeaderCell>Nombre del Cliente</TableHeaderCell>
+                      <TableHeaderCell>Número de Teléfono</TableHeaderCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {customerList.map((customer) => (
+                      <TableRow key={customer.id}>
+                        <TableCell className="font-medium text-slate-700 dark:text-slate-200 truncate max-w-[200px]">
+                          {customer.customer_name}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                            <Smartphone size={14} />
+                            {customer.phone_number}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {customerList.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={2} className="text-center italic py-8">
+                          No hay clientes registrados aún.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
 
             <div className="mt-8">
