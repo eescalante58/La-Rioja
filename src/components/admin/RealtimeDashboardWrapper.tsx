@@ -857,8 +857,25 @@ export default function RealtimeDashboardWrapper({
                   <TableBody>
                     {dateInvoices.map((inv) => (
                       <TableRow key={inv.invoice_number}>
-                        <TableCell className="font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                          #{inv.invoice_number}
+                        <TableCell className="font-medium whitespace-nowrap">
+                          <button
+                            type="button"
+                            className="text-larioja-verde font-bold hover:underline whitespace-nowrap"
+                            onClick={async () => {
+                              setIsLoadingDrillDown(true);
+                              const res = await getInvoiceByNumber(inv.invoice_number);
+                              if (res.success && res.data) {
+                                setIsDateDetailOpen(false);
+                                setConsultingInvoice(res.data);
+                                setIsConsultInvoiceOpen(true);
+                              } else {
+                                alert("Error al cargar detalles de factura: " + (res.error || "Sin datos"));
+                              }
+                              setIsLoadingDrillDown(false);
+                            }}
+                          >
+                            #{inv.invoice_number}
+                          </button>
                         </TableCell>
                         <TableCell className="dark:text-slate-200 truncate max-w-[200px]">
                           {inv.customer_name}
