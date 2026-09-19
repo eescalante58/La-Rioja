@@ -37,8 +37,8 @@ export default function SalesProgressChart({
     grid: {
       left: "3%",
       right: "4%",
-      bottom: "3%",
-      top: "15%",
+      bottom: "0%",
+      top: "10%",
       containLabel: true,
     },
     xAxis: {
@@ -64,12 +64,7 @@ export default function SalesProgressChart({
         silent: true,
         z: 1,
         label: {
-          show: true,
-          position: "right",
-          formatter: () => `Meta: ${formatCurrency(goal)}`,
-          color: "#64748b", // slate-500
-          fontSize: 12,
-          fontWeight: "bold",
+          show: false, // Eliminado el rotulo derecho a petición del usuario
         },
       },
       {
@@ -122,7 +117,7 @@ export default function SalesProgressChart({
         </div>
       </div>
 
-      <div className="h-[180px] w-full">
+      <div className="h-[100px] w-full">
         <ReactECharts
           option={option}
           style={{ height: "100%", width: "100%" }}
@@ -133,7 +128,7 @@ export default function SalesProgressChart({
         />
       </div>
 
-      <div className="grid grid-cols-1 xs:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+      <div className="grid grid-cols-1 xs:grid-cols-3 gap-4 mt-2 pt-4 border-t border-gray-100 dark:border-gray-800">
         <div className="text-center">
           <Text className="text-[10px] font-bold uppercase text-slate-500">
             Meta
