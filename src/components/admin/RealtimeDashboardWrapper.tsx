@@ -12,7 +12,6 @@ import {
   getCardTypeSummary,
   getAssignmentByLevel,
   getStudentCards,
-  globalSearch,
   getInvoiceByNumber,
   getBingoCountries,
 } from "@/app/admin/actions";
@@ -287,10 +286,11 @@ export default function RealtimeDashboardWrapper({
     const timer = setTimeout(async () => {
       if (searchQuery.trim().length >= 2) {
         setIsSearching(true);
-        const res = await globalSearch(searchQuery);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+        const json = await res.json();
         if (isMounted) {
-          if (res.success && res.results) {
-            setSearchResults(res.results);
+          if (json.success && json.results) {
+            setSearchResults(json.results);
             setShowSearchResults(true);
           }
           setIsSearching(false);

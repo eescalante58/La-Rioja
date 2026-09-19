@@ -527,68 +527,6 @@ export async function getAssignmentByLevel() {
 }
 
 /**
- * Performs a global search for invoices or cards in the current event.
- * Uses the busqueda_universal Postgres RPC (FTS + trigram GIN) for speed,
- * then enriches card hits with the fields needed by the quick detail modal.
- */
-export async function globalSearch(query: string) {
-  const supabase = createAdminClient(); // Bypassing RLS for speed in admin search
-  const cookieStore = await cookies();
-  const companyId = cookieStore.get("selected_company_id")?.value;
-
-  if (!companyId) return { success: false, error: "No company selected" };
-
-  const { data: company } = await supabase
-    .from("companies")
-    .select("def_dash_event_id")
-    .eq("company_id", companyId)
-    .single();
-
-  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
-
-  const cleanQuery = query.trim();
-  if (!cleanQuery) return { success: true, results: [] };
-
-  const { data, error } = await supabase.rpc("busqueda_universal", {
-    p_company_id: Number(companyId),
-    p_event_id: company.def_dash_event_id,
-    p_termino: cleanQuery,
-  });
-
-  if (error) return { success: false, error: error.message };
-
-  const rows = (data || []) as any[];
-
-  // Fetch full card rows in one indexed query for the quick detail modal
-  const cardRefs = rows
-    .filter((r) => r.origen === "card")
-    .map((r) => Number(r.ref))
-    .filter((n) => !isNaN(n));
-
-  let cardMap = new Map<number, any>();
-  if (cardRefs.length > 0) {
-    const { data: cardsData } = await supabase
-      .from("cards")
-      .select("card_number, player_name, card_status, card_type, invoice_number")
-      .eq("company_id", companyId)
-      .eq("event_id", company.def_dash_event_id)
-      .in("card_number", cardRefs);
-    cardMap = new Map((cardsData || []).map((c: any) => [c.card_number, c]));
-  }
-
-  const results = rows.map((r) => ({
-    type: r.origen,
-    id: r.ref,
-    title: r.titulo,
-    subtitle: r.subtitulo,
-    details: r.detalle,
-    raw: r.origen === "card" ? cardMap.get(Number(r.ref)) || r : r,
-  }));
-
-  return { success: true, results };
-}
-
-/**
  * Fetches the cards assigned to a specific student in the current event.
  */
 export async function getStudentCards(studentId: number) {
