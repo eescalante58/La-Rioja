@@ -528,6 +528,8 @@ export async function getAssignmentByLevel() {
 
 /**
  * Performs a global search for invoices or cards in the current event.
+ * Uses the busqueda_universal Postgres RPC (FTS + trigram GIN) for speed,
+ * then enriches card hits with the fields needed by the quick detail modal.
  */
 export async function globalSearch(query: string) {
   const supabase = createAdminClient(); // Bypassing RLS for speed in admin search
@@ -547,71 +549,41 @@ export async function globalSearch(query: string) {
   const cleanQuery = query.trim();
   if (!cleanQuery) return { success: true, results: [] };
 
-  const isNumeric = /^\d+$/.test(cleanQuery);
+  const { data, error } = await supabase.rpc("busqueda_universal", {
+    p_company_id: Number(companyId),
+    p_event_id: company.def_dash_event_id,
+    p_termino: cleanQuery,
+  });
 
-  // Optimized Search: Limit columns and use admin client
-  const invoicesPromise = supabase
-    .from("invoices")
-    .select("invoice_number, customer_name, total_amount, manager_name")
-    .eq("company_id", companyId)
-    .eq("event_id", company.def_dash_event_id)
-    .or(
-      `invoice_number.ilike.%${cleanQuery}%,customer_name.ilike.%${cleanQuery}%`,
-    )
-    .limit(5);
+  if (error) return { success: false, error: error.message };
 
-  let cardsPromise;
-  if (isNumeric) {
-    const cardNum = parseInt(cleanQuery);
-    cardsPromise = supabase
+  const rows = (data || []) as any[];
+
+  // Fetch full card rows in one indexed query for the quick detail modal
+  const cardRefs = rows
+    .filter((r) => r.origen === "card")
+    .map((r) => Number(r.ref))
+    .filter((n) => !isNaN(n));
+
+  let cardMap = new Map<number, any>();
+  if (cardRefs.length > 0) {
+    const { data: cardsData } = await supabase
       .from("cards")
       .select("card_number, player_name, card_status, card_type, invoice_number")
       .eq("company_id", companyId)
       .eq("event_id", company.def_dash_event_id)
-      .or(`card_number.eq.${cardNum},player_name.ilike.%${cleanQuery}%`)
-      .limit(5);
-  } else {
-    cardsPromise = supabase
-      .from("cards")
-      .select("card_number, player_name, card_status, card_type, invoice_number")
-      .eq("company_id", companyId)
-      .eq("event_id", company.def_dash_event_id)
-      .ilike("player_name", `%${cleanQuery}%`)
-      .limit(5);
+      .in("card_number", cardRefs);
+    cardMap = new Map((cardsData || []).map((c: any) => [c.card_number, c]));
   }
 
-  const [invoicesRes, cardsRes] = await Promise.all([
-    invoicesPromise,
-    cardsPromise,
-  ]);
-
-  const results: any[] = [];
-
-  if (invoicesRes.data) {
-    invoicesRes.data.forEach((inv) => {
-      results.push({
-        type: "invoice",
-        id: inv.invoice_number,
-        title: `Factura #${inv.invoice_number}`,
-        subtitle: inv.customer_name,
-        details: `Vendedor: ${inv.manager_name || "N/A"} — Total: $${Number(inv.total_amount).toFixed(2)}`,
-        raw: inv,
-      });
-    });
-  }
-
-  if (cardsRes.data) {
-    cardsRes.data.forEach((card) => {
-      results.push({
-        type: "card",
-        id: card.card_number,
-        title: `Cartón #${card.card_number}`,
-        subtitle: card.player_name || "Sin jugador",
-        details: `Tipo: ${card.card_type} — Estado: ${card.card_status}`,
-        raw: card,
-      });
-    });
-  }
+  const results = rows.map((r) => ({
+    type: r.origen,
+    id: r.ref,
+    title: r.titulo,
+    subtitle: r.subtitulo,
+    details: r.detalle,
+    raw: r.origen === "card" ? cardMap.get(Number(r.ref)) || r : r,
+  }));
 
   return { success: true, results };
 }
