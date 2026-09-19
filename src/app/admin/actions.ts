@@ -9,7 +9,8 @@ import { revalidatePath } from "next/cache";
  * @returns {Promise<any>} Dashboard statistics and event data.
  */
 export async function getDashboardData() {
-  const supabase = createAdminClient(); // Use admin client for dashboard stats (faster, bypasses RLS overhead)
+  const supabaseAdmin = createAdminClient(); // For data
+  const supabase = await createClient(); // For user session
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
 
@@ -17,14 +18,14 @@ export async function getDashboardData() {
     return { success: false, error: "No company selected" };
   }
 
-  // Get current user role to check if they are a reader
+  // Get current user role using the client that knows about cookies
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   let userLevel = 0;
   if (user) {
-    const { data: userData } = await supabase
+    const { data: userData } = await supabaseAdmin
       .from("users")
       .select("roles:role_id (level)")
       .eq("id", user.id)
@@ -36,30 +37,30 @@ export async function getDashboardData() {
     // 1. Fetch company info and general stats in parallel
     const [companyRes, cmsRes, customersRes, contactsRes, allEventsRes, recentInvoicesRes] =
       await Promise.all([
-        supabase
+        supabaseAdmin
           .from("companies")
           .select("def_dash_event_id, company_name")
           .eq("company_id", companyId)
           .single(),
-        supabase
+        supabaseAdmin
           .from("site_content")
           .select("*", { count: "exact", head: true }),
-        supabase
+        supabaseAdmin
           .from("customer_phone_number")
           .select("*", { count: "exact", head: true })
           .eq("company_id", companyId),
-        supabase
+        supabaseAdmin
           .from("contact_submissions")
           .select("id, name, created_at")
           .order("created_at", { ascending: false })
           .limit(5),
-        supabase
+        supabaseAdmin
           .from("events")
           .select(
             "event_date, total_amount_solded, event_id, is_active, status",
           )
           .eq("company_id", companyId),
-        supabase
+        supabaseAdmin
           .from("invoices")
           .select("id, invoice_number, customer_name, cards_number, total_amount, created_at, status, invoice_date")
           .eq("company_id", companyId)
@@ -110,19 +111,19 @@ export async function getDashboardData() {
 
     // 2. Fetch event-specific data in parallel
     const [eventRes, invoicesRes, dailySalesRes] = await Promise.all([
-      supabase
+      supabaseAdmin
         .from("events")
         .select("event_name, event_goal, card_value, event_id")
         .eq("event_id", eventId)
         .eq("company_id", companyId)
         .single(),
-      supabase
+      supabaseAdmin
         .from("invoices")
         .select("total_amount")
         .eq("event_id", eventId)
         .eq("company_id", companyId)
         .eq("status", "pagada"),
-      supabase
+      supabaseAdmin
         .from("invoices")
         .select("invoice_date, total_amount")
         .eq("event_id", eventId)

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 /**
  * Checks if a user is authenticated and has a minimum role level.
@@ -15,7 +15,9 @@ export async function requireRoleLevel(minLevel: number) {
     return { user: null, level: 0, error: "No autenticado" };
   }
 
-  const { data: userData } = await supabase
+  // Use Admin client to fetch role level to avoid RLS issues during auth check
+  const supabaseAdmin = createAdminClient();
+  const { data: userData } = await supabaseAdmin
     .from("users")
     .select("roles:role_id (level)")
     .eq("id", user.id)
@@ -24,7 +26,7 @@ export async function requireRoleLevel(minLevel: number) {
   const level = (userData?.roles as any)?.level || 0;
 
   if (level < minLevel) {
-    return { user, level, error: "Permisos insuficientes" };
+    return { user, level, error: `Permisos insuficientes (Nivel: ${level}, Requerido: ${minLevel})` };
   }
 
   return { user, level };
