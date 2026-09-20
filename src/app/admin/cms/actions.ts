@@ -19,6 +19,45 @@ function sanitizeInput(str: string): string {
 }
 
 /**
+ * Transforms a Supabase Dashboard URL into a Public Storage URL if possible.
+ */
+function transformSupabaseUrl(url: string): string {
+  if (!url) return "";
+  
+  // Example Dashboard URL: 
+  // https://supabase.com/dashboard/project/wfkqsifhxnarmxrvbgiu/storage/files/buckets/cms_images?path=promos%2F1&preview=ReelBingoLaRioja01.mp4
+  
+  if (url.includes("supabase.com/dashboard/project/")) {
+    try {
+      const parts = url.split("/dashboard/project/")[1].split("/");
+      const projectRef = parts[0];
+      
+      const bucketMatch = url.match(/buckets\/([^\/?#]+)/);
+      const bucketName = bucketMatch ? bucketMatch[1] : "";
+      
+      const pathMatch = url.match(/path=([^&#]+)/);
+      const path = pathMatch ? decodeURIComponent(pathMatch[1]) : "";
+      
+      const previewMatch = url.match(/preview=([^&#]+)/);
+      const filename = previewMatch ? decodeURIComponent(previewMatch[1]) : "";
+      
+      if (projectRef && bucketName) {
+        // Construct public URL: https://[ref].supabase.co/storage/v1/object/public/[bucket]/[path]/[filename]
+        let fullPath = "";
+        if (path) fullPath += path + "/";
+        fullPath += filename;
+        
+        return `https://${projectRef}.supabase.co/storage/v1/object/public/${bucketName}/${fullPath}`;
+      }
+    } catch (e) {
+      console.error("Error transforming Supabase URL:", e);
+    }
+  }
+  
+  return url;
+}
+
+/**
  * Updates a section of content in the CMS.
  * @param {string} id - The ID of the content to update.
  * @param {FormData} formData - The updated data as FormData.
@@ -53,9 +92,10 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
   const { title, description, is_active, content_order, section_key, metadata } = validation.data;
   const old_image_url = formData.get("old_image_url") as string;
   const file = formData.get("file") as File | null;
+  const manual_image_url = formData.get("image_url") as string | null;
 
   const supabase = await createClient();
-  let image_url = old_image_url;
+  let image_url = manual_image_url ? transformSupabaseUrl(manual_image_url) : old_image_url;
 
   // 1. Handle File Upload if present
   if (file && file instanceof File && file.size > 0) {
@@ -75,7 +115,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
         });
 
       if (uploadError) {
-        throw new Error(`Error al subir imagen: ${uploadError.message}`);
+        throw new Error(`Error al subir archivo: ${uploadError.message}`);
       }
 
       const {
@@ -114,7 +154,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
     .update({
       title: sanitizeInput(title || ""),
       description: sanitizeInput(description || ""),
-      image_url,
+      image_url: transformSupabaseUrl(image_url),
       is_active,
       content_order,
       metadata,
@@ -523,6 +563,7 @@ async function createCMSContentInternal(formData: FormData, context: { user: any
 
   const { page, section_key, title, description, is_active, content_order, metadata } = validation.data;
   const file = formData.get("file") as File | null;
+  const manual_image_url = formData.get("image_url") as string | null;
 
   const supabase = await createClient();
 
@@ -542,7 +583,7 @@ async function createCMSContentInternal(formData: FormData, context: { user: any
     };
   }
 
-  let image_url = "";
+  let image_url = manual_image_url ? transformSupabaseUrl(manual_image_url) : "";
 
   // 1. Handle File Upload if present
   if (file && file instanceof File && file.size > 0) {
@@ -583,7 +624,7 @@ async function createCMSContentInternal(formData: FormData, context: { user: any
         section_key,
         title: sanitizeInput(title),
         description: sanitizeInput(description || ""),
-        image_url,
+        image_url: transformSupabaseUrl(image_url),
         is_active,
         content_order,
         metadata,
