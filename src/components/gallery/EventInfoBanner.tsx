@@ -1,4 +1,4 @@
-import { CalendarDays, MapPin, Sparkles, Ticket } from "lucide-react";
+import { CalendarDays, MapPin, Sparkles, Ticket, Facebook } from "lucide-react";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 
 interface GalleryEvent {
@@ -46,9 +46,11 @@ function formatEventDate(eventDate: string): string {
 export default function EventInfoBanner({
   event,
   whatsappLink,
+  facebookLink,
 }: {
   event: GalleryEvent;
   whatsappLink?: string;
+  facebookLink?: string;
 }) {
   const daysLeft = event.event_date ? getDaysLeft(event.event_date) : null;
 
@@ -61,7 +63,7 @@ export default function EventInfoBanner({
           ? "¡HOY ES EL GRAN EVENTO!"
           : "¡EL EVENTO YA SE REALIZÓ!";
 
-  if (!countdownText && !event.event_date && !event.event_venue && !event.Method_of_payment && !whatsappLink)
+  if (!countdownText && !event.event_date && !event.event_venue && !event.Method_of_payment && !whatsappLink && !facebookLink)
     return null;
 
   return (
@@ -117,19 +119,31 @@ export default function EventInfoBanner({
         </div>
       )}
 
-      {whatsappLink && (
-        <div className="mx-auto mt-8 max-w-[1600px] px-6 pb-8 text-center">
+      <div className="mx-auto mt-4 max-w-[1600px] px-6 pb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+        {facebookLink && (
+          <a
+            href={facebookLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 rounded-full bg-[#1877F2] px-8 py-4 font-montserrat text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#1877F2]/90 md:text-base w-full sm:w-auto justify-center"
+          >
+            <Facebook className="h-6 w-6 shrink-0 fill-current" />
+            Ver video promocional
+          </a>
+        )}
+
+        {whatsappLink && (
           <a
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 rounded-full bg-larioja-verde px-8 py-4 font-montserrat text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-larioja-verde/90 md:text-base"
+            className="inline-flex items-center gap-3 rounded-full bg-larioja-verde px-8 py-4 font-montserrat text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-larioja-verde/90 md:text-base w-full sm:w-auto justify-center"
           >
             <WhatsAppIcon className="h-6 w-6 shrink-0" />
-            Para más información acerca del Bingo La Rioja, envíanos un mensaje vía WhatsApp
+            Solicitar información vía WhatsApp
           </a>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }
