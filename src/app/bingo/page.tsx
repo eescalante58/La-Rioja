@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 export default async function BingoPage() {
   const { data: images = [] } = await getGalleryImages();
   const socialMedia = await getPageContent("social media");
+  const bingoCMS = await getPageContent("bingo");
 
   // Link de WhatsApp normalizado a wa.me/<solo dígitos> para evitar el error
   // "número no existe" si el CMS guarda "+", espacios u otro formato.
@@ -30,8 +31,9 @@ export default async function BingoPage() {
     event = data ?? null;
   }
 
-  // Link directo al Reel para evitar el popup de inicio de sesión (Login Wall)
-  const facebookLink = "https://www.facebook.com/reels/1DGYgNZRQ6/";
+  // Link al video promocional desde el CMS (Key: Anuncio) o fallback al directo
+  const facebookCMSRaw = bingoCMS.find((l: any) => l.section_key === "Anuncio")?.description;
+  const facebookLink = facebookCMSRaw || "https://www.facebook.com/reels/1DGYgNZRQ6/";
 
   return (
     <main className="min-h-screen bg-white dark:bg-black font-inter">
