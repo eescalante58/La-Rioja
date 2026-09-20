@@ -373,6 +373,33 @@ export default function NewInvoicePlusDialog({
                 />
               </div>
 
+              <div className="space-y-1">
+                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  Asociar Cartones ({selectedCards.length} de {cardsNumber})
+                </Text>
+                <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {selectedCards.map((num) => (
+                      <div
+                        key={num}
+                        className="flex items-center justify-center p-2 rounded border cursor-pointer transition-colors text-xs font-bold bg-larioja-azul text-white border-larioja-azul hover:bg-rose-600 hover:border-rose-600"
+                        onClick={() => {
+                          setSelectedInvoiceCards(selectedCards.filter((n) => n !== num));
+                        }}
+                      >
+                        #{num}
+                      </div>
+                    ))}
+                    {selectedCards.length === 0 && (
+                      <div className="col-span-full py-4 text-center text-gray-400 italic text-xs">
+                        Utilice el selector de rango inferior para cargar cartones...
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <input type="hidden" name="associated_cards" value={JSON.stringify(selectedCards)} />
+              </div>
+
               <div className="p-4 bg-larioja-azul/5 dark:bg-larioja-azul/10 rounded-xl border border-larioja-azul/20 space-y-4">
                 <div className="flex items-end gap-4">
                   <div className="flex-grow grid grid-cols-2 gap-4">
@@ -404,33 +431,6 @@ export default function NewInvoicePlusDialog({
                   >
                     Verificar
                   </Button>
-                </div>
-
-                <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                    Asociar Cartones ({selectedCards.length} de {cardsNumber})
-                  </Text>
-                  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-40 overflow-y-auto bg-white dark:bg-gray-900">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {selectedCards.map((num) => (
-                        <div
-                          key={num}
-                          className="flex items-center justify-center p-2 rounded border cursor-pointer transition-colors text-xs font-bold bg-larioja-azul text-white border-larioja-azul hover:bg-rose-600 hover:border-rose-600"
-                          onClick={() => {
-                            setSelectedInvoiceCards(selectedCards.filter((n) => n !== num));
-                          }}
-                        >
-                          #{num}
-                        </div>
-                      ))}
-                      {selectedCards.length === 0 && (
-                        <div className="col-span-full py-4 text-center text-gray-400 italic text-xs">
-                          Ingrese un rango para cargar cartones...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <input type="hidden" name="associated_cards" value={JSON.stringify(selectedCards)} />
                 </div>
               </div>
             </div>
