@@ -65,6 +65,8 @@ function transformSupabaseUrl(url: string): string {
  */
 async function updateCMSContentInternal(id: string, formData: FormData, context: { user: any }) {
   const { user } = context;
+  console.log(`CMS Update started for ID: ${id} by user: ${user?.id}`);
+  
   // 1. Validation with Zod
   const rawMetadataStr = formData.get("metadata") as string;
   let rawMetadata = {};
