@@ -30,7 +30,8 @@ export default async function BingoPage() {
     event = data ?? null;
   }
 
-  const facebookLink = "https://www.facebook.com/share/r/1DGYgNZRQ6/?mibextid=wwXIfr";
+  // Link directo al Reel para evitar el popup de inicio de sesión (Login Wall)
+  const facebookLink = "https://www.facebook.com/reels/1DGYgNZRQ6/";
 
   return (
     <main className="min-h-screen bg-white dark:bg-black font-inter">
