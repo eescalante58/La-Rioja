@@ -1534,6 +1534,68 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
 
 export const updateInvoice = withRole(4, withCompanyAccess(updateInvoiceInternal, 0));
 
+/**
+ * Checks if cards in a given range are available for a company/event.
+ * Verifies that each card is neither "Vendido" nor "Anulado".
+ */
+async function checkCardsRangeInternal(
+  companyId: number,
+  eventId: string,
+  start: number,
+  end: number,
+  context: { user: any }
+) {
+  if (start > end) {
+    return { error: "El cartón inicial no puede ser mayor al final." };
+  }
+  
+  const count = end - start + 1;
+  if (count > 500) {
+    return { error: "El rango no puede ser mayor a 500 cartones." };
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("cards")
+    .select("card_number, card_status")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .gte("card_number", start)
+    .lte("card_number", end)
+    .order("card_number", { ascending: true });
+
+  if (error) return { error: error.message };
+  
+  const cardMap = new Map((data || []).map(c => [c.card_number, c.card_status]));
+  
+  const results = [];
+  const invalidCards: { card_number: number; status: string }[] = [];
+  
+  for (let i = start; i <= end; i++) {
+    const status = cardMap.get(i);
+    if (!status) {
+      invalidCards.push({ card_number: i, status: "No encontrado" });
+    } else if (status === "Vendido" || status === "Anulado") {
+      invalidCards.push({ card_number: i, status });
+    } else {
+      results.push({ card_number: i, status });
+    }
+  }
+
+  if (invalidCards.length > 0) {
+    const details = invalidCards.map(c => `#${c.card_number} (${c.status})`).join(", ");
+    return { 
+      success: false, 
+      error: `Algunos cartones no están disponibles: ${details}`,
+      invalidCards 
+    };
+  }
+
+  return { success: true, data: results };
+}
+
+export const checkCardsRange = withRole(4, withCompanyAccess(checkCardsRangeInternal, 0));
+
 export const sendWhatsAppAutomation = withRole(
   6,
   sendWhatsAppAutomationInternal,

@@ -16,10 +16,11 @@ import {
   TableCell,
   Badge,
 } from "@tremor/react";
-import { Plus, TrendingUp, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, TrendingUp, Eye, Edit, Trash2, PlusSquare } from "lucide-react";
 import { getInvoices, deleteInvoice } from "@/app/admin/bingo/actions";
 import InvoiceDetailsDialog from "./InvoiceDetailsDialog";
 import NewInvoiceDialog from "./NewInvoiceDialog";
+import NewInvoicePlusDialog from "./NewInvoicePlusDialog";
 import WhatsAppPopup from "./WhatsAppPopup";
 
 interface Event {
@@ -44,6 +45,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
+  const [isNewInvoicePlusOpen, setIsNewInvoicePlusOpen] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
 
   const loadInvoices = async (companyId: number, eventId: string) => {
@@ -89,16 +91,28 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
         <div className="flex justify-between items-center mb-6">
           <Title>Ventas y Facturación</Title>
           {currentEventInfo && (
-            <Button
-              icon={Plus}
-              onClick={() => {
-                setSelectedInvoice(null);
-                setIsNewInvoiceOpen(true);
-              }}
-              className="bg-larioja-azul"
-            >
-              Nueva Factura
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                icon={PlusSquare}
+                onClick={() => {
+                  setSelectedInvoice(null);
+                  setIsNewInvoicePlusOpen(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Nueva Factura Plus
+              </Button>
+              <Button
+                icon={Plus}
+                onClick={() => {
+                  setSelectedInvoice(null);
+                  setIsNewInvoiceOpen(true);
+                }}
+                className="bg-larioja-azul"
+              >
+                Nueva Factura
+              </Button>
+            </div>
           )}
         </div>
 
@@ -259,6 +273,21 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
         isOpen={isNewInvoiceOpen}
         onClose={() => setIsNewInvoiceOpen(false)}
         invoice={selectedInvoice}
+        currentEvent={currentEventInfo}
+        countries={countries}
+        onSuccess={() =>
+          currentEventInfo &&
+          loadInvoices(currentEventInfo.companyId, currentEventInfo.eventId)
+        }
+        onWhatsApp={(inv) => {
+          setSelectedInvoice(inv);
+          setIsWhatsAppOpen(true);
+        }}
+      />
+
+      <NewInvoicePlusDialog
+        isOpen={isNewInvoicePlusOpen}
+        onClose={() => setIsNewInvoicePlusOpen(false)}
         currentEvent={currentEventInfo}
         countries={countries}
         onSuccess={() =>
