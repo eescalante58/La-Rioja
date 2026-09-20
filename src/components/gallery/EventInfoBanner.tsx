@@ -1,4 +1,4 @@
-import { CalendarDays, MapPin, Sparkles, Ticket, Facebook } from "lucide-react";
+import { CalendarDays, MapPin, Sparkles, Ticket, Play } from "lucide-react";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 
 interface GalleryEvent {
@@ -46,11 +46,11 @@ function formatEventDate(eventDate: string): string {
 export default function EventInfoBanner({
   event,
   whatsappLink,
-  facebookLink,
+  videoLink,
 }: {
   event: GalleryEvent;
   whatsappLink?: string;
-  facebookLink?: string;
+  videoLink?: string;
 }) {
   const daysLeft = event.event_date ? getDaysLeft(event.event_date) : null;
 
@@ -63,7 +63,7 @@ export default function EventInfoBanner({
           ? "¡HOY ES EL GRAN EVENTO!"
           : "¡EL EVENTO YA SE REALIZÓ!";
 
-  if (!countdownText && !event.event_date && !event.event_venue && !event.Method_of_payment && !whatsappLink && !facebookLink)
+  if (!countdownText && !event.event_date && !event.event_venue && !event.Method_of_payment && !whatsappLink && !videoLink)
     return null;
 
   return (
@@ -120,14 +120,14 @@ export default function EventInfoBanner({
       )}
 
       <div className="mx-auto mt-4 max-w-[1600px] px-6 pb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-        {facebookLink && (
+        {videoLink && (
           <a
-            href={facebookLink}
+            href={videoLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 rounded-full bg-[#1877F2] px-8 py-4 font-montserrat text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-[#1877F2]/90 md:text-base w-full sm:w-auto justify-center"
+            className="inline-flex items-center gap-3 rounded-full bg-larioja-azul px-8 py-4 font-montserrat text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-blue-900 md:text-base w-full sm:w-auto justify-center"
           >
-            <Facebook className="h-6 w-6 shrink-0 fill-current" />
+            <Play className="h-5 w-5 shrink-0 fill-current" />
             Ver video promocional
           </a>
         )}

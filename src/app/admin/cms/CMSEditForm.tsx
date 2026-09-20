@@ -144,6 +144,17 @@ export default function CMSEditForm({ item }: { item: any }) {
     fileInputRef.current?.click();
   };
 
+  const isVideo = (url: string | null) => {
+    if (!url) return false;
+    // Check extension or typical Supabase storage video types
+    return (
+      url.toLowerCase().endsWith(".mp4") ||
+      url.toLowerCase().endsWith(".webm") ||
+      url.toLowerCase().endsWith(".ogg") ||
+      url.includes("/video")
+    );
+  };
+
   const removeFile = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -198,16 +209,24 @@ export default function CMSEditForm({ item }: { item: any }) {
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept="image/*"
+                accept="image/*,video/*"
                 onChange={handleFileChange}
               />
               {previewUrl ? (
                 <div className="relative w-full aspect-square max-h-[400px] overflow-hidden rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                  <img
-                    src={previewUrl}
-                    alt="Vista previa"
-                    className="w-full h-full object-contain"
-                  />
+                  {isVideo(previewUrl) ? (
+                    <video
+                      src={previewUrl}
+                      controls
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <img
+                      src={previewUrl}
+                      alt="Vista previa"
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                     <button
                       type="button"
