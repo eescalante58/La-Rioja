@@ -31,9 +31,11 @@ export default async function BingoPage() {
     event = data ?? null;
   }
 
-  // Link al video promocional desde el CMS (Key: Anuncio) o fallback al directo
-  const facebookCMSRaw = bingoCMS.find((l: any) => l.section_key === "Anuncio")?.description;
-  const facebookLink = facebookCMSRaw || "https://www.facebook.com/reels/1DGYgNZRQ6/";
+  // Link al video promocional desde el CMS (Key: Anuncio).
+  // Se busca prioritariamente en el campo image_url (donde se subió el video)
+  // y como fallback en description.
+  const anuncioSection = bingoCMS.find((l: any) => l.section_key === "Anuncio");
+  const videoLink = anuncioSection?.image_url || anuncioSection?.description || "https://www.facebook.com/reels/1DGYgNZRQ6/";
 
   return (
     <main className="min-h-screen bg-white dark:bg-black font-inter">
@@ -47,7 +49,7 @@ export default async function BingoPage() {
         <EventInfoBanner 
           event={event} 
           whatsappLink={whatsappLink} 
-          facebookLink={facebookLink}
+          videoLink={videoLink}
         />
       )}
 
