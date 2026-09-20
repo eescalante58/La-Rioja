@@ -30,6 +30,8 @@ export default async function BingoPage() {
     event = data ?? null;
   }
 
+  const facebookLink = "https://www.facebook.com/share/r/1DGYgNZRQ6/?mibextid=wwXIfr";
+
   return (
     <main className="min-h-screen bg-white dark:bg-black font-inter">
       <Navbar solid />
@@ -38,7 +40,13 @@ export default async function BingoPage() {
         <GalleryHeader eventName={event?.event_name} images={images} />
       </div>
 
-      {event && <EventInfoBanner event={event} whatsappLink={whatsappLink} />}
+      {event && (
+        <EventInfoBanner 
+          event={event} 
+          whatsappLink={whatsappLink} 
+          facebookLink={facebookLink}
+        />
+      )}
 
       {images.length > 0 ? (
         <GalleryGrid images={images} />
