@@ -89,8 +89,12 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
       } else {
         setCreateStatus({ type: "error", message: result.error || "Error al crear." });
       }
-    } catch (error) {
-      setCreateStatus({ type: "error", message: "Error inesperado al crear." });
+    } catch (error: any) {
+      console.error("Error creating CMS content:", error);
+      setCreateStatus({ 
+        type: "error", 
+        message: error.message || "Error inesperado al crear." 
+      });
     } finally {
       setIsCreating(false);
     }
