@@ -33,12 +33,30 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
     is_active: true,
     content_order: 0,
     metadata: {},
+    image_url: "",
   });
   const [newJsonString, setNewJsonString] = useState("{}");
   const [newJsonError, setNewJsonError] = useState<string | null>(null);
   const [newSelectedFile, setNewSelectedFile] = useState<File | null>(null);
   const [newPreviewUrl, setNewPreviewUrl] = useState<string | null>(null);
   const newFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUrlChange = (url: string) => {
+    setNewFormData({ ...newFormData, image_url: url });
+    if (!newSelectedFile) {
+      setNewPreviewUrl(url || null);
+    }
+  };
+
+  const isVideo = (url: string | null) => {
+    if (!url) return false;
+    return (
+      url.toLowerCase().endsWith(".mp4") ||
+      url.toLowerCase().endsWith(".webm") ||
+      url.toLowerCase().endsWith(".ogg") ||
+      url.includes("/video")
+    );
+  };
 
   const handleJsonChange = (val: string) => {
     setNewJsonString(val);
@@ -73,6 +91,7 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
       submitData.append("is_active", String(newFormData.is_active));
       submitData.append("content_order", String(newFormData.content_order));
       submitData.append("metadata", JSON.stringify(newFormData.metadata));
+      submitData.append("image_url", newFormData.image_url);
       if (newSelectedFile) submitData.append("file", newSelectedFile);
 
       const result = await createCMSContent(submitData);
@@ -81,7 +100,16 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
         setTimeout(() => {
           onClose();
           setCreateStatus(null);
-          setNewFormData({ page: "home", section_key: "", title: "", description: "", is_active: true, content_order: 0, metadata: {} });
+          setNewFormData({ 
+            page: "home", 
+            section_key: "", 
+            title: "", 
+            description: "", 
+            is_active: true, 
+            content_order: 0, 
+            metadata: {}, 
+            image_url: "" 
+          });
           setNewJsonString("{}");
           setNewSelectedFile(null);
           setNewPreviewUrl(null);
@@ -143,8 +171,20 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
                 </button>
                 {newPreviewUrl && <button type="button" onClick={() => { setNewSelectedFile(null); setNewPreviewUrl(null); }} className="text-rose-500 text-xs font-bold hover:underline">Eliminar</button>}
               </div>
-              <input type="file" ref={newFileInputRef} className="hidden" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setNewSelectedFile(f); setNewPreviewUrl(URL.createObjectURL(f)); } }} />
-              {newPreviewUrl && <div className="mt-2 relative aspect-video w-48 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800"><img src={newPreviewUrl} className="w-full h-full object-cover" alt="Preview" /></div>}
+              <input type="file" ref={newFileInputRef} className="hidden" accept="image/*,video/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setNewSelectedFile(f); setNewPreviewUrl(URL.createObjectURL(f)); } }} />
+              {newPreviewUrl && (
+                <div className="mt-2 relative aspect-video w-48 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-black flex items-center justify-center">
+                  {isVideo(newPreviewUrl) ? (
+                    <video src={newPreviewUrl} className="w-full h-full object-contain" controls />
+                  ) : (
+                    <img src={newPreviewUrl} className="w-full h-full object-cover" alt="Preview" />
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="space-y-1">
+              <Text className="text-xs font-bold uppercase text-gray-500">URL Directa (Opcional)</Text>
+              <TextInput placeholder="https://ejemplo.com/archivo.mp4" value={newFormData.image_url} onValueChange={handleUrlChange} />
             </div>
             <div className="space-y-1">
               <Text className="text-xs font-bold uppercase text-gray-500">Metadata Adicional (JSON)</Text>

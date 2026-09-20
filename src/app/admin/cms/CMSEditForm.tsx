@@ -37,6 +37,7 @@ export default function CMSEditForm({ item }: { item: any }) {
     is_active: item.is_active,
     content_order: item.content_order || 0,
     metadata: item.metadata || {},
+    image_url: item.image_url || "",
   });
   const [jsonString, setJsonString] = useState(
     JSON.stringify(item.metadata || {}, null, 2),
@@ -54,6 +55,14 @@ export default function CMSEditForm({ item }: { item: any }) {
   } | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Update preview when manual URL changes
+  const handleUrlChange = (url: string) => {
+    setFormData({ ...formData, image_url: url });
+    if (!selectedFile) {
+      setPreviewUrl(url || item.image_url || null);
+    }
+  };
 
   // Obtener filtros de la URL para regresar al mismo estado
   const pageFilter = searchParams.get("page") || "all";
@@ -82,6 +91,7 @@ export default function CMSEditForm({ item }: { item: any }) {
       submitData.append("content_order", String(formData.content_order));
       submitData.append("metadata", JSON.stringify(formData.metadata));
       submitData.append("old_image_url", item.image_url || "");
+      submitData.append("image_url", formData.image_url);
       submitData.append("section_key", item.section_key);
 
       if (selectedFile) {
@@ -274,6 +284,18 @@ export default function CMSEditForm({ item }: { item: any }) {
                 <span>Nueva imagen seleccionada: {selectedFile.name}</span>
               </div>
             )}
+            
+            <div className="space-y-1">
+              <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">URL Directa (Opcional)</Text>
+              <TextInput
+                placeholder="https://ejemplo.com/archivo.mp4"
+                value={formData.image_url}
+                onChange={(e) => handleUrlChange(e.target.value)}
+              />
+              <Text className="text-[10px] text-gray-400 italic">
+                Usa esto si ya tienes el archivo en Supabase o un servidor externo.
+              </Text>
+            </div>
           </div>
 
           <div className="space-y-2">
