@@ -175,7 +175,16 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
               {newPreviewUrl && (
                 <div className="mt-2 relative aspect-video w-48 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-black flex items-center justify-center">
                   {isVideo(newPreviewUrl) ? (
-                    <video src={newPreviewUrl} className="w-full h-full object-contain" controls />
+                    <video
+                      key={newPreviewUrl}
+                      className="w-full h-full object-contain"
+                      controls
+                      playsInline
+                      preload="metadata"
+                      crossOrigin="anonymous"
+                    >
+                      <source src={newPreviewUrl} type="video/mp4" />
+                    </video>
                   ) : (
                     <img src={newPreviewUrl} className="w-full h-full object-cover" alt="Preview" />
                   )}
