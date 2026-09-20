@@ -91,17 +91,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
         <div className="flex justify-between items-center mb-6">
           <Title>Ventas y Facturación</Title>
           {currentEventInfo && (
-            <div className="flex gap-2">
-              <Button
-                icon={PlusSquare}
-                onClick={() => {
-                  setSelectedInvoice(null);
-                  setIsNewInvoicePlusOpen(true);
-                }}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Nueva Factura Plus
-              </Button>
+            <div className="flex flex-col gap-2">
               <Button
                 icon={Plus}
                 onClick={() => {
@@ -111,6 +101,16 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                 className="bg-larioja-azul"
               >
                 Nueva Factura
+              </Button>
+              <Button
+                icon={PlusSquare}
+                onClick={() => {
+                  setSelectedInvoice(null);
+                  setIsNewInvoicePlusOpen(true);
+                }}
+                className="bg-larioja-azul"
+              >
+                Nueva Factura Plus
               </Button>
             </div>
           )}
