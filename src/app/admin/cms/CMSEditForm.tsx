@@ -84,6 +84,13 @@ export default function CMSEditForm({ item }: { item: any }) {
     setStatus(null);
 
     try {
+      // Validar tamaño de archivo en el cliente (límite de Vercel/Next.js es ~4.5MB)
+      if (selectedFile && selectedFile.size > 4 * 1024 * 1024) {
+        throw new Error(
+          `El archivo es demasiado grande (${(selectedFile.size / (1024 * 1024)).toFixed(2)}MB). El límite máximo permitido es 4MB. Por favor use la "URL Directa" para archivos más grandes o comprima el video.`,
+        );
+      }
+
       const submitData = new FormData();
       submitData.append("title", formData.title);
       submitData.append("description", formData.description);
@@ -117,7 +124,7 @@ export default function CMSEditForm({ item }: { item: any }) {
       console.error("Submit error:", error);
       setStatus({
         type: "error",
-        message: "Error de red o de servidor. Intente nuevamente.",
+        message: error.message || "Error de red o de servidor. Intente nuevamente.",
       });
       setLoading(false);
     }
