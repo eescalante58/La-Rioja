@@ -226,10 +226,16 @@ export default function CMSEditForm({ item }: { item: any }) {
                 <div className="relative w-full aspect-square max-h-[400px] overflow-hidden rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
                   {isVideo(previewUrl) ? (
                     <video
-                      src={previewUrl}
+                      key={previewUrl}
                       controls
+                      playsInline
+                      preload="metadata"
+                      crossOrigin="anonymous"
                       className="w-full h-full object-contain"
-                    />
+                    >
+                      <source src={previewUrl} type="video/mp4" />
+                      Tu navegador no soporta la reproducción de videos.
+                    </video>
                   ) : (
                     <img
                       src={previewUrl}
