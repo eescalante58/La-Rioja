@@ -23,7 +23,7 @@ export default function GalleryGrid({ images }: { images: GalleryImage[] }) {
         {images.map((image) => (
           <div
             key={image.id}
-            className="relative group cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-800 animate-fade-in"
+            className="relative group cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-larioja-azul animate-fade-in"
             onClick={() => setSelectedImage(image)}
           >
             <Image
