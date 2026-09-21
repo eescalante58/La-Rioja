@@ -61,11 +61,14 @@ export default function PromoVideoCard({
         </div>
       </div>
 
-      {/* Reproductor con overlay de play */}
+      {/* Reproductor con overlay de play.
+          El fragmento #t=0.5 hace que Safari/Chrome móvil muestre el frame
+          de 0.5s como carátula — sin él, preload="metadata" deja el video
+          negro en móviles hasta que el usuario presiona play. */}
       <div className="relative overflow-hidden rounded-2xl bg-black/70">
         <video
           ref={videoRef}
-          src={videoUrl}
+          src={`${videoUrl}#t=0.5`}
           controls={started}
           playsInline
           preload="metadata"
