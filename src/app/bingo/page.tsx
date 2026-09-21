@@ -50,6 +50,7 @@ export default async function BingoPage() {
           event={event} 
           whatsappLink={whatsappLink} 
           videoLink={videoLink}
+          videoTitle={anuncioSection?.title}
         />
       )}
 
