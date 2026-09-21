@@ -610,35 +610,6 @@ async function getEventCardsInternal(companyId: number, eventId: string) {
 
 export const getEventCards = withRole(4, withCompanyAccess(getEventCardsInternal, 0));
 
-async function getInvoiceCardsInternal(
-  companyId: number,
-  eventId: string,
-  invoiceNumber: string,
-) {
-  console.log(`[Action getInvoiceCards] companyId: ${companyId}, eventId: ${eventId}, invoiceNumber: ${invoiceNumber}`);
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("cards")
-    .select("company_id, event_id, card_number, invoice_number, card_status")
-    .eq("company_id", Number(companyId))
-    .eq("event_id", eventId)
-    .eq("invoice_number", String(invoiceNumber).trim())
-    .order("card_number", { ascending: true });
-
-  if (error) {
-    console.error("[Action getInvoiceCards] Error:", error);
-    return { error: error.message };
-  }
-  
-  console.log(`[Action getInvoiceCards] Found ${data?.length || 0} cards`);
-  return { success: true, data };
-}
-
-export const getInvoiceCards = withRole(
-  4,
-  withCompanyAccess(getInvoiceCardsInternal, 0),
-);
-
 async function generateCardsInternal(
   companyId: number,
   eventId: string,
