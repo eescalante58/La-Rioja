@@ -94,7 +94,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
-      <Navbar />
+      <Navbar brandHeader />
       <ParallaxHero heroContent={heroContent} />
       <section className="py-24 bg-gray-50 dark:bg-gray-900 transition-colors relative z-30">
         <div className="container mx-auto px-6">

@@ -39,7 +39,7 @@ export default async function FAQPage() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
-      <Navbar />
+      <Navbar brandHeader />
 
       {/* Hero Section */}
       <section className="bg-larioja-azul text-white pt-32 pb-20 relative overflow-hidden shadow-inner">
