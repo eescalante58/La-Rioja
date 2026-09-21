@@ -41,7 +41,7 @@ export default async function BingoPage() {
     <main className="min-h-screen bg-white dark:bg-black font-inter">
       <Navbar solid brandHeader />
 
-      <div className="pt-20">
+      <div className="pt-24 lg:pt-28">
         <GalleryHeader eventName={event?.event_name} images={images} />
       </div>
 

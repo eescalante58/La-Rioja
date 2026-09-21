@@ -76,32 +76,33 @@ export function Navbar({ solid = false, brandHeader = false }: { solid?: boolean
             : "bg-transparent py-4"
         }`}
       >
-        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between">
-          {/* Marca centrada (página Bingo): LA RIOJA como marca principal y
-              subtítulo refinado con amplio tracking. pointer-events-none para
-              no interferir con el logo ni los enlaces laterales. */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12">
+          {/* Masthead institucional (página Bingo): fila superior centrada —
+              "LA RIOJA" como marca principal y "Centro de Formación Laboral"
+              como subtítulo refinado con amplio tracking, por encima del menú. */}
           {brandHeader && (
-            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex select-none flex-col items-center text-center">
+            <div className="flex select-none flex-col items-center py-1.5 text-center">
               <span
                 className={`font-montserrat font-black uppercase leading-none tracking-[0.18em] transition-all duration-500 ${
                   navSolid
-                    ? "text-sm sm:text-base md:text-lg text-larioja-azul dark:text-white"
-                    : "text-base sm:text-lg md:text-2xl text-white"
+                    ? "text-base sm:text-lg md:text-xl text-larioja-azul dark:text-white"
+                    : "text-lg sm:text-xl md:text-2xl text-white"
                 }`}
               >
                 La Rioja
               </span>
               <span
-                className={`mt-1 hidden font-montserrat font-medium uppercase leading-none tracking-[0.32em] sm:block ${
+                className={`mt-1 font-montserrat font-medium uppercase leading-none tracking-[0.28em] ${
                   navSolid
-                    ? "text-[8px] md:text-[9px] text-amber-600 dark:text-larioja-amarillo"
-                    : "text-[9px] md:text-[10px] text-larioja-amarillo"
+                    ? "text-[10px] md:text-xs text-amber-600 dark:text-larioja-amarillo"
+                    : "text-[10px] md:text-xs text-larioja-amarillo"
                 }`}
               >
                 Centro de Formación Laboral
               </span>
             </div>
           )}
+          <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="relative z-[110] p-2 transition-colors">
             <div
@@ -237,6 +238,7 @@ export function Navbar({ solid = false, brandHeader = false }: { solid?: boolean
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
+        </div>
         </div>
       </nav>
 
