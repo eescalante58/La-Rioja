@@ -120,7 +120,7 @@ export default function NewInvoiceDialog({
     if (!currentEvent) return;
     setLoadingInitial(true);
 
-    const targetInvNum = invoice ? String(invoice.invoice_number).trim() : null;
+    const targetInvNum = invoice?.invoice_number ? String(invoice.invoice_number).trim() : null;
 
     /**
      * Consulta (readOnly): si ya tenemos los cartones en el objeto invoice,
@@ -142,13 +142,17 @@ export default function NewInvoiceDialog({
 
     try {
       // Fetch sellers and cards in parallel
-      // For read-only mode, we can optimize by only fetching cards for THIS invoice
-      const [sellersRes, cardsRes] = await Promise.all([
-        getSellersFromView(currentEvent.companyId, currentEvent.eventId),
-        readOnly && targetInvNum 
-          ? getInvoiceCards(currentEvent.companyId, currentEvent.eventId, targetInvNum)
-          : getEventCards(currentEvent.companyId, currentEvent.eventId),
-      ]);
+      const sellersPromise = getSellersFromView(currentEvent.companyId, currentEvent.eventId);
+      
+      // In read-only mode, we ONLY want the cards for this invoice.
+      // If we don't have a targetInvNum yet, we return an empty list instead of all cards.
+      const cardsPromise = readOnly 
+        ? (targetInvNum 
+            ? getInvoiceCards(currentEvent.companyId, currentEvent.eventId, targetInvNum)
+            : Promise.resolve({ success: true, data: [] }))
+        : getEventCards(currentEvent.companyId, currentEvent.eventId);
+
+      const [sellersRes, cardsRes] = await Promise.all([sellersPromise, cardsPromise]);
 
       if (sellersRes.success && sellersRes.data) {
         const uniqueSellers = Array.from(
@@ -171,21 +175,21 @@ export default function NewInvoiceDialog({
             (c) =>
               c.card_status === "Disponible" ||
               c.card_status === "Asignado" ||
-              (targetInvNum && String(c.invoice_number).trim() === targetInvNum),
+              (targetInvNum && String(c.invoice_number || "").trim() === targetInvNum),
           );
         } else if (targetInvNum) {
           // In read-only mode, only show cards for this invoice
           eligible = allCards.filter(
-            (c) => String(c.invoice_number).trim() === targetInvNum,
+            (c) => String(c.invoice_number || "").trim() === targetInvNum,
           );
         }
 
         // Sort: linked first, then by number
         eligible.sort((a, b) => {
           const aLinked =
-            targetInvNum && String(a.invoice_number).trim() === targetInvNum ? 0 : 1;
+            targetInvNum && String(a.invoice_number || "").trim() === targetInvNum ? 0 : 1;
           const bLinked =
-            targetInvNum && String(b.invoice_number).trim() === targetInvNum ? 0 : 1;
+            targetInvNum && String(b.invoice_number || "").trim() === targetInvNum ? 0 : 1;
           return aLinked - bLinked || a.card_number - b.card_number;
         });
 
@@ -195,8 +199,7 @@ export default function NewInvoiceDialog({
         const linkedNums = eligible
           .filter((c) => {
             const cardInv = String(c.invoice_number || "").trim();
-            const matches = cardInv === targetInvNum;
-            return matches;
+            return targetInvNum && cardInv === targetInvNum;
           })
           .map((c) => Number(c.card_number));
         
@@ -204,12 +207,12 @@ export default function NewInvoiceDialog({
         
         if (linkedNums.length > 0) {
           setSelectedInvoiceCards(linkedNums);
+        } else if (readOnly && eligible.length > 0 && targetInvNum) {
+          // Fallback safety for readOnly: if we found cards but filtering failed
+          // due to some edge case, but we KNOW they came from getInvoiceCards
+          setSelectedInvoiceCards(eligible.map(c => Number(c.card_number)));
         } else {
-          // If in read-only mode and we found cards but they don't match the filter
-          // (which shouldn't happen with getInvoiceCards), force show them anyway
-          if (readOnly && eligible.length > 0) {
-            setSelectedInvoiceCards(eligible.map(c => Number(c.card_number)));
-          }
+          setSelectedInvoiceCards([]);
         }
       }
     } catch (err) {
