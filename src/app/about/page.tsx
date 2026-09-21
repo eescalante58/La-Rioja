@@ -144,7 +144,7 @@ export default async function AboutPage() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden">
-      <Navbar />
+      <Navbar brandHeader />
 
       {/* Hero Section - Nuestra Historia */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 bg-larioja-azul text-white overflow-hidden">
