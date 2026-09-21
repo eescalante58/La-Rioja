@@ -1,5 +1,6 @@
 import { CalendarDays, MapPin, Sparkles, Ticket, Play } from "lucide-react";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
+import PromoVideoCard from "./PromoVideoCard";
 
 interface GalleryEvent {
   event_name?: string | null;
@@ -47,12 +48,23 @@ export default function EventInfoBanner({
   event,
   whatsappLink,
   videoLink,
+  videoTitle,
 }: {
   event: GalleryEvent;
   whatsappLink?: string;
   videoLink?: string;
+  videoTitle?: string;
 }) {
   const daysLeft = event.event_date ? getDaysLeft(event.event_date) : null;
+
+  /**
+   * El video se embebe en tarjeta solo cuando el CMS apunta a un archivo
+   * de video directo (Supabase Storage). Para links externos (Facebook,
+   * etc.) se mantiene el botón que abre en pestaña nueva.
+   */
+  const isDirectVideo = videoLink
+    ? /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(videoLink)
+    : false;
 
   const countdownText =
     daysLeft === null
@@ -119,8 +131,18 @@ export default function EventInfoBanner({
         </div>
       )}
 
+      {videoLink && isDirectVideo && (
+        <div className="mx-auto max-w-[1600px] px-6 pb-6 pt-2">
+          <PromoVideoCard
+            videoUrl={videoLink}
+            title={videoTitle}
+            subtitle={event.event_name || "Bingo La Rioja"}
+          />
+        </div>
+      )}
+
       <div className="mx-auto mt-4 max-w-[1600px] px-6 pb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-        {videoLink && (
+        {videoLink && !isDirectVideo && (
           <a
             href={videoLink}
             target="_blank"
