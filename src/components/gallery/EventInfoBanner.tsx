@@ -1,6 +1,6 @@
 import { CalendarDays, MapPin, Sparkles, Ticket, Play } from "lucide-react";
-import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import PromoVideoCard from "./PromoVideoCard";
+import WhatsAppFab from "./WhatsAppFab";
 
 interface GalleryEvent {
   event_name?: string | null;
@@ -155,22 +155,8 @@ export default function EventInfoBanner({
         </div>
       )}
 
-      {/* Botón flotante de WhatsApp: visible en toda la página al hacer scroll */}
-      {whatsappLink && (
-        <a
-          href={whatsappLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Solicitar información vía WhatsApp"
-          title="Solicitar información vía WhatsApp"
-          className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-larioja-verde p-4 text-white shadow-2xl transition-all hover:scale-110 hover:bg-larioja-verde/90 md:px-5"
-        >
-          <WhatsAppIcon className="h-7 w-7 shrink-0" />
-          <span className="hidden font-montserrat text-sm font-bold md:inline">
-            Solicitar información
-          </span>
-        </a>
-      )}
+      {/* Botón flotante de WhatsApp (portal a body: visible en toda la página) */}
+      {whatsappLink && <WhatsAppFab href={whatsappLink} />}
     </section>
   );
 }
