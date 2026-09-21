@@ -124,30 +124,28 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
         data: { publicUrl },
       } = supabase.storage.from("cms_images").getPublicUrl(storagePath);
 
-      // Cleanup: Delete old file if it exists and is different from the new one
-      if (
-        old_image_url &&
-        old_image_url !== publicUrl &&
-        old_image_url.includes("/cms_images/")
-      ) {
-        try {
-          // Extraer la ruta del objeto del URL (todo lo después de /cms_images/)
-          const oldUrlParts = old_image_url.split("/cms_images/");
-          if (oldUrlParts.length > 1) {
-            // Limpiar posibles parámetros de búsqueda (query params)
-            const oldStoragePath = oldUrlParts[1].split("?")[0];
-            await supabase.storage.from("cms_images").remove([oldStoragePath]);
-          }
-        } catch (cleanupErr) {
-          console.error("Error cleaning up old image:", cleanupErr);
-          // No bloqueamos el proceso principal si falla la limpieza
-        }
-      }
-
       image_url = publicUrl;
     } catch (uploadErr: any) {
       console.error("Upload error:", uploadErr);
       return { success: false, error: uploadErr.message };
+    }
+  }
+
+  // Cleanup: Delete old file if the URL has changed and the old one was in our bucket
+  const finalImageUrl = transformSupabaseUrl(image_url);
+  if (
+    old_image_url &&
+    old_image_url !== finalImageUrl &&
+    old_image_url.includes("/cms_images/")
+  ) {
+    try {
+      const oldUrlParts = old_image_url.split("/cms_images/");
+      if (oldUrlParts.length > 1) {
+        const oldStoragePath = oldUrlParts[1].split("?")[0];
+        await supabase.storage.from("cms_images").remove([oldStoragePath]);
+      }
+    } catch (cleanupErr) {
+      console.error("Error cleaning up old image:", cleanupErr);
     }
   }
 
@@ -156,7 +154,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
     .update({
       title: sanitizeInput(title || ""),
       description: sanitizeInput(description || ""),
-      image_url: transformSupabaseUrl(image_url),
+      image_url: finalImageUrl,
       is_active,
       content_order,
       metadata,
