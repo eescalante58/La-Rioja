@@ -91,17 +91,26 @@ export function ContactModal({
           className="bg-[#f8f9fa] w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden animate-scale-in"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="px-8 pt-8 pb-4 flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-larioja-azul">
-              Formulario de Contacto
-            </h2>
+          {/* Header con marca institucional */}
+          <div className="relative px-8 pt-8 pb-4">
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
+              aria-label="Cerrar formulario de contacto"
+              className="absolute right-5 top-5 p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
             >
               <X size={24} />
             </button>
+            <div className="space-y-1 text-center">
+              <p className="font-montserrat text-2xl font-black uppercase tracking-[0.18em] text-larioja-azul">
+                La Rioja
+              </p>
+              <p className="font-montserrat text-[10px] font-medium uppercase tracking-[0.32em] text-amber-600">
+                Centro de Formación Laboral
+              </p>
+            </div>
+            <h2 className="mt-5 text-center text-2xl font-bold text-larioja-azul">
+              Formulario de Contacto
+            </h2>
           </div>
 
           {isSuccess ? (
