@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
   }
 
   const associated_cards = (cards || []).map((c) => Number(c.card_number));
-  console.log(`Invoice ${invoiceNumber}: found ${associated_cards.length} cards`);
+  console.log(`[API /api/invoice] ${invoiceNumber}: found ${associated_cards.length} cards:`, associated_cards);
 
   return NextResponse.json({
     success: true,
