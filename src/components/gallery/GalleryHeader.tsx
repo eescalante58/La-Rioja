@@ -21,12 +21,12 @@ interface GalleryHeaderProps {
 export default function GalleryHeader({ eventName, images }: GalleryHeaderProps) {
   return (
     <header className="w-full bg-white dark:bg-black py-12 px-6 border-b border-gray-100 dark:border-gray-900">
-      <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="max-w-[1600px] mx-auto flex flex-col items-center text-center gap-6">
         <div className="space-y-2">
           <h1 className="text-4xl md:text-5xl font-montserrat font-black tracking-tighter text-larioja-azul dark:text-white uppercase">
             {eventName || "LA RIOJA 2026"}
           </h1>
-          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium">
+          <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400 font-medium">
             <Camera size={18} className="text-larioja-verde" />
             <span className="tracking-widest uppercase text-xs">Galería</span>
           </div>
