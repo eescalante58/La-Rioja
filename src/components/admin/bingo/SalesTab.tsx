@@ -88,18 +88,34 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
   };
 
   /**
-   * Normaliza un valor para comparación de búsqueda (minúsculas, sin espacios extra).
+   * Normaliza un valor para comparación de búsqueda: minúsculas, sin
+   * acentos/diacríticos ("maría" -> "maria") y sin espacios sobrantes.
    * @param value Valor a normalizar.
    * @returns Cadena normalizada.
    */
-  const normalize = (value: any) => String(value ?? "").toLowerCase().trim();
+  const normalize = (value: any) =>
+    String(value ?? "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  /**
+   * Compacta un texto para comparación flexible: convierte comas decimales
+   * a punto y elimina todo lo que no sea letra, dígito o punto
+   * ("$1,234.50" -> "1.234.50", "503-7883" -> "5037883").
+   * @param value Cadena ya normalizada.
+   * @returns Cadena compactada.
+   */
+  const compact = (value: string) =>
+    value.replace(/,/g, ".").replace(/[^a-z0-9.]/g, "");
 
   /**
    * Facturas filtradas por el término de búsqueda. Coincide contra:
    * número de factura, cliente, gestor, teléfono, WhatsApp, email y monto
    * (tanto en formato numérico como en formato monetario).
    */
-  const searchTerm = normalize(invoiceSearch).replace(/[$,\s]/g, "");
+  const searchTerm = compact(normalize(invoiceSearch));
   const filteredInvoices = invoices.filter((inv) => {
     if (!searchTerm) return true;
     const amountRaw = inv.total_amount != null ? String(Number(inv.total_amount)) : "";
@@ -117,7 +133,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
       amountFormatted,
     ];
     return haystack.some((field) =>
-      normalize(field).replace(/[$,\s]/g, "").includes(searchTerm),
+      compact(normalize(field)).includes(searchTerm),
     );
   });
 
@@ -213,6 +229,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                     <TableHeaderCell>N° Factura</TableHeaderCell>
                     <TableHeaderCell>Fecha</TableHeaderCell>
                     <TableHeaderCell>Cliente</TableHeaderCell>
+                    <TableHeaderCell>Gestor</TableHeaderCell>
                     <TableHeaderCell>Pago</TableHeaderCell>
                     <TableHeaderCell>Total</TableHeaderCell>
                     <TableHeaderCell>Estado</TableHeaderCell>
@@ -241,6 +258,9 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                         {new Date(`${inv.invoice_date}T12:00:00`).toLocaleDateString("es-SV")}
                       </TableCell>
                       <TableCell>{inv.customer_name}</TableCell>
+                      <TableCell className="max-w-[180px] truncate">
+                        {inv.manager_name || "—"}
+                      </TableCell>
                       <TableCell className="capitalize">
                         {inv.payment_method}
                       </TableCell>
@@ -292,7 +312,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={8}
                         className="text-center italic py-8 text-gray-400"
                       >
                         Sin resultados para "{invoiceSearch}".
