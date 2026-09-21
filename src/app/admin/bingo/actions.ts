@@ -610,6 +610,29 @@ async function getEventCardsInternal(companyId: number, eventId: string) {
 
 export const getEventCards = withRole(4, withCompanyAccess(getEventCardsInternal, 0));
 
+async function getInvoiceCardsInternal(
+  companyId: number,
+  eventId: string,
+  invoiceNumber: string,
+) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("cards")
+    .select("card_number, card_status, invoice_number")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .eq("invoice_number", invoiceNumber)
+    .order("card_number", { ascending: true });
+
+  if (error) return { error: error.message };
+  return { success: true, data };
+}
+
+export const getInvoiceCards = withRole(
+  4,
+  withCompanyAccess(getInvoiceCardsInternal, 0),
+);
+
 async function generateCardsInternal(
   companyId: number,
   eventId: string,
