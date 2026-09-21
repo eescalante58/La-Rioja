@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 /**
  * Mobile navigation component with hamburger menu.
  */
-export function Navbar({ solid = false }: { solid?: boolean }) {
+export function Navbar({ solid = false, brandHeader = false }: { solid?: boolean; brandHeader?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState<string>("#");
@@ -76,7 +76,32 @@ export function Navbar({ solid = false }: { solid?: boolean }) {
             : "bg-transparent py-4"
         }`}
       >
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between">
+        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between">
+          {/* Marca centrada (página Bingo): LA RIOJA como marca principal y
+              subtítulo refinado con amplio tracking. pointer-events-none para
+              no interferir con el logo ni los enlaces laterales. */}
+          {brandHeader && (
+            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex select-none flex-col items-center text-center">
+              <span
+                className={`font-montserrat font-black uppercase leading-none tracking-[0.18em] transition-all duration-500 ${
+                  navSolid
+                    ? "text-sm sm:text-base md:text-lg text-larioja-azul dark:text-white"
+                    : "text-base sm:text-lg md:text-2xl text-white"
+                }`}
+              >
+                La Rioja
+              </span>
+              <span
+                className={`mt-1 hidden font-montserrat font-medium uppercase leading-none tracking-[0.32em] sm:block ${
+                  navSolid
+                    ? "text-[8px] md:text-[9px] text-amber-600 dark:text-larioja-amarillo"
+                    : "text-[9px] md:text-[10px] text-larioja-amarillo"
+                }`}
+              >
+                Centro de Formación Laboral
+              </span>
+            </div>
+          )}
           {/* Logo */}
           <Link href="/" className="relative z-[110] p-2 transition-colors">
             <div
