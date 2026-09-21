@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     console.error(`Error fetching cards for invoice ${invoiceNumber}:`, cardsError);
   }
 
-  const associated_cards = (cards || []).map((c) => c.card_number);
+  const associated_cards = (cards || []).map((c) => Number(c.card_number));
   console.log(`Invoice ${invoiceNumber}: found ${associated_cards.length} cards`);
 
   return NextResponse.json({
