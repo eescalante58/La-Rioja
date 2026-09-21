@@ -42,7 +42,7 @@ export default async function FAQPage() {
       <Navbar brandHeader />
 
       {/* Hero Section */}
-      <section className="bg-larioja-azul text-white pt-32 pb-20 relative overflow-hidden shadow-inner">
+      <section className="bg-larioja-azul text-white pt-40 md:pt-52 pb-20 relative overflow-hidden shadow-inner">
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent z-10" />
         <div className="container mx-auto px-6 relative z-20 text-center max-w-4xl">
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in break-words [overflow-wrap:anywhere]">
