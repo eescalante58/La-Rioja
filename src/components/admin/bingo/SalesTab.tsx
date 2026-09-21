@@ -8,6 +8,7 @@ import {
   Button,
   Select,
   SelectItem,
+  TextInput,
   Table,
   TableHead,
   TableRow,
@@ -16,7 +17,7 @@ import {
   TableCell,
   Badge,
 } from "@tremor/react";
-import { Plus, TrendingUp, Eye, Edit, Trash2, PlusSquare } from "lucide-react";
+import { Plus, TrendingUp, Eye, Edit, Trash2, PlusSquare, Search } from "lucide-react";
 import { getInvoices, deleteInvoice } from "@/app/admin/bingo/actions";
 import InvoiceDetailsDialog from "./InvoiceDetailsDialog";
 import NewInvoiceDialog from "./NewInvoiceDialog";
@@ -40,6 +41,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
   const [currentEventInfo, setCurrentEventInfo] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [invoiceSearch, setInvoiceSearch] = useState("");
 
   // Dialog states
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
@@ -84,6 +86,40 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
       currency: "USD",
     }).format(value);
   };
+
+  /**
+   * Normaliza un valor para comparación de búsqueda (minúsculas, sin espacios extra).
+   * @param value Valor a normalizar.
+   * @returns Cadena normalizada.
+   */
+  const normalize = (value: any) => String(value ?? "").toLowerCase().trim();
+
+  /**
+   * Facturas filtradas por el término de búsqueda. Coincide contra:
+   * número de factura, cliente, gestor, teléfono, WhatsApp, email y monto
+   * (tanto en formato numérico como en formato monetario).
+   */
+  const searchTerm = normalize(invoiceSearch).replace(/[$,\s]/g, "");
+  const filteredInvoices = invoices.filter((inv) => {
+    if (!searchTerm) return true;
+    const amountRaw = inv.total_amount != null ? String(Number(inv.total_amount)) : "";
+    const amountFormatted =
+      inv.total_amount != null ? formatCurrency(Number(inv.total_amount)) : "";
+    const haystack = [
+      inv.invoice_number,
+      inv.customer_name,
+      inv.manager_name,
+      inv.phone_number,
+      `${inv.phone_area || ""}${inv.phone_number || ""}`,
+      inv.whatsapp_number,
+      inv.customer_email,
+      amountRaw,
+      amountFormatted,
+    ];
+    return haystack.some((field) =>
+      normalize(field).replace(/[$,\s]/g, "").includes(searchTerm),
+    );
+  });
 
   return (
     <>
@@ -135,6 +171,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                       eventId: event.event_id,
                       cardValue: event.card_value,
                     });
+                    setInvoiceSearch("");
                     loadInvoices(event.company_id, event.event_id);
                   }
                 }}
@@ -148,6 +185,18 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                   </SelectItem>
                 ))}
               </Select>
+            </div>
+            <div className="space-y-1">
+              <Text className="text-xs font-bold uppercase text-gray-500">
+                Buscar Factura
+              </Text>
+              <TextInput
+                icon={Search}
+                placeholder="N° factura, cliente, gestor, teléfono, email o monto..."
+                value={invoiceSearch}
+                onValueChange={setInvoiceSearch}
+                disabled={invoices.length === 0}
+              />
             </div>
           </div>
 
@@ -173,7 +222,8 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {invoices.map((inv) => (
+                  {filteredInvoices.length > 0 ? (
+                    filteredInvoices.map((inv) => (
                     <TableRow
                       key={inv.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
@@ -238,7 +288,17 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center italic py-8 text-gray-400"
+                      >
+                        Sin resultados para "{invoiceSearch}".
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
