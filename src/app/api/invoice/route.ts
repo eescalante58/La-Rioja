@@ -71,15 +71,16 @@ export async function GET(request: NextRequest) {
 
   // Associated cards (indexed by idx_cards_invoice_number)
   // Use the invoice's own company_id and event_id for accuracy
+  // We use string comparison for invoice_number to be safe
   const { data: cards, error: cardsError } = await supabase
     .from("cards")
-    .select("card_number")
-    .eq("invoice_number", invoiceNumber)
+    .select("card_number, company_id, event_id, invoice_number")
     .eq("company_id", invoice.company_id)
-    .eq("event_id", invoice.event_id);
+    .eq("event_id", invoice.event_id)
+    .eq("invoice_number", String(invoiceNumber).trim());
 
   if (cardsError) {
-    console.error(`Error fetching cards for invoice ${invoiceNumber}:`, cardsError);
+    console.error(`[API /api/invoice] Error fetching cards for invoice ${invoiceNumber}:`, cardsError);
   }
 
   const associated_cards = (cards || []).map((c) => Number(c.card_number));

@@ -193,11 +193,23 @@ export default function NewInvoiceDialog({
 
         // Sync selection state
         const linkedNums = eligible
-          .filter((c) => targetInvNum && String(c.invoice_number).trim() === targetInvNum)
-          .map((c) => c.card_number);
+          .filter((c) => {
+            const cardInv = String(c.invoice_number || "").trim();
+            const matches = cardInv === targetInvNum;
+            return matches;
+          })
+          .map((c) => Number(c.card_number));
+        
+        console.log(`[Dialog] Target: ${targetInvNum}, Found matches: ${linkedNums.length}`);
         
         if (linkedNums.length > 0) {
           setSelectedInvoiceCards(linkedNums);
+        } else {
+          // If in read-only mode and we found cards but they don't match the filter
+          // (which shouldn't happen with getInvoiceCards), force show them anyway
+          if (readOnly && eligible.length > 0) {
+            setSelectedInvoiceCards(eligible.map(c => Number(c.card_number)));
+          }
         }
       }
     } catch (err) {

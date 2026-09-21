@@ -615,16 +615,22 @@ async function getInvoiceCardsInternal(
   eventId: string,
   invoiceNumber: string,
 ) {
+  console.log(`[Action getInvoiceCards] companyId: ${companyId}, eventId: ${eventId}, invoiceNumber: ${invoiceNumber}`);
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("cards")
-    .select("card_number, card_status, invoice_number")
-    .eq("company_id", companyId)
+    .select("company_id, event_id, card_number, invoice_number, card_status")
+    .eq("company_id", Number(companyId))
     .eq("event_id", eventId)
-    .eq("invoice_number", invoiceNumber)
+    .eq("invoice_number", String(invoiceNumber).trim())
     .order("card_number", { ascending: true });
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("[Action getInvoiceCards] Error:", error);
+    return { error: error.message };
+  }
+  
+  console.log(`[Action getInvoiceCards] Found ${data?.length || 0} cards`);
   return { success: true, data };
 }
 
