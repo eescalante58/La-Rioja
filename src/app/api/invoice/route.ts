@@ -61,22 +61,35 @@ export async function GET(request: NextRequest) {
     .single();
 
   if (error) {
+    console.error(`Error fetching invoice ${invoiceNumber}:`, error);
     return NextResponse.json({ success: false, error: error.message });
   }
 
+  if (!invoice) {
+    return NextResponse.json({ success: false, error: "Factura no encontrada" });
+  }
+
   // Associated cards (indexed by idx_cards_invoice_number)
-  const { data: cards } = await supabase
+  // Use the invoice's own company_id and event_id for accuracy
+  const { data: cards, error: cardsError } = await supabase
     .from("cards")
     .select("card_number")
     .eq("invoice_number", invoiceNumber)
-    .eq("company_id", companyId)
-    .eq("event_id", company.def_dash_event_id);
+    .eq("company_id", invoice.company_id)
+    .eq("event_id", invoice.event_id);
+
+  if (cardsError) {
+    console.error(`Error fetching cards for invoice ${invoiceNumber}:`, cardsError);
+  }
+
+  const associated_cards = (cards || []).map((c) => c.card_number);
+  console.log(`Invoice ${invoiceNumber}: found ${associated_cards.length} cards`);
 
   return NextResponse.json({
     success: true,
     data: {
       ...invoice,
-      associated_cards: (cards || []).map((c) => c.card_number),
+      associated_cards,
     },
   });
 }

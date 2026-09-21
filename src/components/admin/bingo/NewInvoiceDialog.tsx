@@ -41,6 +41,7 @@ export default function NewInvoiceDialog({
   readOnly = false,
 }: NewInvoiceDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [loadingInitial, setLoadingInitial] = useState(false);
   const [cardsNumber, setCardsNumber] = useState<number>(1);
   const [cardPrice, setCardPrice] = useState<number>(0);
   const [phoneArea, setPhoneArea] = useState("503");
@@ -110,75 +111,80 @@ export default function NewInvoiceDialog({
 
   const loadInitialData = async () => {
     if (!currentEvent) return;
+    setLoadingInitial(true);
 
     /**
-     * Consulta (readOnly): los cartones ya llegan en invoice.associated_cards
-     * con los datos de la factura. Evita descargar el inventario completo del
-     * evento (~1200 filas paginadas) y la lista de vendedores, que aquí no
-     * se utilizan.
+     * Consulta (readOnly): si ya tenemos los cartones en el objeto invoice,
+     * los usamos directamente.
      */
-    if (readOnly && invoice) {
-      const nums = [...(invoice.associated_cards || [])].sort((a, b) => a - b);
+    if (readOnly && invoice && invoice.associated_cards && invoice.associated_cards.length > 0) {
+      const nums = [...invoice.associated_cards].sort((a, b) => a - b);
       setSelectedInvoiceCards(nums);
       setAvailableCardsForInvoice(
         nums.map((n) => ({
           card_number: n,
           invoice_number: invoice.invoice_number,
+          card_status: "Vendido"
         })),
       );
+      setLoadingInitial(false);
       return;
     }
 
-    const [sellersRes, cardsRes] = await Promise.all([
-      getSellersFromView(currentEvent.companyId, currentEvent.eventId),
-      getEventCards(currentEvent.companyId, currentEvent.eventId),
-    ]);
+    try {
+      const [sellersRes, cardsRes] = await Promise.all([
+        getSellersFromView(currentEvent.companyId, currentEvent.eventId),
+        getEventCards(currentEvent.companyId, currentEvent.eventId),
+      ]);
 
-    if (sellersRes.success && sellersRes.data) {
-      const uniqueSellers = Array.from(
-        new Set(sellersRes.data.map((s: any) => s.sold_by).filter(Boolean)),
-      ) as string[];
-      setSellers(uniqueSellers.sort());
-    }
+      if (sellersRes.success && sellersRes.data) {
+        const uniqueSellers = Array.from(
+          new Set(sellersRes.data.map((s: any) => s.sold_by).filter(Boolean)),
+        ) as string[];
+        setSellers(uniqueSellers.sort());
+      }
 
-    if (typeof cardsRes === "object" && "data" in cardsRes) {
-      const allCards = (cardsRes.data || []) as any[];
-      
-      let eligible = allCards.filter(
-        (c) =>
-          c.card_status === "Disponible" ||
-          c.card_status === "Asignado" ||
-          (invoice && c.invoice_number === invoice.invoice_number),
-      );
-
-      // Si es solo consulta, filtrar estrictamente solo los de la factura
-      if (readOnly && invoice) {
-        eligible = allCards.filter(
-          (c) => c.invoice_number === invoice.invoice_number,
+      if (typeof cardsRes === "object" && "data" in cardsRes) {
+        const allCards = (cardsRes.data || []) as any[];
+        
+        let eligible = allCards.filter(
+          (c) =>
+            c.card_status === "Disponible" ||
+            c.card_status === "Asignado" ||
+            (invoice && c.invoice_number === invoice.invoice_number),
         );
+
+        // Si es solo consulta, filtrar estrictamente solo los de la factura
+        if (readOnly && invoice) {
+          eligible = allCards.filter(
+            (c) => c.invoice_number === invoice.invoice_number,
+          );
+        }
+
+        // En edición: primero los cartones asignados a esta factura,
+        // luego los disponibles; ambos grupos ordenados por card_number
+        eligible.sort((a, b) => {
+          const aLinked =
+            invoice && a.invoice_number === invoice.invoice_number ? 0 : 1;
+          const bLinked =
+            invoice && b.invoice_number === invoice.invoice_number ? 0 : 1;
+          return aLinked - bLinked || a.card_number - b.card_number;
+        });
+
+        setAvailableCardsForInvoice(eligible);
+
+        // Sincronizar selección
+        if (invoice) {
+          const linked = allCards
+            .filter((c) => c.invoice_number === invoice.invoice_number)
+            .map((c) => c.card_number);
+          setSelectedInvoiceCards(linked);
+        } else {
+          setSelectedInvoiceCards([]);
+        }
       }
-
-      // En edición: primero los cartones asignados a esta factura,
-      // luego los disponibles; ambos grupos ordenados por card_number
-      eligible.sort((a, b) => {
-        const aLinked =
-          invoice && a.invoice_number === invoice.invoice_number ? 0 : 1;
-        const bLinked =
-          invoice && b.invoice_number === invoice.invoice_number ? 0 : 1;
-        return aLinked - bLinked || a.card_number - b.card_number;
-      });
-
-      setAvailableCardsForInvoice(eligible);
-
-      // Sincronizar selección
-      if (invoice) {
-        const linked = allCards
-          .filter((c) => c.invoice_number === invoice.invoice_number)
-          .map((c) => c.card_number);
-        setSelectedInvoiceCards(linked);
-      } else {
-        setSelectedInvoiceCards([]);
-      }
+    } finally {
+      setLoadingInitial(false);
     }
   };
 
@@ -472,42 +478,51 @@ export default function NewInvoiceDialog({
                 <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                   {readOnly ? "Cartones Vendidos" : "Asociar Cartones"} ({selectedCards.length} de {cardsNumber})
                 </Text>
-                <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {availableCards
-                      .filter(card => !readOnly || selectedCards.includes(card.card_number))
-                      .map((card) => (
-                      <div
-                        key={card.card_number}
-                        title={
-                          card.card_status === "Asignado"
-                            ? "Asignado a un alumno"
-                            : undefined
-                        }
-                        className={`flex items-center justify-center gap-1 p-2 rounded border cursor-pointer transition-colors text-xs font-bold ${
-                          selectedCards.includes(card.card_number)
-                            ? "bg-larioja-azul text-white border-larioja-azul"
-                            : card.card_status === "Asignado"
-                              ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 hover:border-larioja-azul"
-                              : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-larioja-azul"
-                        }`}
-                        onClick={() => {
-                          if (readOnly) return;
-                          if (selectedCards.includes(card.card_number)) {
-                            setSelectedInvoiceCards(selectedCards.filter((n) => n !== card.card_number));
-                          } else if (selectedCards.length < cardsNumber) {
-                            setSelectedInvoiceCards([...selectedCards, card.card_number].sort((a, b) => a - b));
+                <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-800/50 min-h-[100px] flex items-center justify-center relative">
+                  {loadingInitial ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-larioja-azul" />
+                      <Text className="text-[10px] text-gray-500">Cargando cartones...</Text>
+                    </div>
+                  ) : availableCards.filter(card => !readOnly || selectedCards.includes(card.card_number)).length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full self-start">
+                      {availableCards
+                        .filter(card => !readOnly || selectedCards.includes(card.card_number))
+                        .map((card) => (
+                        <div
+                          key={card.card_number}
+                          title={
+                            card.card_status === "Asignado"
+                              ? "Asignado a un alumno"
+                              : undefined
                           }
-                        }}
-                      >
-                        #{card.card_number}
-                        {card.card_status === "Asignado" &&
-                          !selectedCards.includes(card.card_number) && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-                          )}
-                      </div>
-                    ))}
-                  </div>
+                          className={`flex items-center justify-center gap-1 p-2 rounded border cursor-pointer transition-colors text-xs font-bold ${
+                            selectedCards.includes(card.card_number)
+                              ? "bg-larioja-azul text-white border-larioja-azul"
+                              : card.card_status === "Asignado"
+                                ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 hover:border-larioja-azul"
+                                : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-larioja-azul"
+                          }`}
+                          onClick={() => {
+                            if (readOnly) return;
+                            if (selectedCards.includes(card.card_number)) {
+                              setSelectedInvoiceCards(selectedCards.filter((n) => n !== card.card_number));
+                            } else if (selectedCards.length < cardsNumber) {
+                              setSelectedInvoiceCards([...selectedCards, card.card_number].sort((a, b) => a - b));
+                            }
+                          }}
+                        >
+                          #{card.card_number}
+                          {card.card_status === "Asignado" &&
+                            !selectedCards.includes(card.card_number) && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+                            )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <Text className="text-gray-400 italic text-xs">No hay cartones asociados.</Text>
+                  )}
                 </div>
                 <input type="hidden" name="associated_cards" value={JSON.stringify(selectedCards)} />
                 <input type="hidden" name="selected_cards" value={JSON.stringify(selectedCards)} />
