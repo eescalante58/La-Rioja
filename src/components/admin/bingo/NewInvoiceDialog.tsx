@@ -115,23 +115,29 @@ export default function NewInvoiceDialog({
     setLoadingInitial(true);
 
     if (readOnly && invoice) {
+      const targetInvoiceNumber = String(invoice.invoice_number).trim();
+      
+      // Try to get them from the invoice object first
       if (invoice.associated_cards && invoice.associated_cards.length > 0) {
-        const nums = [...invoice.associated_cards].sort((a, b) => a - b);
+        const nums = invoice.associated_cards.map((n: any) => Number(n)).sort((a: number, b: number) => a - b);
         setSelectedInvoiceCards(nums);
         setAvailableCardsForInvoice(
-          nums.map((n) => ({
+          nums.map((n: number) => ({
             card_number: n,
-            invoice_number: invoice.invoice_number,
+            invoice_number: targetInvoiceNumber,
             card_status: "Vendido"
           })),
         );
         setLoadingInitial(false);
         return;
       } else {
-        // Fallback: fetch cards by invoice number if they aren't in the object
-        const res = await getInvoiceCards(currentEvent.companyId, currentEvent.eventId, invoice.invoice_number);
+        // Fallback: fetch cards by invoice number from server
+        const res = await getInvoiceCards(currentEvent.companyId, currentEvent.eventId, targetInvoiceNumber);
         if (res.success && res.data) {
-          const cards = res.data as any[];
+          const cards = (res.data as any[]).map(c => ({
+            ...c,
+            card_number: Number(c.card_number)
+          }));
           const nums = cards.map(c => c.card_number).sort((a, b) => a - b);
           setSelectedInvoiceCards(nums);
           setAvailableCardsForInvoice(cards);
@@ -155,19 +161,24 @@ export default function NewInvoiceDialog({
       }
 
       if (typeof cardsRes === "object" && "data" in cardsRes) {
-        const allCards = (cardsRes.data || []) as any[];
+        const allCards = ((cardsRes.data || []) as any[]).map(c => ({
+          ...c,
+          card_number: Number(c.card_number)
+        }));
         
+        const targetInvNum = invoice ? String(invoice.invoice_number).trim() : null;
+
         let eligible = allCards.filter(
           (c) =>
             c.card_status === "Disponible" ||
             c.card_status === "Asignado" ||
-            (invoice && String(c.invoice_number) === String(invoice.invoice_number)),
+            (targetInvNum && String(c.invoice_number).trim() === targetInvNum),
         );
 
         // Si es solo consulta, filtrar estrictamente solo los de la factura
-        if (readOnly && invoice) {
+        if (readOnly && targetInvNum) {
           eligible = allCards.filter(
-            (c) => String(c.invoice_number) === String(invoice.invoice_number),
+            (c) => String(c.invoice_number).trim() === targetInvNum,
           );
         }
 
@@ -175,18 +186,18 @@ export default function NewInvoiceDialog({
         // luego los disponibles; ambos grupos ordenados por card_number
         eligible.sort((a, b) => {
           const aLinked =
-            invoice && String(a.invoice_number) === String(invoice.invoice_number) ? 0 : 1;
+            targetInvNum && String(a.invoice_number).trim() === targetInvNum ? 0 : 1;
           const bLinked =
-            invoice && String(b.invoice_number) === String(invoice.invoice_number) ? 0 : 1;
+            targetInvNum && String(b.invoice_number).trim() === targetInvNum ? 0 : 1;
           return aLinked - bLinked || a.card_number - b.card_number;
         });
 
         setAvailableCardsForInvoice(eligible);
 
         // Sincronizar selección
-        if (invoice) {
+        if (targetInvNum) {
           const linked = allCards
-            .filter((c) => String(c.invoice_number) === String(invoice.invoice_number))
+            .filter((c) => String(c.invoice_number).trim() === targetInvNum)
             .map((c) => c.card_number);
           setSelectedInvoiceCards(linked);
         } else {
@@ -494,10 +505,10 @@ export default function NewInvoiceDialog({
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-larioja-azul" />
                       <Text className="text-[10px] text-gray-500">Cargando cartones...</Text>
                     </div>
-                  ) : availableCards.filter(card => !readOnly || selectedCards.includes(card.card_number)).length > 0 ? (
+                  ) : availableCards.filter(card => !readOnly || selectedCards.map(Number).includes(Number(card.card_number))).length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full self-start">
                       {availableCards
-                        .filter(card => !readOnly || selectedCards.includes(card.card_number))
+                        .filter(card => !readOnly || selectedCards.map(Number).includes(Number(card.card_number)))
                         .map((card) => (
                         <div
                           key={card.card_number}
@@ -507,7 +518,7 @@ export default function NewInvoiceDialog({
                               : undefined
                           }
                           className={`flex items-center justify-center gap-1 p-2 rounded border cursor-pointer transition-colors text-xs font-bold ${
-                            selectedCards.includes(card.card_number)
+                            selectedCards.map(Number).includes(Number(card.card_number))
                               ? "bg-larioja-azul text-white border-larioja-azul"
                               : card.card_status === "Asignado"
                                 ? "bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700 hover:border-larioja-azul"
@@ -515,16 +526,17 @@ export default function NewInvoiceDialog({
                           }`}
                           onClick={() => {
                             if (readOnly) return;
-                            if (selectedCards.includes(card.card_number)) {
-                              setSelectedInvoiceCards(selectedCards.filter((n) => n !== card.card_number));
+                            const num = Number(card.card_number);
+                            if (selectedCards.map(Number).includes(num)) {
+                              setSelectedInvoiceCards(selectedCards.filter((n) => Number(n) !== num));
                             } else if (selectedCards.length < cardsNumber) {
-                              setSelectedInvoiceCards([...selectedCards, card.card_number].sort((a, b) => a - b));
+                              setSelectedInvoiceCards([...selectedCards, num].sort((a, b) => Number(a) - Number(b)));
                             }
                           }}
                         >
                           #{card.card_number}
                           {card.card_status === "Asignado" &&
-                            !selectedCards.includes(card.card_number) && (
+                            !selectedCards.map(Number).includes(Number(card.card_number)) && (
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
                             )}
                         </div>
