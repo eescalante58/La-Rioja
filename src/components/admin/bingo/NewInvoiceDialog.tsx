@@ -16,6 +16,7 @@ import {
   saveInvoice,
   updateInvoice,
   getEventCards,
+  getInvoiceCards,
   getSellersFromView,
 } from "@/app/admin/bingo/actions";
 
@@ -113,22 +114,31 @@ export default function NewInvoiceDialog({
     if (!currentEvent) return;
     setLoadingInitial(true);
 
-    /**
-     * Consulta (readOnly): si ya tenemos los cartones en el objeto invoice,
-     * los usamos directamente.
-     */
-    if (readOnly && invoice && invoice.associated_cards && invoice.associated_cards.length > 0) {
-      const nums = [...invoice.associated_cards].sort((a, b) => a - b);
-      setSelectedInvoiceCards(nums);
-      setAvailableCardsForInvoice(
-        nums.map((n) => ({
-          card_number: n,
-          invoice_number: invoice.invoice_number,
-          card_status: "Vendido"
-        })),
-      );
-      setLoadingInitial(false);
-      return;
+    if (readOnly && invoice) {
+      if (invoice.associated_cards && invoice.associated_cards.length > 0) {
+        const nums = [...invoice.associated_cards].sort((a, b) => a - b);
+        setSelectedInvoiceCards(nums);
+        setAvailableCardsForInvoice(
+          nums.map((n) => ({
+            card_number: n,
+            invoice_number: invoice.invoice_number,
+            card_status: "Vendido"
+          })),
+        );
+        setLoadingInitial(false);
+        return;
+      } else {
+        // Fallback: fetch cards by invoice number if they aren't in the object
+        const res = await getInvoiceCards(currentEvent.companyId, currentEvent.eventId, invoice.invoice_number);
+        if (res.success && res.data) {
+          const cards = res.data as any[];
+          const nums = cards.map(c => c.card_number).sort((a, b) => a - b);
+          setSelectedInvoiceCards(nums);
+          setAvailableCardsForInvoice(cards);
+          setLoadingInitial(false);
+          return;
+        }
+      }
     }
 
     try {
@@ -151,13 +161,13 @@ export default function NewInvoiceDialog({
           (c) =>
             c.card_status === "Disponible" ||
             c.card_status === "Asignado" ||
-            (invoice && c.invoice_number === invoice.invoice_number),
+            (invoice && String(c.invoice_number) === String(invoice.invoice_number)),
         );
 
         // Si es solo consulta, filtrar estrictamente solo los de la factura
         if (readOnly && invoice) {
           eligible = allCards.filter(
-            (c) => c.invoice_number === invoice.invoice_number,
+            (c) => String(c.invoice_number) === String(invoice.invoice_number),
           );
         }
 
@@ -165,9 +175,9 @@ export default function NewInvoiceDialog({
         // luego los disponibles; ambos grupos ordenados por card_number
         eligible.sort((a, b) => {
           const aLinked =
-            invoice && a.invoice_number === invoice.invoice_number ? 0 : 1;
+            invoice && String(a.invoice_number) === String(invoice.invoice_number) ? 0 : 1;
           const bLinked =
-            invoice && b.invoice_number === invoice.invoice_number ? 0 : 1;
+            invoice && String(b.invoice_number) === String(invoice.invoice_number) ? 0 : 1;
           return aLinked - bLinked || a.card_number - b.card_number;
         });
 
@@ -176,7 +186,7 @@ export default function NewInvoiceDialog({
         // Sincronizar selección
         if (invoice) {
           const linked = allCards
-            .filter((c) => c.invoice_number === invoice.invoice_number)
+            .filter((c) => String(c.invoice_number) === String(invoice.invoice_number))
             .map((c) => c.card_number);
           setSelectedInvoiceCards(linked);
         } else {
