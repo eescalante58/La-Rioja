@@ -11,7 +11,11 @@ import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
  * `position: fixed` sea relativo al viewport. Sin el portal, un ancestro
  * con `transform` u `overflow` (p. ej. la cinta marquee de la cuenta
  * regresiva) crearía un containing block que recorta el botón en el
- * borde derecho de la pantalla.
+ * borde de la pantalla.
+ *
+ * Se ubica en la esquina inferior IZQUIERDA porque `FloatingContact`
+ * (botón del formulario de contacto, definido en el layout raíz) ya
+ * ocupa la esquina inferior derecha en todas las páginas.
  */
 export default function WhatsAppFab({ href }: { href: string }) {
   const [mounted, setMounted] = useState(false);
@@ -29,7 +33,7 @@ export default function WhatsAppFab({ href }: { href: string }) {
       rel="noopener noreferrer"
       aria-label="Solicitar información vía WhatsApp"
       title="Solicitar información vía WhatsApp"
-      className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-larioja-verde p-4 text-white shadow-2xl transition-all hover:scale-110 hover:bg-larioja-verde/90 md:px-5"
+      className="fixed bottom-6 left-6 z-40 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-larioja-verde p-4 text-white shadow-2xl transition-all hover:scale-110 hover:bg-larioja-verde/90 md:px-5"
     >
       <WhatsAppIcon className="h-7 w-7 shrink-0" />
       <span className="hidden font-montserrat text-sm font-bold md:inline">
