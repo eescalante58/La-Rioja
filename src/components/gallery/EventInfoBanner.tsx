@@ -141,8 +141,8 @@ export default function EventInfoBanner({
         </div>
       )}
 
-      <div className="mx-auto mt-4 max-w-[1600px] px-6 pb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-        {videoLink && !isDirectVideo && (
+      {videoLink && !isDirectVideo && (
+        <div className="mx-auto mt-4 max-w-[1600px] px-6 pb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
             href={videoLink}
             target="_blank"
@@ -152,20 +152,25 @@ export default function EventInfoBanner({
             <Play className="h-5 w-5 shrink-0 fill-current" />
             Ver video promocional
           </a>
-        )}
+        </div>
+      )}
 
-        {whatsappLink && (
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 rounded-full bg-larioja-verde px-8 py-4 font-montserrat text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:bg-larioja-verde/90 md:text-base w-full sm:w-auto justify-center"
-          >
-            <WhatsAppIcon className="h-6 w-6 shrink-0" />
-            Solicitar información vía WhatsApp
-          </a>
-        )}
-      </div>
+      {/* Botón flotante de WhatsApp: visible en toda la página al hacer scroll */}
+      {whatsappLink && (
+        <a
+          href={whatsappLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Solicitar información vía WhatsApp"
+          title="Solicitar información vía WhatsApp"
+          className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-larioja-verde p-4 text-white shadow-2xl transition-all hover:scale-110 hover:bg-larioja-verde/90 md:px-5"
+        >
+          <WhatsAppIcon className="h-7 w-7 shrink-0" />
+          <span className="hidden font-montserrat text-sm font-bold md:inline">
+            Solicitar información
+          </span>
+        </a>
+      )}
     </section>
   );
 }
