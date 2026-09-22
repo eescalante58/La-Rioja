@@ -229,6 +229,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                     <TableHeaderCell>N° Factura</TableHeaderCell>
                     <TableHeaderCell>Fecha</TableHeaderCell>
                     <TableHeaderCell>Cliente</TableHeaderCell>
+                    <TableHeaderCell>WhatsApp</TableHeaderCell>
                     <TableHeaderCell>Gestor</TableHeaderCell>
                     <TableHeaderCell>Pago</TableHeaderCell>
                     <TableHeaderCell>Total</TableHeaderCell>
@@ -258,6 +259,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                         {new Date(`${inv.invoice_date}T12:00:00`).toLocaleDateString("es-SV")}
                       </TableCell>
                       <TableCell>{inv.customer_name}</TableCell>
+                      <TableCell>{inv.whatsapp_number || "—"}</TableCell>
                       <TableCell className="max-w-[180px] truncate">
                         {inv.manager_name || "—"}
                       </TableCell>
