@@ -56,6 +56,7 @@ export default function WheelItemsDialog({
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<EditableItem[]>([]);
   const [soldCards, setSoldCards] = useState<number[] | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
 
   const isCardsMode = wheel?.mode === "Cartones";
 
@@ -114,7 +115,8 @@ export default function WheelItemsDialog({
 
       if (result?.success) {
         onSuccess();
-        onClose();
+        setJustSaved(true);
+        setTimeout(() => setJustSaved(false), 3000);
       } else if (!redirectIfSessionExpired(result)) {
         alert("Error: " + (result?.error || "No se pudieron guardar los segmentos."));
       }
@@ -252,9 +254,14 @@ export default function WheelItemsDialog({
             </>
           )}
 
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex items-center justify-end gap-3 mt-6">
+            {justSaved && (
+              <span className="text-sm font-medium text-emerald-600">
+                Segmentos guardados
+              </span>
+            )}
             <Button variant="secondary" onClick={onClose} disabled={loading}>
-              {isCardsMode ? "Cerrar" : "Cancelar"}
+              {isCardsMode ? "Cerrar" : "Finalizar"}
             </Button>
             {!isCardsMode && (
               <Button
