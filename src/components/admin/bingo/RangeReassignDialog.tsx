@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Dialog, DialogPanel, Title, Text, TextInput, Button, Select, SelectItem } from "@tremor/react";
 import { RefreshCw } from "lucide-react";
 import { updateCardRangeType } from "@/app/admin/bingo/actions";
+import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface RangeReassignDialogProps {
   isOpen: boolean;
@@ -39,16 +40,19 @@ export default function RangeReassignDialog({
         officialName,
       );
 
-      if (result.success) {
+      if (result?.success) {
         alert(`Se actualizaron ${result.updated_count} cartones a ${rangeNewType} exitosamente.`);
         setOfficialName("");
         onSuccess();
         onClose();
-      } else {
-        alert("Error: " + result.error);
+      } else if (!redirectIfSessionExpired(result)) {
+        alert("Error: " + (result?.error || "No se pudo actualizar el rango."));
       }
     } catch (error) {
       console.error("Error reassigning range:", error);
+      alert(
+        "Error inesperado al guardar. Si el problema persiste, vuelve a iniciar sesión.",
+      );
     } finally {
       setLoading(false);
     }
