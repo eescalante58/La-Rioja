@@ -222,18 +222,20 @@ export default function WheelTab({ events }: WheelTabProps) {
                       setIsItemsOpen(true);
                     }}
                   >
-                    {wheel.mode === "Cartones" ? "Ver Segmentos" : "Segmentos"}
+                    {wheel.mode === "Cartones"
+                      ? "Ver Segmentos"
+                      : "Editar Segmentos"}
                   </Button>
                   <Button
                     size="xs"
                     variant="secondary"
-                    tooltip="Renombrar ruleta"
+                    tooltip="Editar nombre y tipo de la ruleta"
                     onClick={() => {
                       setEditingWheel(wheel);
                       setIsConfigOpen(true);
                     }}
                   >
-                    Editar
+                    Datos
                   </Button>
                   <Button
                     size="xs"
