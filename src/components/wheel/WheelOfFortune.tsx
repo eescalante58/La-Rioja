@@ -121,11 +121,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
   const fontSize = useMemo(() => {
     const n = segments.length;
-    if (n <= 8) return 26;
-    if (n <= 16) return 20;
-    if (n <= 30) return 15;
-    if (n <= 60) return 11;
-    return 8;
+    if (n <= 8) return 22;
+    if (n <= 16) return 16;
+    if (n <= 30) return 13;
+    if (n <= 60) return 10;
+    return 7;
   }, [segments.length]);
 
   // Selector cuando hay varias ruletas publicadas
@@ -210,12 +210,20 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
             >
               {segments.map((seg, i) => {
                 const mid = ((i + 0.5) * 360) / segments.length;
-                const tp = polar(mid, R * 0.62);
+                const textRadius = R * 0.65;
+                const tp = polar(mid, textRadius);
                 const fill = seg.color || PALETTE[i % PALETTE.length];
                 const text =
-                  seg.label.length > 22
-                    ? `${seg.label.slice(0, 21)}…`
+                  seg.label.length > 25
+                    ? `${seg.label.slice(0, 24)}…`
                     : seg.label;
+                
+                // Rotación del texto: si está en la mitad inferior (90 a 270), 
+                // lo giramos 180 grados para que no quede de cabeza al leerlo desde afuera.
+                // Sin embargo, para una ruleta radial clásica, a veces se prefiere que todos
+                // apunten al centro. Ajusto según lo que se ve más natural.
+                const textRotation = mid > 90 && mid < 270 ? mid + 180 : mid;
+
                 return (
                   <g key={i}>
                     <path
@@ -229,11 +237,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                       y={tp.y}
                       fill="#ffffff"
                       fontSize={fontSize}
-                      fontWeight={800}
+                      fontWeight={700}
                       fontFamily="Montserrat, sans-serif"
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      transform={`rotate(${mid} ${tp.x} ${tp.y})`}
+                      transform={`rotate(${textRotation} ${tp.x} ${tp.y})`}
                     >
                       {text}
                     </text>

@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 /**
  * Mobile navigation component with hamburger menu.
  */
-export function Navbar({ solid = false, brandHeader = false }: { solid?: boolean; brandHeader?: boolean }) {
+export function Navbar({ solid = false, brandHeader = false, simple = false }: { solid?: boolean; brandHeader?: boolean; simple?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState<string>("#");
@@ -123,121 +123,125 @@ export function Navbar({ solid = false, brandHeader = false }: { solid?: boolean
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-8 font-montserrat">
-            <Link
-              href="/about"
-              className={`font-bold text-sm transition-all ${
-                navSolid
-                  ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                  : "text-white hover:text-larioja-amarillo"
-              }`}
-            >
-              Nosotros
-            </Link>
-            <Link
-              href="/contact"
-              className={`font-bold text-sm transition-all ${
-                navSolid
-                  ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                  : "text-white hover:text-larioja-amarillo"
-              }`}
-            >
-              Apóyanos
-            </Link>
-            <Link
-              href="/programs"
-              className={`font-bold text-sm transition-all ${
-                navSolid
-                  ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                  : "text-white hover:text-larioja-amarillo"
-              }`}
-            >
-              Programas
-            </Link>
-            <Link
-              href="/faq"
-              className={`font-bold text-sm transition-all ${
-                navSolid
-                  ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                  : "text-white hover:text-larioja-amarillo"
-              }`}
-            >
-              Preguntas
-            </Link>
-            <Link
-              href="/bingo"
-              className={`font-bold text-sm transition-all ${
-                navSolid
-                  ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                  : "text-white hover:text-larioja-verde"
-              }`}
-            >
-              Bingo
-            </Link>
-            <Link
-              href="/admin"
-              className={`font-bold py-2 px-6 rounded-full text-xs transition-all ${
-                navSolid
-                  ? "bg-larioja-azul text-white hover:bg-larioja-azul/90"
-                  : "text-white hover:text-larioja-amarillo"
-              }`}
-            >
-              Panel de Control
-            </Link>
-
-            <ContactTrigger>
-              {(openModal) => (
-                <button
-                  onClick={openModal}
-                  className={`flex items-center gap-2 font-bold py-2 px-6 rounded-full text-xs transition-all ${
+          {!simple && (
+            <>
+              {/* Desktop Navigation */}
+              <div className="hidden lg:flex items-center gap-8 font-montserrat">
+                <Link
+                  href="/about"
+                  className={`font-bold text-sm transition-all ${
                     navSolid
-                      ? "bg-larioja-verde text-white hover:bg-larioja-verde/90"
-                      : "bg-white text-larioja-azul hover:bg-larioja-amarillo hover:text-larioja-azul"
+                      ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
+                      : "text-white hover:text-larioja-amarillo"
                   }`}
                 >
-                  <Mail size={14} />
-                  Contacto
+                  Nosotros
+                </Link>
+                <Link
+                  href="/contact"
+                  className={`font-bold text-sm transition-all ${
+                    navSolid
+                      ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
+                      : "text-white hover:text-larioja-amarillo"
+                  }`}
+                >
+                  Apóyanos
+                </Link>
+                <Link
+                  href="/programs"
+                  className={`font-bold text-sm transition-all ${
+                    navSolid
+                      ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
+                      : "text-white hover:text-larioja-amarillo"
+                  }`}
+                >
+                  Programas
+                </Link>
+                <Link
+                  href="/faq"
+                  className={`font-bold text-sm transition-all ${
+                    navSolid
+                      ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
+                      : "text-white hover:text-larioja-amarillo"
+                  }`}
+                >
+                  Preguntas
+                </Link>
+                <Link
+                  href="/bingo"
+                  className={`font-bold text-sm transition-all ${
+                    navSolid
+                      ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
+                      : "text-white hover:text-larioja-verde"
+                  }`}
+                >
+                  Bingo
+                </Link>
+                <Link
+                  href="/admin"
+                  className={`font-bold py-2 px-6 rounded-full text-xs transition-all ${
+                    navSolid
+                      ? "bg-larioja-azul text-white hover:bg-larioja-azul/90"
+                      : "text-white hover:text-larioja-amarillo"
+                  }`}
+                >
+                  Panel de Control
+                </Link>
+
+                <ContactTrigger>
+                  {(openModal) => (
+                    <button
+                      onClick={openModal}
+                      className={`flex items-center gap-2 font-bold py-2 px-6 rounded-full text-xs transition-all ${
+                        navSolid
+                          ? "bg-larioja-verde text-white hover:bg-larioja-verde/90"
+                          : "bg-white text-larioja-azul hover:bg-larioja-amarillo hover:text-larioja-azul"
+                      }`}
+                    >
+                      <Mail size={14} />
+                      Contacto
+                    </button>
+                  )}
+                </ContactTrigger>
+
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex items-center justify-center w-9 h-9 rounded-full transition-all ${
+                    navSolid
+                      ? "bg-larioja-verde text-white hover:scale-110"
+                      : "bg-white/10 text-white hover:bg-larioja-verde hover:scale-110 backdrop-blur-md"
+                  }`}
+                  title="WhatsApp"
+                >
+                  <WhatsAppIcon className="w-5 h-5" />
+                </a>
+
+                <div className="">
+                  <ThemeToggle />
+                </div>
+              </div>
+
+              {/* Mobile & Tablet Toggle */}
+              <div className="lg:hidden flex items-center gap-3 relative z-[120]">
+                <div className="">
+                  <ThemeToggle />
+                </div>
+                <button
+                  onClick={toggleMenu}
+                  className={`p-2 rounded-lg transition-all border ${
+                    navSolid
+                      ? "bg-larioja-azul text-white border-larioja-azul shadow-md"
+                      : "bg-white/10 backdrop-blur-md border-white/30 text-white"
+                  }`}
+                  aria-label="Menu"
+                >
+                  {isOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
-              )}
-            </ContactTrigger>
-
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center justify-center w-9 h-9 rounded-full transition-all ${
-                navSolid
-                  ? "bg-larioja-verde text-white hover:scale-110"
-                  : "bg-white/10 text-white hover:bg-larioja-verde hover:scale-110 backdrop-blur-md"
-              }`}
-              title="WhatsApp"
-            >
-              <WhatsAppIcon className="w-5 h-5" />
-            </a>
-
-            <div className="">
-              <ThemeToggle />
-            </div>
-          </div>
-
-          {/* Mobile & Tablet Toggle */}
-          <div className="lg:hidden flex items-center gap-3 relative z-[120]">
-            <div className="">
-              <ThemeToggle />
-            </div>
-            <button
-              onClick={toggleMenu}
-              className={`p-2 rounded-lg transition-all border ${
-                navSolid
-                  ? "bg-larioja-azul text-white border-larioja-azul shadow-md"
-                  : "bg-white/10 backdrop-blur-md border-white/30 text-white"
-              }`}
-              aria-label="Menu"
-            >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+              </div>
+            </>
+          )}
         </div>
         </div>
       </nav>

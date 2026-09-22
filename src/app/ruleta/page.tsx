@@ -33,7 +33,7 @@ export default async function RuletaPage({
 
   return (
     <main className="min-h-screen bg-larioja-azul bg-gradient-to-b from-larioja-azul via-[#02184a] to-[#010c28]">
-      <Navbar brandHeader />
+      <Navbar brandHeader simple />
 
       <section className="mx-auto flex min-h-[80vh] max-w-[1400px] flex-col items-center justify-center px-6 pt-40 pb-16 md:pt-52">
         {wheels.length === 0 ? (
