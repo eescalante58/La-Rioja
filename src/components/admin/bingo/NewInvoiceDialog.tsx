@@ -18,6 +18,7 @@ import {
   getEventCards,
   getSellersFromView,
 } from "@/app/admin/bingo/actions";
+import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface NewInvoiceDialogProps {
   isOpen: boolean;
@@ -245,12 +246,12 @@ export default function NewInvoiceDialog({
     try {
       const result = invoice ? await updateInvoice(formData) : await saveInvoice(formData);
 
-      if (result.success) {
+      if (result?.success) {
         alert(invoice ? "Factura actualizada exitosamente" : "Factura guardada exitosamente");
         onSuccess();
         onClose();
-      } else {
-        alert("Error: " + result.error);
+      } else if (!redirectIfSessionExpired(result)) {
+        alert("Error: " + (result?.error || "No se pudo guardar la factura."));
       }
     } catch (error: any) {
       console.error("Error saving invoice:", error);
