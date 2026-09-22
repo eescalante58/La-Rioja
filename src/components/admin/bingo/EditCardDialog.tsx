@@ -12,6 +12,7 @@ import {
   SelectItem,
 } from "@tremor/react";
 import { updateSingleCard } from "@/app/admin/bingo/actions";
+import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface EditCardDialogProps {
   isOpen: boolean;
@@ -59,15 +60,18 @@ export default function EditCardDialog({
         formData,
       );
 
-      if (result.success) {
+      if (result?.success) {
         alert("Cartón actualizado exitosamente.");
         onSuccess();
         onClose();
-      } else {
-        alert("Error: " + result.error);
+      } else if (!redirectIfSessionExpired(result)) {
+        alert("Error: " + (result?.error || "No se pudo actualizar el cartón."));
       }
     } catch (error) {
       console.error("Error updating single card:", error);
+      alert(
+        "Error inesperado al guardar. Si el problema persiste, vuelve a iniciar sesión.",
+      );
     } finally {
       setLoading(false);
     }

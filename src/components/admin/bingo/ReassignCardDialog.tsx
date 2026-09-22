@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Dialog, DialogPanel, Title, Text, TextInput, Button } from "@tremor/react";
 import { RefreshCw } from "lucide-react";
 import { updateCardType } from "@/app/admin/bingo/actions";
+import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface ReassignCardDialogProps {
   isOpen: boolean;
@@ -39,16 +40,19 @@ export default function ReassignCardDialog({
         officialName,
       );
 
-      if (result.success) {
+      if (result?.success) {
         alert(`Tipo de cartón cambiado a ${newType} exitosamente.`);
         setOfficialName("");
         onSuccess();
         onClose();
-      } else {
-        alert("Error: " + result.error);
+      } else if (!redirectIfSessionExpired(result)) {
+        alert("Error: " + (result?.error || "No se pudo cambiar el tipo."));
       }
     } catch (error) {
       console.error("Error reassigning card type:", error);
+      alert(
+        "Error inesperado al guardar. Si el problema persiste, vuelve a iniciar sesión.",
+      );
     } finally {
       setLoading(false);
     }
