@@ -169,7 +169,24 @@ BEFORE UPDATE ON public.wheel_items
 FOR EACH ROW EXECUTE FUNCTION set_timestamps();
 
 -- --------------------------------------------------------------------------
--- 6. Comentarios
+-- 6. Privilegios (las tablas creadas por SQL Editor no reciben GRANT automático)
+-- --------------------------------------------------------------------------
+-- Lectura pública de la ruleta publicada (rol anon, página /ruleta)
+GRANT SELECT ON public.wheel_configs TO anon;
+GRANT SELECT ON public.wheel_items  TO anon;
+
+-- Operación completa para usuarios autenticados (RLS decide fila a fila)
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.wheel_configs TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.wheel_items   TO authenticated;
+GRANT SELECT, INSERT                 ON public.wheel_spins   TO authenticated;
+
+-- Secuencias de las columnas identity (necesario para INSERT)
+GRANT USAGE ON SEQUENCE public.wheel_configs_id_seq TO authenticated;
+GRANT USAGE ON SEQUENCE public.wheel_items_id_seq   TO authenticated;
+GRANT USAGE ON SEQUENCE public.wheel_spins_id_seq   TO authenticated;
+
+-- --------------------------------------------------------------------------
+-- 7. Comentarios
 -- --------------------------------------------------------------------------
 COMMENT ON TABLE public.wheel_configs IS 'Ruletas de sorteo por evento: cabecera (tipo, nombre, estado de publicación).';
 COMMENT ON TABLE public.wheel_items  IS 'Segmentos de cada ruleta. event_id/mode/wheel_name desnormalizados para filtros directos y RLS.';
