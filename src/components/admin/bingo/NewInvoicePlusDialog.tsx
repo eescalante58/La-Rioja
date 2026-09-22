@@ -17,6 +17,7 @@ import {
   getSellersFromView,
   checkCardsRange,
 } from "@/app/admin/bingo/actions";
+import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface NewInvoicePlusDialogProps {
   isOpen: boolean;
@@ -114,7 +115,7 @@ export default function NewInvoicePlusDialog({
     setCheckingRange(true);
     try {
       const result = await checkCardsRange(currentEvent.companyId, currentEvent.eventId, start, end);
-      if (result.success) {
+      if (result?.success) {
         const newNums = (result.data || []).map((c: any) => c.card_number);
         // Combine with existing selection
         const combined = Array.from(new Set([...selectedCards, ...newNums])).sort((a, b) => a - b);
@@ -125,8 +126,8 @@ export default function NewInvoicePlusDialog({
         } else {
           setSelectedInvoiceCards(combined);
         }
-      } else {
-        alert("Error: " + result.error);
+      } else if (!redirectIfSessionExpired(result)) {
+        alert("Error: " + (result?.error || "No se pudo verificar el rango."));
       }
     } catch (error: any) {
       alert("Error al verificar rango: " + error.message);
@@ -151,12 +152,12 @@ export default function NewInvoicePlusDialog({
 
     try {
       const result = await saveInvoice(formData);
-      if (result.success) {
+      if (result?.success) {
         alert("Factura Plus guardada exitosamente");
         onSuccess();
         onClose();
-      } else {
-        alert("Error: " + result.error);
+      } else if (!redirectIfSessionExpired(result)) {
+        alert("Error: " + (result?.error || "No se pudo guardar la factura."));
       }
     } catch (error: any) {
       console.error("Error saving invoice:", error);

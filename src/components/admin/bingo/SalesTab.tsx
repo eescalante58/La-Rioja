@@ -19,6 +19,7 @@ import {
 } from "@tremor/react";
 import { Plus, TrendingUp, Eye, Edit, Trash2, PlusSquare, Search } from "lucide-react";
 import { getInvoices, deleteInvoice } from "@/app/admin/bingo/actions";
+import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import InvoiceDetailsDialog from "./InvoiceDetailsDialog";
 import NewInvoiceDialog from "./NewInvoiceDialog";
 import NewInvoicePlusDialog from "./NewInvoicePlusDialog";
@@ -70,13 +71,13 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
     )
       return;
     const result = await deleteInvoice(id);
-    if (result.success) {
+    if (result?.success) {
       alert("Factura eliminada");
       setIsDetailsOpen(false);
       if (currentEventInfo)
         loadInvoices(currentEventInfo.companyId, currentEventInfo.eventId);
-    } else {
-      alert("Error al eliminar: " + (result.error || "desconocido"));
+    } else if (!redirectIfSessionExpired(result)) {
+      alert("Error al eliminar: " + (result?.error || "desconocido"));
     }
   };
 
