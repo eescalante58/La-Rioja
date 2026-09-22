@@ -10,7 +10,7 @@ import {
   Title,
   Text,
 } from "@tremor/react";
-import { Calendar, Ticket, TrendingUp, Users } from "lucide-react";
+import { Calendar, Ticket, TrendingUp, Users, Dices } from "lucide-react";
 import { deleteEvent } from "./actions";
 import dynamic from "next/dynamic";
 
@@ -41,6 +41,11 @@ const PromotionalTab = dynamic(
     ),
   },
 );
+const WheelTab = dynamic(() => import("@/components/admin/bingo/WheelTab"), {
+  loading: () => (
+    <div className="h-96 w-full bg-slate-900/5 animate-pulse rounded-2xl" />
+  ),
+});
 const EventDialog = dynamic(
   () => import("@/components/admin/bingo/EventDialog"),
 );
@@ -153,6 +158,7 @@ export default function BingoManagerClient({
           <Tab icon={Ticket}>Inventario de Cartones</Tab>
           <Tab icon={TrendingUp}>Ventas y Facturación</Tab>
           <Tab icon={Users}>Mensajes Promocionales</Tab>
+          <Tab icon={Dices}>Ruleta</Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
@@ -187,6 +193,10 @@ export default function BingoManagerClient({
             <PromotionalTab
               companyId={selectedCompanyId ?? companies[0]?.company_id}
             />
+          </TabPanel>
+
+          <TabPanel>
+            <WheelTab events={events} />
           </TabPanel>
         </TabPanels>
       </TabGroup>

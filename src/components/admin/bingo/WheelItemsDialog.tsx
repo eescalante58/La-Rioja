@@ -1,0 +1,273 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogPanel,
+  Title,
+  Text,
+  TextInput,
+  Button,
+  Badge,
+  Table,
+  TableHead,
+  TableRow,
+  TableHeaderCell,
+  TableBody,
+  TableCell,
+} from "@tremor/react";
+import { Plus, Trash2, Ticket } from "lucide-react";
+import {
+  saveWheelItems,
+  getSoldCards,
+} from "@/app/admin/bingo/wheel-actions";
+import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+
+interface WheelItemsDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  wheel: any;
+  companyId?: number;
+  eventId?: string;
+  onSuccess: () => void;
+}
+
+interface EditableItem {
+  label: string;
+  color: string;
+  quantity: number;
+  is_active: boolean;
+}
+
+/**
+ * Editor de segmentos de una ruleta.
+ * - Premios/Participantes: tabla editable (texto, color, stock, activo).
+ * - Cartones: vista de solo lectura; los segmentos se generan al vuelo
+ *   desde los cartones vendidos del evento.
+ */
+export default function WheelItemsDialog({
+  isOpen,
+  onClose,
+  wheel,
+  companyId,
+  eventId,
+  onSuccess,
+}: WheelItemsDialogProps) {
+  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState<EditableItem[]>([]);
+  const [soldCards, setSoldCards] = useState<number[] | null>(null);
+
+  const isCardsMode = wheel?.mode === "Cartones";
+
+  useEffect(() => {
+    if (!isOpen || !wheel || !companyId || !eventId) return;
+
+    if (isCardsMode) {
+      setSoldCards(null);
+      getSoldCards(companyId, eventId).then((res) => {
+        if (res?.data) setSoldCards(res.data);
+        else setSoldCards([]);
+      });
+      return;
+    }
+
+    setItems(
+      (wheel.items || []).map((i: any) => ({
+        label: i.label,
+        color: i.color || "#012060",
+        quantity: i.quantity ?? 1,
+        is_active: i.is_active ?? true,
+      })),
+    );
+  }, [isOpen, wheel, isCardsMode, companyId, eventId]);
+
+  const updateItem = (idx: number, patch: Partial<EditableItem>) => {
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)),
+    );
+  };
+
+  const handleSave = async () => {
+    if (!companyId || !eventId || !wheel) return;
+    if (items.length === 0) {
+      alert("La ruleta debe tener al menos un segmento.");
+      return;
+    }
+    if (items.some((i) => !i.label.trim())) {
+      alert("Todos los segmentos deben tener texto.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await saveWheelItems(
+        companyId,
+        wheel.id,
+        items.map((it, idx) => ({
+          label: it.label.trim(),
+          color: it.color || null,
+          quantity: it.quantity,
+          position: idx + 1,
+          is_active: it.is_active,
+        })),
+      );
+
+      if (result?.success) {
+        onSuccess();
+        onClose();
+      } else if (!redirectIfSessionExpired(result)) {
+        alert("Error: " + (result?.error || "No se pudieron guardar los segmentos."));
+      }
+    } catch (error) {
+      console.error("Error saving wheel items:", error);
+      alert(
+        "Error inesperado al guardar. Si el problema persiste, vuelve a iniciar sesión.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!companyId || !eventId) return null;
+
+  return (
+    <Dialog open={isOpen} onClose={onClose} static={true}>
+      <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
+          <div className="flex items-center justify-between mb-2">
+            <Title>{wheel?.wheel_name}</Title>
+            <Badge color="blue">{wheel?.mode}</Badge>
+          </div>
+          <Text className="text-sm mb-4">Evento: {eventId}</Text>
+
+          {isCardsMode ? (
+            <div className="py-6 text-center space-y-3">
+              <Ticket size={40} className="mx-auto text-larioja-azul" />
+              <Text>
+                Los segmentos de esta ruleta se generan automáticamente con los
+                cartones <span className="font-bold">vendidos</span> del evento.
+              </Text>
+              {soldCards === null ? (
+                <Text className="text-gray-400">Contando cartones...</Text>
+              ) : (
+                <Badge size="lg" color="emerald">
+                  {soldCards.length} cartones vendidos
+                </Badge>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Segmento</TableHeaderCell>
+                      <TableHeaderCell>Color</TableHeaderCell>
+                      {wheel?.mode === "Premios" && (
+                        <TableHeaderCell>Stock</TableHeaderCell>
+                      )}
+                      <TableHeaderCell>Activo</TableHeaderCell>
+                      <TableHeaderCell className="text-right">
+                        Quitar
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {items.map((item, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>
+                          <TextInput
+                            value={item.label}
+                            onValueChange={(v) => updateItem(idx, { label: v })}
+                            placeholder="Ej: Giftcard $50"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <input
+                            type="color"
+                            value={item.color}
+                            onChange={(e) =>
+                              updateItem(idx, { color: e.target.value })
+                            }
+                            className="h-9 w-14 cursor-pointer rounded border border-gray-200"
+                            title="Color del segmento"
+                          />
+                        </TableCell>
+                        {wheel?.mode === "Premios" && (
+                          <TableCell>
+                            <TextInput
+                              type="number"
+                              min={1}
+                              value={String(item.quantity)}
+                              onValueChange={(v) =>
+                                updateItem(idx, {
+                                  quantity: Math.max(1, parseInt(v) || 1),
+                                })
+                              }
+                              className="w-20"
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={item.is_active}
+                            onChange={(e) =>
+                              updateItem(idx, { is_active: e.target.checked })
+                            }
+                            className="h-5 w-5 accent-larioja-azul"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="light"
+                            icon={Trash2}
+                            size="xs"
+                            color="red"
+                            onClick={() =>
+                              setItems((prev) => prev.filter((_, i) => i !== idx))
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <Button
+                variant="secondary"
+                icon={Plus}
+                className="mt-4"
+                onClick={() =>
+                  setItems((prev) => [
+                    ...prev,
+                    { label: "", color: "#012060", quantity: 1, is_active: true },
+                  ])
+                }
+              >
+                Agregar Segmento
+              </Button>
+            </>
+          )}
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="secondary" onClick={onClose} disabled={loading}>
+              {isCardsMode ? "Cerrar" : "Cancelar"}
+            </Button>
+            {!isCardsMode && (
+              <Button
+                onClick={handleSave}
+                loading={loading}
+                className="bg-larioja-azul"
+              >
+                Guardar Segmentos
+              </Button>
+            )}
+          </div>
+        </DialogPanel>
+      </div>
+    </Dialog>
+  );
+}
