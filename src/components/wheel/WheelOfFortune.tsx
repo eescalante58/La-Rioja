@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { Dices, Trophy, RotateCw, Maximize, Minimize } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { Dices, Trophy, RotateCw, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import confetti from "canvas-confetti";
 import {
   getPublicWheelData,
-  spinWheel,
 } from "@/app/admin/bingo/wheel-actions";
 
 interface Segment {
@@ -38,6 +38,29 @@ const CX = 250;
 const CY = 250;
 const R = 240;
 
+/** 
+ * Audio Pool for Ticks to ensure low latency and overlapping sounds.
+ */
+const TICK_POOL_SIZE = 8;
+let tickPool: HTMLAudioElement[] = [];
+let currentTickIndex = 0;
+
+if (typeof window !== "undefined") {
+  tickPool = Array.from({ length: TICK_POOL_SIZE }).map(() => {
+    const audio = new Audio("/sounds/tick.mp3");
+    audio.volume = 0.5;
+    return audio;
+  });
+}
+
+const playTick = () => {
+  if (tickPool.length === 0) return;
+  const audio = tickPool[currentTickIndex];
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+  currentTickIndex = (currentTickIndex + 1) % TICK_POOL_SIZE;
+};
+
 function polar(angleDeg: number, radius: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
   return { x: CX + radius * Math.cos(rad), y: CY + radius * Math.sin(rad) };
@@ -70,7 +93,29 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
+  const [winnerData, setWinnerData] = useState<any>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const wheelGroupRef = useRef<SVGGElement>(null);
+  const pointerRef = useRef<HTMLDivElement>(null);
+  const lastTickSegment = useRef<number>(-1);
+  const suspenseAudio = useRef<HTMLAudioElement | null>(null);
+  const winAudio = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize sounds
+  useEffect(() => {
+    suspenseAudio.current = new Audio("/sounds/suspense.mp3");
+    winAudio.current = new Audio("/sounds/win.mp3");
+    suspenseAudio.current.load();
+    winAudio.current.load();
+  }, []);
+
+  useEffect(() => {
+    if (suspenseAudio.current) suspenseAudio.current.muted = isMuted;
+    if (winAudio.current) winAudio.current.muted = isMuted;
+    tickPool.forEach(a => a.muted = isMuted);
+  }, [isMuted]);
 
   // Sincronizar estado de fullscreen con el navegador
   useEffect(() => {
@@ -103,49 +148,157 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
     });
   }, [selectedWheel]);
 
-  const handleSpin = () => {
+  const fireWinningConfetti = useCallback(() => {
+    const duration = 4 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 35, spread: 360, ticks: 60, zIndex: 100 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval: any = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) return clearInterval(interval);
+
+      const particleCount = 60 * (timeLeft / duration);
+      
+      // Left Cannon
+      confetti({ 
+        ...defaults, 
+        particleCount, 
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ['#012060', '#F0B429', '#ffffff'] 
+      });
+      
+      // Right Cannon
+      confetti({ 
+        ...defaults, 
+        particleCount, 
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ['#1E9922', '#F0B429', '#ffffff'] 
+      });
+    }, 250);
+  }, []);
+
+  const playTickAndShake = useCallback(() => {
+    if (!isMuted) playTick();
+
+    if (pointerRef.current) {
+      pointerRef.current.classList.remove("animate-pointer-hit");
+      void pointerRef.current.offsetWidth; // Force reflow
+      pointerRef.current.classList.add("animate-pointer-hit");
+    }
+  }, [isMuted]);
+
+  const startTickTracker = useCallback((numSegments: number) => {
+    const degPerSeg = 360 / numSegments;
+    
+    const track = () => {
+      if (!wheelGroupRef.current) return;
+
+      const style = window.getComputedStyle(wheelGroupRef.current);
+      const transform = style.transform;
+      
+      if (transform && transform !== 'none') {
+        const values = transform.split('(')[1].split(')')[0].split(',');
+        const a = parseFloat(values[0]);
+        const b = parseFloat(values[1]);
+        let angle = (Math.atan2(b, a) * (180 / Math.PI));
+        
+        // Normalize angle to [0, 360)
+        angle = (angle + 360) % 360;
+
+        // Pointer is at 90 degrees (right)
+        const currentSegment = Math.floor(((90 - angle + 360) % 360) / degPerSeg);
+
+        if (currentSegment !== lastTickSegment.current) {
+          playTickAndShake();
+          lastTickSegment.current = currentSegment;
+        }
+      }
+
+      if (spinningRef.current) {
+        requestAnimationFrame(track);
+      }
+    };
+
+    requestAnimationFrame(track);
+  }, [playTickAndShake]);
+
+  // Use a ref for spinning to be used inside requestAnimationFrame without closing over stale state
+  const spinningRef = useRef(spinning);
+  useEffect(() => {
+    spinningRef.current = spinning;
+  }, [spinning]);
+
+  const handleSpin = async () => {
     if (spinning || !selectedWheel || segments.length === 0) return;
     
     setWinner(null);
+    setWinnerData(null);
     setSpinning(true);
-    
-    // Iniciamos un giro de inercia inmediato (10 vueltas) para feedback instantáneo
-    const currentRotation = rotation;
-    setRotation(currentRotation + 3600);
+    lastTickSegment.current = -1;
 
-    spinWheel(selectedWheel.id).then((result) => {
-      if (!result?.success || !result.segments) {
-        alert(result?.error || "No se pudo girar la ruleta.");
-        setSpinning(false);
-        setRotation(currentRotation);
-        return;
+    // 1. Instant Start Feedback
+    if (suspenseAudio.current) {
+      suspenseAudio.current.currentTime = 0;
+      suspenseAudio.current.play().catch(() => {});
+    }
+    
+    // Start with a large rotation immediately
+    const startRotation = rotation + 1800; // 5 quick turns
+    setRotation(startRotation);
+
+    // Start audio tick tracking
+    startTickTracker(segments.length);
+
+    try {
+      // 2. Ultra-fast API call (Route Handler)
+      const res = await fetch(`/api/wheel/spin?id=${selectedWheel.id}`, { method: 'POST' });
+      const result = await res.json();
+
+      if (!result?.success) {
+        throw new Error(result?.error || "Error en el sorteo");
       }
 
-      // Sincronizamos segmentos en caliente (el cambio es casi invisible durante el giro)
+      // Sincronizamos segmentos en caliente
       setSegments(result.segments);
 
       const segDeg = 360 / result.segments.length;
       const winnerCenter = (result.winnerIndex + 0.5) * segDeg;
       
-      // Calculamos la posición final exacta (puntero a la derecha = 90deg)
+      // Pointer is at 90deg (right)
       const targetMod = (90 - winnerCenter + 360) % 360;
-      const extraSpins = 7;
-      const finalAbsolute = currentRotation + (extraSpins * 360) + ((targetMod - (currentRotation % 360) + 360) % 360);
+      const extraSpins = 6;
+      const finalAbsolute = startRotation + (extraSpins * 360) + ((targetMod - (startRotation % 360) + 360) % 360);
       
-      // Corregimos la trayectoria hacia el punto exacto
+      // Update to final absolute rotation
       setRotation(finalAbsolute);
+      setWinnerData(result);
 
-      // Mostramos al ganador tras los 6s de rigor
-      setTimeout(() => {
-        setWinner(result.winnerLabel);
-        // Pequeño delay para que la rueda no "salte" al terminar la transición
-        setTimeout(() => setSpinning(false), 500);
-      }, 6000);
-    }).catch(error => {
+    } catch (error: any) {
       console.error("Error spinning wheel:", error);
+      alert(error.message || "Error al girar la ruleta.");
       setSpinning(false);
-      setRotation(currentRotation);
-    });
+      if (suspenseAudio.current) {
+        suspenseAudio.current.pause();
+      }
+    }
+  };
+
+  const handleTransitionEnd = () => {
+    if (spinning && winnerData) {
+      setWinner(winnerData.winnerLabel);
+      fireWinningConfetti();
+      if (winAudio.current) {
+        winAudio.current.currentTime = 0;
+        winAudio.current.play().catch(() => {});
+      }
+      if (suspenseAudio.current) {
+        suspenseAudio.current.pause();
+      }
+      // Small delay to let the UI settle
+      setTimeout(() => setSpinning(false), 200);
+    }
   };
 
   const fontSize = useMemo(() => {
@@ -186,14 +339,35 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
   return (
     <div className="flex flex-col items-center gap-8 relative w-full max-w-[1600px] mx-auto px-4">
-      {/* Botón Fullscreen flotante */}
-      <button
-        onClick={toggleFullscreen}
-        className="fixed top-24 right-6 z-[120] p-3 rounded-full bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md border border-white/10 shadow-xl"
-        title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-      >
-        {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
-      </button>
+      {/* Styles for animations */}
+      <style jsx global>{`
+        @keyframes pointer-hit {
+          0% { transform: translateY(-50%) translateX(50%) rotate(0deg); }
+          20% { transform: translateY(-50%) translateX(50%) rotate(-20deg); }
+          100% { transform: translateY(-50%) translateX(50%) rotate(0deg); }
+        }
+        .animate-pointer-hit {
+          animation: pointer-hit 0.1s ease-out;
+        }
+      `}</style>
+
+      {/* Botones de Control flotantes */}
+      <div className="fixed top-24 right-6 z-[120] flex flex-col gap-3">
+        <button
+          onClick={() => setIsMuted(!isMuted)}
+          className="p-3 rounded-full bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md border border-white/10 shadow-xl"
+          title={isMuted ? "Activar sonido" : "Silenciar"}
+        >
+          {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+        </button>
+        <button
+          onClick={toggleFullscreen}
+          className="p-3 rounded-full bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md border border-white/10 shadow-xl"
+          title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+        >
+          {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+        </button>
+      </div>
 
       {/* Encabezado de la ruleta */}
       <div className="text-center w-full">
@@ -222,9 +396,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
         >
           {/* Puntero 3D a la DERECHA - Clickable */}
           <div 
+            ref={pointerRef}
             className={`absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1/2 drop-shadow-2xl transition-all ${
-              spinning ? "scale-90 opacity-60 grayscale-[0.5]" : "hover:scale-110 active:scale-95 cursor-pointer"
+              spinning ? "opacity-90 scale-100" : "hover:scale-110 active:scale-95 cursor-pointer"
             }`}
+            style={{ transformOrigin: 'left center' }}
             title="¡Haz clic para girar!"
           >
             <svg width="70" height="70" viewBox="0 0 70 70">
@@ -271,14 +447,28 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
           ) : (
             <svg
               viewBox="0 0 500 500"
-              className="h-[300px] w-[300px] drop-shadow-2xl md:h-[520px] md:w-[520px]"
+              className={`h-[300px] w-[300px] drop-shadow-2xl md:h-[520px] md:w-[520px] transition-transform duration-1000 ${spinning ? 'scale-105' : 'scale-100'}`}
             >
+              {spinning && (
+                <defs>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+              )}
               <g
+                ref={wheelGroupRef}
+                onTransitionEnd={handleTransitionEnd}
                 style={{
                   transform: `rotate(${rotation}deg)`,
                   transformOrigin: `${CX}px ${CY}px`,
+                  willChange: 'transform',
                   transition: spinning
-                    ? "transform 6s cubic-bezier(0.12, 0.8, 0.15, 1)"
+                    ? "transform 6s cubic-bezier(0.15, 0, 0.15, 1)"
                     : "transform 0.5s ease-out",
                 }}
               >
