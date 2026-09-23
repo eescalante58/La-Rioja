@@ -47,7 +47,7 @@ let currentTickIndex = 0;
 
 if (typeof window !== "undefined") {
   tickPool = Array.from({ length: TICK_POOL_SIZE }).map(() => {
-    const audio = new Audio("/sounds/tick.mp3");
+    const audio = new Audio("/sounds/tick.wav");
     audio.volume = 0.5;
     return audio;
   });
@@ -105,8 +105,8 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
   // Initialize sounds
   useEffect(() => {
-    suspenseAudio.current = new Audio("/sounds/suspense.mp3");
-    winAudio.current = new Audio("/sounds/win.mp3");
+    suspenseAudio.current = new Audio("/sounds/suspense.wav");
+    winAudio.current = new Audio("/sounds/win.wav");
     suspenseAudio.current.load();
     winAudio.current.load();
   }, []);
