@@ -359,6 +359,4 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
       </div>
     </div>
   );
-    </div>
-  );
 }
