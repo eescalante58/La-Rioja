@@ -7,6 +7,7 @@ import {
   Title,
   Text,
   TextInput,
+  Textarea,
   Button,
   Badge,
   Table,
@@ -179,10 +180,12 @@ export default function WheelItemsDialog({
                     {items.map((item, idx) => (
                       <TableRow key={idx}>
                         <TableCell>
-                          <TextInput
+                          <Textarea
                             value={item.label}
                             onValueChange={(v) => updateItem(idx, { label: v })}
-                            placeholder="Ej: Giftcard $50"
+                            placeholder="Ej: Giftcard&#10;$50"
+                            rows={2}
+                            className="min-w-[200px]"
                           />
                         </TableCell>
                         <TableCell>

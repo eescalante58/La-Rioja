@@ -384,6 +384,7 @@ async function buildSegments(
     itemId: i.id,
     label: i.label,
     color: i.color,
+    quantity: i.quantity,
   }));
 }
 
