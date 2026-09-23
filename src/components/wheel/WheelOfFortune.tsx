@@ -115,15 +115,23 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
         return;
       }
 
+      // IMPORTANTE: Buscamos el ganador en nuestra lista local de segmentos.
+      // No usamos winnerIndex del servidor porque si el stock cambió, los índices
+      // pueden estar desfasados respecto a lo que el navegador tiene cargado.
+      const localWinnerIndex = segments.findIndex(
+        (s) => s.label === result.winnerLabel,
+      );
+
+      // Si por alguna razón no lo encontramos (muy raro), usamos el índice del server
+      const finalIndex = localWinnerIndex !== -1 ? localWinnerIndex : result.winnerIndex;
+
       const segDeg = 360 / segments.length;
-      const winnerCenter = (result.winnerIndex + 0.5) * segDeg;
+      const winnerCenter = (finalIndex + 0.5) * segDeg;
       // Puntero en la parte superior (0° de rotación visual).
-      // Se suman 5-7 vueltas completas para el efecto de giro.
       const currentMod = ((rotation % 360) + 360) % 360;
       const targetMod = (360 - winnerCenter) % 360;
-      const extraSpins = 5 + Math.random() * 2;
-      const delta =
-        extraSpins * 360 + ((targetMod - currentMod + 360) % 360);
+      const extraSpins = 6 + Math.random() * 2;
+      const delta = extraSpins * 360 + ((targetMod - currentMod + 360) % 360);
 
       setRotation((prev) => prev + delta);
 
@@ -131,6 +139,10 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
       setTimeout(() => {
         setWinner(result.winnerLabel);
         setSpinning(false);
+        // Refrescamos los segmentos después de ganar para sincronizar stock/visibilidad
+        getPublicWheelData(selectedWheel.id).then((res) => {
+          if (res?.data) setSegments(res.data.segments);
+        });
       }, 6100);
     } catch (error) {
       console.error("Error spinning wheel:", error);
@@ -141,11 +153,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
   const fontSize = useMemo(() => {
     const n = segments.length;
-    if (n <= 8) return 22;
-    if (n <= 16) return 16;
-    if (n <= 30) return 13;
-    if (n <= 60) return 10;
-    return 7;
+    if (n <= 8) return 26;
+    if (n <= 16) return 22;
+    if (n <= 30) return 18;
+    if (n <= 60) return 14;
+    return 10;
   }, [segments.length]);
 
   // Selector cuando hay varias ruletas publicadas
@@ -239,18 +251,19 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
             >
               {segments.map((seg, i) => {
                 const mid = ((i + 0.5) * 360) / segments.length;
-                const textRadius = R * 0.65;
+                // Posicionamos el punto del texto cerca del borde exterior
+                const textRadius = R * 0.92;
                 const tp = polar(mid, textRadius);
                 const fill = seg.color || PALETTE[i % PALETTE.length];
                 const text =
-                  seg.label.length > 25
-                    ? `${seg.label.slice(0, 24)}…`
+                  seg.label.length > 28
+                    ? `${seg.label.slice(0, 27)}…`
                     : seg.label;
                 
-                // Rotación del texto: si está en la mitad inferior (90 a 270), 
-                // lo giramos 180 grados para que no quede de cabeza al leerlo desde afuera.
-                // Sin embargo, para una ruleta radial clásica, a veces se prefiere que todos
-                // apunten al centro. Ajusto según lo que se ve más natural.
+                // Rotación del texto: 
+                // Orientamos el texto radialmente (del borde al centro)
+                // mid es el ángulo del radio. Sumamos 180 si está en la zona inferior
+                // para que no quede de cabeza al leerlo desde afuera.
                 const textRotation = mid > 90 && mid < 270 ? mid + 180 : mid;
 
                 return (
@@ -266,9 +279,9 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                       y={tp.y}
                       fill="#ffffff"
                       fontSize={fontSize}
-                      fontWeight={700}
+                      fontWeight={900}
                       fontFamily="Montserrat, sans-serif"
-                      textAnchor="middle"
+                      textAnchor="end"
                       dominantBaseline="middle"
                       transform={`rotate(${textRotation} ${tp.x} ${tp.y})`}
                     >
