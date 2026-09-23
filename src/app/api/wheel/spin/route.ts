@@ -129,12 +129,15 @@ export async function POST(request: NextRequest) {
 
     await auditPromise;
 
+    // Fetch updated segments to reflect new quantities (hides zero stock items)
+    const updatedSegments = await buildSegments(supabase, cfg);
+
     return NextResponse.json({
       success: true,
       winnerIndex,
       winnerLabel: winner.label,
       cardNumber: winner.cardNumber ?? null,
-      segments,
+      segments: updatedSegments,
     });
   } catch (err: any) {
     console.error("Error spinning wheel in API:", err);

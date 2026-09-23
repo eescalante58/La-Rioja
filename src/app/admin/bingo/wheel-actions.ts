@@ -376,7 +376,7 @@ async function buildSegments(
     .order("position", { ascending: true, nullsFirst: false })
     .order("id");
 
-  // En Premios solo participan segmentos con stock
+  // En Premios solo participan segmentos con stock > 0
   if (cfg.mode === "Premios") query = query.gt("quantity", 0);
 
   const { data } = await query;
