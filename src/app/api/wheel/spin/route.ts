@@ -120,24 +120,27 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (item && item.quantity > 0) {
-        await supabase
+        const newQuantity = item.quantity - 1;
+        const { error: updateError } = await supabase
           .from("wheel_items")
-          .update({ quantity: item.quantity - 1 })
+          .update({ quantity: newQuantity })
           .eq("id", winner.itemId);
+        
+        if (!updateError) {
+          // Actualizar el objeto winner en el array original para que la respuesta sea coherente
+          winner.quantity = newQuantity;
+        }
       }
     }
 
     await auditPromise;
-
-    // Fetch updated segments to reflect new quantities (hides zero stock items)
-    const updatedSegments = await buildSegments(supabase, cfg);
 
     return NextResponse.json({
       success: true,
       winnerIndex,
       winnerLabel: winner.label,
       cardNumber: winner.cardNumber ?? null,
-      segments: updatedSegments,
+      segments, // Devolvemos los segmentos usados en el giro con el stock actualizado
     });
   } catch (err: any) {
     console.error("Error spinning wheel in API:", err);

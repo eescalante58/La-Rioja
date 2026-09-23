@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.wheel_items (
   wheel_name text   NOT NULL,
   label      text   NOT NULL,
   color      text,                       -- hex opcional; NULL = paleta institucional
-  quantity   integer NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  quantity   integer NOT NULL DEFAULT 1 CHECK (quantity >= 0),
   position   smallint,
   is_active  boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
