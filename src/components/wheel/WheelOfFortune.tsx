@@ -11,6 +11,7 @@ interface Segment {
   itemId: number | null;
   label: string;
   color: string | null;
+  quantity?: number;
   cardNumber?: number;
 }
 
@@ -273,10 +274,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                 const textRadius = R * 0.9;
                 const tp = polar(mid, textRadius);
                 const fill = seg.color || PALETTE[i % PALETTE.length];
-                const text =
-                  seg.label.length > 30
-                    ? `${seg.label.slice(0, 29)}…`
-                    : seg.label;
+                const lines = seg.label.split("\n");
                 
                 // Rotación radial: mid - 90 orienta el texto hacia el centro
                 // Giramos 180 si está en el lado izquierdo para mantener legibilidad
@@ -301,7 +299,26 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                       dominantBaseline="middle"
                       transform={`rotate(${textRotation} ${tp.x} ${tp.y})`}
                     >
-                      {text}
+                      {lines.map((line, lineIdx) => (
+                        <tspan
+                          key={lineIdx}
+                          x={tp.x}
+                          dy={lineIdx === 0 ? `-${(lines.length - 1) * 0.6}em` : "1.2em"}
+                        >
+                          {line}
+                        </tspan>
+                      ))}
+                      {selectedWheel.mode === "Premios" && seg.quantity !== undefined && (
+                        <tspan
+                          x={tp.x}
+                          dy="1.4em"
+                          fontSize={Math.max(fontSize - 4, 8)}
+                          fontWeight={400}
+                          fill="rgba(255,255,255,0.7)"
+                        >
+                          (Stock: {seg.quantity})
+                        </tspan>
+                      )}
                     </text>
                   </g>
                 );
