@@ -495,5 +495,6 @@ export async function spinWheel(wheelId: number) {
     winnerIndex,
     winnerLabel: winner.label,
     cardNumber: winner.cardNumber ?? null,
+    segments, // Enviamos los segmentos usados para sincronizar al cliente
   };
 }
