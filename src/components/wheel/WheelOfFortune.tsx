@@ -548,7 +548,13 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                 {winner}
               </h3>
               <button
-                onClick={() => setWinner(null)}
+                onClick={() => {
+                  setWinner(null);
+                  if (winAudio.current) {
+                    winAudio.current.pause();
+                    winAudio.current.currentTime = 0;
+                  }
+                }}
                 className="w-full rounded-full bg-larioja-azul py-4 font-montserrat text-sm font-bold uppercase tracking-[0.2em] text-white transition-all hover:bg-[#02184a] shadow-lg"
               >
                 Continuar
