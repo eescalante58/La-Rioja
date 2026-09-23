@@ -143,11 +143,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
   const fontSize = useMemo(() => {
     const n = segments.length;
-    if (n <= 8) return 26;
-    if (n <= 16) return 22;
-    if (n <= 30) return 18;
-    if (n <= 60) return 14;
-    return 10;
+    if (n <= 8) return 20;
+    if (n <= 16) return 16;
+    if (n <= 30) return 13;
+    if (n <= 60) return 10;
+    return 8;
   }, [segments.length]);
 
   // Selector cuando hay varias ruletas publicadas
@@ -209,9 +209,37 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
       {/* Rueda */}
       <div className="relative">
-        {/* Puntero */}
-        <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-2">
-          <div className="h-0 w-0 border-x-[18px] border-t-[30px] border-x-transparent border-t-larioja-amarillo drop-shadow-lg" />
+        {/* Puntero 3D a la DERECHA */}
+        <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1/2 pointer-events-none drop-shadow-2xl">
+          <svg width="60" height="60" viewBox="0 0 60 60">
+            <defs>
+              <linearGradient id="pointerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#FFFF00" />
+                <stop offset="100%" stopColor="#F0B429" />
+              </linearGradient>
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+                <feOffset dx="2" dy="2" result="offsetblur" />
+                <feComponentTransfer>
+                  <feFuncA type="linear" slope="0.5" />
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            {/* Cuerpo de la flecha 3D apuntando a la izquierda */}
+            <path 
+              d="M 50 30 L 10 10 L 10 50 Z" 
+              fill="url(#pointerGrad)" 
+              stroke="#B48900" 
+              strokeWidth="2"
+              filter="url(#shadow)"
+            />
+            {/* Efecto de borde 3D */}
+            <path d="M 50 30 L 10 10 L 12 15 L 45 30 Z" fill="rgba(255,255,255,0.4)" />
+          </svg>
         </div>
 
         {loading ? (
@@ -241,18 +269,17 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
             >
               {segments.map((seg, i) => {
                 const mid = ((i + 0.5) * 360) / segments.length;
-                // Radio del texto: centrado entre el eje y el borde
-                const textRadius = R * 0.55;
+                // Texto radial: del borde hacia el centro
+                const textRadius = R * 0.9;
                 const tp = polar(mid, textRadius);
                 const fill = seg.color || PALETTE[i % PALETTE.length];
                 const text =
-                  seg.label.length > 28
-                    ? `${seg.label.slice(0, 27)}…`
+                  seg.label.length > 30
+                    ? `${seg.label.slice(0, 29)}…`
                     : seg.label;
                 
-                // Rotación del texto: 
-                // mid - 90 lo hace radial (hacia el borde)
-                // si mid está en la mitad izquierda, sumamos 180 para que no se lea al revés
+                // Rotación radial: mid - 90 orienta el texto hacia el centro
+                // Giramos 180 si está en el lado izquierdo para mantener legibilidad
                 const textRotation = mid > 180 ? mid - 90 + 180 : mid - 90;
 
                 return (
@@ -268,9 +295,9 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                       y={tp.y}
                       fill="#ffffff"
                       fontSize={fontSize}
-                      fontWeight={900}
+                      fontWeight={800}
                       fontFamily="Montserrat, sans-serif"
-                      textAnchor="middle"
+                      textAnchor={mid > 180 ? "start" : "end"}
                       dominantBaseline="middle"
                       transform={`rotate(${textRotation} ${tp.x} ${tp.y})`}
                     >
