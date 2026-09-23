@@ -318,7 +318,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
       {/* Celebración del ganador */}
       {winner && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in p-4"
           onClick={() => setWinner(null)}
         >
           <div

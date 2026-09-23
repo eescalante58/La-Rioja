@@ -12,14 +12,23 @@ import { createClient } from "@/lib/supabase/client";
 /**
  * Mobile navigation component with hamburger menu.
  */
-export function Navbar({ solid = false, brandHeader = false, simple = false }: { solid?: boolean; brandHeader?: boolean; simple?: boolean }) {
+export function Navbar({ 
+  solid = false, 
+  brandHeader = false, 
+  simple = false,
+  fixed = true
+}: { 
+  solid?: boolean; 
+  brandHeader?: boolean; 
+  simple?: boolean;
+  fixed?: boolean;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [whatsappLink, setWhatsappLink] = useState<string>("#");
 
-  // `solid` fuerza el estilo "scrolled" (fondo sólido y texto legible) en
-  // páginas con fondo claro donde el texto blanco transparente no se vería.
   const navSolid = isScrolled || solid;
+  const isFixed = fixed;
 
   // Fetch WhatsApp link from CMS
   useEffect(() => {
@@ -68,9 +77,8 @@ export function Navbar({ solid = false, brandHeader = false, simple = false }: {
 
   return (
     <>
-      {/* Desktop & Mobile Fixed Navbar container */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${
+        className={`${isFixed ? "fixed top-0 left-0 right-0" : "relative"} z-[100] transition-all duration-500 ${
           navSolid
             ? "bg-white/80 dark:bg-larioja-azul/80 backdrop-blur-lg shadow-lg py-1"
             : "bg-transparent py-4"
