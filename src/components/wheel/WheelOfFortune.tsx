@@ -103,51 +103,54 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
     });
   }, [selectedWheel]);
 
-  const handleSpin = async () => {
+  const handleSpin = () => {
     if (spinning || !selectedWheel || segments.length === 0) return;
-    setSpinning(true);
+    
     setWinner(null);
+    setLoading(true);
 
-    try {
-      const result = await spinWheel(selectedWheel.id);
+    // 1. Obtenemos el ganador ANTES de empezar a girar para sincronizar 100%
+    spinWheel(selectedWheel.id).then((result) => {
       if (!result?.success || !result.segments) {
         alert(result?.error || "No se pudo girar la ruleta.");
-        setSpinning(false);
+        setLoading(false);
         return;
       }
 
-      // SINCRONIZACIÓN TOTAL:
-      // Actualizamos los segmentos con lo que el servidor realmente usó.
-      // Esto asegura que result.winnerIndex corresponda exactamente a lo que vemos.
+      // 2. Actualizamos la rueda con los datos reales del servidor
       setSegments(result.segments);
+      setLoading(false);
+      setSpinning(true);
 
       const segDeg = 360 / result.segments.length;
       const winnerCenter = (result.winnerIndex + 0.5) * segDeg;
       
-      const currentMod = ((rotation % 360) + 360) % 360;
-      const targetMod = (360 - winnerCenter) % 360;
-      const extraSpins = 7 + Math.random() * 2;
-      const delta = extraSpins * 360 + ((targetMod - currentMod + 360) % 360);
+      const currentRotation = rotation;
+      // El puntero está a la derecha (90deg)
+      const targetMod = (90 - winnerCenter + 360) % 360;
+      const extraSpins = 8;
+      const finalAbsolute = currentRotation + (extraSpins * 360) + ((targetMod - (currentRotation % 360) + 360) % 360);
+      
+      setRotation(finalAbsolute);
 
-      setRotation((prev) => prev + delta);
-
+      // 3. Mostramos al ganador exactamente al terminar la animación (6s)
       setTimeout(() => {
         setWinner(result.winnerLabel);
-        setSpinning(false);
-      }, 6100);
-    } catch (error) {
+        // Esperamos un segundo extra para estabilizar antes de permitir otro giro
+        setTimeout(() => setSpinning(false), 1000);
+      }, 6000);
+    }).catch(error => {
       console.error("Error spinning wheel:", error);
-      alert("Error inesperado al girar la ruleta.");
-      setSpinning(false);
-    }
+      setLoading(false);
+    });
   };
 
   const fontSize = useMemo(() => {
     const n = segments.length;
-    if (n <= 8) return 18;
-    if (n <= 16) return 14;
-    if (n <= 30) return 11;
-    if (n <= 60) return 8;
+    if (n <= 8) return 15;
+    if (n <= 16) return 11;
+    if (n <= 30) return 9;
+    if (n <= 60) return 7;
     return 6;
   }, [segments.length]);
 
