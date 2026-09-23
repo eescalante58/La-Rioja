@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Dices, Trophy, RotateCw } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Dices, Trophy, RotateCw, Maximize, Minimize } from "lucide-react";
 import {
   getPublicWheelData,
   spinWheel,
@@ -69,6 +69,26 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Sincronizar estado de fullscreen con el navegador
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
 
   useEffect(() => {
     if (!selectedWheel) return;
@@ -156,7 +176,16 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-6 relative w-full">
+      {/* Botón Fullscreen flotante */}
+      <button
+        onClick={toggleFullscreen}
+        className="fixed top-24 right-6 z-[120] p-3 rounded-full bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md border border-white/10 shadow-xl"
+        title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+      >
+        {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+      </button>
+
       {/* Encabezado de la ruleta */}
       <div className="text-center">
         <p className="font-montserrat text-xs font-bold uppercase tracking-[0.3em] text-larioja-amarillo">
