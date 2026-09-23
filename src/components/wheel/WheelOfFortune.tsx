@@ -107,41 +107,44 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
     if (spinning || !selectedWheel || segments.length === 0) return;
     
     setWinner(null);
-    setLoading(true);
+    setSpinning(true);
+    
+    // Iniciamos un giro de inercia inmediato (10 vueltas) para feedback instantáneo
+    const currentRotation = rotation;
+    setRotation(currentRotation + 3600);
 
-    // 1. Obtenemos el ganador ANTES de empezar a girar para sincronizar 100%
     spinWheel(selectedWheel.id).then((result) => {
       if (!result?.success || !result.segments) {
         alert(result?.error || "No se pudo girar la ruleta.");
-        setLoading(false);
+        setSpinning(false);
+        setRotation(currentRotation);
         return;
       }
 
-      // 2. Actualizamos la rueda con los datos reales del servidor
+      // Sincronizamos segmentos en caliente (el cambio es casi invisible durante el giro)
       setSegments(result.segments);
-      setLoading(false);
-      setSpinning(true);
 
       const segDeg = 360 / result.segments.length;
       const winnerCenter = (result.winnerIndex + 0.5) * segDeg;
       
-      const currentRotation = rotation;
-      // El puntero está a la derecha (90deg)
+      // Calculamos la posición final exacta (puntero a la derecha = 90deg)
       const targetMod = (90 - winnerCenter + 360) % 360;
-      const extraSpins = 8;
+      const extraSpins = 7;
       const finalAbsolute = currentRotation + (extraSpins * 360) + ((targetMod - (currentRotation % 360) + 360) % 360);
       
+      // Corregimos la trayectoria hacia el punto exacto
       setRotation(finalAbsolute);
 
-      // 3. Mostramos al ganador exactamente al terminar la animación (6s)
+      // Mostramos al ganador tras los 6s de rigor
       setTimeout(() => {
         setWinner(result.winnerLabel);
-        // Esperamos un segundo extra para estabilizar antes de permitir otro giro
-        setTimeout(() => setSpinning(false), 1000);
+        // Pequeño delay para que la rueda no "salte" al terminar la transición
+        setTimeout(() => setSpinning(false), 500);
       }, 6000);
     }).catch(error => {
       console.error("Error spinning wheel:", error);
-      setLoading(false);
+      setSpinning(false);
+      setRotation(currentRotation);
     });
   };
 
@@ -219,8 +222,8 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
         >
           {/* Puntero 3D a la DERECHA - Clickable */}
           <div 
-            className={`absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1/2 drop-shadow-2xl transition-transform ${
-              spinning ? "scale-95 opacity-80" : "hover:scale-110 active:scale-95"
+            className={`absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1/2 drop-shadow-2xl transition-all ${
+              spinning ? "scale-90 opacity-60 grayscale-[0.5]" : "hover:scale-110 active:scale-95 cursor-pointer"
             }`}
             title="¡Haz clic para girar!"
           >
@@ -254,7 +257,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
             </svg>
           </div>
 
-          {loading ? (
+          {(loading && segments.length === 0) ? (
             <div className="flex h-[300px] w-[300px] items-center justify-center md:h-[520px] md:w-[520px]">
               <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-larioja-amarillo" />
             </div>
@@ -281,11 +284,15 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
               >
                 {segments.map((seg, i) => {
                   const mid = ((i + 0.5) * 360) / segments.length;
-                  const textRadius = R * 0.55;
+                  const textRadius = R * 0.9;
                   const tp = polar(mid, textRadius);
                   const fill = seg.color || PALETTE[i % PALETTE.length];
                   const lines = seg.label.split("\n");
-                  const textRotation = mid > 180 ? mid - 90 + 180 : mid - 90;
+                  
+                  // Rotación radial: mid - 90 orienta el texto hacia el centro
+                  // Si el segmento está en el lado izquierdo (90-270), giramos 180 para legibilidad
+                  const textRotation = (mid > 90 && mid < 270) ? mid + 90 : mid - 90;
+                  const isLeftSide = mid > 90 && mid < 270;
 
                   return (
                     <g key={i}>
@@ -302,7 +309,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                         fontSize={fontSize}
                         fontWeight={800}
                         fontFamily="Montserrat, sans-serif"
-                        textAnchor="middle"
+                        textAnchor={isLeftSide ? "start" : "end"}
                         dominantBaseline="middle"
                         transform={`rotate(${textRotation} ${tp.x} ${tp.y})`}
                       >
