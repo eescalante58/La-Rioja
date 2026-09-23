@@ -144,11 +144,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
   const fontSize = useMemo(() => {
     const n = segments.length;
-    if (n <= 8) return 20;
-    if (n <= 16) return 16;
-    if (n <= 30) return 13;
-    if (n <= 60) return 10;
-    return 8;
+    if (n <= 8) return 18;
+    if (n <= 16) return 14;
+    if (n <= 30) return 11;
+    if (n <= 60) return 8;
+    return 6;
   }, [segments.length]);
 
   // Selector cuando hay varias ruletas publicadas
@@ -209,20 +209,28 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
       )}
 
       {/* Rueda */}
-      <div className="relative">
-        {/* Puntero 3D a la DERECHA */}
-        <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1/2 pointer-events-none drop-shadow-2xl">
-          <svg width="60" height="60" viewBox="0 0 60 60">
+      <div 
+        className={`relative ${!spinning && !loading && segments.length > 0 ? "cursor-pointer" : ""}`}
+        onClick={handleSpin}
+      >
+        {/* Puntero 3D a la DERECHA - Clickable */}
+        <div 
+          className={`absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1/2 drop-shadow-2xl transition-transform ${
+            spinning ? "scale-95 opacity-80" : "hover:scale-110 active:scale-95"
+          }`}
+          title="¡Haz clic para girar!"
+        >
+          <svg width="70" height="70" viewBox="0 0 70 70">
             <defs>
-              <linearGradient id="pointerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <linearGradient id="pointerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#FFFF00" />
                 <stop offset="100%" stopColor="#F0B429" />
               </linearGradient>
-              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
-                <feOffset dx="2" dy="2" result="offsetblur" />
+              <filter id="shadow3d" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" />
+                <feOffset dx="1" dy="2" result="offsetblur" />
                 <feComponentTransfer>
-                  <feFuncA type="linear" slope="0.5" />
+                  <feFuncA type="linear" slope="0.7" />
                 </feComponentTransfer>
                 <feMerge>
                   <feMergeNode />
@@ -230,16 +238,18 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                 </feMerge>
               </filter>
             </defs>
-            {/* Cuerpo de la flecha 3D apuntando a la izquierda */}
+            {/* Flecha según imagen: punta a la izquierda, base cóncava a la derecha */}
             <path 
-              d="M 50 30 L 10 10 L 10 50 Z" 
+              d="M 10 35 L 60 10 L 45 35 L 60 60 Z" 
               fill="url(#pointerGrad)" 
               stroke="#B48900" 
               strokeWidth="2"
-              filter="url(#shadow)"
+              filter="url(#shadow3d)"
             />
-            {/* Efecto de borde 3D */}
-            <path d="M 50 30 L 10 10 L 12 15 L 45 30 Z" fill="rgba(255,255,255,0.4)" />
+            {/* Efecto de bisel/luz superior */}
+            <path d="M 10 35 L 60 10 L 55 15 L 20 35 Z" fill="rgba(255,255,255,0.5)" />
+            {/* Sombra interna inferior */}
+            <path d="M 10 35 L 60 60 L 55 55 L 20 35 Z" fill="rgba(0,0,0,0.1)" />
           </svg>
         </div>
 
@@ -335,31 +345,18 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
               strokeWidth={4}
             />
             {/* Eje central */}
-            <circle cx={CX} cy={CY} r={62} fill="#ffffff" />
+            <circle cx={CX} cy={CY} r={62} fill="#ffffff" stroke="#eeeeee" strokeWidth="1" />
             <image
               href="/logo.png"
-              x={CX - 50}
-              y={CY - 38}
-              width={100}
-              height={76}
+              x={CX - 45}
+              y={CY - 34}
+              width={90}
+              height={68}
               preserveAspectRatio="xMidYMid meet"
             />
           </svg>
         )}
       </div>
-
-      {/* Botón girar */}
-      <button
-        onClick={handleSpin}
-        disabled={spinning || loading || segments.length === 0}
-        className="group flex items-center gap-3 rounded-full bg-larioja-verde px-10 py-4 font-montserrat text-lg font-black uppercase tracking-wider text-white shadow-2xl transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <RotateCw
-          size={24}
-          className={spinning ? "animate-spin" : "transition-transform group-hover:rotate-90"}
-        />
-        {spinning ? "Girando..." : "¡Girar!"}
-      </button>
 
       {/* Celebración del ganador */}
       {winner && (
