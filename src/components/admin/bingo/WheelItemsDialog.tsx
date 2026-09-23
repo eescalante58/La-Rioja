@@ -36,7 +36,7 @@ interface WheelItemsDialogProps {
 interface EditableItem {
   label: string;
   color: string;
-  quantity: number;
+  quantity: number | string;
   is_active: boolean;
 }
 
@@ -108,7 +108,7 @@ export default function WheelItemsDialog({
         items.map((it, idx) => ({
           label: it.label.trim(),
           color: it.color || null,
-          quantity: it.quantity,
+          quantity: Math.max(1, parseInt(String(it.quantity)) || 1),
           position: idx + 1,
           is_active: it.is_active,
         })),
@@ -206,9 +206,7 @@ export default function WheelItemsDialog({
                               min={1}
                               value={String(item.quantity)}
                               onValueChange={(v) =>
-                                updateItem(idx, {
-                                  quantity: Math.max(1, parseInt(v) || 1),
-                                })
+                                updateItem(idx, { quantity: v })
                               }
                               className="w-20"
                             />
