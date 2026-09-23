@@ -109,40 +109,30 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
     try {
       const result = await spinWheel(selectedWheel.id);
-      if (!result?.success) {
+      if (!result?.success || !result.segments) {
         alert(result?.error || "No se pudo girar la ruleta.");
         setSpinning(false);
         return;
       }
 
-      // IMPORTANTE: Buscamos el ganador en nuestra lista local de segmentos.
-      // No usamos winnerIndex del servidor porque si el stock cambió, los índices
-      // pueden estar desfasados respecto a lo que el navegador tiene cargado.
-      const localWinnerIndex = segments.findIndex(
-        (s) => s.label === result.winnerLabel,
-      );
+      // SINCRONIZACIÓN TOTAL:
+      // Actualizamos los segmentos con lo que el servidor realmente usó.
+      // Esto asegura que result.winnerIndex corresponda exactamente a lo que vemos.
+      setSegments(result.segments);
 
-      // Si por alguna razón no lo encontramos (muy raro), usamos el índice del server
-      const finalIndex = localWinnerIndex !== -1 ? localWinnerIndex : result.winnerIndex;
-
-      const segDeg = 360 / segments.length;
-      const winnerCenter = (finalIndex + 0.5) * segDeg;
-      // Puntero en la parte superior (0° de rotación visual).
+      const segDeg = 360 / result.segments.length;
+      const winnerCenter = (result.winnerIndex + 0.5) * segDeg;
+      
       const currentMod = ((rotation % 360) + 360) % 360;
       const targetMod = (360 - winnerCenter) % 360;
-      const extraSpins = 6 + Math.random() * 2;
+      const extraSpins = 7 + Math.random() * 2;
       const delta = extraSpins * 360 + ((targetMod - currentMod + 360) % 360);
 
       setRotation((prev) => prev + delta);
 
-      // Espera a que termine la animación (6s) antes de mostrar el ganador
       setTimeout(() => {
         setWinner(result.winnerLabel);
         setSpinning(false);
-        // Refrescamos los segmentos después de ganar para sincronizar stock/visibilidad
-        getPublicWheelData(selectedWheel.id).then((res) => {
-          if (res?.data) setSegments(res.data.segments);
-        });
       }, 6100);
     } catch (error) {
       console.error("Error spinning wheel:", error);
@@ -251,8 +241,8 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
             >
               {segments.map((seg, i) => {
                 const mid = ((i + 0.5) * 360) / segments.length;
-                // Posicionamos el punto del texto cerca del borde exterior
-                const textRadius = R * 0.92;
+                // Radio del texto: centrado entre el eje y el borde
+                const textRadius = R * 0.55;
                 const tp = polar(mid, textRadius);
                 const fill = seg.color || PALETTE[i % PALETTE.length];
                 const text =
@@ -261,10 +251,9 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                     : seg.label;
                 
                 // Rotación del texto: 
-                // Orientamos el texto radialmente (del borde al centro)
-                // mid es el ángulo del radio. Sumamos 180 si está en la zona inferior
-                // para que no quede de cabeza al leerlo desde afuera.
-                const textRotation = mid > 90 && mid < 270 ? mid + 180 : mid;
+                // mid - 90 lo hace radial (hacia el borde)
+                // si mid está en la mitad izquierda, sumamos 180 para que no se lea al revés
+                const textRotation = mid > 180 ? mid - 90 + 180 : mid - 90;
 
                 return (
                   <g key={i}>
@@ -281,7 +270,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                       fontSize={fontSize}
                       fontWeight={900}
                       fontFamily="Montserrat, sans-serif"
-                      textAnchor="end"
+                      textAnchor="middle"
                       dominantBaseline="middle"
                       transform={`rotate(${textRotation} ${tp.x} ${tp.y})`}
                     >
