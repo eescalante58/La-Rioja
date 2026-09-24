@@ -23,11 +23,12 @@ import {
   getSoldCards,
 } from "@/app/admin/bingo/wheel-actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+import type { Wheel } from "./wheel-types";
 
 interface WheelItemsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  wheel: any;
+  wheel: Wheel | null;
   companyId?: number;
   eventId?: string;
   onSuccess: () => void;

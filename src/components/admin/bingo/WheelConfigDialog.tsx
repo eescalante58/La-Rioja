@@ -13,13 +13,14 @@ import {
 } from "@tremor/react";
 import { saveWheelConfig } from "@/app/admin/bingo/wheel-actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+import type { Wheel } from "./wheel-types";
 
 interface WheelConfigDialogProps {
   isOpen: boolean;
   onClose: () => void;
   companyId?: number;
   eventId?: string;
-  wheel: any; // null = nueva ruleta
+  wheel: Wheel | null; // null = nueva ruleta
   onSuccess: () => void;
 }
 

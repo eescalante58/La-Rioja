@@ -29,6 +29,7 @@ import {
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import WheelConfigDialog from "./WheelConfigDialog";
 import WheelItemsDialog from "./WheelItemsDialog";
+import type { Wheel, WheelItem } from "./wheel-types";
 
 interface Event {
   id: number;
@@ -55,14 +56,14 @@ const MODE_COLORS: Record<string, string> = {
  */
 export default function WheelTab({ events }: WheelTabProps) {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [wheels, setWheels] = useState<any[]>([]);
+  const [wheels, setWheels] = useState<Wheel[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [editingWheel, setEditingWheel] = useState<any>(null);
-  const [itemsWheel, setItemsWheel] = useState<any>(null);
+  const [editingWheel, setEditingWheel] = useState<Wheel | null>(null);
+  const [itemsWheel, setItemsWheel] = useState<Wheel | null>(null);
   const [isItemsOpen, setIsItemsOpen] = useState(false);
-  const [historyWheel, setHistoryWheel] = useState<any>(null);
+  const [historyWheel, setHistoryWheel] = useState<Wheel | null>(null);
   const [spins, setSpins] = useState<any[]>([]);
 
   const supabase = createClient();
@@ -83,9 +84,9 @@ export default function WheelTab({ events }: WheelTabProps) {
         initialLoadDone.current = true;
         // Si el modal de segmentos está abierto, refrescamos su wheel.
         // Se usa update funcional para leer el estado actual, no el del closure.
-        setItemsWheel((prev: any) =>
+        setItemsWheel((prev) =>
           prev
-            ? (result.data.find((w: any) => w.id === prev.id) ?? prev)
+            ? (result.data.find((w: Wheel) => w.id === prev.id) ?? prev)
             : prev,
         );
       } else {
@@ -118,7 +119,7 @@ export default function WheelTab({ events }: WheelTabProps) {
           console.log("[WheelTab] Cambio detectado en wheel_items:", payload);
           const isDelete = payload.eventType === "DELETE";
           // En DELETE, payload.new está vacío: hay que leer payload.old
-          const item = (isDelete ? payload.old : payload.new) as any;
+          const item = (isDelete ? payload.old : payload.new) as Partial<WheelItem>;
           if (!item?.id) return;
 
           /**
@@ -126,25 +127,25 @@ export default function WheelTab({ events }: WheelTabProps) {
            * En DELETE se filtra por id en todas las ruletas porque
            * payload.old puede no incluir wheel_id (REPLICA IDENTITY).
            */
-          const applyItemChange = (w: any) => {
-            const items = (w.items || []) as any[];
+          const applyItemChange = (w: Wheel): Wheel => {
+            const items = w.items || [];
             if (isDelete) {
-              return { ...w, items: items.filter((it: any) => it.id !== item.id) };
+              return { ...w, items: items.filter((it) => it.id !== item.id) };
             }
             if (w.id !== item.wheel_id) return w;
-            const exists = items.some((it: any) => it.id === item.id);
+            const exists = items.some((it) => it.id === item.id);
             return {
               ...w,
               items: exists
-                ? items.map((it: any) => (it.id === item.id ? { ...it, ...item } : it))
-                : [...items, item],
+                ? items.map((it) => (it.id === item.id ? ({ ...it, ...item } as WheelItem) : it))
+                : [...items, item as WheelItem],
             };
           };
 
           // Actualización Atómica: modificamos estado local inmediatamente con el dato de Supabase
           setWheels(prevWheels => prevWheels.map(applyItemChange));
           // Si el modal de segmentos está abierto, sincronizamos su wheel también
-          setItemsWheel((prev: any) => (prev ? applyItemChange(prev) : prev));
+          setItemsWheel((prev) => (prev ? applyItemChange(prev) : prev));
         }
       )
       .on(
@@ -170,7 +171,7 @@ export default function WheelTab({ events }: WheelTabProps) {
     };
   }, [selectedEvent?.event_id, selectedEvent?.company_id]);
 
-  const handleTogglePublish = async (wheel: any) => {
+  const handleTogglePublish = async (wheel: Wheel) => {
     const result = await toggleWheelPublished(
       wheel.company_id,
       wheel.id,
@@ -183,7 +184,7 @@ export default function WheelTab({ events }: WheelTabProps) {
     }
   };
 
-  const handleDelete = async (wheel: any) => {
+  const handleDelete = async (wheel: Wheel) => {
     if (
       !confirm(
         `¿Eliminar la ruleta "${wheel.wheel_name}"? Se borrarán sus segmentos e historial.`,
@@ -198,7 +199,7 @@ export default function WheelTab({ events }: WheelTabProps) {
     }
   };
 
-  const handleShowHistory = async (wheel: any) => {
+  const handleShowHistory = async (wheel: Wheel) => {
     setHistoryWheel(wheel);
     setSpins([]);
     const result = await getWheelSpins(
