@@ -106,7 +106,13 @@ export default function WheelTab({ events }: WheelTabProps) {
         },
         (payload) => {
           console.log("[WheelTab] Cambio detectado en wheel_items:", payload);
-          loadWheels(selectedEvent);
+          // Si el diálogo de items está abierto, actualizamos sus datos también
+          if (itemsWheel) {
+            // Recargamos la información de la ruleta desde el servidor
+            loadWheels(selectedEvent);
+          } else {
+            loadWheels(selectedEvent);
+          }
         }
       )
       .on(
