@@ -18,12 +18,7 @@ import {
   TableCell,
 } from "@tremor/react";
 import { Plus, Trash2, Ticket } from "lucide-react";
-import {
-  saveWheelItems,
-  loadTombolaCards,
-  getTombolaCards,
-  removeTombolaCard,
-} from "@/app/admin/bingo/wheel-actions";
+import { saveWheelItems } from "@/app/admin/bingo/wheel-actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import { createClient } from "@/lib/supabase/client";
 import type { Wheel, WheelItem, TombolaCard } from "./wheel-types";
@@ -68,10 +63,15 @@ export default function WheelItemsDialog({
   // Tómbola aplica a Cartones y Participantes (cartones vendidos del evento)
   const isCardsMode = wheel?.mode === "Cartones" || wheel?.mode === "Participantes";
 
+  // Las operaciones de tómbola van por /api/tombola/cards (Route Handler):
+  // las Server Actions re-renderizan /admin/bingo completo y tardaban minutos.
   const refreshTombolaCards = async () => {
     if (!companyId || !wheel) return;
-    const res = await getTombolaCards(companyId, wheel.id);
-    setTombolaCards(res?.data || []);
+    const res = await fetch(
+      `/api/tombola/cards?companyId=${companyId}&wheelId=${wheel.id}`,
+    );
+    const json = (await res.json()) as { data?: TombolaCard[] };
+    setTombolaCards(json.data || []);
   };
 
   useEffect(() => {
@@ -127,23 +127,33 @@ export default function WheelItemsDialog({
   const handleLoadTombola = async () => {
     if (!companyId || !wheel) return;
     setLoadingTombola(true);
-    const res = await loadTombolaCards(companyId, wheel.id);
+    const res = await fetch("/api/tombola/cards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companyId, wheelId: wheel.id }),
+    });
+    const json = (await res.json()) as { success?: boolean; error?: string };
     setLoadingTombola(false);
-    if (res?.success) {
+    if (json.success) {
       await refreshTombolaCards();
-    } else if (!redirectIfSessionExpired(res)) {
-      alert("Error: " + (res?.error || "No se pudieron cargar los cartones."));
+    } else if (!redirectIfSessionExpired(json)) {
+      alert("Error: " + (json.error || "No se pudieron cargar los cartones."));
     }
   };
 
   /** Quita un cartón no-ganador de la tómbola. */
   const handleRemoveTombolaCard = async (cardId: number) => {
     if (!companyId) return;
-    const res = await removeTombolaCard(companyId, cardId);
-    if (res?.success) {
+    const res = await fetch("/api/tombola/cards", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companyId, cardId }),
+    });
+    const json = (await res.json()) as { success?: boolean; error?: string };
+    if (json.success) {
       setTombolaCards((prev) => (prev ? prev.filter((c) => c.id !== cardId) : prev));
-    } else if (!redirectIfSessionExpired(res)) {
-      alert("Error: " + (res?.error || "No se pudo quitar el cartón."));
+    } else if (!redirectIfSessionExpired(json)) {
+      alert("Error: " + (json.error || "No se pudo quitar el cartón."));
     }
   };
 
