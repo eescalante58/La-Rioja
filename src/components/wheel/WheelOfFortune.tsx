@@ -231,7 +231,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
   }, [spinning]);
 
   const handleSpin = async () => {
-    if (spinning || !selectedWheel || segments.length === 0) return;
+    if (spinning || !!winner || !selectedWheel || segments.length === 0) return;
     
     setWinner(null);
     setWinnerData(null);
@@ -398,17 +398,17 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
       <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 w-full">
         {/* Rueda */}
         <div 
-          className={`relative shrink-0 ${!spinning && !loading && segments.length > 0 ? "cursor-pointer" : ""}`}
+          className={`relative shrink-0 ${!spinning && !loading && !winner && segments.length > 0 ? "cursor-pointer" : ""}`}
           onClick={handleSpin}
         >
           {/* Puntero 3D a la DERECHA - Clickable */}
           <div 
             ref={pointerRef}
             className={`absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1/2 drop-shadow-2xl transition-all ${
-              spinning ? "opacity-90 scale-100" : "hover:scale-110 active:scale-95 cursor-pointer"
+              (spinning || !!winner) ? "opacity-90 scale-100" : "hover:scale-110 active:scale-95 cursor-pointer"
             }`}
             style={{ transformOrigin: 'left center' }}
-            title="¡Haz clic para girar!"
+            title={winner ? "Presiona Continuar para seguir" : "¡Haz clic para girar!"}
           >
             <svg width="70" height="70" viewBox="0 0 70 70">
               <defs>
