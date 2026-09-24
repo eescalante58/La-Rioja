@@ -136,6 +136,9 @@ export default function WheelItemsDialog({
 
   if (!companyId || !eventId) return null;
 
+  const totalInitial = items.reduce((sum, it) => sum + (parseInt(String(it.initial_quantity ?? it.quantity)) || 0), 0);
+  const totalCurrent = items.reduce((sum, it) => sum + (parseInt(String(it.quantity)) || 0), 0);
+
   return (
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
@@ -145,7 +148,23 @@ export default function WheelItemsDialog({
             <Title>{wheel?.wheel_name}</Title>
             <Badge color="blue">{wheel?.mode}</Badge>
           </div>
-          <Text className="text-sm mb-4">Evento: {eventId}</Text>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <Text className="text-sm">Evento: {eventId}</Text>
+            
+            {wheel?.mode === "Premios" && (
+              <div className="flex items-center gap-3">
+                <div className="bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-700">
+                  <Text className="text-[10px] font-bold uppercase text-gray-400 leading-none mb-1">Total Inicial</Text>
+                  <Text className="text-lg font-black text-gray-600 dark:text-gray-300 leading-none">{totalInitial}</Text>
+                </div>
+                <div className="bg-larioja-azul/5 dark:bg-larioja-azul/10 px-3 py-1.5 rounded-lg border border-larioja-azul/20">
+                  <Text className="text-[10px] font-bold uppercase text-larioja-azul/60 leading-none mb-1">Total Actual</Text>
+                  <Text className="text-lg font-black text-larioja-azul dark:text-blue-400 leading-none">{totalCurrent}</Text>
+                </div>
+              </div>
+            )}
+          </div>
 
           {isCardsMode ? (
             <div className="py-6 text-center space-y-3">
