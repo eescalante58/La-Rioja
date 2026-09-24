@@ -83,7 +83,7 @@ export default function WheelItemsDialog({
         is_active: i.is_active ?? true,
       })),
     );
-  }, [isOpen, wheel, isCardsMode, companyId, eventId]);
+  }, [isOpen, wheel.items, isCardsMode, companyId, eventId]); // Escuchamos cambios en wheel.items
 
   const updateItem = (idx: number, patch: Partial<EditableItem>) => {
     setItems((prev) =>
