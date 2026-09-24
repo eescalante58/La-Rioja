@@ -19,6 +19,7 @@ interface WheelSummary {
   id: number;
   company_id: number;
   event_id: string;
+  event_name?: string;
   mode: string;
   wheel_name: string;
 }
@@ -113,6 +114,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
   const lastTickSegment = useRef<number>(-1);
   const suspenseAudio = useRef<HTMLAudioElement | null>(null);
   const winAudio = useRef<HTMLAudioElement | null>(null);
+  const confettiInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Initialize sounds
   useEffect(() => {
@@ -159,36 +161,42 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
     });
   }, [selectedWheel]);
 
-  const fireWinningConfetti = useCallback(() => {
-    const duration = 4 * 1000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 35, spread: 360, ticks: 60, zIndex: 100 };
+  const stopConfetti = useCallback(() => {
+    if (confettiInterval.current) {
+      clearInterval(confettiInterval.current);
+      confettiInterval.current = null;
+    }
+  }, []);
 
+  /**
+   * Confeti continuo: lluvia constante de doble cañón mientras el anuncio
+   * del ganador permanezca abierto. Se detiene al presionar "Continuar".
+   */
+  const fireWinningConfetti = useCallback(() => {
+    stopConfetti();
+    const defaults = { startVelocity: 35, spread: 360, ticks: 60, zIndex: 100 };
     const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-    const interval: ReturnType<typeof setInterval> = setInterval(function() {
-      const timeLeft = animationEnd - Date.now();
-      if (timeLeft <= 0) return clearInterval(interval);
-
-      const particleCount = 60 * (timeLeft / duration);
-      
+    confettiInterval.current = setInterval(() => {
       // Left Cannon
-      confetti({ 
-        ...defaults, 
-        particleCount, 
+      confetti({
+        ...defaults,
+        particleCount: 25,
         origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-        colors: ['#012060', '#F0B429', '#ffffff'] 
+        colors: ['#012060', '#F0B429', '#ffffff']
       });
-      
       // Right Cannon
-      confetti({ 
-        ...defaults, 
-        particleCount, 
+      confetti({
+        ...defaults,
+        particleCount: 25,
         origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-        colors: ['#1E9922', '#F0B429', '#ffffff'] 
+        colors: ['#1E9922', '#F0B429', '#ffffff']
       });
     }, 250);
-  }, []);
+  }, [stopConfetti]);
+
+  // Limpieza del confeti al desmontar el componente
+  useEffect(() => stopConfetti, [stopConfetti]);
 
   const playTickAndShake = useCallback(() => {
     if (!isMuted) playTick();
@@ -356,7 +364,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-8 relative w-full max-w-[1600px] mx-auto px-4">
+    <div className="flex flex-col items-center gap-4 relative w-full max-w-[1600px] mx-auto px-4">
       {/* Styles for animations */}
       <style jsx global>{`
         @keyframes pointer-hit {
@@ -389,16 +397,24 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
       {/* Encabezado de la ruleta */}
       <div className="text-center w-full">
-        <p className="font-montserrat text-xs font-bold uppercase tracking-[0.3em] text-larioja-amarillo">
-          {selectedWheel.mode} · Evento {selectedWheel.event_id}
+        <p className="font-montserrat text-lg font-bold uppercase tracking-[0.3em] text-larioja-amarillo">
+          {selectedWheel.event_name || selectedWheel.event_id}
         </p>
-        <h2 className="mt-1 font-montserrat text-3xl font-black uppercase tracking-wide text-white md:text-5xl">
+        <h2 className="mt-0 font-montserrat text-lg font-black uppercase tracking-wide text-white md:text-2xl">
           {selectedWheel.wheel_name}
         </h2>
+        {selectedWheel.mode === "Premios" && segments.length > 0 && (
+          <p className="mt-1 font-montserrat text-sm font-bold uppercase tracking-widest text-white/70">
+            Total de premios:{" "}
+            <span className="text-larioja-amarillo">
+              {segments.reduce((sum, s) => sum + (s.quantity ?? 0), 0)}
+            </span>
+          </p>
+        )}
         {wheels.length > 1 && (
           <button
             onClick={() => setSelectedWheel(null)}
-            className="mt-2 text-[10px] font-bold uppercase tracking-widest text-white/40 underline underline-offset-4 hover:text-white"
+            className="mt-1 text-[10px] font-bold uppercase tracking-widest text-white/40 underline underline-offset-4 hover:text-white"
           >
             Cambiar de ruleta
           </button>
@@ -459,7 +475,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
             <div className="flex h-[300px] w-[300px] flex-col items-center justify-center gap-3 md:h-[520px] md:w-[520px]">
               <Dices size={48} className="text-white/30" />
               <p className="max-w-xs text-center text-sm text-white/60">
-                Esta ruleta no tiene segmentos disponibles.
+                No existen premios para esta Ruleta
               </p>
             </div>
           ) : (
@@ -568,6 +584,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
               <button
                 onClick={() => {
                   setWinner(null);
+                  stopConfetti();
                   if (winAudio.current) {
                     winAudio.current.pause();
                     winAudio.current.currentTime = 0;

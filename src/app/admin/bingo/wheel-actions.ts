@@ -416,7 +416,34 @@ export async function getPublicWheels(filters?: {
 
   const { data, error } = await query;
   if (error) return { error: error.message };
-  return { data };
+
+  // Adjunta el nombre legible del evento para mostrarlo en /ruleta
+  const wheels = data || [];
+  const companyIds = [...new Set(wheels.map((w) => w.company_id))];
+  const eventIds = [...new Set(wheels.map((w) => w.event_id))];
+
+  let eventsMap = new Map<string, string>();
+  if (companyIds.length > 0) {
+    const { data: events } = await supabase
+      .from("events")
+      .select("company_id, event_id, event_name")
+      .in("company_id", companyIds)
+      .in("event_id", eventIds);
+
+    eventsMap = new Map(
+      (events || []).map((e: { company_id: number; event_id: string; event_name: string }) => [
+        `${e.company_id}|${e.event_id}`,
+        e.event_name,
+      ]),
+    );
+  }
+
+  return {
+    data: wheels.map((w) => ({
+      ...w,
+      event_name: eventsMap.get(`${w.company_id}|${w.event_id}`) || w.event_id,
+    })),
+  };
 }
 
 /**
