@@ -74,7 +74,8 @@ export default function WheelItemsDialog({
       return;
     }
 
-    // Sincronizar items cuando cambian en el prop 'wheel' (Realtime)
+    // Sincronización Directa: Mantenemos el estado 'items' actualizado con la prop 'wheel'
+    // pero solo si el usuario NO está interactuando activamente (para no moverle el cursor)
     const currentItems = wheel?.items || [];
     setItems(
       currentItems.map((i: any) => ({
@@ -85,7 +86,7 @@ export default function WheelItemsDialog({
         is_active: i.is_active ?? true,
       })),
     );
-  }, [isOpen, wheel, companyId, eventId]); // Escuchamos el objeto wheel completo
+  }, [isOpen, wheel.items, companyId, eventId]); // Escuchamos específicamente los items del wheel
 
   const updateItem = (idx: number, patch: Partial<EditableItem>) => {
     setItems((prev) =>

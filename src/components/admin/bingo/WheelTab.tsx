@@ -106,13 +106,24 @@ export default function WheelTab({ events }: WheelTabProps) {
         },
         (payload) => {
           console.log("[WheelTab] Cambio detectado en wheel_items:", payload);
-          // Si el diálogo de items está abierto, actualizamos sus datos también
-          if (itemsWheel) {
-            // Recargamos la información de la ruleta desde el servidor
-            loadWheels(selectedEvent);
-          } else {
-            loadWheels(selectedEvent);
-          }
+          const newItem = payload.new as any;
+          
+          // Actualización Atómica: Modificamos el estado local inmediatamente con el dato de Supabase
+          setWheels(prevWheels => prevWheels.map(w => {
+            if (w.id === newItem.wheel_id) {
+              const updatedItems = (w.items || []).map(it => 
+                it.id === newItem.id ? { ...it, ...newItem } : it
+              );
+              
+              const newWheel = { ...w, items: updatedItems };
+              // Si este es el wheel que se está editando en el modal, lo actualizamos también
+              if (itemsWheel?.id === w.id) {
+                setItemsWheel(newWheel);
+              }
+              return newWheel;
+            }
+            return w;
+          }));
         }
       )
       .on(
