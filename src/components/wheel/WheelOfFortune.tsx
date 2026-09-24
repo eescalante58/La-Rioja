@@ -23,6 +23,17 @@ interface WheelSummary {
   wheel_name: string;
 }
 
+/** Respuesta del endpoint POST /api/wheel/spin. */
+interface SpinResult {
+  success: boolean;
+  error?: string;
+  winnerIndex: number;
+  winnerLabel: string;
+  cardNumber: number | null;
+  itemId?: number | null;
+  segments: Segment[];
+}
+
 /** Paleta institucional para segmentos sin color propio. */
 const PALETTE = [
   "#012060",
@@ -93,7 +104,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
-  const [winnerData, setWinnerData] = useState<any>(null);
+  const [winnerData, setWinnerData] = useState<SpinResult | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
@@ -155,7 +166,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
     const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-    const interval: any = setInterval(function() {
+    const interval: ReturnType<typeof setInterval> = setInterval(function() {
       const timeLeft = animationEnd - Date.now();
       if (timeLeft <= 0) return clearInterval(interval);
 
@@ -282,9 +293,9 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
       setRotation(finalAbsolute);
       setWinnerData(result);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error spinning wheel:", error);
-      alert(error.message || "Error al girar la ruleta.");
+      alert(error instanceof Error ? error.message : "Error al girar la ruleta.");
       setSpinning(false);
       if (suspenseAudio.current) {
         suspenseAudio.current.pause();
@@ -563,7 +574,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                   }
                   // AHORA SÍ: Actualizamos la ruleta con los nuevos stocks (o quitamos los de stock 0)
                   if (winnerData?.segments) {
-                    const nextSegments = winnerData.segments.filter((s: any) => 
+                    const nextSegments = (winnerData.segments as Segment[]).filter((s) => 
                       selectedWheel.mode !== "Premios" || (s.quantity === undefined || s.quantity > 0)
                     );
                     setSegments(nextSegments);

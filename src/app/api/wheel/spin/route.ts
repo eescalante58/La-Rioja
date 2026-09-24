@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { randomInt } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Interface for wheel segments.
@@ -18,7 +19,7 @@ interface WheelSegment {
  * Optimized for low latency.
  */
 async function buildSegments(
-  supabase: any,
+  supabase: SupabaseClient,
   cfg: { id: number; company_id: number; event_id: string; mode: string },
 ): Promise<WheelSegment[]> {
   if (cfg.mode === "Cartones") {
@@ -30,7 +31,7 @@ async function buildSegments(
       .eq("card_status", "Vendido")
       .order("card_number");
 
-    return (data || []).map((c: any) => ({
+    return (data || []).map((c: { card_number: number }) => ({
       itemId: null,
       label: `#${c.card_number}`,
       color: null,
@@ -49,7 +50,7 @@ async function buildSegments(
   if (cfg.mode === "Premios") query = query.gt("quantity", 0);
 
   const { data } = await query;
-  return (data || []).map((i: any) => ({
+  return (data || []).map((i: { id: number; label: string; color: string | null; quantity: number }) => ({
     itemId: i.id,
     label: i.label,
     color: i.color,
@@ -142,9 +143,10 @@ export async function POST(request: NextRequest) {
       winnerIndex,
       winnerLabel: winner.label,
       cardNumber: winner.cardNumber ?? null,
+      itemId: winner.itemId,
       segments, // Devolvemos los segmentos usados en el giro con el stock actualizado
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error spinning wheel in API:", err);
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }

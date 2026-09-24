@@ -23,7 +23,7 @@ import {
   getSoldCards,
 } from "@/app/admin/bingo/wheel-actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
-import type { Wheel } from "./wheel-types";
+import type { Wheel, WheelItem } from "./wheel-types";
 
 interface WheelItemsDialogProps {
   isOpen: boolean;
@@ -79,7 +79,7 @@ export default function WheelItemsDialog({
     // pero solo si el usuario NO está interactuando activamente (para no moverle el cursor)
     const currentItems = wheel?.items || [];
     setItems(
-      currentItems.map((i: any) => ({
+      currentItems.map((i: WheelItem) => ({
         label: i.label,
         color: i.color || "#012060",
         quantity: i.quantity ?? 1,
