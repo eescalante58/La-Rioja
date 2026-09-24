@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   Title,
@@ -19,6 +19,7 @@ import {
   TableCell,
 } from "@tremor/react";
 import { Dices, Plus, Edit, Trash2, Eye, EyeOff, History } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import {
   getWheels,
   getWheelSpins,
@@ -64,16 +65,68 @@ export default function WheelTab({ events }: WheelTabProps) {
   const [historyWheel, setHistoryWheel] = useState<any>(null);
   const [spins, setSpins] = useState<any[]>([]);
 
+  const supabase = createClient();
+
   const loadWheels = async (ev: Event) => {
-    setLoading(true);
+    // Only show global loading spinner on initial load to avoid UI flicker during realtime updates
+    if (wheels.length === 0) setLoading(true);
     try {
       const result = await getWheels(ev.company_id, ev.event_id);
-      if (result?.data) setWheels(result.data);
-      else setWheels([]);
+      if (result?.data) {
+        setWheels(result.data);
+        // If the items dialog is open, update the reference wheel object
+        if (itemsWheel) {
+          const updatedWheel = result.data.find((w: any) => w.id === itemsWheel.id);
+          if (updatedWheel) setItemsWheel(updatedWheel);
+        }
+      } else {
+        setWheels([]);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Real-time subscription for wheel items and configs
+  useEffect(() => {
+    if (!selectedEvent) return;
+
+    console.log(`[WheelTab] Subscribing to realtime updates for event ${selectedEvent.event_id}`);
+    
+    const channel = supabase
+      .channel(`realtime_wheel_admin_${selectedEvent.event_id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "wheel_items",
+          filter: `company_id=eq.${selectedEvent.company_id}`,
+        },
+        () => {
+          console.log("[WheelTab] Realtime update detected in wheel_items, refreshing...");
+          loadWheels(selectedEvent);
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "wheel_configs",
+          filter: `company_id=eq.${selectedEvent.company_id}`,
+        },
+        () => {
+          console.log("[WheelTab] Realtime update detected in wheel_configs, refreshing...");
+          loadWheels(selectedEvent);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedEvent, itemsWheel?.id]);
 
   const handleTogglePublish = async (wheel: any) => {
     const result = await toggleWheelPublished(
