@@ -42,7 +42,7 @@ export default async function TombolaPage({
   // Imagen de la tarjeta voladora desde CMS (site_content: page='tombola',
   // section_key='Tarjeta Voladora', image_url = URL del bucket de Storage)
   const cardContent = await getSectionContent("tombola", "Tarjeta Voladora");
-  const cardImageUrl = cardContent?.image_url || "/card.png";
+  const cardImageUrl = cardContent?.image_url || "/card.webp";
 
   return (
     <main className="min-h-screen bg-larioja-azul bg-gradient-to-b from-larioja-azul via-[#02184a] to-[#010c28]">
