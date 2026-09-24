@@ -39,14 +39,17 @@ export default function WheelConfigDialog({
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState("Premios");
   const [wheelName, setWheelName] = useState("");
+  const [timeRotation, setTimeRotation] = useState("5");
 
   useEffect(() => {
     if (wheel) {
       setMode(wheel.mode);
       setWheelName(wheel.wheel_name);
+      setTimeRotation(String(wheel.time_rotation ?? 5));
     } else {
       setMode("Premios");
       setWheelName("");
+      setTimeRotation("5");
     }
   }, [wheel, isOpen]);
 
@@ -55,6 +58,12 @@ export default function WheelConfigDialog({
     if (!companyId || !eventId) return;
     if (!wheelName.trim()) {
       alert("Ingrese un nombre para la ruleta.");
+      return;
+    }
+    // Tómbola (Cartones/Participantes) requiere tiempo de rotación > 0
+    const rotation = parseInt(timeRotation) || 0;
+    if (mode !== "Premios" && rotation <= 0) {
+      alert("El tiempo de rotación es obligatorio (mínimo 1 segundo) para ruletas de Cartones y Participantes.");
       return;
     }
 
@@ -66,6 +75,7 @@ export default function WheelConfigDialog({
         event_id: eventId,
         mode,
         wheel_name: wheelName.trim(),
+        time_rotation: mode === "Premios" ? 0 : rotation,
       });
 
       if (result?.success) {
@@ -126,6 +136,26 @@ export default function WheelConfigDialog({
                 required
               />
             </div>
+
+            {mode !== "Premios" && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase text-gray-500">
+                  Tiempo de Rotación (segundos)
+                </label>
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={300}
+                  value={timeRotation}
+                  onValueChange={setTimeRotation}
+                  placeholder="Ej: 5"
+                  required
+                />
+                <Text className="text-xs text-gray-400">
+                  Duración del giro de la tómbola antes de revelar el ganador.
+                </Text>
+              </div>
+            )}
 
             {mode === "Cartones" && !wheel && (
               <Text className="text-xs text-gray-500">

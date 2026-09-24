@@ -20,10 +20,13 @@ import {
 import { Plus, Trash2, Ticket } from "lucide-react";
 import {
   saveWheelItems,
-  getSoldCards,
+  loadTombolaCards,
+  getTombolaCards,
+  removeTombolaCard,
 } from "@/app/admin/bingo/wheel-actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
-import type { Wheel, WheelItem } from "./wheel-types";
+import { createClient } from "@/lib/supabase/client";
+import type { Wheel, WheelItem, TombolaCard } from "./wheel-types";
 
 interface WheelItemsDialogProps {
   isOpen: boolean;
@@ -58,20 +61,24 @@ export default function WheelItemsDialog({
 }: WheelItemsDialogProps) {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<EditableItem[]>([]);
-  const [soldCards, setSoldCards] = useState<number[] | null>(null);
+  const [tombolaCards, setTombolaCards] = useState<TombolaCard[] | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const [loadingTombola, setLoadingTombola] = useState(false);
 
-  const isCardsMode = wheel?.mode === "Cartones";
+  // Tómbola aplica a Cartones y Participantes (cartones vendidos del evento)
+  const isCardsMode = wheel?.mode === "Cartones" || wheel?.mode === "Participantes";
+
+  const refreshTombolaCards = async () => {
+    if (!companyId || !wheel) return;
+    const res = await getTombolaCards(companyId, wheel.id);
+    setTombolaCards(res?.data || []);
+  };
 
   useEffect(() => {
     if (!isOpen || !wheel || !companyId || !eventId) return;
 
     if (isCardsMode) {
-      setSoldCards(null);
-      getSoldCards(companyId, eventId).then((res) => {
-        if (res?.data) setSoldCards(res.data);
-        else setSoldCards([]);
-      });
+      refreshTombolaCards();
       return;
     }
 
@@ -88,6 +95,57 @@ export default function WheelItemsDialog({
       })),
     );
   }, [isOpen, wheel?.items, companyId, eventId]); // Escuchamos específicamente los items del wheel
+
+  // Realtime: cuando la tómbola marca ganadores (/api/tombola/spin),
+  // refrescamos la lista de participantes del diálogo abierto.
+  useEffect(() => {
+    if (!isOpen || !wheel || !isCardsMode || !companyId) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`tombola_admin_${wheel.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "wheel_participating_cards",
+          filter: `wheel_id=eq.${wheel.id}`,
+        },
+        () => {
+          refreshTombolaCards();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isOpen, wheel?.id, isCardsMode, companyId]);
+
+  /** Carga masiva de cartones vendidos del evento a la tómbola. */
+  const handleLoadTombola = async () => {
+    if (!companyId || !wheel) return;
+    setLoadingTombola(true);
+    const res = await loadTombolaCards(companyId, wheel.id);
+    setLoadingTombola(false);
+    if (res?.success) {
+      await refreshTombolaCards();
+    } else if (!redirectIfSessionExpired(res)) {
+      alert("Error: " + (res?.error || "No se pudieron cargar los cartones."));
+    }
+  };
+
+  /** Quita un cartón no-ganador de la tómbola. */
+  const handleRemoveTombolaCard = async (cardId: number) => {
+    if (!companyId) return;
+    const res = await removeTombolaCard(companyId, cardId);
+    if (res?.success) {
+      setTombolaCards((prev) => (prev ? prev.filter((c) => c.id !== cardId) : prev));
+    } else if (!redirectIfSessionExpired(res)) {
+      alert("Error: " + (res?.error || "No se pudo quitar el cartón."));
+    }
+  };
 
   const updateItem = (idx: number, patch: Partial<EditableItem>) => {
     setItems((prev) =>
@@ -171,18 +229,59 @@ export default function WheelItemsDialog({
           </div>
 
           {isCardsMode ? (
-            <div className="py-6 text-center space-y-3">
-              <Ticket size={40} className="mx-auto text-larioja-azul" />
-              <Text>
-                Los segmentos de esta ruleta se generan automáticamente con los
-                cartones <span className="font-bold">vendidos</span> del evento.
-              </Text>
-              {soldCards === null ? (
-                <Text className="text-gray-400">Contando cartones...</Text>
-              ) : (
-                <Badge size="lg" color="emerald">
-                  {soldCards.length} cartones vendidos
-                </Badge>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Text>
+                  Cartones de la tómbola:{" "}
+                  <span className="font-bold">
+                    {tombolaCards === null
+                      ? "cargando..."
+                      : `${tombolaCards.filter((c) => !c.is_winner).length} disponibles · ${tombolaCards.filter((c) => c.is_winner).length} ganadores`}
+                  </span>
+                </Text>
+                <Button
+                  size="xs"
+                  icon={Ticket}
+                  loading={loadingTombola}
+                  onClick={handleLoadTombola}
+                  className="bg-larioja-azul"
+                >
+                  Cargar cartones vendidos
+                </Button>
+              </div>
+
+              {tombolaCards !== null && tombolaCards.length === 0 && (
+                <div className="py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl">
+                  <Ticket size={36} className="mx-auto text-gray-300 mb-2" />
+                  <Text className="text-gray-400 italic">
+                    Sin cartones cargados. Usa el botón para traer los vendidos del evento.
+                  </Text>
+                </div>
+              )}
+
+              {tombolaCards !== null && tombolaCards.length > 0 && (
+                <div className="max-h-[45vh] overflow-y-auto pr-1">
+                  <div className="flex flex-wrap gap-1.5">
+                    {tombolaCards.map((card) => (
+                      <Badge
+                        key={card.id}
+                        color={card.is_winner ? "amber" : "blue"}
+                        className={card.is_winner ? "opacity-60 line-through" : ""}
+                      >
+                        #{card.card_number}
+                        {!card.is_winner && (
+                          <button
+                            onClick={() => handleRemoveTombolaCard(card.id)}
+                            className="ml-1 opacity-60 hover:opacity-100"
+                            title="Quitar de la tómbola"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           ) : (

@@ -33,6 +33,9 @@ const wheelConfigSchema = z.object({
   event_id: z.string().min(1),
   mode: z.enum(WHEEL_MODES),
   wheel_name: z.string().min(1).max(80),
+  // Duración del giro de la tómbola en segundos.
+  // Requerido (>0) en Cartones/Participantes; forzado a 0 en Premios.
+  time_rotation: z.number().int().min(0).max(300).default(0),
 });
 
 const wheelItemSchema = z.object({
@@ -148,6 +151,7 @@ async function saveWheelConfigInternal(payload: {
   event_id: string;
   mode: string;
   wheel_name: string;
+  time_rotation?: number;
 }) {
   const validation = wheelConfigSchema.safeParse(payload);
   if (!validation.success) {
@@ -160,11 +164,16 @@ async function saveWheelConfigInternal(payload: {
   const data = validation.data;
   const supabase = await createClient();
 
+  // Premios no usa tómbola: time_rotation siempre 0
+  const timeRotation =
+    data.mode === "Premios" ? 0 : Math.max(0, data.time_rotation);
+
   const row = {
     company_id: data.company_id,
     event_id: data.event_id,
     mode: data.mode,
     wheel_name: sanitizeInput(data.wheel_name).trim(),
+    time_rotation: timeRotation,
   };
 
   const { data: saved, error } = data.id
@@ -527,5 +536,176 @@ export async function spinWheel(wheelId: number) {
     winnerLabel: winner.label,
     cardNumber: winner.cardNumber ?? null,
     segments, // Enviamos los segmentos usados para sincronizar al cliente
+  };
+}
+
+// ============================================================================
+// TÓMBOLA — wheel_participating_cards (modos Cartones y Participantes)
+// ============================================================================
+
+/**
+ * Carga masiva: copia a wheel_participating_cards todos los cartones
+ * con card_status='Vendido' del evento de la ruleta.
+ * Usa upsert con ignoreDuplicates sobre la llave (company_id, event_id,
+ * card_number): re-ejecutar es idempotente y no duplica ni resetea ganadores.
+ */
+async function loadTombolaCardsInternal(companyId: number, wheelId: number) {
+  const supabase = createAdminClient();
+
+  const { data: cfg, error: cfgError } = await supabase
+    .from("wheel_configs")
+    .select("id, company_id, event_id, mode, wheel_name")
+    .eq("id", wheelId)
+    .eq("company_id", companyId)
+    .single();
+
+  if (cfgError || !cfg) return { error: "No se encontró la ruleta." };
+  if (cfg.mode === "Premios") {
+    return { error: "La tómbola solo aplica a ruletas de Cartones o Participantes." };
+  }
+
+  const { data: soldCards, error: cardsError } = await supabase
+    .from("cards")
+    .select("card_number")
+    .eq("company_id", companyId)
+    .eq("event_id", cfg.event_id)
+    .eq("card_status", "Vendido");
+
+  if (cardsError) return { error: cardsError.message };
+  if (!soldCards || soldCards.length === 0) {
+    return { error: "No hay cartones vendidos en este evento." };
+  }
+
+  const rows = soldCards.map((c: { card_number: number }) => ({
+    wheel_id: cfg.id,
+    company_id: companyId,
+    event_id: cfg.event_id,
+    mode: cfg.mode,
+    wheel_name: cfg.wheel_name,
+    card_number: c.card_number,
+  }));
+
+  // upsert idempotente: ignora los que ya participan (no toca is_winner)
+  const { error: upsertError } = await supabase
+    .from("wheel_participating_cards")
+    .upsert(rows, {
+      onConflict: "company_id,event_id,card_number",
+      ignoreDuplicates: true,
+    });
+
+  if (upsertError) return { error: upsertError.message };
+
+  // Conteo real tras la carga para reportar al admin
+  const { count } = await supabase
+    .from("wheel_participating_cards")
+    .select("id", { count: "exact", head: true })
+    .eq("wheel_id", wheelId);
+
+  revalidatePath("/admin/bingo");
+  return { success: true, loaded: rows.length, total: count ?? 0 };
+}
+
+export const loadTombolaCards = withRole(
+  4,
+  withCompanyAccess(loadTombolaCardsInternal, 0),
+);
+
+/**
+ * Lista los cartones participantes de una tómbola (admin).
+ * winners = true primero al final; ordenado por card_number.
+ */
+async function getTombolaCardsInternal(companyId: number, wheelId: number) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("wheel_participating_cards")
+    .select("id, card_number, is_winner")
+    .eq("company_id", companyId)
+    .eq("wheel_id", wheelId)
+    .order("is_winner")
+    .order("card_number");
+
+  if (error) return { error: error.message };
+  return { data };
+}
+
+export const getTombolaCards = withRole(
+  4,
+  withCompanyAccess(getTombolaCardsInternal, 0),
+);
+
+/**
+ * Quita un cartón de la tómbola (admin). Solo si no es ganador.
+ */
+async function removeTombolaCardInternal(companyId: number, cardId: number) {
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("wheel_participating_cards")
+    .delete()
+    .eq("id", cardId)
+    .eq("company_id", companyId)
+    .eq("is_winner", false);
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+export const removeTombolaCard = withRole(
+  4,
+  withCompanyAccess(removeTombolaCardInternal, 0),
+);
+
+/**
+ * Datos públicos de una tómbola publicada:
+ * - participantes: card_numbers aún no ganadores (para el tambor)
+ * - winners: card_numbers ya sorteados (para la galería)
+ * - config: id, wheel_name, event_name, time_rotation
+ * Solo expone números de cartón — nunca datos internos.
+ */
+export async function getPublicTombolaData(wheelId: number) {
+  const supabase = createAdminClient();
+
+  const { data: cfg, error } = await supabase
+    .from("wheel_configs")
+    .select("id, company_id, event_id, mode, wheel_name, time_rotation, published")
+    .eq("id", wheelId)
+    .eq("published", true)
+    .single();
+
+  if (error || !cfg) return { error: "La tómbola no está disponible." };
+  if (cfg.mode === "Premios") {
+    return { error: "Esta ruleta no es de tómbola." };
+  }
+
+  const { data: cards, error: cardsError } = await supabase
+    .from("wheel_participating_cards")
+    .select("card_number, is_winner")
+    .eq("wheel_id", cfg.id)
+    .order("card_number");
+
+  if (cardsError) return { error: cardsError.message };
+
+  // Nombre legible del evento para el encabezado
+  const { data: evt } = await supabase
+    .from("events")
+    .select("event_name")
+    .eq("company_id", cfg.company_id)
+    .eq("event_id", cfg.event_id)
+    .single();
+
+  const list = (cards || []) as { card_number: number; is_winner: boolean }[];
+
+  return {
+    data: {
+      config: {
+        id: cfg.id,
+        wheel_name: cfg.wheel_name,
+        event_id: cfg.event_id,
+        event_name: evt?.event_name || cfg.event_id,
+        mode: cfg.mode,
+        time_rotation: cfg.time_rotation || 5,
+      },
+      participants: list.filter((c) => !c.is_winner).map((c) => c.card_number),
+      winners: list.filter((c) => c.is_winner).map((c) => c.card_number),
+    },
   };
 }
