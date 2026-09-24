@@ -121,12 +121,18 @@ export async function POST(request: NextRequest) {
 
       if (item && item.quantity > 0) {
         const newQuantity = item.quantity - 1;
-        const { error: updateError } = await supabase
+        console.log(`[API /api/wheel/spin] Updating item ${winner.itemId} quantity from ${item.quantity} to ${newQuantity}`);
+        
+        const { data: updated, error: updateError } = await supabase
           .from("wheel_items")
           .update({ quantity: newQuantity })
-          .eq("id", winner.itemId);
+          .eq("id", winner.itemId)
+          .select();
         
-        if (!updateError) {
+        if (updateError) {
+          console.error(`[API /api/wheel/spin] Error updating quantity:`, updateError);
+        } else {
+          console.log(`[API /api/wheel/spin] Successfully updated item:`, updated);
           // Actualizar el objeto winner en el array original para que la respuesta sea coherente
           winner.quantity = newQuantity;
         }
