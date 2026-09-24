@@ -115,8 +115,17 @@ export function Navbar({
             </div>
           )}
           <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="relative z-[110] p-2 transition-colors">
+          {/* Logo — en modo simple (ruleta/tómbola) flota a la izquierda del
+              masthead sin ocupar altura: la ruleta sube ~96px. Oculto en
+              móviles donde el masthead ya cubre la marca. */}
+          <Link
+            href="/"
+            className={`${
+              simple
+                ? "absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 hidden sm:block"
+                : "relative"
+            } z-[110] p-2 transition-colors`}
+          >
             <div
               className={`relative transition-all duration-500 ${
                 navSolid
