@@ -40,7 +40,7 @@ export default async function RuletaPage({
     <main className="min-h-screen bg-larioja-azul bg-gradient-to-b from-larioja-azul via-[#02184a] to-[#010c28]">
       <Navbar brandHeader simple fixed={false} />
 
-      <section className="mx-auto flex min-h-[80vh] max-w-[1400px] flex-col items-center justify-center px-6 pt-12 pb-16 md:pt-20">
+      <section className="mx-auto flex min-h-[80vh] max-w-[1400px] flex-col items-center justify-center px-6 pt-4 pb-10 md:pt-6">
         {wheels.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
             <Dices size={64} className="text-white/20" />

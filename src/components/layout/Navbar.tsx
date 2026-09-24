@@ -94,7 +94,9 @@ export function Navbar({
                 className={`font-montserrat font-black uppercase leading-none tracking-[0.18em] transition-all duration-500 ${
                   navSolid
                     ? "text-base sm:text-lg md:text-xl text-larioja-azul dark:text-white"
-                    : "text-lg sm:text-xl md:text-2xl text-white"
+                    : simple
+                      ? "text-xl sm:text-2xl md:text-3xl text-white"
+                      : "text-lg sm:text-xl md:text-2xl text-white"
                 }`}
               >
                 La Rioja
@@ -103,7 +105,9 @@ export function Navbar({
                 className={`mt-1 font-montserrat font-medium uppercase leading-none tracking-[0.28em] ${
                   navSolid
                     ? "text-[10px] md:text-xs text-amber-600 dark:text-larioja-amarillo"
-                    : "text-[10px] md:text-xs text-larioja-amarillo"
+                    : simple
+                      ? "text-xs md:text-base text-larioja-amarillo"
+                      : "text-[10px] md:text-xs text-larioja-amarillo"
                 }`}
               >
                 Centro de Formación Laboral
