@@ -75,7 +75,7 @@ export default function WheelItemsDialog({
     }
 
     setItems(
-      (wheel.items || []).map((i: any) => ({
+      (wheel?.items || []).map((i: any) => ({
         label: i.label,
         color: i.color || "#012060",
         quantity: i.quantity ?? 1,
@@ -83,7 +83,7 @@ export default function WheelItemsDialog({
         is_active: i.is_active ?? true,
       })),
     );
-  }, [isOpen, wheel.items, isCardsMode, companyId, eventId]); // Escuchamos cambios en wheel.items
+  }, [isOpen, wheel?.items, isCardsMode, companyId, eventId]);
 
   const updateItem = (idx: number, patch: Partial<EditableItem>) => {
     setItems((prev) =>
