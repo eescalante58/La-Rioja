@@ -86,7 +86,7 @@ export default function WheelItemsDialog({
         is_active: i.is_active ?? true,
       })),
     );
-  }, [isOpen, wheel.items, companyId, eventId]); // Escuchamos específicamente los items del wheel
+  }, [isOpen, wheel?.items, companyId, eventId]); // Escuchamos específicamente los items del wheel
 
   const updateItem = (idx: number, patch: Partial<EditableItem>) => {
     setItems((prev) =>
