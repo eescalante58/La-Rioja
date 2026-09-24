@@ -9,6 +9,11 @@ export const metadata = {
     "Ruleta de sorteos en vivo del Centro de Formación Laboral La Rioja.",
 };
 
+// F5 siempre consulta la BD: la ruleta es un tablero en vivo y el stock
+// de premios cambia en cada giro. Sin Full Route Cache ni Data Cache.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * Página pública de proyección de ruletas (/ruleta).
  *
