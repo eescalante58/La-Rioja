@@ -91,10 +91,11 @@ export default function WheelTab({ events }: WheelTabProps) {
   useEffect(() => {
     if (!selectedEvent) return;
 
-    console.log(`[WheelTab] Subscribing to realtime updates for event ${selectedEvent.event_id}`);
+    const channelName = `realtime_wheel_admin_${selectedEvent.event_id}`;
+    console.log(`[WheelTab] Conectando a Realtime: ${channelName}`);
     
     const channel = supabase
-      .channel(`realtime_wheel_admin_${selectedEvent.event_id}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
@@ -103,8 +104,8 @@ export default function WheelTab({ events }: WheelTabProps) {
           table: "wheel_items",
           filter: `company_id=eq.${selectedEvent.company_id}`,
         },
-        () => {
-          console.log("[WheelTab] Realtime update detected in wheel_items, refreshing...");
+        (payload) => {
+          console.log("[WheelTab] Cambio detectado en wheel_items:", payload);
           loadWheels(selectedEvent);
         }
       )
@@ -116,17 +117,20 @@ export default function WheelTab({ events }: WheelTabProps) {
           table: "wheel_configs",
           filter: `company_id=eq.${selectedEvent.company_id}`,
         },
-        () => {
-          console.log("[WheelTab] Realtime update detected in wheel_configs, refreshing...");
+        (payload) => {
+          console.log("[WheelTab] Cambio detectado en wheel_configs:", payload);
           loadWheels(selectedEvent);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`[WheelTab] Estado de suscripción: ${status}`);
+      });
 
     return () => {
+      console.log(`[WheelTab] Desconectando de Realtime: ${channelName}`);
       supabase.removeChannel(channel);
     };
-  }, [selectedEvent, itemsWheel?.id]);
+  }, [selectedEvent?.event_id, selectedEvent?.company_id]);
 
   const handleTogglePublish = async (wheel: any) => {
     const result = await toggleWheelPublished(
