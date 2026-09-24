@@ -29,3 +29,19 @@ export interface Wheel {
   published: boolean;
   items: WheelItem[];
 }
+
+/** Registro de auditoría de un giro (fila de wheel_spins). */
+export interface WheelSpin {
+  id: number;
+  wheel_id: number;
+  company_id: number;
+  event_id: string;
+  mode: string;
+  wheel_name: string;
+  item_id: number | null;
+  winner_label: string;
+  card_number: number | null;
+  prize_label: string | null;
+  spun_by: string | null;
+  spun_at: string;
+}

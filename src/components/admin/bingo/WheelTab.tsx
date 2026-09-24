@@ -29,7 +29,7 @@ import {
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import WheelConfigDialog from "./WheelConfigDialog";
 import WheelItemsDialog from "./WheelItemsDialog";
-import type { Wheel, WheelItem } from "./wheel-types";
+import type { Wheel, WheelItem, WheelSpin } from "./wheel-types";
 
 interface Event {
   id: number;
@@ -64,7 +64,7 @@ export default function WheelTab({ events }: WheelTabProps) {
   const [itemsWheel, setItemsWheel] = useState<Wheel | null>(null);
   const [isItemsOpen, setIsItemsOpen] = useState(false);
   const [historyWheel, setHistoryWheel] = useState<Wheel | null>(null);
-  const [spins, setSpins] = useState<any[]>([]);
+  const [spins, setSpins] = useState<WheelSpin[]>([]);
 
   const supabase = createClient();
   /**
