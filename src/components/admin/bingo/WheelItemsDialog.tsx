@@ -37,6 +37,7 @@ interface EditableItem {
   label: string;
   color: string;
   quantity: number | string;
+  initial_quantity?: number | string;
   is_active: boolean;
 }
 
@@ -78,6 +79,7 @@ export default function WheelItemsDialog({
         label: i.label,
         color: i.color || "#012060",
         quantity: i.quantity ?? 1,
+        initial_quantity: i.initial_quantity ?? i.quantity ?? 1,
         is_active: i.is_active ?? true,
       })),
     );
@@ -108,7 +110,8 @@ export default function WheelItemsDialog({
         items.map((it, idx) => ({
           label: it.label.trim(),
           color: it.color || null,
-          quantity: Math.max(1, parseInt(String(it.quantity)) || 1),
+          quantity: Math.max(0, parseInt(String(it.quantity)) || 0),
+          initial_quantity: Math.max(0, parseInt(String(it.initial_quantity ?? it.quantity)) || 0),
           position: idx + 1,
           is_active: it.is_active,
         })),
@@ -168,7 +171,10 @@ export default function WheelItemsDialog({
                       <TableHeaderCell>Segmento</TableHeaderCell>
                       <TableHeaderCell>Color</TableHeaderCell>
                       {wheel?.mode === "Premios" && (
-                        <TableHeaderCell>Stock</TableHeaderCell>
+                        <>
+                          <TableHeaderCell>Stock Inicial</TableHeaderCell>
+                          <TableHeaderCell>Stock Actual</TableHeaderCell>
+                        </>
                       )}
                       <TableHeaderCell>Activo</TableHeaderCell>
                       <TableHeaderCell className="text-right">
@@ -200,17 +206,37 @@ export default function WheelItemsDialog({
                           />
                         </TableCell>
                         {wheel?.mode === "Premios" && (
-                          <TableCell>
-                            <TextInput
-                              type="number"
-                              min={1}
-                              value={String(item.quantity)}
-                              onValueChange={(v) =>
-                                updateItem(idx, { quantity: v })
-                              }
-                              className="w-20"
-                            />
-                          </TableCell>
+                          <>
+                            <TableCell>
+                              <TextInput
+                                type="number"
+                                min={0}
+                                value={String(item.initial_quantity ?? item.quantity)}
+                                onValueChange={(v) => {
+                                  const val = parseInt(v) || 0;
+                                  // Si estamos creando un nuevo item, sincronizamos ambos
+                                  updateItem(idx, { 
+                                    initial_quantity: val,
+                                    quantity: item.label === "" ? val : item.quantity 
+                                  });
+                                }}
+                                className="w-24"
+                                placeholder="Base"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <TextInput
+                                type="number"
+                                min={0}
+                                value={String(item.quantity)}
+                                onValueChange={(v) =>
+                                  updateItem(idx, { quantity: v })
+                                }
+                                className="w-24 font-bold text-larioja-azul"
+                                placeholder="Actual"
+                              />
+                            </TableCell>
+                          </>
                         )}
                         <TableCell>
                           <input

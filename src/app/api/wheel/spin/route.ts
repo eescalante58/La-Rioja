@@ -115,25 +115,22 @@ export async function POST(request: NextRequest) {
     if (cfg.mode === "Premios" && winner.itemId) {
       const { data: item } = await supabase
         .from("wheel_items")
-        .select("quantity")
+        .select("quantity, initial_quantity")
         .eq("id", winner.itemId)
         .single();
 
       if (item && item.quantity > 0) {
         const newQuantity = item.quantity - 1;
-        console.log(`[API /api/wheel/spin] Updating item ${winner.itemId} quantity from ${item.quantity} to ${newQuantity}`);
-        
-        const { data: updated, error: updateError } = await supabase
+        // Si el stock llega a 0, también lo marcamos como is_active = false para que buildSegments lo oculte
+        const { error: updateError } = await supabase
           .from("wheel_items")
-          .update({ quantity: newQuantity })
-          .eq("id", winner.itemId)
-          .select();
+          .update({ 
+            quantity: newQuantity,
+            is_active: newQuantity > 0 
+          })
+          .eq("id", winner.itemId);
         
-        if (updateError) {
-          console.error(`[API /api/wheel/spin] Error updating quantity:`, updateError);
-        } else {
-          console.log(`[API /api/wheel/spin] Successfully updated item:`, updated);
-          // Actualizar el objeto winner en el array original para que la respuesta sea coherente
+        if (!updateError) {
           winner.quantity = newQuantity;
         }
       }
