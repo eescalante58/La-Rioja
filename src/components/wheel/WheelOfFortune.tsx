@@ -260,11 +260,18 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
         throw new Error(result?.error || "Error en el sorteo");
       }
 
-      // Sincronizamos segmentos en caliente
-      setSegments(result.segments);
+      // NO actualizamos segments aquí para evitar que la ruleta cambie visualmente mientras gira.
+      // En su lugar, buscamos dónde está el ganador en los segmentos ACTUALES que ve el público.
+      const currentWinnerIndex = segments.findIndex(s => 
+        (result.itemId && s.itemId === result.itemId) || s.label === result.winnerLabel
+      );
 
-      const segDeg = 360 / result.segments.length;
-      const winnerCenter = (result.winnerIndex + 0.5) * segDeg;
+      // Si por alguna razón el premio no está en la ruleta actual (ej. se borró justo antes),
+      // usamos el índice que mandó el servidor como fallback.
+      const finalWinnerIndex = currentWinnerIndex !== -1 ? currentWinnerIndex : result.winnerIndex;
+
+      const segDeg = 360 / segments.length;
+      const winnerCenter = (finalWinnerIndex + 0.5) * segDeg;
       
       // Pointer is at 90deg (right)
       const targetMod = (90 - winnerCenter + 360) % 360;
@@ -554,7 +561,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                     winAudio.current.pause();
                     winAudio.current.currentTime = 0;
                   }
-                  // Al continuar, limpiamos los segmentos que llegaron a stock 0
+                  // AHORA SÍ: Actualizamos la ruleta con los nuevos stocks (o quitamos los de stock 0)
                   if (winnerData?.segments) {
                     const nextSegments = winnerData.segments.filter((s: any) => 
                       selectedWheel.mode !== "Premios" || (s.quantity === undefined || s.quantity > 0)
