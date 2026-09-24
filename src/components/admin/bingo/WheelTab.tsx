@@ -106,24 +106,35 @@ export default function WheelTab({ events }: WheelTabProps) {
         },
         (payload) => {
           console.log("[WheelTab] Cambio detectado en wheel_items:", payload);
-          const newItem = payload.new as any;
-          
-          // Actualización Atómica: Modificamos el estado local inmediatamente con el dato de Supabase
-          setWheels(prevWheels => prevWheels.map(w => {
-            if (w.id === newItem.wheel_id) {
-              const updatedItems = (w.items || []).map(it => 
-                it.id === newItem.id ? { ...it, ...newItem } : it
-              );
-              
-              const newWheel = { ...w, items: updatedItems };
-              // Si este es el wheel que se está editando en el modal, lo actualizamos también
-              if (itemsWheel?.id === w.id) {
-                setItemsWheel(newWheel);
-              }
-              return newWheel;
+          const isDelete = payload.eventType === "DELETE";
+          // En DELETE, payload.new está vacío: hay que leer payload.old
+          const item = (isDelete ? payload.old : payload.new) as any;
+          if (!item?.id) return;
+
+          /**
+           * Aplica el cambio de un item sobre un wheel.
+           * En DELETE se filtra por id en todas las ruletas porque
+           * payload.old puede no incluir wheel_id (REPLICA IDENTITY).
+           */
+          const applyItemChange = (w: any) => {
+            const items = (w.items || []) as any[];
+            if (isDelete) {
+              return { ...w, items: items.filter((it: any) => it.id !== item.id) };
             }
-            return w;
-          }));
+            if (w.id !== item.wheel_id) return w;
+            const exists = items.some((it: any) => it.id === item.id);
+            return {
+              ...w,
+              items: exists
+                ? items.map((it: any) => (it.id === item.id ? { ...it, ...item } : it))
+                : [...items, item],
+            };
+          };
+
+          // Actualización Atómica: modificamos estado local inmediatamente con el dato de Supabase
+          setWheels(prevWheels => prevWheels.map(applyItemChange));
+          // Si el modal de segmentos está abierto, sincronizamos su wheel también
+          setItemsWheel((prev: any) => (prev ? applyItemChange(prev) : prev));
         }
       )
       .on(
