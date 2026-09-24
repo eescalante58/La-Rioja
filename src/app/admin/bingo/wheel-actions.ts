@@ -38,7 +38,8 @@ const wheelConfigSchema = z.object({
 const wheelItemSchema = z.object({
   label: z.string().min(1).max(120),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
-  quantity: z.number().int().min(1).default(1),
+  quantity: z.number().int().min(0).default(1),
+  initial_quantity: z.number().int().min(0).optional(),
   position: z.number().int().min(0).nullable().optional(),
   is_active: z.boolean().default(true),
 });
@@ -264,6 +265,7 @@ async function saveWheelItemsInternal(
       label: sanitizeInput(item.label).trim(),
       color: item.color ?? null,
       quantity: item.quantity ?? 1,
+      initial_quantity: item.initial_quantity ?? item.quantity ?? 1,
       position: item.position ?? idx + 1,
       is_active: item.is_active ?? true,
     }));
@@ -385,6 +387,7 @@ async function buildSegments(
     label: i.label,
     color: i.color,
     quantity: i.quantity,
+    initial_quantity: i.initial_quantity,
   }));
 }
 
