@@ -27,7 +27,16 @@ export interface Wheel {
   mode: string;
   wheel_name: string;
   published: boolean;
+  /** Duración del giro de la tómbola en segundos (0 en modo Premios). */
+  time_rotation: number;
   items: WheelItem[];
+}
+
+/** Cartón participante de una tómbola (fila de wheel_participating_cards). */
+export interface TombolaCard {
+  id: number;
+  card_number: number;
+  is_winner: boolean;
 }
 
 /** Registro de auditoría de un giro (fila de wheel_spins). */

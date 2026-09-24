@@ -1,0 +1,540 @@
+"use client";
+
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Dices, Ticket, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import confetti from "canvas-confetti";
+import { getPublicTombolaData } from "@/app/admin/bingo/wheel-actions";
+
+interface WheelSummary {
+  id: number;
+  company_id: number;
+  event_id: string;
+  event_name?: string;
+  mode: string;
+  wheel_name: string;
+}
+
+/** Config de la tómbola devuelta por getPublicTombolaData. */
+interface TombolaConfig {
+  id: number;
+  wheel_name: string;
+  event_id: string;
+  event_name: string;
+  mode: string;
+  /** Duración del giro del tambor en segundos. */
+  time_rotation: number;
+}
+
+interface TombolaProps {
+  wheels: WheelSummary[];
+  /** URL de la imagen de la tarjeta voladora (desde site_content). */
+  cardImageUrl: string;
+}
+
+/** Tarjeta voladora en tránsito (de la tómbola a la galería). */
+interface FlyingCard {
+  cardNumber: number;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  launched: boolean;
+}
+
+/**
+ * Tómbola virtual de cartones (proyección pública /tombola).
+ *
+ * - Izquierda: tambor giratorio (CSS 3D) + botón "Girar Tómbola".
+ *   El giro dura wheel.time_rotation segundos.
+ * - Derecha: galería de ganadores en filas de 4, con el número encima.
+ * - El ganador lo decide el servidor (/api/tombola/spin, randomInt
+ *   criptográfico + UPDATE atómico). El cliente solo anima y muestra.
+ * - Espectadores: sincronizan por polling a /api/tombola/state (CDN ~2s)
+ *   para soportar 1000+ clientes sin agotar conexiones Realtime.
+ */
+export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
+  const [selectedWheel, setSelectedWheel] = useState<WheelSummary | null>(
+    wheels.length === 1 ? wheels[0] : null,
+  );
+  const [tombConfig, setTombConfig] = useState<TombolaConfig | null>(null);
+  const [participants, setParticipants] = useState<number[]>([]);
+  const [winners, setWinners] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [spinning, setSpinning] = useState(false);
+  const [drumAngle, setDrumAngle] = useState(0);
+  const [currentBall, setCurrentBall] = useState<number | null>(null);
+  const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const drumRef = useRef<HTMLDivElement>(null);
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const suspenseAudio = useRef<HTMLAudioElement | null>(null);
+  const winAudio = useRef<HTMLAudioElement | null>(null);
+  const confettiInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tickInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  // true cuando ESTE cliente giró (el resultado llega por la respuesta del POST,
+  // no por polling — así el operador no depende del caché del CDN)
+  const operatorSpin = useRef(false);
+
+  // ── Audio ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    suspenseAudio.current = new Audio("/sounds/suspense.wav");
+    winAudio.current = new Audio("/sounds/win.wav");
+    suspenseAudio.current.load();
+    winAudio.current.load();
+  }, []);
+
+  useEffect(() => {
+    if (suspenseAudio.current) suspenseAudio.current.muted = isMuted;
+    if (winAudio.current) winAudio.current.muted = isMuted;
+  }, [isMuted]);
+
+  // ── Fullscreen ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
+
+  // ── Confeti continuo mientras la tarjeta ganadora se muestra ───────────
+  const stopConfetti = useCallback(() => {
+    if (confettiInterval.current) {
+      clearInterval(confettiInterval.current);
+      confettiInterval.current = null;
+    }
+  }, []);
+
+  const fireConfetti = useCallback(() => {
+    stopConfetti();
+    const defaults = { startVelocity: 35, spread: 360, ticks: 60, zIndex: 100 };
+    const randomInRange = (min: number, max: number) =>
+      Math.random() * (max - min) + min;
+
+    confettiInterval.current = setInterval(() => {
+      confetti({
+        ...defaults,
+        particleCount: 20,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ["#012060", "#F0B429", "#ffffff"],
+      });
+      confetti({
+        ...defaults,
+        particleCount: 20,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ["#1E9922", "#F0B429", "#ffffff"],
+      });
+    }, 300);
+    // La lluvia dura ~4s como celebración de cada ganador
+    setTimeout(stopConfetti, 4000);
+  }, [stopConfetti]);
+
+  useEffect(
+    () => () => {
+      stopConfetti();
+      if (pollInterval.current) clearInterval(pollInterval.current);
+      if (tickInterval.current) clearInterval(tickInterval.current);
+    },
+    [stopConfetti],
+  );
+
+  // ── Carga inicial del estado de la tómbola ─────────────────────────────
+  useEffect(() => {
+    if (!selectedWheel) return;
+    setLoading(true);
+    setParticipants([]);
+    setWinners([]);
+    setDrumAngle(0);
+    setCurrentBall(null);
+    getPublicTombolaData(selectedWheel.id).then((res) => {
+      if (res?.data) {
+        setTombConfig(res.data.config);
+        setParticipants(res.data.participants);
+        setWinners(res.data.winners);
+      }
+      setLoading(false);
+    });
+  }, [selectedWheel]);
+
+  // ── Polling para espectadores (CDN-cached, escala a 1000+ clientes) ────
+  useEffect(() => {
+    if (!selectedWheel) return;
+
+    pollInterval.current = setInterval(async () => {
+      // No interferir con un giro en curso de este cliente
+      if (spinning || operatorSpin.current) return;
+      try {
+        const res = await fetch(`/api/tombola/state?id=${selectedWheel.id}`);
+        const data = await res.json();
+        if (data?.success) {
+          setParticipants(data.participants);
+          setWinners(data.winners);
+        }
+      } catch {
+        // polling silencioso: si falla una pasada, reintenta la siguiente
+      }
+    }, 4000);
+
+    return () => {
+      if (pollInterval.current) clearInterval(pollInterval.current);
+    };
+  }, [selectedWheel?.id, spinning]);
+
+  // ── Balotas aleatorias durante el giro ─────────────────────────────────
+  const startBallTicker = useCallback(() => {
+    tickInterval.current = setInterval(() => {
+      setParticipants((prev) => {
+        if (prev.length > 0) {
+          setCurrentBall(prev[Math.floor(Math.random() * prev.length)]);
+        }
+        return prev;
+      });
+    }, 120);
+  }, []);
+
+  const stopBallTicker = useCallback(() => {
+    if (tickInterval.current) {
+      clearInterval(tickInterval.current);
+      tickInterval.current = null;
+    }
+  }, []);
+
+  // ── Giro de la tómbola ─────────────────────────────────────────────────
+  const handleSpin = async () => {
+    if (spinning || !selectedWheel || participants.length === 0) return;
+
+    const rotationSec = tombConfig?.time_rotation || 5;
+    operatorSpin.current = true;
+    setSpinning(true);
+
+    if (suspenseAudio.current) {
+      suspenseAudio.current.currentTime = 0;
+      suspenseAudio.current.play().catch(() => {});
+    }
+
+    // Tambor girando N vueltas rápidas + balotas aleatorias
+    setDrumAngle((prev) => prev + 360 * Math.max(3, Math.floor(rotationSec)));
+    startBallTicker();
+
+    try {
+      // El ganador lo decide el servidor — la petición sale YA para 0 latencia
+      const res = await fetch(`/api/tombola/spin?id=${selectedWheel.id}`, {
+        method: "POST",
+      });
+      const result = await res.json();
+
+      if (!result?.success) {
+        throw new Error(result?.error || "Error en el sorteo");
+      }
+
+      // Esperar a que termine la animación del tambor (time_rotation)
+      await new Promise((r) => setTimeout(r, rotationSec * 1000));
+
+      stopBallTicker();
+      setCurrentBall(result.winnerCardNumber);
+
+      if (suspenseAudio.current) suspenseAudio.current.pause();
+      if (winAudio.current) {
+        winAudio.current.currentTime = 0;
+        winAudio.current.play().catch(() => {});
+      }
+
+      // Tarjeta voladora: de la tómbola a la galería
+      const drumRect = drumRef.current?.getBoundingClientRect();
+      const galleryRect = galleryRef.current?.getBoundingClientRect();
+      if (drumRect && galleryRect) {
+        const flying: FlyingCard = {
+          cardNumber: result.winnerCardNumber,
+          from: {
+            x: drumRect.left + drumRect.width / 2 - 40,
+            y: drumRect.top + drumRect.height / 2 - 55,
+          },
+          to: {
+            x: galleryRect.left + 20,
+            y: galleryRect.top + 20,
+          },
+          launched: false,
+        };
+        setFlyingCard(flying);
+        // Doble rAF: primero montamos en 'from', luego transicionamos a 'to'
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() =>
+            setFlyingCard((f) => (f ? { ...f, launched: true } : f)),
+          ),
+        );
+      }
+
+      // Al aterrizar: agregar a la galería y quitar de participantes
+      setTimeout(() => {
+        setWinners((prev) => [...prev, result.winnerCardNumber]);
+        setParticipants((prev) =>
+          prev.filter((c) => c !== result.winnerCardNumber),
+        );
+        setFlyingCard(null);
+        setCurrentBall(null);
+        fireConfetti();
+      }, 1200);
+    } catch (error: unknown) {
+      console.error("Error spinning tombola:", error);
+      alert(error instanceof Error ? error.message : "Error al girar la tómbola.");
+      stopBallTicker();
+      setCurrentBall(null);
+      if (suspenseAudio.current) suspenseAudio.current.pause();
+    } finally {
+      setSpinning(false);
+      operatorSpin.current = false;
+    }
+  };
+
+  // ── Selector cuando hay varias tómbolas publicadas ─────────────────────
+  if (!selectedWheel) {
+    return (
+      <div className="flex flex-col items-center gap-6 py-20">
+        <Dices size={56} className="text-larioja-amarillo" />
+        <h2 className="font-montserrat text-2xl font-black uppercase tracking-wider text-white">
+          Selecciona una Tómbola
+        </h2>
+        <div className="flex flex-wrap justify-center gap-4 max-w-3xl">
+          {wheels.map((w) => (
+            <button
+              key={w.id}
+              onClick={() => setSelectedWheel(w)}
+              className="rounded-2xl border-2 border-larioja-amarillo/60 bg-white/5 px-8 py-5 text-left backdrop-blur transition-all hover:scale-105 hover:border-larioja-amarillo hover:bg-white/10"
+            >
+              <p className="font-montserrat text-xs font-bold uppercase tracking-widest text-larioja-amarillo">
+                {w.mode}
+              </p>
+              <p className="mt-1 text-lg font-bold text-white">{w.wheel_name}</p>
+              <p className="text-xs text-white/50">{w.event_name || w.event_id}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-4 relative w-full max-w-[1600px] mx-auto px-4">
+      {/* Animaciones CSS de la tómbola */}
+      <style jsx global>{`
+        @keyframes drum-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes ball-tumble {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          25% { transform: translate(8px, -14px) rotate(90deg); }
+          50% { transform: translate(-10px, 6px) rotate(180deg); }
+          75% { transform: translate(6px, 12px) rotate(270deg); }
+        }
+        @keyframes winner-pop {
+          0% { transform: scale(0.3); opacity: 0; }
+          60% { transform: scale(1.15); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .tombola-drum {
+          transition: transform 1s cubic-bezier(0.2, 0.8, 0.3, 1);
+        }
+        .tombola-ball {
+          animation: ball-tumble 0.8s ease-in-out infinite;
+        }
+        .winner-card-in {
+          animation: winner-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+      `}</style>
+
+      {/* Controles flotantes */}
+      <div className="fixed top-24 right-6 z-[120] flex flex-col gap-3">
+        <button
+          onClick={() => setIsMuted(!isMuted)}
+          className="p-3 rounded-full bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md border border-white/10 shadow-xl"
+          title={isMuted ? "Activar sonido" : "Silenciar"}
+        >
+          {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+        </button>
+        <button
+          onClick={toggleFullscreen}
+          className="p-3 rounded-full bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md border border-white/10 shadow-xl"
+          title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+        >
+          {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+        </button>
+      </div>
+
+      {/* Encabezado */}
+      <div className="text-center w-full">
+        <p className="font-montserrat text-lg font-bold uppercase tracking-[0.3em] text-larioja-amarillo">
+          {selectedWheel.event_name || selectedWheel.event_id}
+        </p>
+        <h2 className="mt-0 font-montserrat text-lg font-black uppercase tracking-wide text-white md:text-2xl">
+          {selectedWheel.wheel_name}
+        </h2>
+        {participants.length > 0 && (
+          <p className="mt-1 font-montserrat text-sm font-bold uppercase tracking-widest text-white/70">
+            Cartones en juego:{" "}
+            <span className="text-larioja-amarillo">{participants.length}</span>
+          </p>
+        )}
+        {wheels.length > 1 && (
+          <button
+            onClick={() => setSelectedWheel(null)}
+            className="mt-1 text-[10px] font-bold uppercase tracking-widest text-white/40 underline underline-offset-4 hover:text-white"
+          >
+            Cambiar de tómbola
+          </button>
+        )}
+      </div>
+
+      {/* Layout principal: Tómbola izquierda + Galería derecha */}
+      <div className="flex flex-col lg:flex-row items-start justify-center gap-10 lg:gap-16 w-full">
+        {/* ── Izquierda: Tambor + botón ─────────────────────────────── */}
+        <div className="flex flex-col items-center gap-6 shrink-0 mx-auto lg:mx-0">
+          <div
+            ref={drumRef}
+            className="relative flex items-center justify-center"
+          >
+            {/* Tambor */}
+            <div
+              className="tombola-drum relative flex items-center justify-center rounded-full border-[10px] border-larioja-amarillo/80 bg-white/5 shadow-[0_0_60px_rgba(240,180,41,0.25),inset_0_0_40px_rgba(0,0,0,0.4)] backdrop-blur-sm h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
+              style={{ transform: `rotate(${drumAngle}deg)` }}
+            >
+              {/* Balotas decorativas en el tambor */}
+              {spinning && (
+                <>
+                  {[0, 60, 120, 180, 240, 300].map((deg) => (
+                    <div
+                      key={deg}
+                      className="tombola-ball absolute h-8 w-8 md:h-11 md:w-11 rounded-full bg-gradient-to-br from-larioja-amarillo to-amber-600 shadow-lg border-2 border-white/40"
+                      style={{
+                        top: `${50 + 38 * Math.sin((deg * Math.PI) / 180)}%`,
+                        left: `${50 + 38 * Math.cos((deg * Math.PI) / 180)}%`,
+                        transform: "translate(-50%, -50%)",
+                        animationDelay: `${deg / 360}s`,
+                      }}
+                    />
+                  ))}
+                </>
+              )}
+              {/* Balota central: número actual durante el giro / ganador */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div
+                  className={`flex items-center justify-center rounded-full bg-white shadow-2xl transition-all ${
+                    currentBall !== null
+                      ? "h-24 w-24 md:h-32 md:w-32 winner-card-in"
+                      : "h-16 w-16 md:h-20 md:w-20 opacity-30"
+                  }`}
+                  style={{ transform: `rotate(${-drumAngle}deg)` }}
+                >
+                  <span className="font-montserrat text-xl md:text-3xl font-black text-larioja-azul">
+                    {currentBall !== null ? `#${currentBall}` : "?"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Botón de giro */}
+          <button
+            onClick={handleSpin}
+            disabled={spinning || loading || participants.length === 0}
+            className={`rounded-full px-10 py-4 font-montserrat text-sm font-bold uppercase tracking-[0.2em] transition-all shadow-xl ${
+              spinning || loading || participants.length === 0
+                ? "bg-white/10 text-white/30 cursor-not-allowed"
+                : "bg-larioja-amarillo text-larioja-azul hover:scale-105 hover:shadow-[0_0_30px_rgba(240,180,41,0.5)] active:scale-95"
+            }`}
+          >
+            {spinning ? "Girando..." : "Girar Tómbola"}
+          </button>
+
+          {loading && participants.length === 0 && (
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-larioja-amarillo" />
+          )}
+          {!loading && participants.length === 0 && winners.length === 0 && (
+            <p className="max-w-xs text-center text-sm text-white/60">
+              No hay cartones participantes en esta tómbola.
+            </p>
+          )}
+          {!loading && participants.length === 0 && winners.length > 0 && (
+            <p className="max-w-xs text-center text-sm text-larioja-amarillo font-bold">
+              ¡Todos los cartones fueron sorteados!
+            </p>
+          )}
+        </div>
+
+        {/* ── Derecha: Galería de ganadores (filas de 4) ────────────── */}
+        <div ref={galleryRef} className="flex-1 w-full max-w-2xl">
+          <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-6 min-h-[300px]">
+            <div className="flex items-center gap-3 mb-5">
+              <Ticket size={22} className="text-larioja-amarillo" />
+              <h3 className="font-montserrat text-sm font-bold uppercase tracking-[0.25em] text-white/80">
+                Cartones Ganadores
+              </h3>
+              {winners.length > 0 && (
+                <span className="ml-auto rounded-full bg-larioja-amarillo/20 px-3 py-1 font-montserrat text-xs font-bold text-larioja-amarillo">
+                  {winners.length}
+                </span>
+              )}
+            </div>
+
+            {winners.length === 0 ? (
+              <p className="py-10 text-center text-sm text-white/40 italic">
+                Los cartones ganadores aparecerán aquí.
+              </p>
+            ) : (
+              <div className="grid grid-cols-4 gap-3">
+                {winners.map((cardNumber) => (
+                  <div
+                    key={cardNumber}
+                    className="winner-card-in relative flex flex-col items-center"
+                  >
+                    <p className="mb-1 font-montserrat text-[10px] font-bold uppercase tracking-wider text-larioja-amarillo">
+                      #{cardNumber}
+                    </p>
+                    <img
+                      src={cardImageUrl}
+                      alt={`Cartón ${cardNumber}`}
+                      className="w-full rounded-lg shadow-lg border-2 border-larioja-amarillo/60 object-cover aspect-[3/4]"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tarjeta voladora (posición fija, transición CSS) */}
+      {flyingCard && (
+        <div
+          className="fixed z-[200] pointer-events-none"
+          style={{
+            left: flyingCard.launched ? flyingCard.to.x : flyingCard.from.x,
+            top: flyingCard.launched ? flyingCard.to.y : flyingCard.from.y,
+            transform: flyingCard.launched
+              ? "translate(0, 0) rotate(720deg) scale(0.55)"
+              : "translate(0, 0) rotate(0deg) scale(1)",
+            transition: "all 1.1s cubic-bezier(0.25, 0.8, 0.3, 1)",
+          }}
+        >
+          <div className="w-20 flex flex-col items-center">
+            <p className="mb-1 font-montserrat text-xs font-black uppercase text-larioja-amarillo drop-shadow-lg">
+              #{flyingCard.cardNumber}
+            </p>
+            <img
+              src={cardImageUrl}
+              alt="Tarjeta ganadora"
+              className="w-full rounded-lg shadow-2xl border-2 border-larioja-amarillo object-cover aspect-[3/4]"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
