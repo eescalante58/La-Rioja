@@ -601,7 +601,8 @@ async function loadTombolaCardsInternal(companyId: number, wheelId: number) {
     .select("id", { count: "exact", head: true })
     .eq("wheel_id", wheelId);
 
-  revalidatePath("/admin/bingo");
+  // Sin revalidatePath: el diálogo ya recarga la lista con getTombolaCards
+  // y realtime; re-renderizar /admin/bingo completo tardaba minutos.
   return { success: true, loaded: rows.length, total: count ?? 0 };
 }
 
