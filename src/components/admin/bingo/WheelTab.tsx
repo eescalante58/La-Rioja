@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   Title,
@@ -66,21 +66,31 @@ export default function WheelTab({ events }: WheelTabProps) {
   const [spins, setSpins] = useState<any[]>([]);
 
   const supabase = createClient();
+  /**
+   * Marca si ya se hizo la primera carga de ruletas del evento actual.
+   * Se usa un ref porque loadWheels puede invocarse desde closures de
+   * Realtime donde 'wheels' estaría obsoleto.
+   */
+  const initialLoadDone = useRef(false);
 
   const loadWheels = async (ev: Event) => {
-    // Only show global loading spinner on initial load to avoid UI flicker during realtime updates
-    if (wheels.length === 0) setLoading(true);
+    // Spinner global solo en la primera carga para evitar parpadeo con Realtime
+    if (!initialLoadDone.current) setLoading(true);
     try {
       const result = await getWheels(ev.company_id, ev.event_id);
       if (result?.data) {
         setWheels(result.data);
-        // If the items dialog is open, update the reference wheel object
-        if (itemsWheel) {
-          const updatedWheel = result.data.find((w: any) => w.id === itemsWheel.id);
-          if (updatedWheel) setItemsWheel(updatedWheel);
-        }
+        initialLoadDone.current = true;
+        // Si el modal de segmentos está abierto, refrescamos su wheel.
+        // Se usa update funcional para leer el estado actual, no el del closure.
+        setItemsWheel((prev: any) =>
+          prev
+            ? (result.data.find((w: any) => w.id === prev.id) ?? prev)
+            : prev,
+        );
       } else {
         setWheels([]);
+        initialLoadDone.current = true;
       }
     } finally {
       setLoading(false);
@@ -221,6 +231,7 @@ export default function WheelTab({ events }: WheelTabProps) {
                 );
                 setSelectedEvent(ev || null);
                 setWheels([]);
+                initialLoadDone.current = false;
                 if (ev) loadWheels(ev);
               }}
             >
