@@ -74,8 +74,10 @@ export default function WheelItemsDialog({
       return;
     }
 
+    // Sincronizar items cuando cambian en el prop 'wheel' (Realtime)
+    const currentItems = wheel?.items || [];
     setItems(
-      (wheel?.items || []).map((i: any) => ({
+      currentItems.map((i: any) => ({
         label: i.label,
         color: i.color || "#012060",
         quantity: i.quantity ?? 1,
@@ -83,7 +85,7 @@ export default function WheelItemsDialog({
         is_active: i.is_active ?? true,
       })),
     );
-  }, [isOpen, wheel?.items, isCardsMode, companyId, eventId]);
+  }, [isOpen, wheel, companyId, eventId]); // Escuchamos el objeto wheel completo
 
   const updateItem = (idx: number, patch: Partial<EditableItem>) => {
     setItems((prev) =>
