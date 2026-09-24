@@ -121,12 +121,11 @@ export async function POST(request: NextRequest) {
 
       if (item && item.quantity > 0) {
         const newQuantity = item.quantity - 1;
-        // Si el stock llega a 0, también lo marcamos como is_active = false para que buildSegments lo oculte
+        // Solo actualizamos la cantidad. El filtro quantity > 0 se encarga de ocultarlo.
         const { error: updateError } = await supabase
           .from("wheel_items")
           .update({ 
-            quantity: newQuantity,
-            is_active: newQuantity > 0 
+            quantity: newQuantity
           })
           .eq("id", winner.itemId);
         
