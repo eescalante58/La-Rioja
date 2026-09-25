@@ -18,7 +18,7 @@ import {
   TableBody,
   TableCell,
 } from "@tremor/react";
-import { Dices, Plus, Edit, Trash2, Eye, EyeOff, History } from "lucide-react";
+import { Dices, Plus, Edit, Trash2, Eye, EyeOff, History, Monitor } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   getWheels,
@@ -347,6 +347,19 @@ export default function WheelTab({ events }: WheelTabProps) {
                   >
                     {wheel.published ? "Ocultar" : "Publicar"}
                   </Button>
+                  {wheel.mode !== "Premios" && (
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      icon={Monitor}
+                      tooltip="Monitor de resultados de la tómbola"
+                      onClick={() =>
+                        window.open(`/tombola/monitor?id=${wheel.id}`, "_blank")
+                      }
+                    >
+                      Monitorear
+                    </Button>
+                  )}
                   <Button
                     size="xs"
                     variant="light"
