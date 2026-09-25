@@ -481,7 +481,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             >
             {/* Tambor */}
             <div
-              className="tombola-drum relative flex items-center justify-center rounded-full border-[10px] border-[#2a3348] shadow-[inset_0_0_60px_rgba(0,0,0,0.6),0_20px_50px_rgba(0,0,0,0.5)] h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
+              className="tombola-drum relative flex items-center justify-center rounded-full border-[10px] border-larioja-verde shadow-[inset_0_0_60px_rgba(0,0,0,0.6),0_20px_50px_rgba(0,0,0,0.5)] h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
               style={{
                 transform: `rotate(${drumAngle}deg)`,
                 background:
