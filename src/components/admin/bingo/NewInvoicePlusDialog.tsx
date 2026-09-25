@@ -248,8 +248,12 @@ export default function NewInvoicePlusDialog({
                     {countries.map((country) => (
                       <SelectItem key={`${country.name}-${country.phone_code}`} value={country.phone_code}>
                         <div className="flex items-center gap-2">
-                          <span className="text-lg">{country.flag_emoji}</span>
-                          <span>+{country.phone_code}</span>
+                          <img
+                            src={`https://flagcdn.com/w20/${country.iso2.toLowerCase()}.png`}
+                            alt={country.name}
+                            className="h-3.5 w-5 rounded-[2px] object-cover"
+                          />
+                          <span>{country.phone_code}</span>
                         </div>
                       </SelectItem>
                     ))}
