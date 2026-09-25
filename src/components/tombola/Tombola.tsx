@@ -61,6 +61,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
   const [spinning, setSpinning] = useState(false);
   const [drumAngle, setDrumAngle] = useState(0);
   const [currentBall, setCurrentBall] = useState<number | null>(null);
+  const [winnerReveal, setWinnerReveal] = useState<number | null>(null);
   const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -239,12 +240,19 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
 
       stopBallTicker();
       setCurrentBall(result.winnerCardNumber);
+      setWinnerReveal(result.winnerCardNumber);
 
       if (suspenseAudio.current) suspenseAudio.current.pause();
       if (winAudio.current) {
         winAudio.current.currentTime = 0;
         winAudio.current.play().catch(() => {});
       }
+      fireConfetti();
+
+      // El número ganador se muestra primero en un círculo grande 2s,
+      // luego se suelta la tarjeta voladora hacia la galería.
+      await new Promise((r) => setTimeout(r, 2000));
+      setWinnerReveal(null);
 
       // Tarjeta voladora: de la tómbola a la galería
       const drumRect = drumRef.current?.getBoundingClientRect();
@@ -279,13 +287,13 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
         );
         setFlyingCard(null);
         setCurrentBall(null);
-        fireConfetti();
       }, 1200);
     } catch (error: unknown) {
       console.error("Error spinning tombola:", error);
       alert(error instanceof Error ? error.message : "Error al girar la tómbola.");
       stopBallTicker();
       setCurrentBall(null);
+      setWinnerReveal(null);
       if (suspenseAudio.current) suspenseAudio.current.pause();
     } finally {
       setSpinning(false);
@@ -339,6 +347,16 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
           60% { transform: scale(1.15); }
           100% { transform: scale(1); opacity: 1; }
         }
+        @keyframes winner-reveal {
+          0% { transform: scale(0.2); opacity: 0; }
+          55% { transform: scale(1.12); opacity: 1; }
+          75% { transform: scale(0.97); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes winner-glow {
+          0%, 100% { box-shadow: 0 0 60px rgba(240,180,41,0.55); }
+          50% { box-shadow: 0 0 110px rgba(240,180,41,0.9); }
+        }
         .tombola-drum {
           transition: transform 1s cubic-bezier(0.2, 0.8, 0.3, 1);
         }
@@ -347,6 +365,11 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
         }
         .winner-card-in {
           animation: winner-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .winner-reveal {
+          animation:
+            winner-reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+            winner-glow 1.1s ease-in-out 0.6s infinite;
         }
       `}</style>
 
@@ -438,6 +461,23 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                 </div>
               </div>
             </div>
+
+            {/* Círculo grande del ganador: se muestra 2s antes de soltar
+                la tarjeta voladora. Fuera del tambor rotatorio → derecho. */}
+            {winnerReveal !== null && (
+              <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+                <div className="winner-reveal flex h-56 w-56 items-center justify-center rounded-full border-8 border-larioja-amarillo bg-white md:h-80 md:w-80">
+                  <div className="flex flex-col items-center">
+                    <span className="font-montserrat text-xs font-bold uppercase tracking-[0.3em] text-gray-400 md:text-sm">
+                      Ganador
+                    </span>
+                    <span className="font-montserrat text-6xl font-black leading-none text-larioja-azul md:text-8xl">
+                      #{winnerReveal}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Botón de giro */}
@@ -494,7 +534,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                     key={cardNumber}
                     className="winner-card-in relative flex flex-col items-center"
                   >
-                    <p className="mb-1 font-montserrat text-[10px] font-bold uppercase tracking-wider text-larioja-amarillo">
+                    <p className="mb-1 font-montserrat text-base font-black uppercase tracking-wider text-larioja-amarillo md:text-lg">
                       #{cardNumber}
                     </p>
                     <img
