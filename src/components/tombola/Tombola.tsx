@@ -474,7 +474,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
         {/* ── Izquierda: Tambor + botón ─────────────────────────────── */}
         <div className="flex flex-col items-center gap-6 shrink-0 mx-auto lg:mx-0">
           {/* Card contenedora del tambor */}
-          <div className="rounded-3xl border border-white/[0.06] bg-[linear-gradient(135deg,#1a2138_0%,#0d1120_100%)] p-8 shadow-2xl md:p-10">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-md md:p-10">
             <div
               ref={drumRef}
               className="relative flex items-center justify-center"
