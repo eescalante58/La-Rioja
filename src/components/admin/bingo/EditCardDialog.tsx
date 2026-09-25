@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogPanel,
@@ -8,20 +8,32 @@ import {
   Text,
   TextInput,
   Button,
-  Select,
-  SelectItem,
 } from "@tremor/react";
 import { updateSingleCard } from "@/app/admin/bingo/actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+
+interface Country {
+  name: string;
+  iso2: string;
+  phone_code: string;
+  flag_emoji: string;
+}
 
 interface EditCardDialogProps {
   isOpen: boolean;
   onClose: () => void;
   card: any;
   event: any;
-  countries: any[];
+  countries: Country[];
   onSuccess: () => void;
 }
+
+/** Solo dígitos: "+1-721" → "1721" (algunos códigos traen guiones). */
+const digitsOf = (v: string) => v.replace(/\D/g, "");
+
+/** URL de bandera por ISO2 (flagcdn — los emojis de bandera no se ven en Windows). */
+const flagUrl = (iso2: string, w: 20 | 40 = 40) =>
+  `https://flagcdn.com/w${w}/${iso2.toLowerCase()}.png`;
 
 export default function EditCardDialog({
   isOpen,
@@ -34,17 +46,39 @@ export default function EditCardDialog({
   const [loading, setLoading] = useState(false);
   const [phoneArea, setPhoneArea] = useState("+503");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [areaListOpen, setAreaListOpen] = useState(false);
 
+  // Al abrir: separa el número guardado en código de área + número local,
+  // usando el prefijo de país más largo que coincida (+1-721 antes que +1).
   useEffect(() => {
-    if (card) {
-      const existingArea = countries.find((c) =>
-        card.player_phone_number?.startsWith(c.phone_code),
-      )?.phone_code;
-      const area = existingArea || "+503";
-      setPhoneArea(area);
-      setPhoneNumber(card.player_phone_number ? card.player_phone_number.replace(area, "") : "");
-    }
+    if (!card) return;
+    const raw = card.player_phone_number || "";
+    const digits = digitsOf(raw);
+    const match = countries
+      .filter((c) => digits.startsWith(digitsOf(c.phone_code)))
+      .sort((a, b) => digitsOf(b.phone_code).length - digitsOf(a.phone_code).length)[0];
+    setPhoneArea(match ? `+${digitsOf(match.phone_code)}` : "+503");
+    setPhoneNumber(match ? digits.slice(digitsOf(match.phone_code).length) : digits);
   }, [card, countries]);
+
+  // País detectado al digitar: exacto, o único candidato por prefijo.
+  const selectedCountry = useMemo(() => {
+    const digits = digitsOf(phoneArea);
+    if (!digits) return null;
+    const exact = countries.find((c) => digitsOf(c.phone_code) === digits);
+    if (exact) return exact;
+    const candidates = countries.filter((c) =>
+      digitsOf(c.phone_code).startsWith(digits),
+    );
+    return candidates.length === 1 ? candidates[0] : null;
+  }, [phoneArea, countries]);
+
+  // Lista del dropdown filtrada por lo que se va digitando.
+  const filteredCountries = useMemo(() => {
+    const digits = digitsOf(phoneArea);
+    if (!digits) return countries;
+    return countries.filter((c) => digitsOf(c.phone_code).startsWith(digits));
+  }, [phoneArea, countries]);
 
   const handleUpdateSingleCard = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -91,24 +125,80 @@ export default function EditCardDialog({
             </div>
 
             <div className="grid grid-cols-3 gap-2">
-              <div className="col-span-1 space-y-1">
+              <div className="col-span-1 space-y-1 relative">
                 <label className="text-xs font-bold uppercase text-gray-500">Área</label>
-                <Select value={phoneArea} onValueChange={setPhoneArea} enableClear={false}>
-                  {countries.map((c: any) => (
-                    <SelectItem key={c.iso2} value={c.phone_code}>
-                      {c.flag_emoji} +{c.phone_code}
-                    </SelectItem>
-                  ))}
-                </Select>
+                <div className="relative">
+                  {selectedCountry && (
+                    <img
+                      src={flagUrl(selectedCountry.iso2)}
+                      alt={selectedCountry.name}
+                      className="absolute left-2.5 top-1/2 h-4 w-6 -translate-y-1/2 rounded-[2px] object-cover"
+                    />
+                  )}
+                  <input
+                    type="text"
+                    inputMode="tel"
+                    autoComplete="off"
+                    value={phoneArea}
+                    placeholder="+503"
+                    title={selectedCountry?.name}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^\d+]/g, "");
+                      setPhoneArea(v === "" || v.startsWith("+") ? v : `+${v}`);
+                      setAreaListOpen(true);
+                    }}
+                    onFocus={() => setAreaListOpen(true)}
+                    onBlur={() => setTimeout(() => setAreaListOpen(false), 150)}
+                    className={`w-full rounded-lg border border-gray-300 bg-white py-2 text-sm text-gray-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${
+                      selectedCountry ? "pl-10 pr-2" : "px-3"
+                    }`}
+                  />
+                </div>
+                {areaListOpen && filteredCountries.length > 0 && (
+                  <ul className="absolute left-0 z-50 mt-1 max-h-48 w-72 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
+                    {filteredCountries.map((c) => (
+                      <li key={`${c.iso2}-${c.phone_code}`}>
+                        <button
+                          type="button"
+                          onMouseDown={() => {
+                            setPhoneArea(`+${digitsOf(c.phone_code)}`);
+                            setAreaListOpen(false);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                        >
+                          <img
+                            src={flagUrl(c.iso2, 20)}
+                            alt=""
+                            className="h-3.5 w-5 shrink-0 rounded-[2px] object-cover"
+                          />
+                          <span className="shrink-0 font-semibold text-gray-800 dark:text-gray-100">
+                            {c.phone_code}
+                          </span>
+                          <span className="truncate text-gray-500 dark:text-gray-400">
+                            {c.name}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <div className="col-span-2 space-y-1">
                 <label className="text-xs font-bold uppercase text-gray-500">Teléfono</label>
                 <TextInput
                   value={phoneNumber}
-                  onValueChange={setPhoneNumber}
+                  onValueChange={(v) => setPhoneNumber(v.replace(/\D/g, ""))}
                   placeholder="Ej: 70000000"
                 />
-                <input type="hidden" name="player_phone_number" value={`${phoneArea}${phoneNumber}`} />
+                <input
+                  type="hidden"
+                  name="player_phone_number"
+                  value={
+                    phoneNumber
+                      ? `+${digitsOf(phoneArea)}${digitsOf(phoneNumber)}`
+                      : ""
+                  }
+                />
               </div>
             </div>
 
