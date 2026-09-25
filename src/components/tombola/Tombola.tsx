@@ -632,18 +632,21 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                     key={cardNumber}
                     className="winner-card-in relative flex flex-col items-center"
                   >
-                    {/* Posición en el orden del sorteo */}
-                    <span className="absolute -left-1.5 -top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-larioja-amarillo font-montserrat text-[10px] font-black text-larioja-azul shadow-lg">
-                      {idx + 1}°
-                    </span>
                     <p className="mb-1 font-montserrat text-base font-black uppercase tracking-wider text-larioja-amarillo md:text-lg">
                       #{cardNumber}
                     </p>
-                    <img
-                      src={cardImageUrl}
-                      alt={`Cartón ${cardNumber}`}
-                      className="w-full rounded-lg shadow-lg border-2 border-larioja-amarillo/60 object-cover aspect-[3/4]"
-                    />
+                    <div className="relative w-full">
+                      {/* Posición en el orden del sorteo (esquina de la
+                          tarjeta — no se monta sobre el número en móvil) */}
+                      <span className="absolute left-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-larioja-amarillo font-montserrat text-[10px] font-black text-larioja-azul shadow-lg">
+                        {idx + 1}°
+                      </span>
+                      <img
+                        src={cardImageUrl}
+                        alt={`Cartón ${cardNumber}`}
+                        className="w-full rounded-lg shadow-lg border-2 border-larioja-amarillo/60 object-cover aspect-[3/4]"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
