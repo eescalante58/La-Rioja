@@ -570,9 +570,8 @@ export async function getPublicTombolaData(wheelId: number) {
 
   const { data: cards, error: cardsError } = await supabase
     .from("wheel_participating_cards")
-    .select("card_number, is_winner")
-    .eq("wheel_id", cfg.id)
-    .order("card_number");
+    .select("card_number, is_winner, updated_at")
+    .eq("wheel_id", cfg.id);
 
   if (cardsError) return { error: cardsError.message };
 
@@ -584,7 +583,24 @@ export async function getPublicTombolaData(wheelId: number) {
     .eq("event_id", cfg.event_id)
     .single();
 
-  const list = (cards || []) as { card_number: number; is_winner: boolean }[];
+  const list = (cards || []) as {
+    card_number: number;
+    is_winner: boolean;
+    updated_at: string;
+  }[];
+
+  // Participantes por número; ganadores por orden de sorteo (updated_at)
+  const participants = list
+    .filter((c) => !c.is_winner)
+    .sort((a, b) => a.card_number - b.card_number)
+    .map((c) => c.card_number);
+  const winners = list
+    .filter((c) => c.is_winner)
+    .sort(
+      (a, b) =>
+        new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime(),
+    )
+    .map((c) => c.card_number);
 
   return {
     data: {
@@ -596,8 +612,8 @@ export async function getPublicTombolaData(wheelId: number) {
         mode: cfg.mode,
         time_rotation: cfg.time_rotation || 5,
       },
-      participants: list.filter((c) => !c.is_winner).map((c) => c.card_number),
-      winners: list.filter((c) => c.is_winner).map((c) => c.card_number),
+      participants,
+      winners,
     },
   };
 }
