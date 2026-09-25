@@ -479,7 +479,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
           >
             {/* Tambor */}
             <div
-              className="tombola-drum relative flex items-center justify-center rounded-full border-8 border-larioja-amarillo/60 bg-gradient-to-b from-[#0a2a75]/70 to-[#010c28]/90 shadow-[0_0_50px_rgba(240,180,41,0.18),inset_0_0_60px_rgba(0,0,0,0.5)] backdrop-blur-sm h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
+              className="tombola-drum relative flex items-center justify-center rounded-full border-8 border-larioja-verde bg-gradient-to-b from-[#0a2a75]/70 to-[#010c28]/90 shadow-[0_0_50px_rgba(30,153,34,0.3),inset_0_0_60px_rgba(0,0,0,0.5)] backdrop-blur-sm h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
               style={{ transform: `rotate(${drumAngle}deg)` }}
             >
               {/* Balotas numeradas: cartones participantes reales. Orbitan
