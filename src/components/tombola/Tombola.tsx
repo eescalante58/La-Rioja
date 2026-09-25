@@ -473,15 +473,24 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
       <div className="flex flex-col lg:flex-row items-start justify-center gap-10 lg:gap-16 w-full">
         {/* ── Izquierda: Tambor + botón ─────────────────────────────── */}
         <div className="flex flex-col items-center gap-6 shrink-0 mx-auto lg:mx-0">
-          <div
-            ref={drumRef}
-            className="relative flex items-center justify-center"
-          >
+          {/* Card contenedora del tambor */}
+          <div className="rounded-3xl border border-white/[0.06] bg-[linear-gradient(135deg,#1a2138_0%,#0d1120_100%)] p-8 shadow-2xl md:p-10">
+            <div
+              ref={drumRef}
+              className="relative flex items-center justify-center"
+            >
             {/* Tambor */}
             <div
-              className="tombola-drum relative flex items-center justify-center rounded-full border-8 border-larioja-verde bg-gradient-to-b from-[#0a2a75]/70 to-[#010c28]/90 shadow-[0_0_50px_rgba(30,153,34,0.3),inset_0_0_60px_rgba(0,0,0,0.5)] backdrop-blur-sm h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
-              style={{ transform: `rotate(${drumAngle}deg)` }}
+              className="tombola-drum relative flex items-center justify-center rounded-full border-[10px] border-[#2a3348] shadow-[inset_0_0_60px_rgba(0,0,0,0.6),0_20px_50px_rgba(0,0,0,0.5)] h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
+              style={{
+                transform: `rotate(${drumAngle}deg)`,
+                background:
+                  "radial-gradient(circle at 50% 40%, #141b2e 0%, #05070d 100%)",
+              }}
             >
+              {/* Guía circular punteada (decorativa): sugiere el límite
+                  donde caen las balotas */}
+              <div className="pointer-events-none absolute inset-[14%] rounded-full border-2 border-dashed border-white/15" />
               {/* Balotas numeradas: cartones participantes reales. Orbitan
                   con el tambor y contra-rotan para que el número quede
                   derecho; durante el giro re-muestrean números al azar. */}
@@ -551,6 +560,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                 </div>
               </div>
             )}
+            </div>
           </div>
 
           {/* Botón de giro */}
