@@ -42,6 +42,7 @@ interface WinnerRow {
   is_winner: boolean;
   updated_at: string;
   won_at: string | null;
+  winner_order: number | null;
   winner_name: string | null;
   winner_prize: string | null;
   document_type: string | null;
@@ -94,7 +95,7 @@ export async function GET(request: NextRequest) {
     const { data: cards, error: cardsError } = await supabase
       .from("wheel_participating_cards")
       .select(
-        "card_number, is_winner, updated_at, won_at, winner_name, winner_prize, document_type, document_number, winner_phone_number, winner_registered_at",
+        "card_number, is_winner, updated_at, won_at, winner_order, winner_name, winner_prize, document_type, document_number, winner_phone_number, winner_registered_at",
       )
       .eq("wheel_id", cfg.id);
 
@@ -119,6 +120,7 @@ export async function GET(request: NextRequest) {
       .map((c) => ({
         cardNumber: c.card_number,
         wonAt: c.won_at ?? c.updated_at,
+        winnerOrder: c.winner_order,
         winnerName: c.winner_name,
         winnerPrize: c.winner_prize,
         documentType: c.document_type,

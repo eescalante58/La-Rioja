@@ -35,6 +35,8 @@ interface TombolaConfig {
 interface WinnerInfo {
   cardNumber: number;
   wonAt: string;
+  /** Posición del premio (1 = primer ganador); null antes de migrar. */
+  winnerOrder: number | null;
   winnerName: string | null;
   winnerPrize: string | null;
   documentType: string | null;
@@ -503,7 +505,7 @@ export default function TombolaMonitor({
                         : "bg-white/15 text-white/70"
                     }`}
                   >
-                    {i + 1}°
+                    {w.winnerOrder ?? i + 1}°
                   </span>
                   <span
                     className={`font-montserrat text-lg md:text-xl font-black tracking-tight shrink-0 ${
