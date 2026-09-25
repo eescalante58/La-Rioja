@@ -40,6 +40,18 @@ interface FlyingCard {
 }
 
 /**
+ * Posiciones fijas (% dentro del tambor) para las balotas numeradas.
+ * Cluster disperso tipo tómbola física; cada balota muestra un cartón real.
+ */
+const BALL_SLOTS: { x: number; y: number }[] = [
+  { x: 32, y: 28 }, { x: 55, y: 24 }, { x: 70, y: 36 },
+  { x: 24, y: 44 }, { x: 45, y: 40 }, { x: 63, y: 52 },
+  { x: 78, y: 56 }, { x: 33, y: 62 }, { x: 53, y: 66 },
+  { x: 72, y: 72 }, { x: 22, y: 60 }, { x: 44, y: 52 },
+  { x: 60, y: 38 }, { x: 38, y: 74 },
+];
+
+/**
  * Tómbola virtual de cartones (proyección pública /tombola).
  *
  * - Izquierda: tambor giratorio (CSS 3D) + botón "Girar Tómbola".
@@ -62,6 +74,8 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
   const [drumAngle, setDrumAngle] = useState(0);
   const [currentBall, setCurrentBall] = useState<number | null>(null);
   const [winnerReveal, setWinnerReveal] = useState<number | null>(null);
+  const [lastWinner, setLastWinner] = useState<number | null>(null);
+  const [ballSample, setBallSample] = useState<number[]>([]);
   const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -159,6 +173,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
         setTombConfig(res.data.config);
         setParticipants(res.data.participants);
         setWinners(res.data.winners);
+        setLastWinner(res.data.winners.at(-1) ?? null);
       }
       setLoading(false);
     });
@@ -177,6 +192,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
         if (data?.success) {
           setParticipants(data.participants);
           setWinners(data.winners);
+          setLastWinner(data.winners.at(-1) ?? null);
         }
       } catch {
         // polling silencioso: si falla una pasada, reintenta la siguiente
@@ -188,12 +204,36 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
     };
   }, [selectedWheel?.id, spinning]);
 
+  // ── Balotas del tambor ──────────────────────────────────────────────────
+  // En reposo: muestra estable (muestra espaciada de participantes).
+  // Durante el giro: el ticker las re-muestrea a números aleatorios.
+  useEffect(() => {
+    if (spinning) return;
+    if (participants.length === 0) {
+      setBallSample([]);
+      return;
+    }
+    const step = Math.max(1, Math.floor(participants.length / BALL_SLOTS.length));
+    setBallSample(
+      Array.from(
+        { length: Math.min(BALL_SLOTS.length, participants.length) },
+        (_, i) => participants[i * step],
+      ),
+    );
+  }, [participants, spinning]);
+
   // ── Balotas aleatorias durante el giro ─────────────────────────────────
   const startBallTicker = useCallback(() => {
     tickInterval.current = setInterval(() => {
       setParticipants((prev) => {
         if (prev.length > 0) {
           setCurrentBall(prev[Math.floor(Math.random() * prev.length)]);
+          setBallSample(
+            Array.from(
+              { length: Math.min(BALL_SLOTS.length, prev.length) },
+              () => prev[Math.floor(Math.random() * prev.length)],
+            ),
+          );
         }
         return prev;
       });
@@ -241,6 +281,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
       stopBallTicker();
       setCurrentBall(result.winnerCardNumber);
       setWinnerReveal(result.winnerCardNumber);
+      setLastWinner(result.winnerCardNumber);
 
       if (suspenseAudio.current) suspenseAudio.current.pause();
       if (winAudio.current) {
@@ -338,9 +379,13 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
         }
         @keyframes ball-tumble {
           0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(8px, -14px) rotate(90deg); }
-          50% { transform: translate(-10px, 6px) rotate(180deg); }
-          75% { transform: translate(6px, 12px) rotate(270deg); }
+          25% { transform: translate(10px, -16px) rotate(8deg); }
+          50% { transform: translate(-12px, 8px) rotate(-6deg); }
+          75% { transform: translate(8px, 14px) rotate(10deg); }
+        }
+        @keyframes ball-float {
+          0%, 100% { transform: translate(0, 0); }
+          50% { transform: translate(3px, -7px); }
         }
         @keyframes winner-pop {
           0% { transform: scale(0.3); opacity: 0; }
@@ -362,6 +407,9 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
         }
         .tombola-ball {
           animation: ball-tumble 0.8s ease-in-out infinite;
+        }
+        .tombola-ball-idle {
+          animation: ball-float 4s ease-in-out infinite;
         }
         .winner-card-in {
           animation: winner-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -393,6 +441,12 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
 
       {/* Encabezado */}
       <div className="text-center w-full">
+        <div className="mb-1 flex items-center justify-center gap-3">
+          <img src="/logo.png" alt="La Rioja" className="h-10 w-auto md:h-12" />
+          <h1 className="font-montserrat text-xl font-black uppercase tracking-[0.15em] text-white md:text-3xl">
+            Tómbola <span className="text-larioja-amarillo">Electrónica</span>
+          </h1>
+        </div>
         <p className="font-montserrat text-lg font-bold uppercase tracking-[0.3em] text-larioja-amarillo">
           {selectedWheel.event_name || selectedWheel.event_id}
         </p>
@@ -425,26 +479,45 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
           >
             {/* Tambor */}
             <div
-              className="tombola-drum relative flex items-center justify-center rounded-full border-[10px] border-larioja-amarillo/80 bg-white/5 shadow-[0_0_60px_rgba(240,180,41,0.25),inset_0_0_40px_rgba(0,0,0,0.4)] backdrop-blur-sm h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
+              className="tombola-drum relative flex items-center justify-center rounded-full border-8 border-larioja-amarillo/60 bg-gradient-to-b from-[#0a2a75]/70 to-[#010c28]/90 shadow-[0_0_50px_rgba(240,180,41,0.18),inset_0_0_60px_rgba(0,0,0,0.5)] backdrop-blur-sm h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
               style={{ transform: `rotate(${drumAngle}deg)` }}
             >
-              {/* Balotas decorativas en el tambor */}
-              {spinning && (
-                <>
-                  {[0, 60, 120, 180, 240, 300].map((deg) => (
+              {/* Balotas numeradas: cartones participantes reales. Orbitan
+                  con el tambor y contra-rotan para que el número quede
+                  derecho; durante el giro re-muestrean números al azar. */}
+              {ballSample.map((num, i) => {
+                const pos = BALL_SLOTS[i];
+                const behind = i % 3 === 2; // cada 3ra balota al fondo
+                return (
+                  <div
+                    key={`${i}-${num}`}
+                    className="tombola-drum absolute"
+                    style={{
+                      top: `${pos.y}%`,
+                      left: `${pos.x}%`,
+                      transform: `translate(-50%, -50%) rotate(${-drumAngle}deg)`,
+                    }}
+                  >
                     <div
-                      key={deg}
-                      className="tombola-ball absolute h-8 w-8 md:h-11 md:w-11 rounded-full bg-gradient-to-br from-larioja-amarillo to-amber-600 shadow-lg border-2 border-white/40"
+                      className={`flex items-center justify-center rounded-full bg-white font-montserrat font-black text-larioja-azul border border-gray-200 shadow-md ${
+                        spinning ? "tombola-ball" : "tombola-ball-idle"
+                      } ${
+                        behind
+                          ? "h-7 w-7 text-[9px] opacity-55 md:h-9 md:w-9 md:text-xs"
+                          : "h-9 w-9 text-[11px] md:h-12 md:w-12 md:text-sm"
+                      }`}
                       style={{
-                        top: `${50 + 38 * Math.sin((deg * Math.PI) / 180)}%`,
-                        left: `${50 + 38 * Math.cos((deg * Math.PI) / 180)}%`,
-                        transform: "translate(-50%, -50%)",
-                        animationDelay: `${deg / 360}s`,
+                        animationDelay: `${(i * 0.17) % 1}s`,
+                        animationDuration: spinning
+                          ? `${0.6 + (i % 4) * 0.12}s`
+                          : `${3 + (i % 5) * 0.7}s`,
                       }}
-                    />
-                  ))}
-                </>
-              )}
+                    >
+                      {num}
+                    </div>
+                  </div>
+                );
+              })}
               {/* Balota central: número actual durante el giro / ganador */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div
@@ -493,6 +566,21 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             {spinning ? "Girando..." : "Girar Tómbola"}
           </button>
 
+          {/* Último ganador persistente (estilo "sorteo completado") */}
+          {lastWinner !== null && (
+            <div className="flex flex-col items-center gap-1 rounded-2xl border border-larioja-amarillo/25 bg-white/5 px-10 py-4 backdrop-blur-md">
+              <p className="font-montserrat text-[10px] font-bold uppercase tracking-[0.3em] text-white/50">
+                Último número seleccionado
+              </p>
+              <p className="font-montserrat text-5xl font-black text-white drop-shadow-lg md:text-6xl">
+                #{lastWinner}
+              </p>
+              <p className="font-montserrat text-[11px] font-bold uppercase tracking-widest text-larioja-amarillo">
+                {winners.length} ganador{winners.length === 1 ? "" : "es"} en total
+              </p>
+            </div>
+          )}
+
           {loading && participants.length === 0 && (
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-larioja-amarillo" />
           )}
@@ -502,8 +590,8 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             </p>
           )}
           {!loading && participants.length === 0 && winners.length > 0 && (
-            <p className="max-w-xs text-center text-sm text-larioja-amarillo font-bold">
-              ¡Todos los cartones fueron sorteados!
+            <p className="max-w-xs text-center text-sm text-larioja-amarillo font-bold uppercase tracking-widest">
+              Sorteo finalizado — todos los cartones fueron sorteados
             </p>
           )}
         </div>
@@ -529,11 +617,15 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
               </p>
             ) : (
               <div className="grid grid-cols-4 gap-3">
-                {winners.map((cardNumber) => (
+                {winners.map((cardNumber, idx) => (
                   <div
                     key={cardNumber}
                     className="winner-card-in relative flex flex-col items-center"
                   >
+                    {/* Posición en el orden del sorteo */}
+                    <span className="absolute -left-1.5 -top-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-larioja-amarillo font-montserrat text-[10px] font-black text-larioja-azul shadow-lg">
+                      {idx + 1}°
+                    </span>
                     <p className="mb-1 font-montserrat text-base font-black uppercase tracking-wider text-larioja-amarillo md:text-lg">
                       #{cardNumber}
                     </p>
