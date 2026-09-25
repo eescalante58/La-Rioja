@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     const { data: cards, error: cardsError } = await supabase
       .from("wheel_participating_cards")
-      .select("card_number, is_winner, updated_at")
+      .select("card_number, is_winner, updated_at, won_at")
       .eq("wheel_id", cfg.id);
 
     if (cardsError) throw cardsError;
@@ -52,7 +52,13 @@ export async function GET(request: NextRequest) {
       card_number: number;
       is_winner: boolean;
       updated_at: string;
+      won_at: string | null;
     }[];
+
+    // Ganadores en orden de sorteo (won_at = momento del giro;
+    // updated_at puede cambiar al registrar datos del ganador)
+    const drawTime = (c: { won_at: string | null; updated_at: string }) =>
+      new Date(c.won_at ?? c.updated_at).getTime();
 
     return NextResponse.json(
       {
@@ -61,14 +67,9 @@ export async function GET(request: NextRequest) {
           .filter((c) => !c.is_winner)
           .sort((a, b) => a.card_number - b.card_number)
           .map((c) => c.card_number),
-        // Ganadores en orden de sorteo (updated_at = momento del giro)
         winners: list
           .filter((c) => c.is_winner)
-          .sort(
-            (a, b) =>
-              new Date(a.updated_at).getTime() -
-              new Date(b.updated_at).getTime(),
-          )
+          .sort((a, b) => drawTime(a) - drawTime(b))
           .map((c) => c.card_number),
       },
       {

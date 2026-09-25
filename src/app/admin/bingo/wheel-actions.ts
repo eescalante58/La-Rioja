@@ -570,7 +570,7 @@ export async function getPublicTombolaData(wheelId: number) {
 
   const { data: cards, error: cardsError } = await supabase
     .from("wheel_participating_cards")
-    .select("card_number, is_winner, updated_at")
+    .select("card_number, is_winner, updated_at, won_at")
     .eq("wheel_id", cfg.id);
 
   if (cardsError) return { error: cardsError.message };
@@ -587,19 +587,22 @@ export async function getPublicTombolaData(wheelId: number) {
     card_number: number;
     is_winner: boolean;
     updated_at: string;
+    won_at: string | null;
   }[];
 
-  // Participantes por número; ganadores por orden de sorteo (updated_at)
+  // Participantes por número; ganadores por orden de sorteo.
+  // won_at = momento del giro (updated_at puede cambiar al registrar
+  // los datos del ganador por el trigger set_timestamps).
+  const drawTime = (c: { won_at: string | null; updated_at: string }) =>
+    new Date(c.won_at ?? c.updated_at).getTime();
+
   const participants = list
     .filter((c) => !c.is_winner)
     .sort((a, b) => a.card_number - b.card_number)
     .map((c) => c.card_number);
   const winners = list
     .filter((c) => c.is_winner)
-    .sort(
-      (a, b) =>
-        new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime(),
-    )
+    .sort((a, b) => drawTime(a) - drawTime(b))
     .map((c) => c.card_number);
 
   return {

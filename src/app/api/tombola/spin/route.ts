@@ -75,13 +75,27 @@ export async function POST(request: NextRequest) {
         randomInt(0, participants.length)
       ];
 
-    // 4. Marcado atómico: solo si sigue sin ser ganador (anti doble-giro)
-    const { data: marked, error: markError } = await supabase
+    // 4. Marcado atómico: solo si sigue sin ser ganador (anti doble-giro).
+    // won_at fija el orden de sorteo (updated_at lo mueve set_timestamps
+    // al registrar datos del ganador). Fallback sin won_at por si la
+    // migración 20261004000000 aún no se aplicó en producción.
+    let { data: marked, error: markError } = await supabase
       .from("wheel_participating_cards")
-      .update({ is_winner: true })
+      .update({ is_winner: true, won_at: new Date().toISOString() })
       .eq("id", winner.id)
       .eq("is_winner", false)
       .select("id");
+
+    if (markError) {
+      const fallback = await supabase
+        .from("wheel_participating_cards")
+        .update({ is_winner: true })
+        .eq("id", winner.id)
+        .eq("is_winner", false)
+        .select("id");
+      marked = fallback.data;
+      markError = fallback.error;
+    }
 
     if (markError) throw markError;
     if (!marked || marked.length === 0) {
