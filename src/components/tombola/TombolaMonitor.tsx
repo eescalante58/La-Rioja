@@ -150,9 +150,9 @@ export default function TombolaMonitor({
     return map;
   }, [winners]);
 
-  /** Bandeja: orden descendente por número de cartón (requisito del staff). */
+  /** Bandeja: orden ascendente por número de cartón (requisito del staff). */
   const sortedWinners = useMemo(
-    () => [...winners].sort((a, b) => b - a),
+    () => [...winners].sort((a, b) => a - b),
     [winners],
   );
 
@@ -210,6 +210,11 @@ export default function TombolaMonitor({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {lastDrawn !== null && (
+            <div className="px-4 py-2 rounded-full bg-larioja-amarillo/15 border border-larioja-amarillo/60 text-larioja-amarillo text-sm font-black shadow-[0_0_20px_rgba(251,197,14,0.2)]">
+              Último: <span className="text-lg">#{lastDrawn}</span>
+            </div>
+          )}
           <div className="px-4 py-2 rounded-full bg-white/10 border border-white/15 text-white/80 text-sm font-bold">
             <Trophy size={14} className="inline-block mr-1.5 -mt-0.5 text-larioja-amarillo" />
             {winners.length} de {totalCards} sorteados
@@ -259,20 +264,20 @@ export default function TombolaMonitor({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="flex flex-col gap-2">
             {sortedWinners.map((cardNumber) => {
               const isLast = cardNumber === lastDrawn;
               return (
                 <div
                   key={cardNumber}
-                  className={`relative rounded-2xl border p-5 md:p-6 flex flex-col items-center justify-center gap-1 transition-all ${
+                  className={`flex items-center gap-4 rounded-xl border px-4 py-2.5 transition-all ${
                     isLast
-                      ? "bg-larioja-amarillo/15 border-larioja-amarillo ring-2 ring-larioja-amarillo/70 shadow-[0_0_30px_rgba(251,197,14,0.25)]"
+                      ? "bg-larioja-amarillo/15 border-larioja-amarillo ring-1 ring-larioja-amarillo/60"
                       : "bg-white/5 border-white/10"
                   }`}
                 >
                   <span
-                    className={`absolute top-2.5 left-2.5 rounded-full px-2 py-0.5 text-xs font-black ${
+                    className={`w-10 shrink-0 rounded-full px-2 py-0.5 text-center text-xs font-black ${
                       isLast
                         ? "bg-larioja-amarillo text-black"
                         : "bg-white/15 text-white/70"
@@ -281,17 +286,12 @@ export default function TombolaMonitor({
                     {drawPosition.get(cardNumber)}°
                   </span>
                   <span
-                    className={`font-montserrat text-3xl md:text-4xl font-black tracking-tight ${
+                    className={`font-montserrat text-lg md:text-xl font-black tracking-tight ${
                       isLast ? "text-larioja-amarillo" : "text-white"
                     }`}
                   >
                     #{cardNumber}
                   </span>
-                  {isLast && (
-                    <span className="text-larioja-amarillo/80 text-[11px] font-bold uppercase tracking-widest">
-                      Último sorteado
-                    </span>
-                  )}
                 </div>
               );
             })}
