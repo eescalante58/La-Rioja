@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     // 1. Config de la ruleta (debe estar publicada y ser de tómbola)
     const { data: cfg, error } = await supabase
       .from("wheel_configs")
-      .select("id, company_id, event_id, mode, wheel_name, published")
+      .select("*")
       .eq("id", wheelId)
       .eq("published", true)
       .single();
@@ -49,6 +49,26 @@ export async function POST(request: NextRequest) {
     if (cfg.mode === "Premios") {
       return NextResponse.json(
         { success: false, error: "Esta ruleta no es de tómbola." },
+        { status: 400 },
+      );
+    }
+
+    const prizesNumber = cfg.prizes_number ?? 0;
+    const { count: winnerCount } = await supabase
+      .from("wheel_participating_cards")
+      .select("id", { count: "exact", head: true })
+      .eq("wheel_id", cfg.id)
+      .eq("is_winner", true);
+
+    if (prizesNumber > 0 && (winnerCount ?? 0) >= prizesNumber) {
+      return NextResponse.json(
+        {
+          success: false,
+          finished: true,
+          error: `La tómbola ya completó los ${prizesNumber} premios configurados.`,
+          winnerCount: winnerCount ?? 0,
+          prizesNumber,
+        },
         { status: 400 },
       );
     }
@@ -97,6 +117,18 @@ export async function POST(request: NextRequest) {
       markError = fallback.error;
     }
 
+    if (markError?.code === "23514") {
+      return NextResponse.json(
+        {
+          success: false,
+          finished: true,
+          error: markError.message,
+          winnerCount: prizesNumber,
+          prizesNumber,
+        },
+        { status: 400 },
+      );
+    }
     if (markError) throw markError;
     if (!marked || marked.length === 0) {
       // Otro proceso lo ganó primero: reintentar una vez
@@ -107,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Auditoría (mismo esquema que wheel_spins de la ruleta)
-    await supabase.from("wheel_spins").insert({
+    const { error: auditError } = await supabase.from("wheel_spins").insert({
       wheel_id: cfg.id,
       company_id: cfg.company_id,
       event_id: cfg.event_id,
@@ -120,10 +152,18 @@ export async function POST(request: NextRequest) {
       spun_by: null, // giro público
     });
 
+    if (auditError) {
+      // El ganador ya quedó marcado y validado por el trigger de tómbola;
+      // se reporta el problema sin intentar revertir el sorteo.
+      console.error("Error auditando giro de tómbola:", auditError);
+    }
+
     return NextResponse.json({
       success: true,
       winnerCardNumber: winner.card_number,
       remainingCount: participants.length - 1,
+      winnerCount: (winnerCount ?? 0) + 1,
+      prizesNumber,
     });
   } catch (err: unknown) {
     console.error("Error spinning tombola in API:", err);

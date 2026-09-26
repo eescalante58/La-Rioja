@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: cfg, error } = await supabase
       .from("wheel_configs")
-      .select("id, company_id, event_id, mode, wheel_name, time_rotation")
+      .select("*")
       .eq("id", wheelId)
       .eq("published", true)
       .single();
@@ -139,6 +139,9 @@ export async function GET(request: NextRequest) {
           event_name: evt?.event_name || cfg.event_id,
           mode: cfg.mode,
           time_rotation: cfg.time_rotation || 5,
+          is_automatic_rotation: cfg.is_automatic_rotation ?? false,
+          automatic_timeout_rotation: cfg.automatic_timeout_rotation ?? 5,
+          prizes_number: cfg.prizes_number ?? 0,
         },
         participants: list
           .filter((c) => !c.is_winner)

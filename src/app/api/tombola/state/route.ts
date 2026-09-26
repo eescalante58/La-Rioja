@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   try {
     const { data: cfg, error } = await supabase
       .from("wheel_configs")
-      .select("id, published, mode")
+      .select("*")
       .eq("id", wheelId)
       .eq("published", true)
       .single();
@@ -60,6 +60,12 @@ export async function GET(request: NextRequest) {
     const drawTime = (c: { won_at: string | null; updated_at: string }) =>
       new Date(c.won_at ?? c.updated_at).getTime();
 
+    const winners = list
+      .filter((c) => c.is_winner)
+      .sort((a, b) => drawTime(a) - drawTime(b))
+      .map((c) => c.card_number);
+    const prizesNumber = cfg.prizes_number ?? 0;
+
     return NextResponse.json(
       {
         success: true,
@@ -67,10 +73,13 @@ export async function GET(request: NextRequest) {
           .filter((c) => !c.is_winner)
           .sort((a, b) => a.card_number - b.card_number)
           .map((c) => c.card_number),
-        winners: list
-          .filter((c) => c.is_winner)
-          .sort((a, b) => drawTime(a) - drawTime(b))
-          .map((c) => c.card_number),
+        winners,
+        winnerCount: winners.length,
+        prizesNumber,
+        finished: prizesNumber > 0 && winners.length >= prizesNumber,
+        isAutomaticRotation: cfg.is_automatic_rotation ?? false,
+        automaticTimeoutRotation: cfg.automatic_timeout_rotation ?? 5,
+        timeRotation: cfg.time_rotation || 5,
       },
       {
         headers: {

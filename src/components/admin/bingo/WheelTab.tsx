@@ -296,6 +296,14 @@ export default function WheelTab({ events }: WheelTabProps) {
                         ? "Segmentos: cartones vendidos"
                         : `${(wheel.items || []).length} segmentos`}
                     </Text>
+                    <Text className="text-xs text-gray-400">
+                      {wheel.is_automatic_rotation
+                        ? `Automático · espera ${wheel.automatic_timeout_rotation ?? 0}s`
+                        : "Giro manual"}
+                      {(wheel.prizes_number ?? 0) > 0
+                        ? ` · ${wheel.prizes_number} premios`
+                        : " · sin límite"}
+                    </Text>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <Badge color={MODE_COLORS[wheel.mode] || "gray"} size="xs">

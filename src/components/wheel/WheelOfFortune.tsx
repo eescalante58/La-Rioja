@@ -24,15 +24,28 @@ interface WheelSummary {
   wheel_name: string;
 }
 
+/** Config pública de la ruleta devuelta por getPublicWheelData. */
+interface WheelConfig {
+  id: number;
+  mode: string;
+  wheel_name: string;
+  is_automatic_rotation?: boolean;
+  automatic_timeout_rotation?: number;
+  prizes_number?: number;
+}
+
 /** Respuesta del endpoint POST /api/wheel/spin. */
 interface SpinResult {
   success: boolean;
   error?: string;
+  finished?: boolean;
   winnerIndex: number;
   winnerLabel: string;
   cardNumber: number | null;
   itemId?: number | null;
   segments: Segment[];
+  spinsCount?: number;
+  prizesNumber?: number;
 }
 
 /** Paleta institucional para segmentos sin color propio. */
@@ -101,6 +114,8 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
     wheels.length === 1 ? wheels[0] : null,
   );
   const [segments, setSegments] = useState<Segment[]>([]);
+  const [wheelConfig, setWheelConfig] = useState<WheelConfig | null>(null);
+  const [spinsCount, setSpinsCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -108,6 +123,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
   const [winnerData, setWinnerData] = useState<SpinResult | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
 
   const wheelGroupRef = useRef<SVGGElement>(null);
   const pointerRef = useRef<HTMLDivElement>(null);
@@ -153,10 +169,16 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
     if (!selectedWheel) return;
     setLoading(true);
     setSegments([]);
+    setWheelConfig(null);
+    setSpinsCount(0);
     setWinner(null);
     setRotation(0);
     getPublicWheelData(selectedWheel.id).then((res) => {
-      if (res?.data) setSegments(res.data.segments);
+      if (res?.data) {
+        setWheelConfig(res.data.config);
+        setSegments(res.data.segments);
+        setSpinsCount(res.data.spinsCount ?? 0);
+      }
       setLoading(false);
     });
   }, [selectedWheel]);
@@ -245,13 +267,27 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
   // Use a ref for spinning to be used inside requestAnimationFrame without closing over stale state
   const spinningRef = useRef(spinning);
+  const segmentsRef = useRef<Segment[]>([]);
   useEffect(() => {
     spinningRef.current = spinning;
   }, [spinning]);
+  useEffect(() => {
+    segmentsRef.current = segments;
+  }, [segments]);
 
-  const handleSpin = async () => {
-    if (spinning || !!winner || !selectedWheel || segments.length === 0) return;
-    
+  const prizesNumber = wheelConfig?.prizes_number ?? winnerData?.prizesNumber ?? 0;
+  const prizeLimitReached = prizesNumber > 0 && spinsCount >= prizesNumber;
+  const isAutomaticRotation = wheelConfig?.is_automatic_rotation ?? false;
+  const automaticTimeout = Math.max(0, wheelConfig?.automatic_timeout_rotation ?? 5);
+
+  /**
+   * Ejecuta un giro real en el servidor. No depende del estado visual del
+   * anuncio: el modo automático puede cerrarlo y llamar aquí directamente.
+   */
+  const runSpin = useCallback(async () => {
+    const currentSegments = segmentsRef.current;
+    if (spinning || !selectedWheel || currentSegments.length === 0 || prizeLimitReached) return;
+
     setWinner(null);
     setWinnerData(null);
     setSpinning(true);
@@ -262,13 +298,13 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
       suspenseAudio.current.currentTime = 0;
       suspenseAudio.current.play().catch(() => {});
     }
-    
+
     // Start with a large rotation immediately
     const startRotation = rotation + 1800; // 5 quick turns
     setRotation(startRotation);
 
     // Start audio tick tracking
-    startTickTracker(segments.length);
+    startTickTracker(currentSegments.length);
 
     try {
       // 2. Ultra-fast API call (Route Handler)
@@ -276,12 +312,18 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
       const result = await res.json();
 
       if (!result?.success) {
+        if (result?.finished) {
+          setSpinsCount(result.spinsCount ?? prizesNumber);
+          setSpinning(false);
+          if (suspenseAudio.current) suspenseAudio.current.pause();
+          return;
+        }
         throw new Error(result?.error || "Error en el sorteo");
       }
 
       // NO actualizamos segments aquí para evitar que la ruleta cambie visualmente mientras gira.
       // En su lugar, buscamos dónde está el ganador en los segmentos ACTUALES que ve el público.
-      const currentWinnerIndex = segments.findIndex(s => 
+      const currentWinnerIndex = currentSegments.findIndex(s =>
         (result.itemId && s.itemId === result.itemId) || s.label === result.winnerLabel
       );
 
@@ -289,17 +331,18 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
       // usamos el índice que mandó el servidor como fallback.
       const finalWinnerIndex = currentWinnerIndex !== -1 ? currentWinnerIndex : result.winnerIndex;
 
-      const segDeg = 360 / segments.length;
+      const segDeg = 360 / currentSegments.length;
       const winnerCenter = (finalWinnerIndex + 0.5) * segDeg;
-      
+
       // Pointer is at 90deg (right)
       const targetMod = (90 - winnerCenter + 360) % 360;
       const extraSpins = 6;
       const finalAbsolute = startRotation + (extraSpins * 360) + ((targetMod - (startRotation % 360) + 360) % 360);
-      
+
       // Update to final absolute rotation
       setRotation(finalAbsolute);
       setWinnerData(result);
+      setSpinsCount((prev) => result.spinsCount ?? prev + 1);
 
     } catch (error: unknown) {
       console.error("Error spinning wheel:", error);
@@ -309,7 +352,85 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
         suspenseAudio.current.pause();
       }
     }
-  };
+  }, [spinning, selectedWheel, rotation, prizeLimitReached, prizesNumber, startTickTracker]);
+
+  const runSpinRef = useRef(runSpin);
+  useEffect(() => {
+    runSpinRef.current = runSpin;
+  }, [runSpin]);
+
+  /** Giro manual: solo disponible cuando la ruleta no está en modo automático. */
+  const handleSpin = useCallback(() => {
+    if (isAutomaticRotation || winner || prizeLimitReached) return;
+    void runSpin();
+  }, [isAutomaticRotation, winner, prizeLimitReached, runSpin]);
+
+  /**
+   * Cierra el anuncio del ganador y aplica el stock devuelto por el servidor.
+   * El modo automático también lo usa para encadenar el siguiente giro.
+   */
+  const handleContinue = useCallback(() => {
+    setWinner(null);
+    stopConfetti();
+    if (winAudio.current) {
+      winAudio.current.pause();
+      winAudio.current.currentTime = 0;
+    }
+    // AHORA SÍ: Actualizamos la ruleta con los nuevos stocks (o quitamos los de stock 0)
+    if (winnerData?.segments) {
+      const nextSegments = (winnerData.segments as Segment[]).filter((s) =>
+        selectedWheel?.mode !== "Premios" || (s.quantity === undefined || s.quantity > 0)
+      );
+      segmentsRef.current = nextSegments;
+      setSegments(nextSegments);
+    }
+  }, [winnerData, selectedWheel?.mode, stopConfetti]);
+
+  // Programa el siguiente giro cuando la ruleta está en modo automático.
+  // Si hay un anuncio abierto, primero lo cierra y luego dispara el giro.
+  useEffect(() => {
+    if (
+      !isAutomaticRotation ||
+      !selectedWheel ||
+      loading ||
+      spinning ||
+      prizeLimitReached ||
+      segments.length === 0
+    ) {
+      setAutoCountdown(null);
+      return;
+    }
+
+    const startedAt = Date.now();
+    setAutoCountdown(automaticTimeout);
+    const countdown = window.setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      setAutoCountdown(Math.max(0, automaticTimeout - elapsed));
+    }, 250);
+
+    const timer = window.setTimeout(() => {
+      if (winner) handleContinue();
+      // Un tick adicional permite aplicar los segmentos actualizados antes
+      // de pedir el siguiente ganador al servidor.
+      window.setTimeout(() => void runSpinRef.current(), 0);
+    }, automaticTimeout * 1000);
+
+    return () => {
+      window.clearInterval(countdown);
+      window.clearTimeout(timer);
+      setAutoCountdown(null);
+    };
+  }, [
+    isAutomaticRotation,
+    selectedWheel,
+    loading,
+    spinning,
+    winner,
+    prizeLimitReached,
+    segments.length,
+    automaticTimeout,
+    handleContinue,
+  ]);
 
   const handleTransitionEnd = () => {
     if (spinning && winnerData) {
@@ -411,6 +532,15 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
             </span>
           </p>
         )}
+        {prizesNumber > 0 && (
+          <p className="mt-1 font-montserrat text-xs font-bold uppercase tracking-widest text-white/60">
+            Premios sorteados:{" "}
+            <span className="text-larioja-amarillo">
+              {Math.min(spinsCount, prizesNumber)} de {prizesNumber}
+            </span>
+            {isAutomaticRotation && " · Giro automático"}
+          </p>
+        )}
         {wheels.length > 1 && (
           <button
             onClick={() => setSelectedWheel(null)}
@@ -423,11 +553,12 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
       {/* Contenedor Principal: Rueda + Ganador lado a lado */}
       <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 w-full">
-        {/* Rueda */}
-        <div 
-          className={`relative shrink-0 ${!spinning && !loading && !winner && segments.length > 0 ? "cursor-pointer" : ""}`}
-          onClick={handleSpin}
-        >
+        {/* Rueda + botón de giro */}
+        <div className="flex flex-col items-center gap-5 shrink-0">
+          <div
+            className={`relative ${!isAutomaticRotation && !spinning && !loading && !winner && !prizeLimitReached && segments.length > 0 ? "cursor-pointer" : ""}`}
+            onClick={handleSpin}
+          >
           {/* Puntero 3D a la DERECHA - Clickable */}
           <div 
             ref={pointerRef}
@@ -568,6 +699,38 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
               <image href="/logo.png" x={CX - 45} y={CY - 34} width={90} height={68} preserveAspectRatio="xMidYMid meet" />
             </svg>
           )}
+          </div>
+
+          {isAutomaticRotation ? (
+            <div className="rounded-full border border-larioja-amarillo/40 bg-white/10 px-8 py-3 text-center backdrop-blur-md">
+              <p className="font-montserrat text-xs font-bold uppercase tracking-[0.2em] text-larioja-amarillo">
+                {prizeLimitReached
+                  ? "Sorteo finalizado"
+                  : spinning
+                    ? "Girando..."
+                    : autoCountdown !== null
+                      ? `Próximo giro en ${autoCountdown}s`
+                      : "Giro automático"}
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSpin}
+              disabled={spinning || loading || !!winner || prizeLimitReached || segments.length === 0}
+              className={`rounded-full px-10 py-4 font-montserrat text-sm font-bold uppercase tracking-[0.2em] transition-all shadow-xl ${
+                spinning || loading || !!winner || prizeLimitReached || segments.length === 0
+                  ? "bg-white/10 text-white/30 cursor-not-allowed"
+                  : "bg-larioja-amarillo text-larioja-azul hover:scale-105 hover:shadow-[0_0_30px_rgba(240,180,41,0.5)] active:scale-95"
+              }`}
+            >
+              {prizeLimitReached
+                ? "Sorteo finalizado"
+                : spinning
+                  ? "Girando..."
+                  : "Girar Ruleta"}
+            </button>
+          )}
         </div>
 
         {/* Anuncio del Ganador: A la DERECHA en desktop */}
@@ -582,21 +745,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                 {winner}
               </h3>
               <button
-                onClick={() => {
-                  setWinner(null);
-                  stopConfetti();
-                  if (winAudio.current) {
-                    winAudio.current.pause();
-                    winAudio.current.currentTime = 0;
-                  }
-                  // AHORA SÍ: Actualizamos la ruleta con los nuevos stocks (o quitamos los de stock 0)
-                  if (winnerData?.segments) {
-                    const nextSegments = (winnerData.segments as Segment[]).filter((s) => 
-                      selectedWheel.mode !== "Premios" || (s.quantity === undefined || s.quantity > 0)
-                    );
-                    setSegments(nextSegments);
-                  }
-                }}
+                onClick={handleContinue}
                 className="w-full rounded-full bg-larioja-azul py-4 font-montserrat text-sm font-bold uppercase tracking-[0.2em] text-white transition-all hover:bg-[#02184a] shadow-lg"
               >
                 Continuar
