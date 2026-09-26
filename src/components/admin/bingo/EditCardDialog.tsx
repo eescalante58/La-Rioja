@@ -35,6 +35,20 @@ const digitsOf = (v: string) => v.replace(/\D/g, "");
 const flagUrl = (iso2: string, w: 20 | 40 = 40) =>
   `https://flagcdn.com/w${w}/${iso2.toLowerCase()}.png`;
 
+/**
+ * Estados posibles de un cartón (enum card_status_enum en la BD).
+ * 'Donado' = cartón de cortesía/donación: no se vende pero participa
+ * en la tómbola igual que uno vendido.
+ */
+const CARD_STATUSES = [
+  "Disponible",
+  "Vendido",
+  "Asignado",
+  "Reservado",
+  "Donado",
+  "Anulado",
+] as const;
+
 export default function EditCardDialog({
   isOpen,
   onClose,
@@ -205,6 +219,21 @@ export default function EditCardDialog({
             <div className="space-y-1">
               <label className="text-xs font-bold uppercase text-gray-500">Correo Electrónico</label>
               <TextInput name="player_email" type="email" defaultValue={card?.player_email} />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase text-gray-500">Estado</label>
+              <select
+                name="card_status"
+                defaultValue={card?.card_status || "Disponible"}
+                className="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-sm text-gray-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              >
+                {CARD_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">

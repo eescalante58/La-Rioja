@@ -123,7 +123,7 @@ export default function WheelItemsDialog({
     };
   }, [isOpen, wheel?.id, isCardsMode, companyId]);
 
-  /** Carga masiva de cartones vendidos del evento a la tómbola. */
+  /** Carga masiva de cartones vendidos/donados del evento a la tómbola. */
   const handleLoadTombola = async () => {
     if (!companyId || !wheel) return;
     setLoadingTombola(true);
@@ -256,7 +256,7 @@ export default function WheelItemsDialog({
                   onClick={handleLoadTombola}
                   className="bg-larioja-azul"
                 >
-                  Cargar cartones vendidos
+                  Cargar cartones vendidos y donados
                 </Button>
               </div>
 
@@ -264,7 +264,7 @@ export default function WheelItemsDialog({
                 <div className="py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl">
                   <Ticket size={36} className="mx-auto text-gray-300 mb-2" />
                   <Text className="text-gray-400 italic">
-                    Sin cartones cargados. Usa el botón para traer los vendidos del evento.
+                    Sin cartones cargados. Usa el botón para traer los vendidos y donados del evento.
                   </Text>
                 </div>
               )}

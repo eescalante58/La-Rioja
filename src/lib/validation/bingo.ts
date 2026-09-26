@@ -65,7 +65,7 @@ export const updateCardRangeTypeSchema = z.object({
 
 export const singleCardSchema = z.object({
   card_type: z.enum(["Virtual", "Fisico"]),
-  card_status: z.enum(["Disponible", "Vendido", "Reservado", "Anulado"]),
+  card_status: z.enum(["Disponible", "Vendido", "Asignado", "Reservado", "Anulado", "Donado"]),
   card_price: z.number().min(0),
   sales_price: z.number().min(0).nullable().optional(),
   sold_by: z.string().optional().or(z.literal("")),

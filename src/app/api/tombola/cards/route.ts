@@ -70,8 +70,9 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/tombola/cards
  * Carga masiva: copia a wheel_participating_cards todos los cartones con
- * card_status='Vendido' del evento de la ruleta. Upsert idempotente sobre la
- * llave (company_id, event_id, card_number): no duplica ni resetea ganadores.
+ * card_status 'Vendido' o 'Donado' del evento de la ruleta. Upsert
+ * idempotente sobre la llave (company_id, event_id, card_number):
+ * no duplica ni resetea ganadores.
  */
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -116,14 +117,14 @@ export async function POST(request: NextRequest) {
     .select("card_number")
     .eq("company_id", companyId)
     .eq("event_id", cfg.event_id)
-    .eq("card_status", "Vendido");
+    .in("card_status", ["Vendido", "Donado"]);
 
   if (cardsError) {
     return NextResponse.json({ error: cardsError.message }, { status: 500 });
   }
   if (!soldCards || soldCards.length === 0) {
     return NextResponse.json(
-      { error: "No hay cartones vendidos en este evento." },
+      { error: "No hay cartones vendidos ni donados en este evento." },
       { status: 400 },
     );
   }
