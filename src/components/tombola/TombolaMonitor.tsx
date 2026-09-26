@@ -192,6 +192,12 @@ export default function TombolaMonitor({
     ).cardNumber;
   }, [winners]);
 
+  /** Panel: orden ascendente por número de cartón (requisito del staff). */
+  const sortedWinners = useMemo(
+    () => [...winners].sort((a, b) => a.cardNumber - b.cardNumber),
+    [winners],
+  );
+
   const totalCards = participants.length + winners.length;
 
   /**
@@ -487,7 +493,7 @@ export default function TombolaMonitor({
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {winners.map((w, i) => {
+            {sortedWinners.map((w, i) => {
               const isLast = w.cardNumber === lastDrawn;
               return (
                 <div
