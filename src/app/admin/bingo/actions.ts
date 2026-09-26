@@ -1371,7 +1371,7 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
   // 1. Get current invoice to handle file cleanup if needed
   const { data: currentInvoice } = await supabase
     .from("invoices")
-    .select("url_invoice, invoice_number")
+    .select("url_invoice, invoice_number, status")
     .eq("id", id)
     .single();
 
