@@ -12,6 +12,7 @@ import {
   SelectItem,
   Switch,
 } from "@tremor/react";
+import { ExternalLink } from "lucide-react";
 import { saveWheelConfig } from "@/app/admin/bingo/wheel-actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import type { Wheel } from "./wheel-types";
@@ -119,6 +120,13 @@ export default function WheelConfigDialog({
   };
 
   if (!companyId || !eventId) return null;
+
+  /** Página pública correspondiente al tipo de juego configurado. */
+  const publicGameUrl = wheel
+    ? wheel.mode === "Premios"
+      ? `/ruleta?evento=${encodeURIComponent(wheel.event_id)}&tipo=${encodeURIComponent(wheel.mode)}&nombre=${encodeURIComponent(wheel.wheel_name)}`
+      : `/tombola?evento=${encodeURIComponent(wheel.event_id)}&nombre=${encodeURIComponent(wheel.wheel_name)}`
+    : null;
 
   return (
     <Dialog open={isOpen} onClose={onClose} static={true}>
@@ -238,6 +246,32 @@ export default function WheelConfigDialog({
                 En modo Cartones los segmentos se generan automáticamente con
                 los cartones vendidos del evento.
               </Text>
+            )}
+
+            {wheel && publicGameUrl && (
+              <div className="rounded-xl border border-larioja-azul/20 bg-larioja-azul/5 p-4 flex items-center justify-between gap-4">
+                <div>
+                  <Text className="text-xs font-bold uppercase text-larioja-azul">
+                    Página del juego
+                  </Text>
+                  <Text className="text-xs text-gray-500">
+                    {wheel.published
+                      ? "Abre la pantalla pública en una pestaña nueva."
+                      : "Publica la ruleta para habilitar el acceso."}
+                  </Text>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  icon={ExternalLink}
+                  disabled={!wheel.published}
+                  onClick={() =>
+                    window.open(publicGameUrl, "_blank", "noopener,noreferrer")
+                  }
+                >
+                  {wheel.mode === "Premios" ? "Abrir Ruleta" : "Abrir Tómbola"}
+                </Button>
+              </div>
             )}
 
             <div className="flex justify-end gap-3 mt-6">
