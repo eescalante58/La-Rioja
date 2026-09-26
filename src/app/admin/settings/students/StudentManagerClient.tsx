@@ -868,6 +868,7 @@ export default function StudentManagerClient({
                     <option value="3.Medio">3.Medio</option>
                     <option value="4.Prelaboral">4.Prelaboral</option>
                     <option value="5.Laboral">5.Laboral</option>
+                    <option value="6.Maestros">6.Maestros</option>
                   </select>
                 </div>
               </div>
