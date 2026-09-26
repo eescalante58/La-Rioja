@@ -13,6 +13,7 @@ import {
   getAssignmentByLevel,
   getStudentCards,
   getBingoCountries,
+  getRegisteredCards,
 } from "@/app/admin/actions";
 import { getCustomers } from "@/app/admin/bingo/actions";
 import {
@@ -49,6 +50,7 @@ import {
   BookOpen,
   Search,
   Smartphone,
+  ClipboardList,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import NewInvoiceDialog from "./bingo/NewInvoiceDialog";
@@ -133,6 +135,12 @@ export default function RealtimeDashboardWrapper({
   const [isCustomerListOpen, setIsCustomerListOpen] = useState(false);
   const [customerList, setCustomerList] = useState<any[]>([]);
 
+  const [isRegisteredOpen, setIsRegisteredOpen] = useState(false);
+  const [registeredCards, setRegisteredCards] = useState<any[]>([]);
+  /** Registros que llegaron por Realtime desde la última carga: se suman
+      al conteo sin disparar un refetch por cada INSERT de la ráfaga. */
+  const [reportedDelta, setReportedDelta] = useState(0);
+
   const supabase = createClient();
 
   // Function to refresh data from server
@@ -141,6 +149,8 @@ export default function RealtimeDashboardWrapper({
     const newData = await getDashboardData();
     if (newData.success) {
       setData(newData);
+      // El conteo fresco ya incluye los INSERTs recibidos: reset del delta
+      setReportedDelta(0);
     }
     loadCardTypeSummary();
     loadAssignmentByLevel();
@@ -248,6 +258,19 @@ export default function RealtimeDashboardWrapper({
     setIsLoadingDrillDown(false);
   };
 
+  /** Drill-down: cartones auto-registrados en /registro (Participantes). */
+  const handleRegisteredDrillDown = async () => {
+    setIsLoadingDrillDown(true);
+    const res = await getRegisteredCards();
+    if (res.success && res.data) {
+      setRegisteredCards(res.data);
+      setIsRegisteredOpen(true);
+    } else {
+      alert("Error al cargar cartones reportados: " + (res.error || "Sin datos"));
+    }
+    setIsLoadingDrillDown(false);
+  };
+
   const closeManagerModal = () => {
     setIsManagerDetailOpen(false);
     setSelectedManager(null);
@@ -255,6 +278,18 @@ export default function RealtimeDashboardWrapper({
     setSelectedInvoice(null);
     setInvoiceCards([]);
   };
+
+  // Con el modal de reportados abierto, los INSERTs en vivo refrescan la
+  // lista con debounce: durante la ráfaga los eventos llegan de a decenas
+  // por segundo y se agrupan en una sola consulta cada ~1.5s.
+  useEffect(() => {
+    if (!isRegisteredOpen || reportedDelta === 0) return;
+    const t = setTimeout(async () => {
+      const res = await getRegisteredCards();
+      if (res.success && res.data) setRegisteredCards(res.data);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [reportedDelta, isRegisteredOpen]);
 
   const toggleLevel = (levelName: string) => {
     setExpandedLevels((prev) => {
@@ -420,6 +455,20 @@ export default function RealtimeDashboardWrapper({
       () => refreshData(),
     );
 
+    // 6. Registros de /registro (Participantes): el INSERT solo mueve el
+    // contador — durante la ráfaga del evento no conviene un refetch
+    // completo del dashboard por cada cartón registrado.
+    channel.on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "wheels_presents_cards",
+        filter: data.companyId ? `company_id=eq.${data.companyId}` : undefined,
+      },
+      () => setReportedDelta((d) => d + 1),
+    );
+
     channel.subscribe();
 
     return () => {
@@ -440,6 +489,17 @@ export default function RealtimeDashboardWrapper({
       icon: Users,
       color: "emerald",
       onClick: data.userLevel >= 4 ? handleCustomerDrillDown : undefined,
+    },
+    {
+      // Cartones auto-registrados por asistentes en /registro.
+      // reportedDelta suma en vivo los INSERTs recibidos por Realtime.
+      title: "Cartones Reportados",
+      metric: (
+        (data.stats?.reportedCardsCount || 0) + reportedDelta
+      ).toString(),
+      icon: ClipboardList,
+      color: "violet",
+      onClick: data.userLevel >= 4 ? handleRegisteredDrillDown : undefined,
     },
     {
       title: "Venta Realizada",
@@ -1594,6 +1654,104 @@ export default function RealtimeDashboardWrapper({
             <div className="mt-8 flex-shrink-0">
               <Button
                 onClick={() => setIsCustomerListOpen(false)}
+                className="w-full bg-larioja-azul"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Modal: Cartones Reportados (/registro — modo Participantes) */}
+      <Dialog
+        open={isRegisteredOpen}
+        onClose={() => setIsRegisteredOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
+          <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between mb-6 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-violet-50 dark:bg-violet-500/10 rounded-lg text-violet-600 dark:text-violet-400">
+                  <ClipboardList size={24} />
+                </div>
+                <div>
+                  <Title className="dark:text-white uppercase tracking-tight">
+                    Cartones Reportados
+                  </Title>
+                  <Text className="text-xs">
+                    Registros del formulario público /registro
+                  </Text>
+                </div>
+              </div>
+              <Button
+                variant="light"
+                icon={X}
+                onClick={() => setIsRegisteredOpen(false)}
+              />
+            </div>
+
+            <div className="flex-1 overflow-auto pr-1 custom-scrollbar">
+              <div className="min-w-[640px] md:min-w-full">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>Folio</TableHeaderCell>
+                      <TableHeaderCell>Cartón</TableHeaderCell>
+                      <TableHeaderCell>Asistente</TableHeaderCell>
+                      <TableHeaderCell>Teléfono</TableHeaderCell>
+                      <TableHeaderCell>Tómbola</TableHeaderCell>
+                      <TableHeaderCell>Estado</TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {registeredCards.map((card) => (
+                      <TableRow key={card.id}>
+                        <TableCell className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                          #{card.id}
+                        </TableCell>
+                        <TableCell className="font-bold text-larioja-azul dark:text-blue-400">
+                          #{card.card_number}
+                        </TableCell>
+                        <TableCell className="font-medium text-slate-700 dark:text-slate-200 truncate max-w-[200px]">
+                          {card.player_name}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                            <Smartphone size={14} />
+                            {card.player_phone_number}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[160px]">
+                          {card.wheel_name}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            size="xs"
+                            color={card.is_winner ? "amber" : "emerald"}
+                          >
+                            {card.is_winner ? "Ganador" : "En juego"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {registeredCards.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center italic py-8">
+                          Aún no hay cartones reportados para este evento.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            <div className="mt-8 flex-shrink-0">
+              <Button
+                onClick={() => setIsRegisteredOpen(false)}
                 className="w-full bg-larioja-azul"
               >
                 Cerrar
