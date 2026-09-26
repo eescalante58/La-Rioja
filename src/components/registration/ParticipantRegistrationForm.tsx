@@ -289,7 +289,7 @@ export default function ParticipantRegistrationForm({
         <h1 className="mt-3 font-montserrat text-lg font-black uppercase tracking-wide text-larioja-azul md:text-xl">
           Formulario para Registro de Cartones
         </h1>
-        <p className="mt-1 font-montserrat text-lg font-black uppercase tracking-wide text-larioja-amarillo md:text-xl">
+        <p className="mt-1 font-montserrat text-lg font-black uppercase tracking-wide text-larioja-verde md:text-xl">
           {wheel.event_name || wheel.event_id}
         </p>
         <p className="text-xs font-semibold text-gray-500">
@@ -330,7 +330,8 @@ export default function ParticipantRegistrationForm({
             >
               {countries.map((c) => (
                 <option key={c.iso2} value={c.iso2}>
-                  {c.flag_emoji ? `${c.flag_emoji} ` : ""}+{c.phone_code}
+                  {c.flag_emoji ? `${c.flag_emoji} ` : ""}
+                  {c.name} (+{c.phone_code})
                 </option>
               ))}
             </select>
