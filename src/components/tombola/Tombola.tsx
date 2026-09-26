@@ -815,7 +815,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                 Los cartones ganadores aparecerán aquí.
               </p>
             ) : (
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-6 gap-3">
                 {[...winners].reverse().map((cardNumber, idx) => (
                   <div
                     key={cardNumber}
