@@ -32,6 +32,8 @@ interface RpcResponse {
   error?: string;
   results?: CardResult[];
   registered?: number[];
+  /** Ids de las filas creadas en wheels_presents_cards (folio del asistente). */
+  confirmationIds?: number[];
 }
 
 interface ParticipantRegistrationFormProps {
@@ -81,6 +83,8 @@ export default function ParticipantRegistrationForm({
   const [cardErrors, setCardErrors] = useState<Map<number, string>>(new Map());
   const [formError, setFormError] = useState<string | null>(null);
   const [registered, setRegistered] = useState<number[] | null>(null);
+  /** Folio(s) de confirmación: id de cada fila creada en la tabla. */
+  const [confirmationIds, setConfirmationIds] = useState<number[]>([]);
 
   const selectedCountry = useMemo(
     () => countries.find((c) => c.iso2 === areaIso2),
@@ -173,6 +177,7 @@ export default function ParticipantRegistrationForm({
 
     if (result.success) {
       setRegistered(result.registered ?? cardNumbers);
+      setConfirmationIds(result.confirmationIds ?? []);
       return;
     }
 
@@ -263,8 +268,21 @@ export default function ParticipantRegistrationForm({
             </span>
           ))}
         </div>
-        <p className="mt-6 text-sm text-gray-500">
-          Guarda esta pantalla. ¡Mucha suerte en el sorteo!
+        {confirmationIds.length > 0 && (
+          <div className="mt-5 rounded-2xl border-2 border-dashed border-larioja-verde/40 bg-larioja-verde/10 px-4 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500">
+              {confirmationIds.length === 1
+                ? "Código de registro"
+                : "Códigos de registro"}
+            </p>
+            <p className="mt-1 font-montserrat text-xl font-black tracking-wide text-larioja-verde">
+              {confirmationIds.map((id) => `#${id}`).join("  ·  ")}
+            </p>
+          </div>
+        )}
+        <p className="mt-5 text-sm text-gray-500">
+          Guarda esta pantalla y tu código de registro. ¡Mucha suerte en el
+          sorteo!
         </p>
         <button
           onClick={handleReset}
