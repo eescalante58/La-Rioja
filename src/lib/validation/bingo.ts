@@ -16,7 +16,7 @@ export const eventSchema = z.object({
   event_start_promotion_date: z.string().nullable().optional(),
 });
 
-export const invoiceSchema = z.object({
+const invoiceBaseSchema = z.object({
   company_id: z.number().int().positive(),
   event_id: z.string().min(1),
   invoice_number: z.string().min(1, "Número de factura requerido"),
@@ -28,13 +28,43 @@ export const invoiceSchema = z.object({
   whatsapp_number: z.string().optional(),
   manager_name: z.string().min(1, "Nombre del gestor requerido"),
   cards_number: z.number().int().positive("Debe seleccionar al menos 1 cartón"),
-  card_price: z.number().positive(),
-  total_amount: z.number().positive(),
+  card_price: z.number().min(0, "El valor del cartón no puede ser negativo"),
+  total_amount: z.number().min(0, "El total no puede ser negativo"),
   payment_method: z.string().default("efectivo"),
   status: z.string().default("pagada"),
   observation: z.string().optional().or(z.literal("")),
   associated_cards: z.array(z.number().int()).min(1, "Debe asociar al menos un cartón"),
 });
+
+/**
+ * Facturas normales exigen precio y total > 0; una factura 'Donada'
+ * lleva valor de cartón $0 (los cartones quedan con status 'Donado').
+ */
+const invoiceAmountsRefine = (
+  d: { status?: string; card_price?: number; total_amount?: number },
+  ctx: z.RefinementCtx,
+) => {
+  if (d.status === "Donada") return;
+  if (d.card_price !== undefined && d.card_price <= 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["card_price"],
+      message: "El valor del cartón debe ser mayor a 0",
+    });
+  }
+  if (d.total_amount !== undefined && d.total_amount <= 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["total_amount"],
+      message: "El total debe ser mayor a 0",
+    });
+  }
+};
+
+export const invoiceSchema = invoiceBaseSchema.superRefine(invoiceAmountsRefine);
+export const invoiceUpdateSchema = invoiceBaseSchema
+  .partial()
+  .superRefine(invoiceAmountsRefine);
 
 export const generateCardsSchema = z.object({
   company_id: z.number().int().positive(),

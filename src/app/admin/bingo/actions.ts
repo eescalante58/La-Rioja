@@ -9,7 +9,8 @@ import {
 import { withRole, withCompanyAccess } from "@/lib/auth/guards";
 import { 
   eventSchema, 
-  invoiceSchema, 
+  invoiceSchema,
+  invoiceUpdateSchema, 
   generateCardsSchema, 
   updateCardTypeSchema, 
   updateCardRangeTypeSchema, 
@@ -1191,8 +1192,9 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
     whatsapp_number: sanitizeInput(invoiceFields.whatsapp_number || ""),
     manager_name: toTitleCase(sanitizeInput(invoiceFields.manager_name)),
     cards_number: invoiceFields.cards_number,
-    card_price: invoiceFields.card_price,
-    total_amount: invoiceFields.total_amount,
+    // Factura 'Donada': valor de referencia $0 (cartones quedan 'Donado')
+    card_price: invoiceFields.status === "Donada" ? 0 : invoiceFields.card_price,
+    total_amount: invoiceFields.status === "Donada" ? 0 : invoiceFields.total_amount,
     payment_method: invoiceFields.payment_method,
     status: invoiceFields.status,
     observation: sanitizeInput(invoiceFields.observation || ""),
@@ -1360,7 +1362,7 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
   };
 
   // Validation with Zod
-  const validation = invoiceSchema.partial().safeParse(rawData);
+  const validation = invoiceUpdateSchema.safeParse(rawData);
   if (!validation.success) {
     return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
   }
@@ -1461,9 +1463,11 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
   if (invoiceFields.phone_number !== undefined) invoiceData.phone_number = sanitizeInput(invoiceFields.phone_number || "");
   if (invoiceFields.whatsapp_number !== undefined) invoiceData.whatsapp_number = sanitizeInput(invoiceFields.whatsapp_number || "");
   if (invoiceFields.manager_name !== undefined) invoiceData.manager_name = toTitleCase(sanitizeInput(invoiceFields.manager_name || ""));
+  const isDonada =
+    (invoiceFields.status ?? currentInvoice?.status) === "Donada";
   if (invoiceFields.cards_number !== undefined) invoiceData.cards_number = invoiceFields.cards_number;
-  if (invoiceFields.card_price !== undefined) invoiceData.card_price = invoiceFields.card_price;
-  if (invoiceFields.total_amount !== undefined) invoiceData.total_amount = invoiceFields.total_amount;
+  if (invoiceFields.card_price !== undefined) invoiceData.card_price = isDonada ? 0 : invoiceFields.card_price;
+  if (invoiceFields.total_amount !== undefined) invoiceData.total_amount = isDonada ? 0 : invoiceFields.total_amount;
   if (invoiceFields.payment_method !== undefined) invoiceData.payment_method = invoiceFields.payment_method;
   if (invoiceFields.status !== undefined) invoiceData.status = invoiceFields.status;
   if (invoiceFields.observation !== undefined) invoiceData.observation = sanitizeInput(invoiceFields.observation || "");
@@ -1489,10 +1493,7 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
     );
   }
 
-  // Now link the new selection. Factura "Donada" → cartones 'Donado';
-  // el estado efectivo es el enviado o el que ya tenía la factura.
-  const isDonada =
-    (invoiceFields.status ?? currentInvoice?.status) === "Donada";
+  // Now link the new selection. Factura "Donada" → cartones 'Donado'.
   if (data.associated_cards && data.associated_cards.length > 0) {
     const { error: cardsError } = await supabase
       .from("cards")
