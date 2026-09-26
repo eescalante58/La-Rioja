@@ -110,31 +110,40 @@ export async function getDashboardData() {
     }
 
     // 2. Fetch event-specific data in parallel
-    const [eventRes, invoicesRes, dailySalesRes] = await Promise.all([
-      supabaseAdmin
-        .from("events")
-        .select("event_name, event_goal, card_value, event_id")
-        .eq("event_id", eventId)
-        .eq("company_id", companyId)
-        .single(),
-      supabaseAdmin
-        .from("invoices")
-        .select("total_amount")
-        .eq("event_id", eventId)
-        .eq("company_id", companyId)
-        .eq("status", "pagada"),
-      supabaseAdmin
-        .from("invoices")
-        .select("invoice_date, total_amount")
-        .eq("event_id", eventId)
-        .eq("company_id", companyId)
-        .eq("status", "pagada")
-        .order("invoice_date", { ascending: true }),
-    ]);
+    const [eventRes, invoicesRes, dailySalesRes, reportedCardsRes] =
+      await Promise.all([
+        supabaseAdmin
+          .from("events")
+          .select("event_name, event_goal, card_value, event_id")
+          .eq("event_id", eventId)
+          .eq("company_id", companyId)
+          .single(),
+        supabaseAdmin
+          .from("invoices")
+          .select("total_amount")
+          .eq("event_id", eventId)
+          .eq("company_id", companyId)
+          .eq("status", "pagada"),
+        supabaseAdmin
+          .from("invoices")
+          .select("invoice_date, total_amount")
+          .eq("event_id", eventId)
+          .eq("company_id", companyId)
+          .eq("status", "pagada")
+          .order("invoice_date", { ascending: true }),
+        // Cartones auto-registrados por asistentes en /registro
+        // (tómbolas modo Participantes del evento del dashboard)
+        supabaseAdmin
+          .from("wheels_presents_cards")
+          .select("id", { count: "exact", head: true })
+          .eq("company_id", companyId)
+          .eq("event_id", eventId),
+      ]);
 
     const { data: event, error: eventError } = eventRes;
     const { data: invoices, error: invoicesError } = invoicesRes;
     const { data: dailySales, error: dailySalesError } = dailySalesRes;
+    const { count: reportedCardsCount } = reportedCardsRes;
 
     if (eventError || !event) {
       console.error("Error fetching event details:", eventError);
@@ -213,6 +222,7 @@ export async function getDashboardData() {
       stats: {
         cmsCount: cmsCount || 0,
         customersCount: customersCount || 0,
+        reportedCardsCount: reportedCardsCount || 0,
       },
       recentContacts: recentContacts || [],
       recentInvoices: recentInvoices || [],
@@ -222,6 +232,41 @@ export async function getDashboardData() {
     console.error("Unexpected error in getDashboardData:", error);
     return { success: false, error: error.message };
   }
+}
+
+/**
+ * Lista los cartones auto-registrados por asistentes en /registro
+ * (wheels_presents_cards) para el evento del dashboard (Drill down de la
+ * tarjeta "Cartones Reportados"). El id de la fila es el folio que el
+ * asistente recibe como código de registro.
+ */
+export async function getRegisteredCards() {
+  const supabase = createAdminClient();
+  const cookieStore = await cookies();
+  const companyId = cookieStore.get("selected_company_id")?.value;
+
+  if (!companyId) return { success: false, error: "No company" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  const eventId = company?.def_dash_event_id;
+  if (!eventId) return { success: true, data: [] };
+
+  const { data, error } = await supabase
+    .from("wheels_presents_cards")
+    .select(
+      "id, card_number, player_name, player_phone_number, wheel_name, is_winner, created_at",
+    )
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false });
+
+  if (error) return { success: false, error: error.message };
+  return { success: true, data };
 }
 
 /**
