@@ -137,6 +137,8 @@ export default function RealtimeDashboardWrapper({
 
   const [isRegisteredOpen, setIsRegisteredOpen] = useState(false);
   const [registeredCards, setRegisteredCards] = useState<any[]>([]);
+  /** Filtro del modal de reportados: folio, cartón, asistente o teléfono. */
+  const [registeredSearch, setRegisteredSearch] = useState("");
   /** Registros que llegaron por Realtime desde la última carga: se suman
       al conteo sin disparar un refetch por cada INSERT de la ráfaga. */
   const [reportedDelta, setReportedDelta] = useState(0);
@@ -302,6 +304,18 @@ export default function RealtimeDashboardWrapper({
       return next;
     });
   };
+
+  /** Reportados filtrados por folio, cartón, asistente o teléfono. */
+  const filteredRegistered = registeredCards.filter((card) => {
+    const q = registeredSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      String(card.id).includes(q) ||
+      String(card.card_number).includes(q) ||
+      (card.player_name || "").toLowerCase().includes(q) ||
+      (card.player_phone_number || "").toLowerCase().includes(q)
+    );
+  });
 
   const toggleCardType = (cardType: string) => {
     setExpandedCardTypes((prev) => {
@@ -1693,6 +1707,20 @@ export default function RealtimeDashboardWrapper({
               />
             </div>
 
+            {/* Búsqueda: folio, número de cartón, asistente o teléfono */}
+            <div className="relative mb-4 flex-shrink-0">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={registeredSearch}
+                onChange={(e) => setRegisteredSearch(e.target.value)}
+                placeholder="Buscar por folio, cartón, nombre o teléfono…"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-slate-900 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-larioja-azul"
+              />
+            </div>
+
             <div className="flex-1 overflow-auto pr-1 custom-scrollbar">
               <div className="min-w-[640px] md:min-w-full">
                 <Table>
@@ -1707,7 +1735,7 @@ export default function RealtimeDashboardWrapper({
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {registeredCards.map((card) => (
+                    {filteredRegistered.map((card) => (
                       <TableRow key={card.id}>
                         <TableCell className="font-mono text-xs text-slate-500 dark:text-slate-400">
                           #{card.id}
@@ -1737,10 +1765,12 @@ export default function RealtimeDashboardWrapper({
                         </TableCell>
                       </TableRow>
                     ))}
-                    {registeredCards.length === 0 && (
+                    {filteredRegistered.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center italic py-8">
-                          Aún no hay cartones reportados para este evento.
+                          {registeredCards.length === 0
+                            ? "Aún no hay cartones reportados para este evento."
+                            : "Ningún registro coincide con la búsqueda."}
                         </TableCell>
                       </TableRow>
                     )}
