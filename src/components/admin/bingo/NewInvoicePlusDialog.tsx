@@ -322,6 +322,7 @@ export default function NewInvoicePlusDialog({
                   <Select value={status} onValueChange={setStatus} enableClear={false}>
                     <SelectItem value="pagada">Pagada</SelectItem>
                     <SelectItem value="pendiente">Pendiente</SelectItem>
+                    <SelectItem value="Donada">Donada</SelectItem>
                   </Select>
                   <input type="hidden" name="status" value={status} />
                 </div>
