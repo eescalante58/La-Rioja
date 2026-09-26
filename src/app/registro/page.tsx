@@ -57,7 +57,7 @@ export default async function RegistroPage({
 
   return (
     <main className="min-h-screen bg-larioja-azul bg-gradient-to-b from-larioja-azul via-[#02184a] to-[#010c28]">
-      <section className="mx-auto flex min-h-screen w-full max-w-xl flex-col items-center px-4 py-8">
+      <section className="mx-auto flex min-h-screen w-full max-w-xl flex-col items-center px-3 py-3 sm:py-8">
         {wheels.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-24 text-center">
             <ClipboardList size={64} className="text-white/20" />
