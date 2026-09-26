@@ -365,7 +365,7 @@ export default function TombolaMonitor({
               className={`${inputClass} [&>option]:bg-[#0a1b45]`}
             >
               <option value="">Selecciona un cartón ganador…</option>
-              {winners.map((w) => (
+              {sortedWinners.map((w) => (
                 <option key={w.cardNumber} value={w.cardNumber}>
                   #{w.cardNumber}
                   {w.registeredAt ? " (registrado)" : ""}
