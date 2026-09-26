@@ -17,7 +17,7 @@ import {
   TableBody,
   TableCell,
 } from "@tremor/react";
-import { Plus, Trash2, Ticket } from "lucide-react";
+import { Plus, Trash2, Ticket, Copy, Check } from "lucide-react";
 import { saveWheelItems } from "@/app/admin/bingo/wheel-actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import { createClient } from "@/lib/supabase/client";
@@ -59,6 +59,25 @@ export default function WheelItemsDialog({
   const [tombolaCards, setTombolaCards] = useState<TombolaCard[] | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [loadingTombola, setLoadingTombola] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
+
+  // URL del formulario público de auto-registro (modo Participantes).
+  // Es la que se convierte en QR para proyectar/compartir en el evento.
+  const registroUrl =
+    wheel && typeof window !== "undefined"
+      ? `${window.location.origin}/registro?id=${wheel.id}`
+      : `/registro?id=${wheel?.id}`;
+
+  /** Copia al portapapeles el URL del formulario /registro. */
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(registroUrl);
+      setUrlCopied(true);
+      setTimeout(() => setUrlCopied(false), 2000);
+    } catch {
+      alert("No se pudo copiar. Selecciona el URL manualmente.");
+    }
+  };
 
   // Tómbola aplica a Cartones y Participantes (cartones vendidos del evento)
   const isCardsMode = wheel?.mode === "Cartones" || wheel?.mode === "Participantes";
@@ -268,18 +287,29 @@ export default function WheelItemsDialog({
               </div>
 
               {wheel?.mode === "Participantes" && (
-                <Text className="text-xs text-gray-500">
-                  Los asistentes registran sus cartones desde el formulario
-                  público{" "}
-                  <a
-                    href={`/registro?id=${wheel.id}`}
-                    target="_blank"
-                    className="font-semibold text-larioja-azul underline"
-                  >
-                    /registro?id={wheel.id}
-                  </a>{" "}
-                  — publícalo como QR durante el evento.
-                </Text>
+                <div className="rounded-xl border border-larioja-azul/20 bg-larioja-azul/5 p-3 dark:border-larioja-azul/30 dark:bg-larioja-azul/10">
+                  <Text className="text-xs text-gray-500 dark:text-gray-400">
+                    Los asistentes registran sus cartones desde el formulario
+                    público — convierte este URL en QR para el evento:
+                  </Text>
+                  <div className="mt-2 flex items-center gap-2">
+                    <a
+                      href={registroUrl}
+                      target="_blank"
+                      className="min-w-0 flex-1 truncate rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-larioja-azul underline dark:border-gray-700 dark:bg-gray-800"
+                    >
+                      {registroUrl}
+                    </a>
+                    <Button
+                      size="xs"
+                      variant="secondary"
+                      icon={urlCopied ? Check : Copy}
+                      onClick={handleCopyUrl}
+                    >
+                      {urlCopied ? "Copiado" : "Copiar"}
+                    </Button>
+                  </div>
+                </div>
               )}
 
               {tombolaCards !== null && tombolaCards.length === 0 && (
