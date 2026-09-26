@@ -816,7 +816,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
               </p>
             ) : (
               <div className="grid grid-cols-4 gap-3">
-                {winners.map((cardNumber, idx) => (
+                {[...winners].reverse().map((cardNumber, idx) => (
                   <div
                     key={cardNumber}
                     className="winner-card-in relative flex flex-col items-center"
@@ -828,7 +828,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                       {/* Posición en el orden del sorteo (esquina de la
                           tarjeta — no se monta sobre el número en móvil) */}
                       <span className="absolute left-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-larioja-amarillo font-montserrat text-[10px] font-black text-larioja-azul shadow-lg">
-                        {idx + 1}°
+                        {winners.length - idx}°
                       </span>
                       <img
                         src={cardImageUrl}
