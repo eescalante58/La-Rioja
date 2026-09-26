@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ClipboardList, PartyPopper, Loader2 } from "lucide-react";
+import {
+  ClipboardList,
+  PartyPopper,
+  Loader2,
+  MessageCircle,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface WheelSummary {
@@ -459,6 +464,17 @@ export default function ParticipantRegistrationForm({
             "Registrar Cartones"
           )}
         </button>
+
+        <a
+          href="https://wa.me/50363020032"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mx-auto -mt-1 inline-flex items-center gap-1.5 text-center text-xs font-semibold text-larioja-verde underline-offset-2 hover:underline"
+        >
+          <MessageCircle size={14} className="shrink-0" />
+          En caso de una incidencia, contáctanos por WhatsApp al{" "}
+          <span className="font-bold">+503 6302-0032</span>
+        </a>
 
         <p className="text-center text-[10px] text-gray-400 sm:text-xs">
           <ClipboardList size={11} className="mr-1 inline-block" />
