@@ -219,7 +219,7 @@ export default function ParticipantRegistrationForm({
   };
 
   const inputClass =
-    "w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-larioja-amarillo focus:border-transparent sm:px-4 sm:py-3 sm:text-base";
+    "w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-larioja-amarillo focus:border-transparent sm:px-4 sm:py-3 sm:text-base";
 
   // ── Selector de tómbola (varias publicadas) ─────────────────────────────
   if (!wheel) {
@@ -301,36 +301,36 @@ export default function ParticipantRegistrationForm({
 
   // ── Formulario ───────────────────────────────────────────────────────────
   return (
-    <div className="w-full rounded-3xl bg-white p-4 shadow-2xl sm:p-6 md:p-8">
+    <div className="w-full rounded-3xl bg-white p-3 shadow-2xl sm:p-6 md:p-8">
       {/* Encabezado */}
-      <div className="mb-3 text-center sm:mb-5">
+      <div className="mb-2 text-center sm:mb-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logo.png"
           alt="La Rioja"
-          className="mx-auto h-8 w-auto sm:h-12"
+          className="mx-auto h-7 w-auto sm:h-12"
         />
-        <p className="mt-0.5 font-montserrat text-[10px] font-bold uppercase tracking-[0.3em] text-gray-400 sm:text-xs">
+        <p className="font-montserrat text-[9px] font-bold uppercase tracking-[0.22em] text-gray-400 sm:text-xs sm:tracking-[0.3em]">
           Centro de Formación Laboral
         </p>
-        <h1 className="mt-2 font-montserrat text-base font-black uppercase leading-tight tracking-wide text-larioja-azul sm:text-lg md:text-xl">
+        <h1 className="mt-1 font-montserrat text-sm font-black uppercase leading-tight tracking-wide text-larioja-azul sm:text-lg md:text-xl">
           Formulario para Registro de Cartones
         </h1>
-        <p className="mt-0.5 font-montserrat text-base font-black uppercase tracking-wide text-larioja-verde sm:text-lg md:text-xl">
+        <p className="font-montserrat text-sm font-black uppercase tracking-wide text-larioja-verde sm:text-lg md:text-xl">
           {wheel.event_name || wheel.event_id}
         </p>
-        <p className="text-[11px] font-semibold text-gray-500 sm:text-xs">
+        <p className="text-[10px] font-semibold text-gray-500 sm:text-xs">
           {wheel.wheel_name}
         </p>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-3.5 sm:gap-5"
+        className="flex flex-col gap-3 sm:gap-5"
       >
         {/* Nombre */}
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-500">
+          <label className="mb-1 block text-[11px] font-bold sm:text-xs uppercase tracking-wider text-gray-500">
             Nombre Completo <span className="text-red-500">*</span>
           </label>
           <input
@@ -349,7 +349,7 @@ export default function ParticipantRegistrationForm({
         {/* Teléfono: código de área + número */}
         <div className="grid grid-cols-[1fr_1.6fr] gap-3">
           <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-500">
+            <label className="mb-1 block text-[11px] font-bold sm:text-xs uppercase tracking-wider text-gray-500">
               Código de Área <span className="text-red-500">*</span>
             </label>
             <select
@@ -367,7 +367,7 @@ export default function ParticipantRegistrationForm({
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-500">
+            <label className="mb-1 block text-[11px] font-bold sm:text-xs uppercase tracking-wider text-gray-500">
               Número de teléfono <span className="text-red-500">*</span>
             </label>
             <input
@@ -453,7 +453,7 @@ export default function ParticipantRegistrationForm({
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-full bg-larioja-amarillo px-6 py-3 font-montserrat text-sm font-black uppercase tracking-wider text-larioja-azul shadow-lg transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:py-4 sm:text-base"
+          className="w-full rounded-full bg-larioja-amarillo px-6 py-2.5 font-montserrat text-sm font-black uppercase tracking-wider text-larioja-azul shadow-lg transition-all hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:py-4 sm:text-base"
         >
           {pending ? (
             <span className="inline-flex items-center gap-2">
@@ -469,7 +469,7 @@ export default function ParticipantRegistrationForm({
           href="https://wa.me/50363020032"
           target="_blank"
           rel="noopener noreferrer"
-          className="mx-auto -mt-1 inline-flex items-center gap-1.5 text-center text-xs font-semibold text-larioja-verde underline-offset-2 hover:underline"
+          className="mx-auto -mt-1.5 inline-flex items-center gap-1.5 text-center text-[11px] font-semibold text-larioja-verde underline-offset-2 hover:underline sm:text-xs"
         >
           <MessageCircle size={14} className="shrink-0" />
           En caso de una incidencia, contáctanos por WhatsApp al{" "}
