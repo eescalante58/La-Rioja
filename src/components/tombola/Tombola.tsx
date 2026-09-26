@@ -88,6 +88,8 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
   /** El servidor ya informó que el cupo de premios está completo. */
   const [drawFinished, setDrawFinished] = useState(false);
+  /** El operador inició el ciclo automático. */
+  const [autoRunning, setAutoRunning] = useState(false);
 
   const drumRef = useRef<HTMLDivElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
@@ -182,6 +184,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
     setParticipants([]);
     setWinners([]);
     setDrawFinished(false);
+    setAutoRunning(false);
     setDrumAngle(0);
     setCurrentBall(null);
     getPublicTombolaData(selectedWheel.id).then((res) => {
@@ -407,10 +410,25 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
     void runSpin();
   }, [isAutomaticRotation, prizeLimitReached, runSpin]);
 
+  /**
+   * Inicia el modo automático con un giro inmediato; los giros siguientes
+   * esperan automatic_timeout_rotation segundos.
+   */
+  const handleStartAutomatic = useCallback(() => {
+    setAutoRunning(true);
+    void runSpin();
+  }, [runSpin]);
+
+  // Detiene el estado operativo cuando ya no hay giros disponibles.
+  useEffect(() => {
+    if (prizeLimitReached || participants.length === 0) setAutoRunning(false);
+  }, [prizeLimitReached, participants.length]);
+
   // Programa el siguiente giro cuando la tómbola está en modo automático.
   useEffect(() => {
     if (
       !isAutomaticRotation ||
+      !autoRunning ||
       !selectedWheel ||
       loading ||
       spinning ||
@@ -440,6 +458,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
     };
   }, [
     isAutomaticRotation,
+    autoRunning,
     selectedWheel,
     loading,
     spinning,
@@ -678,18 +697,49 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             </div>
           </div>
 
-          {/* Botón de giro o estado del ciclo automático */}
+          {/* Controles del giro manual o ciclo automático */}
           {isAutomaticRotation ? (
-            <div className="rounded-full border border-larioja-amarillo/40 bg-white/10 px-8 py-3 text-center backdrop-blur-md">
-              <p className="font-montserrat text-xs font-bold uppercase tracking-[0.2em] text-larioja-amarillo">
-                {prizeLimitReached
-                  ? "Sorteo finalizado"
-                  : spinning
-                    ? "Girando..."
-                    : autoCountdown !== null
-                      ? `Próximo giro en ${autoCountdown}s`
-                      : "Giro automático"}
-              </p>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-wrap justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleStartAutomatic}
+                  disabled={autoRunning || spinning || loading || prizeLimitReached || participants.length === 0}
+                  className={`rounded-full px-8 py-3 font-montserrat text-xs font-bold uppercase tracking-[0.18em] transition-all shadow-xl ${
+                    autoRunning || spinning || loading || prizeLimitReached || participants.length === 0
+                      ? "bg-white/10 text-white/30 cursor-not-allowed"
+                      : "bg-larioja-verde text-white hover:scale-105 active:scale-95"
+                  }`}
+                >
+                  Iniciar Juego
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAutoRunning(false)}
+                  disabled={!autoRunning}
+                  title="Suspende el ciclo automático al finalizar el giro actual"
+                  className={`rounded-full px-8 py-3 font-montserrat text-xs font-bold uppercase tracking-[0.18em] transition-all shadow-xl ${
+                    !autoRunning
+                      ? "bg-white/10 text-white/30 cursor-not-allowed"
+                      : "bg-white text-larioja-azul hover:scale-105 active:scale-95"
+                  }`}
+                >
+                  Parar Juego
+                </button>
+              </div>
+              <div className="rounded-full border border-larioja-amarillo/40 bg-white/10 px-8 py-3 text-center backdrop-blur-md">
+                <p className="font-montserrat text-xs font-bold uppercase tracking-[0.2em] text-larioja-amarillo">
+                  {prizeLimitReached
+                    ? "Sorteo finalizado"
+                    : spinning
+                      ? "Girando..."
+                      : !autoRunning
+                        ? "Automático en pausa"
+                        : autoCountdown !== null
+                          ? `Próximo giro en ${autoCountdown}s`
+                          : "Giro automático"}
+                </p>
+              </div>
             </div>
           ) : (
             <button
