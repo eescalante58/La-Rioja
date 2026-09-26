@@ -11,11 +11,12 @@ import {
   SelectItem,
   Button,
 } from "@tremor/react";
-import { Smartphone, DollarSign, Search } from "lucide-react";
+import { Smartphone, DollarSign, Search, Hash } from "lucide-react";
 import {
   saveInvoice,
   getSellersFromView,
   checkCardsRange,
+  getNextAutoInvoiceNumber,
 } from "@/app/admin/bingo/actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
@@ -53,6 +54,28 @@ export default function NewInvoicePlusDialog({
   const [observation, setObservation] = useState<string>("");
   const [customerName, setCustomerName] = useState<string>("");
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
+  const [autoNumbering, setAutoNumbering] = useState(false);
+
+  /**
+   * Genera y asigna el siguiente número automático "FactAut-NNNNNN"
+   * (correlativo por empresa+evento, calculado en el servidor).
+   */
+  const handleAutoNumber = async () => {
+    if (!currentEvent) return;
+    setAutoNumbering(true);
+    const result = await getNextAutoInvoiceNumber(
+      currentEvent.companyId,
+      currentEvent.eventId,
+    );
+    setAutoNumbering(false);
+    if (result?.data) {
+      setInvoiceNumber(result.data);
+    } else if (!redirectIfSessionExpired(result)) {
+      alert(
+        "Error: " + (result?.error || "No se pudo generar el número automático."),
+      );
+    }
+  };
 
   const todayLocal = () => new Date().toLocaleDateString("en-CA");
 
@@ -199,13 +222,25 @@ export default function NewInvoicePlusDialog({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">N° Factura</Text>
-                  <TextInput
-                    name="invoice_number"
-                    placeholder="F001-000001"
-                    value={invoiceNumber}
-                    onValueChange={setInvoiceNumber}
-                    required
-                  />
+                  <div className="flex gap-2">
+                    <TextInput
+                      name="invoice_number"
+                      placeholder="F001-000001"
+                      value={invoiceNumber}
+                      onValueChange={setInvoiceNumber}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      icon={Hash}
+                      loading={autoNumbering}
+                      onClick={handleAutoNumber}
+                      tooltip="Generar número automático (FactAut-…)"
+                    >
+                      Auto
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Fecha</Text>

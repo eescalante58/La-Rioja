@@ -1083,6 +1083,38 @@ async function getInvoicesInternal(companyId: number, eventId: string) {
 
 export const getInvoices = withRole(4, withCompanyAccess(getInvoicesInternal, 0));
 
+/**
+ * Siguiente número de factura automático con prefijo "FactAut-"
+ * (secuencial por empresa+evento: FactAut-000001, FactAut-000002…).
+ * Los dígitos se extraen del sufijo de los invoice_number existentes.
+ */
+async function getNextAutoInvoiceNumberInternal(
+  companyId: number,
+  eventId: string,
+) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("invoices")
+    .select("invoice_number")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .ilike("invoice_number", "FactAut%");
+
+  if (error) return { error: error.message };
+
+  const max = (data || []).reduce((m: number, r: any) => {
+    const n = parseInt(String(r.invoice_number).replace(/\D/g, ""), 10);
+    return Number.isFinite(n) && n > m ? n : m;
+  }, 0);
+
+  return { data: `FactAut-${String(max + 1).padStart(6, "0")}` };
+}
+
+export const getNextAutoInvoiceNumber = withRole(
+  4,
+  withCompanyAccess(getNextAutoInvoiceNumberInternal, 0),
+);
+
 async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
   const { user } = context;
 
