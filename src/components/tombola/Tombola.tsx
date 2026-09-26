@@ -565,13 +565,28 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
       </div>
 
       {/* Encabezado */}
-      <div className="text-center w-full">
+      <div className="relative text-center w-full">
         <div className="mb-1 flex items-center justify-center gap-3">
           <img src="/logo.png" alt="La Rioja" className="h-10 w-auto md:h-12" />
           <h1 className="font-montserrat text-xl font-black uppercase tracking-[0.15em] text-white md:text-3xl">
             Tómbola <span className="text-larioja-amarillo">Electrónica</span>
           </h1>
         </div>
+
+        {/* Anuncio llamativo: a la derecha del masthead en proyección (lg+),
+            fluye centrado debajo del encabezado en pantallas pequeñas. */}
+        {prizesNumber > 0 && (
+          <div className="mx-auto mt-3 max-w-sm lg:mt-0 lg:absolute lg:right-2 lg:top-0 lg:max-w-xs xl:right-8">
+            <div className="animate-pulse rounded-2xl border-2 border-white/70 bg-gradient-to-br from-larioja-amarillo via-[#ffd75e] to-[#f59e0b] px-5 py-4 shadow-[0_0_40px_rgba(240,180,41,0.6)]">
+              <p className="font-montserrat text-sm font-black uppercase leading-snug tracking-wide text-larioja-azul xl:text-base">
+                ¡Es tu oportunidad de ganar uno de{" "}
+                <span className="text-xl xl:text-2xl">{prizesNumber}</span>{" "}
+                premios por medio del número de cartón que compraste!
+              </p>
+            </div>
+          </div>
+        )}
+
         <p className="font-montserrat text-lg font-bold uppercase tracking-[0.3em] text-larioja-amarillo">
           {selectedWheel.event_name || selectedWheel.event_id}
         </p>
@@ -585,7 +600,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
           </p>
         )}
         {prizesNumber > 0 && (
-          <p className="mt-1 font-montserrat text-xs font-bold uppercase tracking-widest text-white/60">
+          <p className="mt-1 font-montserrat text-base font-bold uppercase tracking-widest text-white/70 md:text-lg">
             Premios sorteados:{" "}
             <span className="text-larioja-amarillo">
               {Math.min(winners.length, prizesNumber)} de {prizesNumber}
