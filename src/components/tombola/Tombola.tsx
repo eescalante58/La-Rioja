@@ -370,7 +370,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
 
       // Al aterrizar: agregar a la galería y quitar de participantes.
       // Esperamos la animación completa antes de habilitar el siguiente giro.
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 700));
       setWinners((prev) => [...prev, result.winnerCardNumber]);
       setParticipants((prev) =>
         prev.filter((c) => c !== result.winnerCardNumber),
@@ -854,7 +854,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             transform: flyingCard.launched
               ? "translate(0, 0) rotate(720deg) scale(0.55)"
               : "translate(0, 0) rotate(0deg) scale(1)",
-            transition: "all 1.1s cubic-bezier(0.25, 0.8, 0.3, 1)",
+            transition: "all 0.65s cubic-bezier(0.25, 0.8, 0.3, 1)",
           }}
         >
           <div className="w-20 flex flex-col items-center">
