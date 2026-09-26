@@ -1208,11 +1208,13 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
   if (invoiceError) return { error: invoiceError.message };
 
   // 3. Update Associated Cards
+  // Factura "Donada" → los cartones quedan 'Donado' (participan en la
+  // tómbola, no aparecen como vendidos en la ruleta).
   if (data.associated_cards.length > 0) {
     const { error: cardsError } = await supabase
       .from("cards")
       .update({
-        card_status: "Vendido",
+        card_status: data.status === "Donada" ? "Donado" : "Vendido",
         invoice_number: data.invoice_number,
         sales_price: data.card_price,
         sold_by: invoiceData.manager_name,
@@ -1487,12 +1489,15 @@ async function updateInvoiceInternal(formData: FormData, context: { user: any })
     );
   }
 
-  // Now link the new selection
+  // Now link the new selection. Factura "Donada" → cartones 'Donado';
+  // el estado efectivo es el enviado o el que ya tenía la factura.
+  const isDonada =
+    (invoiceFields.status ?? currentInvoice?.status) === "Donada";
   if (data.associated_cards && data.associated_cards.length > 0) {
     const { error: cardsError } = await supabase
       .from("cards")
       .update({
-        card_status: "Vendido",
+        card_status: isDonada ? "Donado" : "Vendido",
         invoice_number: data.invoice_number,
         sales_price: data.card_price,
         sold_by: invoiceData.manager_name || data.manager_name,
