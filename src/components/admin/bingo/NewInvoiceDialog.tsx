@@ -456,7 +456,16 @@ export default function NewInvoiceDialog({
                 </div>
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Estado</Text>
-                  <Select value={status} onValueChange={setStatus} enableClear={false} disabled={readOnly}>
+                  <Select
+                    value={status}
+                    onValueChange={(v) => {
+                      setStatus(v);
+                      // Donada: el valor del cartón es $0 por defecto
+                      if (v === "Donada") setCardPrice(0);
+                    }}
+                    enableClear={false}
+                    disabled={readOnly}
+                  >
                     <SelectItem value="pagada">Pagada</SelectItem>
                     <SelectItem value="pendiente">Pendiente</SelectItem>
                     <SelectItem value="Donada">Donada</SelectItem>
@@ -495,6 +504,7 @@ export default function NewInvoiceDialog({
                     onValueChange={(v) => setCardPrice(parseFloat(v) || 0)}
                     required
                     disabled={readOnly}
+                    readOnly={status === "Donada"}
                   />
                 </div>
                 <div className="space-y-1">
