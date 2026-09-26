@@ -23,6 +23,12 @@ interface TombolaConfig {
   mode: string;
   /** Duración del giro del tambor en segundos. */
   time_rotation: number;
+  /** true = la tómbola agenda los giros sin intervención manual. */
+  is_automatic_rotation?: boolean;
+  /** Segundos de espera entre giros automáticos. */
+  automatic_timeout_rotation?: number;
+  /** Máximo de premios/ganadores configurados; 0 = sin límite. */
+  prizes_number?: number;
 }
 
 interface TombolaProps {
@@ -79,6 +85,9 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
   const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
+  /** El servidor ya informó que el cupo de premios está completo. */
+  const [drawFinished, setDrawFinished] = useState(false);
 
   const drumRef = useRef<HTMLDivElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
@@ -90,6 +99,12 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
   // true cuando ESTE cliente giró (el resultado llega por la respuesta del POST,
   // no por polling — así el operador no depende del caché del CDN)
   const operatorSpin = useRef(false);
+
+  const prizesNumber = tombConfig?.prizes_number ?? 0;
+  const prizeLimitReached =
+    drawFinished || (prizesNumber > 0 && winners.length >= prizesNumber);
+  const isAutomaticRotation = tombConfig?.is_automatic_rotation ?? false;
+  const automaticTimeout = Math.max(0, tombConfig?.automatic_timeout_rotation ?? 5);
 
   // ── Audio ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -166,6 +181,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
     setLoading(true);
     setParticipants([]);
     setWinners([]);
+    setDrawFinished(false);
     setDrumAngle(0);
     setCurrentBall(null);
     getPublicTombolaData(selectedWheel.id).then((res) => {
@@ -193,6 +209,21 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
           setParticipants(data.participants);
           setWinners(data.winners);
           setLastWinner(data.winners.at(-1) ?? null);
+          setDrawFinished(Boolean(data.finished));
+          setTombConfig((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  time_rotation: data.timeRotation ?? prev.time_rotation,
+                  is_automatic_rotation:
+                    data.isAutomaticRotation ?? prev.is_automatic_rotation,
+                  automatic_timeout_rotation:
+                    data.automaticTimeoutRotation ??
+                    prev.automatic_timeout_rotation,
+                  prizes_number: data.prizesNumber ?? prev.prizes_number,
+                }
+              : prev,
+          );
         }
       } catch {
         // polling silencioso: si falla una pasada, reintenta la siguiente
@@ -248,8 +279,13 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
   }, []);
 
   // ── Giro de la tómbola ─────────────────────────────────────────────────
-  const handleSpin = async () => {
-    if (spinning || !selectedWheel || participants.length === 0) return;
+  /**
+   * Ejecuta un ciclo completo del sorteo y no libera `spinning` hasta que la
+   * tarjeta ganadora aterrizó en la galería. Así el modo automático respeta
+   * exactamente la espera configurada entre premios.
+   */
+  const runSpin = useCallback(async () => {
+    if (spinning || !selectedWheel || participants.length === 0 || prizeLimitReached) return;
 
     const rotationSec = tombConfig?.time_rotation || 5;
     operatorSpin.current = true;
@@ -272,6 +308,15 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
       const result = await res.json();
 
       if (!result?.success) {
+        if (result?.finished) {
+          setDrawFinished(true);
+          setSpinning(false);
+          operatorSpin.current = false;
+          stopBallTicker();
+          setCurrentBall(null);
+          if (suspenseAudio.current) suspenseAudio.current.pause();
+          return;
+        }
         throw new Error(result?.error || "Error en el sorteo");
       }
 
@@ -320,15 +365,15 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
         );
       }
 
-      // Al aterrizar: agregar a la galería y quitar de participantes
-      setTimeout(() => {
-        setWinners((prev) => [...prev, result.winnerCardNumber]);
-        setParticipants((prev) =>
-          prev.filter((c) => c !== result.winnerCardNumber),
-        );
-        setFlyingCard(null);
-        setCurrentBall(null);
-      }, 1200);
+      // Al aterrizar: agregar a la galería y quitar de participantes.
+      // Esperamos la animación completa antes de habilitar el siguiente giro.
+      await new Promise((r) => setTimeout(r, 1200));
+      setWinners((prev) => [...prev, result.winnerCardNumber]);
+      setParticipants((prev) =>
+        prev.filter((c) => c !== result.winnerCardNumber),
+      );
+      setFlyingCard(null);
+      setCurrentBall(null);
     } catch (error: unknown) {
       console.error("Error spinning tombola:", error);
       alert(error instanceof Error ? error.message : "Error al girar la tómbola.");
@@ -340,7 +385,68 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
       setSpinning(false);
       operatorSpin.current = false;
     }
-  };
+  }, [
+    spinning,
+    selectedWheel,
+    participants.length,
+    prizeLimitReached,
+    tombConfig?.time_rotation,
+    startBallTicker,
+    stopBallTicker,
+    fireConfetti,
+  ]);
+
+  const runSpinRef = useRef(runSpin);
+  useEffect(() => {
+    runSpinRef.current = runSpin;
+  }, [runSpin]);
+
+  /** Giro manual: disponible solo cuando la tómbola no está automatizada. */
+  const handleSpin = useCallback(() => {
+    if (isAutomaticRotation || prizeLimitReached) return;
+    void runSpin();
+  }, [isAutomaticRotation, prizeLimitReached, runSpin]);
+
+  // Programa el siguiente giro cuando la tómbola está en modo automático.
+  useEffect(() => {
+    if (
+      !isAutomaticRotation ||
+      !selectedWheel ||
+      loading ||
+      spinning ||
+      prizeLimitReached ||
+      participants.length === 0
+    ) {
+      setAutoCountdown(null);
+      return;
+    }
+
+    const startedAt = Date.now();
+    setAutoCountdown(automaticTimeout);
+    const countdown = window.setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      setAutoCountdown(Math.max(0, automaticTimeout - elapsed));
+    }, 250);
+
+    const timer = window.setTimeout(
+      () => void runSpinRef.current(),
+      automaticTimeout * 1000,
+    );
+
+    return () => {
+      window.clearInterval(countdown);
+      window.clearTimeout(timer);
+      setAutoCountdown(null);
+    };
+  }, [
+    isAutomaticRotation,
+    selectedWheel,
+    loading,
+    spinning,
+    prizeLimitReached,
+    participants.length,
+    automaticTimeout,
+  ]);
 
   // ── Selector cuando hay varias tómbolas publicadas ─────────────────────
   if (!selectedWheel) {
@@ -459,6 +565,15 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             <span className="text-larioja-amarillo">{participants.length}</span>
           </p>
         )}
+        {prizesNumber > 0 && (
+          <p className="mt-1 font-montserrat text-xs font-bold uppercase tracking-widest text-white/60">
+            Premios sorteados:{" "}
+            <span className="text-larioja-amarillo">
+              {Math.min(winners.length, prizesNumber)} de {prizesNumber}
+            </span>
+            {isAutomaticRotation && " · Giro automático"}
+          </p>
+        )}
         {wheels.length > 1 && (
           <button
             onClick={() => setSelectedWheel(null)}
@@ -563,18 +678,37 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             </div>
           </div>
 
-          {/* Botón de giro */}
-          <button
-            onClick={handleSpin}
-            disabled={spinning || loading || participants.length === 0}
-            className={`rounded-full px-10 py-4 font-montserrat text-sm font-bold uppercase tracking-[0.2em] transition-all shadow-xl ${
-              spinning || loading || participants.length === 0
-                ? "bg-white/10 text-white/30 cursor-not-allowed"
-                : "bg-larioja-amarillo text-larioja-azul hover:scale-105 hover:shadow-[0_0_30px_rgba(240,180,41,0.5)] active:scale-95"
-            }`}
-          >
-            {spinning ? "Girando..." : "Girar Tómbola"}
-          </button>
+          {/* Botón de giro o estado del ciclo automático */}
+          {isAutomaticRotation ? (
+            <div className="rounded-full border border-larioja-amarillo/40 bg-white/10 px-8 py-3 text-center backdrop-blur-md">
+              <p className="font-montserrat text-xs font-bold uppercase tracking-[0.2em] text-larioja-amarillo">
+                {prizeLimitReached
+                  ? "Sorteo finalizado"
+                  : spinning
+                    ? "Girando..."
+                    : autoCountdown !== null
+                      ? `Próximo giro en ${autoCountdown}s`
+                      : "Giro automático"}
+              </p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSpin}
+              disabled={spinning || loading || participants.length === 0 || prizeLimitReached}
+              className={`rounded-full px-10 py-4 font-montserrat text-sm font-bold uppercase tracking-[0.2em] transition-all shadow-xl ${
+                spinning || loading || participants.length === 0 || prizeLimitReached
+                  ? "bg-white/10 text-white/30 cursor-not-allowed"
+                  : "bg-larioja-amarillo text-larioja-azul hover:scale-105 hover:shadow-[0_0_30px_rgba(240,180,41,0.5)] active:scale-95"
+              }`}
+            >
+              {prizeLimitReached
+                ? "Sorteo finalizado"
+                : spinning
+                  ? "Girando..."
+                  : "Girar Tómbola"}
+            </button>
+          )}
 
           {/* Último ganador persistente (estilo "sorteo completado") */}
           {lastWinner !== null && (
@@ -599,7 +733,12 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
               No hay cartones participantes en esta tómbola.
             </p>
           )}
-          {!loading && participants.length === 0 && winners.length > 0 && (
+          {!loading && prizeLimitReached && (
+            <p className="max-w-xs text-center text-sm text-larioja-amarillo font-bold uppercase tracking-widest">
+              Sorteo finalizado — se completaron los {prizesNumber} premios
+            </p>
+          )}
+          {!loading && !prizeLimitReached && participants.length === 0 && winners.length > 0 && (
             <p className="max-w-xs text-center text-sm text-larioja-amarillo font-bold uppercase tracking-widest">
               Sorteo finalizado — todos los cartones fueron sorteados
             </p>

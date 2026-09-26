@@ -36,6 +36,10 @@ const wheelConfigSchema = z.object({
   // Duración del giro de la tómbola en segundos.
   // Requerido (>0) en Cartones/Participantes; forzado a 0 en Premios.
   time_rotation: z.number().int().min(0).max(300).default(0),
+  is_automatic_rotation: z.boolean().default(false),
+  automatic_timeout_rotation: z.number().int().min(0).max(3600).default(5),
+  // 0 = sin límite; un valor >0 limita los giros/premios de la ruleta.
+  prizes_number: z.number().int().min(0).default(0),
 });
 
 const wheelItemSchema = z.object({
@@ -152,6 +156,9 @@ async function saveWheelConfigInternal(payload: {
   mode: string;
   wheel_name: string;
   time_rotation?: number;
+  is_automatic_rotation?: boolean;
+  automatic_timeout_rotation?: number;
+  prizes_number?: number;
 }) {
   const validation = wheelConfigSchema.safeParse(payload);
   if (!validation.success) {
@@ -174,6 +181,9 @@ async function saveWheelConfigInternal(payload: {
     mode: data.mode,
     wheel_name: sanitizeInput(data.wheel_name).trim(),
     time_rotation: timeRotation,
+    is_automatic_rotation: data.is_automatic_rotation,
+    automatic_timeout_rotation: data.automatic_timeout_rotation,
+    prizes_number: data.prizes_number,
   };
 
   const { data: saved, error } = data.id
@@ -464,15 +474,22 @@ export async function getPublicWheelData(wheelId: number) {
 
   const { data: cfg, error } = await supabase
     .from("wheel_configs")
-    .select("id, company_id, event_id, mode, wheel_name, published")
+    .select("*")
     .eq("id", wheelId)
     .eq("published", true)
     .single();
 
   if (error || !cfg) return { error: "La ruleta no está disponible." };
 
-  const segments = await buildSegments(supabase, cfg);
-  return { data: { config: cfg, segments } };
+  const [{ count: spinsCount }, segments] = await Promise.all([
+    supabase
+      .from("wheel_spins")
+      .select("id", { count: "exact", head: true })
+      .eq("wheel_id", wheelId),
+    buildSegments(supabase, cfg),
+  ]);
+
+  return { data: { config: cfg, segments, spinsCount: spinsCount ?? 0 } };
 }
 
 /**
@@ -485,12 +502,22 @@ export async function spinWheel(wheelId: number) {
 
   const { data: cfg, error } = await supabase
     .from("wheel_configs")
-    .select("id, company_id, event_id, mode, wheel_name, published")
+    .select("*")
     .eq("id", wheelId)
     .eq("published", true)
     .single();
 
   if (error || !cfg) return { error: "La ruleta no está disponible." };
+
+  const prizesNumber = cfg.prizes_number ?? 0;
+  const { count: spinsCount } = await supabase
+    .from("wheel_spins")
+    .select("id", { count: "exact", head: true })
+    .eq("wheel_id", wheelId);
+
+  if (prizesNumber > 0 && (spinsCount ?? 0) >= prizesNumber) {
+    return { error: `La ruleta ya completó los ${prizesNumber} premios configurados.` };
+  }
 
   const segments = await buildSegments(supabase, cfg);
   if (segments.length === 0) {
@@ -499,6 +526,23 @@ export async function spinWheel(wheelId: number) {
 
   const winnerIndex = randomInt(0, segments.length);
   const winner = segments[winnerIndex];
+
+  // Auditoría primero: si el trigger de prizes_number rechaza un giro
+  // concurrente, el stock del premio no se descuenta por error.
+  const { error: auditError } = await supabase.from("wheel_spins").insert({
+    wheel_id: cfg.id,
+    company_id: cfg.company_id,
+    event_id: cfg.event_id,
+    mode: cfg.mode,
+    wheel_name: cfg.wheel_name,
+    item_id: winner.itemId,
+    winner_label: winner.label,
+    card_number: winner.cardNumber ?? null,
+    prize_label: cfg.mode === "Premios" ? winner.label : null,
+    spun_by: null, // giro público
+  });
+
+  if (auditError) return { error: auditError.message };
 
   // Descuenta stock en modo Premios
   if (cfg.mode === "Premios" && winner.itemId) {
@@ -516,26 +560,14 @@ export async function spinWheel(wheelId: number) {
     }
   }
 
-  // Auditoría del giro
-  await supabase.from("wheel_spins").insert({
-    wheel_id: cfg.id,
-    company_id: cfg.company_id,
-    event_id: cfg.event_id,
-    mode: cfg.mode,
-    wheel_name: cfg.wheel_name,
-    item_id: winner.itemId,
-    winner_label: winner.label,
-    card_number: winner.cardNumber ?? null,
-    prize_label: cfg.mode === "Premios" ? winner.label : null,
-    spun_by: null, // giro público
-  });
-
   return {
     success: true,
     winnerIndex,
     winnerLabel: winner.label,
     cardNumber: winner.cardNumber ?? null,
     segments, // Enviamos los segmentos usados para sincronizar al cliente
+    spinsCount: (spinsCount ?? 0) + 1,
+    prizesNumber,
   };
 }
 
@@ -558,7 +590,7 @@ export async function getPublicTombolaData(wheelId: number) {
 
   const { data: cfg, error } = await supabase
     .from("wheel_configs")
-    .select("id, company_id, event_id, mode, wheel_name, time_rotation, published")
+    .select("*")
     .eq("id", wheelId)
     .eq("published", true)
     .single();
@@ -614,6 +646,9 @@ export async function getPublicTombolaData(wheelId: number) {
         event_name: evt?.event_name || cfg.event_id,
         mode: cfg.mode,
         time_rotation: cfg.time_rotation || 5,
+        is_automatic_rotation: cfg.is_automatic_rotation ?? false,
+        automatic_timeout_rotation: cfg.automatic_timeout_rotation ?? 5,
+        prizes_number: cfg.prizes_number ?? 0,
       },
       participants,
       winners,

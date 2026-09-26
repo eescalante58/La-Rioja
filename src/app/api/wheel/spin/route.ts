@@ -80,13 +80,32 @@ export async function POST(request: NextRequest) {
     // 1. Fetch wheel config
     const { data: cfg, error } = await supabase
       .from("wheel_configs")
-      .select("id, company_id, event_id, mode, wheel_name, published")
+      .select("*")
       .eq("id", wheelId)
       .eq("published", true)
       .single();
 
     if (error || !cfg) {
       return NextResponse.json({ success: false, error: "La ruleta no está disponible o no está publicada." }, { status: 404 });
+    }
+
+    const prizesNumber = cfg.prizes_number ?? 0;
+    const { count: spinsCount } = await supabase
+      .from("wheel_spins")
+      .select("id", { count: "exact", head: true })
+      .eq("wheel_id", cfg.id);
+
+    if (prizesNumber > 0 && (spinsCount ?? 0) >= prizesNumber) {
+      return NextResponse.json(
+        {
+          success: false,
+          finished: true,
+          error: `La ruleta ya completó los ${prizesNumber} premios configurados.`,
+          spinsCount: spinsCount ?? 0,
+          prizesNumber,
+        },
+        { status: 400 },
+      );
     }
 
     // 2. Build segments
@@ -99,8 +118,9 @@ export async function POST(request: NextRequest) {
     const winnerIndex = randomInt(0, segments.length);
     const winner = segments[winnerIndex];
 
-    // 4. Update state and audit (in parallel where possible)
-    const auditPromise = supabase.from("wheel_spins").insert({
+    // 4. Auditoría primero: si el trigger de prizes_number rechaza un giro
+    // concurrente, el stock del premio no se descuenta por error.
+    const { error: auditError } = await supabase.from("wheel_spins").insert({
       wheel_id: cfg.id,
       company_id: cfg.company_id,
       event_id: cfg.event_id,
@@ -112,6 +132,20 @@ export async function POST(request: NextRequest) {
       prize_label: cfg.mode === "Premios" ? winner.label : null,
       spun_by: null, // Public spin
     });
+
+    if (auditError) {
+      const finished = auditError.code === "23514";
+      return NextResponse.json(
+        {
+          success: false,
+          finished,
+          error: auditError.message,
+          spinsCount: finished ? prizesNumber : (spinsCount ?? 0),
+          prizesNumber,
+        },
+        { status: 400 },
+      );
+    }
 
     if (cfg.mode === "Premios" && winner.itemId) {
       const { data: item } = await supabase
@@ -136,8 +170,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await auditPromise;
-
     return NextResponse.json({
       success: true,
       winnerIndex,
@@ -145,6 +177,8 @@ export async function POST(request: NextRequest) {
       cardNumber: winner.cardNumber ?? null,
       itemId: winner.itemId,
       segments, // Devolvemos los segmentos usados en el giro con el stock actualizado
+      spinsCount: (spinsCount ?? 0) + 1,
+      prizesNumber,
     });
   } catch (err: unknown) {
     console.error("Error spinning wheel in API:", err);

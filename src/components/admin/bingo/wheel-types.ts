@@ -29,6 +29,12 @@ export interface Wheel {
   published: boolean;
   /** Duración del giro de la tómbola en segundos (0 en modo Premios). */
   time_rotation: number;
+  /** true = la pantalla pública agenda los giros sin intervención manual. */
+  is_automatic_rotation: boolean;
+  /** Segundos de espera entre giros automáticos. */
+  automatic_timeout_rotation: number;
+  /** Máximo de premios/giros configurados; 0 = sin límite. */
+  prizes_number: number;
   items: WheelItem[];
 }
 

@@ -10,6 +10,7 @@ import {
   Button,
   Select,
   SelectItem,
+  Switch,
 } from "@tremor/react";
 import { saveWheelConfig } from "@/app/admin/bingo/wheel-actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
@@ -40,16 +41,25 @@ export default function WheelConfigDialog({
   const [mode, setMode] = useState("Premios");
   const [wheelName, setWheelName] = useState("");
   const [timeRotation, setTimeRotation] = useState("5");
+  const [isAutomaticRotation, setIsAutomaticRotation] = useState(false);
+  const [automaticTimeoutRotation, setAutomaticTimeoutRotation] = useState("5");
+  const [prizesNumber, setPrizesNumber] = useState("0");
 
   useEffect(() => {
     if (wheel) {
       setMode(wheel.mode);
       setWheelName(wheel.wheel_name);
       setTimeRotation(String(wheel.time_rotation ?? 5));
+      setIsAutomaticRotation(wheel.is_automatic_rotation ?? false);
+      setAutomaticTimeoutRotation(String(wheel.automatic_timeout_rotation ?? 5));
+      setPrizesNumber(String(wheel.prizes_number ?? 0));
     } else {
       setMode("Premios");
       setWheelName("");
       setTimeRotation("5");
+      setIsAutomaticRotation(false);
+      setAutomaticTimeoutRotation("5");
+      setPrizesNumber("0");
     }
   }, [wheel, isOpen]);
 
@@ -62,8 +72,19 @@ export default function WheelConfigDialog({
     }
     // Tómbola (Cartones/Participantes) requiere tiempo de rotación > 0
     const rotation = parseInt(timeRotation) || 0;
+    const automaticTimeout = parseInt(automaticTimeoutRotation) || 0;
+    const totalPrizes = parseInt(prizesNumber) || 0;
+
     if (mode !== "Premios" && rotation <= 0) {
       alert("El tiempo de rotación es obligatorio (mínimo 1 segundo) para ruletas de Cartones y Participantes.");
+      return;
+    }
+    if (automaticTimeout < 0 || automaticTimeout > 3600) {
+      alert("El tiempo de espera automático debe estar entre 0 y 3600 segundos.");
+      return;
+    }
+    if (totalPrizes < 0) {
+      alert("El número de premios no puede ser negativo.");
       return;
     }
 
@@ -76,6 +97,9 @@ export default function WheelConfigDialog({
         mode,
         wheel_name: wheelName.trim(),
         time_rotation: mode === "Premios" ? 0 : rotation,
+        is_automatic_rotation: isAutomaticRotation,
+        automatic_timeout_rotation: automaticTimeout,
+        prizes_number: totalPrizes,
       });
 
       if (result?.success) {
@@ -156,6 +180,58 @@ export default function WheelConfigDialog({
                 </Text>
               </div>
             )}
+
+            <div className="rounded-xl border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <label className="text-xs font-bold uppercase text-gray-500">
+                    Giro Automático
+                  </label>
+                  <Text className="text-xs text-gray-400">
+                    La pantalla pública ejecuta los giros sin operador.
+                  </Text>
+                </div>
+                <Switch
+                  checked={isAutomaticRotation}
+                  onChange={setIsAutomaticRotation}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-gray-500">
+                    Espera Automática (seg.)
+                  </label>
+                  <TextInput
+                    type="number"
+                    min={0}
+                    max={3600}
+                    value={automaticTimeoutRotation}
+                    onValueChange={setAutomaticTimeoutRotation}
+                    placeholder="Ej: 10"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase text-gray-500">
+                    Número de Premios
+                  </label>
+                  <TextInput
+                    type="number"
+                    min={0}
+                    value={prizesNumber}
+                    onValueChange={setPrizesNumber}
+                    placeholder="0 = sin límite"
+                    required
+                  />
+                </div>
+              </div>
+              <Text className="text-xs text-gray-400">
+                En modo automático, cada giro espera el tiempo indicado. Usa 0
+                premios para dejar la ruleta sin límite configurado.
+              </Text>
+            </div>
 
             {mode === "Cartones" && !wheel && (
               <Text className="text-xs text-gray-500">
