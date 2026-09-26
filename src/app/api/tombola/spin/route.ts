@@ -53,9 +53,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Participantes sortea los cartones auto-registrados por los asistentes
+    // en /registro; Cartones usa la carga masiva de vendidos/donados.
+    const table =
+      cfg.mode === "Participantes"
+        ? "wheels_presents_cards"
+        : "wheel_participating_cards";
+
     const prizesNumber = cfg.prizes_number ?? 0;
     const { count: winnerCount } = await supabase
-      .from("wheel_participating_cards")
+      .from(table)
       .select("id", { count: "exact", head: true })
       .eq("wheel_id", cfg.id)
       .eq("is_winner", true);
@@ -75,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Cartones aún no ganadores
     const { data: participants, error: partError } = await supabase
-      .from("wheel_participating_cards")
+      .from(table)
       .select("id, card_number")
       .eq("wheel_id", cfg.id)
       .eq("is_winner", false)
@@ -100,7 +107,7 @@ export async function POST(request: NextRequest) {
     // al registrar datos del ganador). Fallback sin won_at por si la
     // migración 20261004000000 aún no se aplicó en producción.
     let { data: marked, error: markError } = await supabase
-      .from("wheel_participating_cards")
+      .from(table)
       .update({ is_winner: true, won_at: new Date().toISOString() })
       .eq("id", winner.id)
       .eq("is_winner", false)
@@ -108,7 +115,7 @@ export async function POST(request: NextRequest) {
 
     if (markError) {
       const fallback = await supabase
-        .from("wheel_participating_cards")
+        .from(table)
         .update({ is_winner: true })
         .eq("id", winner.id)
         .eq("is_winner", false)

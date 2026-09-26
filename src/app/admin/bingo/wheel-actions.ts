@@ -600,8 +600,15 @@ export async function getPublicTombolaData(wheelId: number) {
     return { error: "Esta ruleta no es de tómbola." };
   }
 
+  // Participantes lee los cartones auto-registrados en /registro;
+  // Cartones usa la carga masiva de vendidos/donados.
+  const table =
+    cfg.mode === "Participantes"
+      ? "wheels_presents_cards"
+      : "wheel_participating_cards";
+
   const { data: cards, error: cardsError } = await supabase
-    .from("wheel_participating_cards")
+    .from(table)
     .select("card_number, is_winner, updated_at, won_at")
     .eq("wheel_id", cfg.id);
 

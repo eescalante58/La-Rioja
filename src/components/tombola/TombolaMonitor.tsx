@@ -43,6 +43,9 @@ interface WinnerInfo {
   documentNumber: string | null;
   winnerPhoneNumber: string | null;
   registeredAt: string | null;
+  /** Solo modo Participantes: datos digitados por el asistente en /registro. */
+  playerName?: string | null;
+  playerPhoneNumber?: string | null;
 }
 
 interface TombolaMonitorProps {
@@ -86,6 +89,9 @@ export default function TombolaMonitor({
   const [tombConfig, setTombConfig] = useState<TombolaConfig | null>(null);
   const [participants, setParticipants] = useState<number[]>([]);
   const [winners, setWinners] = useState<WinnerInfo[]>([]);
+  /** Registros en vivo (modo Participantes): crece por evento INSERT sin
+      volver a consultar COUNT(*) a la BD durante la ráfaga. */
+  const [registeredCount, setRegisteredCount] = useState(0);
   const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -118,6 +124,7 @@ export default function TombolaMonitor({
         setTombConfig(json.config);
         setParticipants(json.participants);
         setWinners(json.winners);
+        setRegisteredCount(json.participants.length + json.winners.length);
         setLoadError(false);
       } else {
         setLoadError(true);
@@ -138,15 +145,24 @@ export default function TombolaMonitor({
     setParticipants([]);
     setWinners([]);
     setTombConfig(null);
+    setRegisteredCount(0);
     setLoadError(false);
     setFormMsg(null);
     if (selectedWheel) loadState();
   }, [selectedWheel?.id]);
 
-  // Realtime: cualquier cambio (nuevo ganador o registro de datos)
-  // refetea el estado completo.
+  // Realtime: la tabla depende del modo — Participantes escribe en
+  // wheels_presents_cards (registros de /registro), Cartones en
+  // wheel_participating_cards (carga masiva admin).
+  // INSERT solo incrementa el contador (la ráfaga de /registro no debe
+  // provocar un refetch por cada cartón); UPDATE/DELETE (ganadores y
+  // datos del staff) sí refetean el estado completo.
   useEffect(() => {
     if (!selectedWheel) return;
+    const table =
+      selectedWheel.mode === "Participantes"
+        ? "wheels_presents_cards"
+        : "wheel_participating_cards";
     const supabase = createClient();
     const channelName = `tombola_monitor_${selectedWheel.id}`;
     const channel = supabase
@@ -156,11 +172,15 @@ export default function TombolaMonitor({
         {
           event: "*",
           schema: "public",
-          table: "wheel_participating_cards",
+          table,
           filter: `wheel_id=eq.${selectedWheel.id}`,
         },
-        () => {
-          loadState();
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setRegisteredCount((c) => c + 1);
+          } else {
+            loadState();
+          }
         },
       )
       .subscribe();
@@ -168,7 +188,7 @@ export default function TombolaMonitor({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedWheel?.id]);
+  }, [selectedWheel?.id, selectedWheel?.mode]);
 
   // Fullscreen para proyectar en pantalla del staff
   const toggleFullscreen = () => {
@@ -198,7 +218,14 @@ export default function TombolaMonitor({
     [winners],
   );
 
-  const totalCards = participants.length + winners.length;
+  // En Participantes los registros nuevos llegan por INSERT sin refetch:
+  // registeredCount lleva el total vivo; en Cartones equivale al listado.
+  const totalCards = Math.max(
+    registeredCount,
+    participants.length + winners.length,
+  );
+  const isPresentsMode =
+    (tombConfig?.mode ?? selectedWheel?.mode) === "Participantes";
 
   /**
    * Al elegir un cartón que ya tiene datos registrados, precarga el
@@ -215,6 +242,11 @@ export default function TombolaMonitor({
       setFormDocType(existing.documentType ?? "DUI");
       setFormDocNumber(existing.documentNumber ?? "");
       setFormPhone(existing.winnerPhoneNumber ?? "");
+    } else if (existing?.playerName) {
+      // Modo Participantes: precarga lo que el asistente digitó en
+      // /registro — el staff solo confirma o corrige.
+      setFormName(existing.playerName);
+      if (existing.playerPhoneNumber) setFormPhone(existing.playerPhoneNumber);
     }
   };
 
@@ -324,6 +356,15 @@ export default function TombolaMonitor({
             />
             {winners.length} de {totalCards} sorteados
           </div>
+          {isPresentsMode && (
+            <div className="px-4 py-2 rounded-full bg-larioja-verde/20 border border-larioja-verde/50 text-emerald-200 text-sm font-bold">
+              <Ticket
+                size={14}
+                className="inline-block mr-1.5 -mt-0.5"
+              />
+              {totalCards} registrados
+            </div>
+          )}
           <button
             onClick={handleRefresh}
             disabled={refreshing}

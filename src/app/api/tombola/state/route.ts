@@ -41,8 +41,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Participantes lee los cartones auto-registrados en /registro
+    const table =
+      cfg.mode === "Participantes"
+        ? "wheels_presents_cards"
+        : "wheel_participating_cards";
+
     const { data: cards, error: cardsError } = await supabase
-      .from("wheel_participating_cards")
+      .from(table)
       .select("card_number, is_winner, updated_at, won_at")
       .eq("wheel_id", cfg.id);
 

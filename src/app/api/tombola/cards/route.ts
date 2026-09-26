@@ -55,9 +55,25 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = createAdminClient();
+
+  // La tabla depende del modo: Participantes usa los registros de /registro
+  const { data: cfg } = await supabase
+    .from("wheel_configs")
+    .select("mode")
+    .eq("id", wheelId)
+    .eq("company_id", companyId)
+    .single();
+  const table =
+    cfg?.mode === "Participantes"
+      ? "wheels_presents_cards"
+      : "wheel_participating_cards";
+  const selectCols =
+    "id, card_number, is_winner" +
+    (cfg?.mode === "Participantes" ? ", player_name, player_phone_number" : "");
+
   const { data, error } = await supabase
-    .from("wheel_participating_cards")
-    .select("id, card_number, is_winner")
+    .from(table)
+    .select(selectCols)
     .eq("company_id", companyId)
     .eq("wheel_id", wheelId)
     .order("is_winner")
@@ -111,6 +127,17 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
+  if (cfg.mode === "Participantes") {
+    // Los cartones Participantes los registran los asistentes desde
+    // /registro — no se permite la carga masiva administrativa.
+    return NextResponse.json(
+      {
+        error:
+          "Las ruletas de Participantes se cargan desde el formulario público /registro, no por carga masiva.",
+      },
+      { status: 400 },
+    );
+  }
 
   const { data: soldCards, error: cardsError } = await supabase
     .from("cards")
@@ -138,10 +165,12 @@ export async function POST(request: NextRequest) {
     card_number: c.card_number,
   }));
 
+  // La llave incluye wheel_id: un cartón puede participar en varias
+  // tómbolas Cartones del mismo evento sin chocar con la otra carga.
   const { error: upsertError } = await supabase
     .from("wheel_participating_cards")
     .upsert(rows, {
-      onConflict: "company_id,event_id,card_number",
+      onConflict: "company_id,event_id,wheel_id,card_number",
       ignoreDuplicates: true,
     });
 
@@ -185,12 +214,24 @@ export async function DELETE(request: NextRequest) {
   }
 
   const supabase = createAdminClient();
-  const { error } = await supabase
-    .from("wheel_participating_cards")
-    .delete()
-    .eq("id", cardId)
-    .eq("company_id", companyId)
-    .eq("is_winner", false);
+
+  // El cardId solo existe en una de las dos tablas de participación;
+  // el DELETE sobre la tabla que no lo contiene no elimina nada.
+  const [partRes, presentsRes] = await Promise.all([
+    supabase
+      .from("wheel_participating_cards")
+      .delete()
+      .eq("id", cardId)
+      .eq("company_id", companyId)
+      .eq("is_winner", false),
+    supabase
+      .from("wheels_presents_cards")
+      .delete()
+      .eq("id", cardId)
+      .eq("company_id", companyId)
+      .eq("is_winner", false),
+  ]);
+  const error = partRes.error || presentsRes.error;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });

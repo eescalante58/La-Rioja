@@ -49,6 +49,9 @@ interface WinnerRow {
   document_number: string | null;
   winner_phone_number: string | null;
   winner_registered_at: string | null;
+  /** Solo modo Participantes: datos que digitó el asistente en /registro. */
+  player_name?: string | null;
+  player_phone_number?: string | null;
 }
 
 /**
@@ -92,16 +95,25 @@ export async function GET(request: NextRequest) {
       .eq("event_id", cfg.event_id)
       .single();
 
+    // Participantes lee wheels_presents_cards, que además guarda el nombre
+    // y teléfono que el asistente digitó al registrarse (precarga en el
+    // formulario del monitor).
+    const table =
+      cfg.mode === "Participantes"
+        ? "wheels_presents_cards"
+        : "wheel_participating_cards";
+    const selectCols =
+      "card_number, is_winner, updated_at, won_at, winner_order, winner_name, winner_prize, document_type, document_number, winner_phone_number, winner_registered_at" +
+      (cfg.mode === "Participantes" ? ", player_name, player_phone_number" : "");
+
     const { data: cards, error: cardsError } = await supabase
-      .from("wheel_participating_cards")
-      .select(
-        "card_number, is_winner, updated_at, won_at, winner_order, winner_name, winner_prize, document_type, document_number, winner_phone_number, winner_registered_at",
-      )
+      .from(table)
+      .select(selectCols)
       .eq("wheel_id", cfg.id);
 
     if (cardsError) throw cardsError;
 
-    const list = (cards || []) as WinnerRow[];
+    const list = (cards || []) as unknown as WinnerRow[];
     const drawTime = (c: WinnerRow) =>
       new Date(c.won_at ?? c.updated_at).getTime();
     const captureTime = (c: WinnerRow) =>
@@ -127,6 +139,8 @@ export async function GET(request: NextRequest) {
         documentNumber: c.document_number,
         winnerPhoneNumber: c.winner_phone_number,
         registeredAt: c.winner_registered_at,
+        playerName: c.player_name ?? null,
+        playerPhoneNumber: c.player_phone_number ?? null,
       }));
 
     return NextResponse.json(
@@ -215,9 +229,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const table =
+      cfg.mode === "Participantes"
+        ? "wheels_presents_cards"
+        : "wheel_participating_cards";
+
     // Validación clave: el cartón debe participar y ser ganador
     const { data: card, error: cardError } = await supabase
-      .from("wheel_participating_cards")
+      .from(table)
       .select("id, winner_registered_at")
       .eq("wheel_id", cfg.id)
       .eq("card_number", cardNumber)
@@ -235,7 +254,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { error: updateError } = await supabase
-      .from("wheel_participating_cards")
+      .from(table)
       .update({
         winner_name: winnerName,
         winner_prize: winnerPrize || null,

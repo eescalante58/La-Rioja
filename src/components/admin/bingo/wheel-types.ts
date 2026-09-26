@@ -38,11 +38,15 @@ export interface Wheel {
   items: WheelItem[];
 }
 
-/** Cartón participante de una tómbola (fila de wheel_participating_cards). */
+/** Cartón participante de una tómbola (fila de wheel_participating_cards
+ *  o wheels_presents_cards según el modo de la ruleta). */
 export interface TombolaCard {
   id: number;
   card_number: number;
   is_winner: boolean;
+  /** Solo modo Participantes: quien registró el cartón en /registro. */
+  player_name?: string | null;
+  player_phone_number?: string | null;
 }
 
 /** Registro de auditoría de un giro (fila de wheel_spins). */

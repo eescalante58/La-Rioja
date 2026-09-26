@@ -96,11 +96,16 @@ export default function WheelItemsDialog({
     );
   }, [isOpen, wheel?.items, companyId, eventId]); // Escuchamos específicamente los items del wheel
 
-  // Realtime: cuando la tómbola marca ganadores (/api/tombola/spin),
-  // refrescamos la lista de participantes del diálogo abierto.
+  // Realtime: cuando la tómbola marca ganadores (/api/tombola/spin) o un
+  // asistente se registra (/registro), refrescamos la lista del diálogo.
+  // La tabla depende del modo: Participantes usa wheels_presents_cards.
   useEffect(() => {
     if (!isOpen || !wheel || !isCardsMode || !companyId) return;
 
+    const table =
+      wheel.mode === "Participantes"
+        ? "wheels_presents_cards"
+        : "wheel_participating_cards";
     const supabase = createClient();
     const channel = supabase
       .channel(`tombola_admin_${wheel.id}`)
@@ -109,7 +114,7 @@ export default function WheelItemsDialog({
         {
           event: "*",
           schema: "public",
-          table: "wheel_participating_cards",
+          table,
           filter: `wheel_id=eq.${wheel.id}`,
         },
         () => {
@@ -249,22 +254,41 @@ export default function WheelItemsDialog({
                       : `${tombolaCards.filter((c) => !c.is_winner).length} disponibles · ${tombolaCards.filter((c) => c.is_winner).length} ganadores`}
                   </span>
                 </Text>
-                <Button
-                  size="xs"
-                  icon={Ticket}
-                  loading={loadingTombola}
-                  onClick={handleLoadTombola}
-                  className="bg-larioja-azul"
-                >
-                  Cargar cartones vendidos y donados
-                </Button>
+                {wheel?.mode === "Cartones" && (
+                  <Button
+                    size="xs"
+                    icon={Ticket}
+                    loading={loadingTombola}
+                    onClick={handleLoadTombola}
+                    className="bg-larioja-azul"
+                  >
+                    Cargar cartones vendidos y donados
+                  </Button>
+                )}
               </div>
+
+              {wheel?.mode === "Participantes" && (
+                <Text className="text-xs text-gray-500">
+                  Los asistentes registran sus cartones desde el formulario
+                  público{" "}
+                  <a
+                    href={`/registro?id=${wheel.id}`}
+                    target="_blank"
+                    className="font-semibold text-larioja-azul underline"
+                  >
+                    /registro?id={wheel.id}
+                  </a>{" "}
+                  — publícalo como QR durante el evento.
+                </Text>
+              )}
 
               {tombolaCards !== null && tombolaCards.length === 0 && (
                 <div className="py-8 text-center border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl">
                   <Ticket size={36} className="mx-auto text-gray-300 mb-2" />
                   <Text className="text-gray-400 italic">
-                    Sin cartones cargados. Usa el botón para traer los vendidos y donados del evento.
+                    {wheel?.mode === "Participantes"
+                      ? "Sin registros todavía. Los cartones aparecen aquí cuando los asistentes usen el formulario /registro."
+                      : "Sin cartones cargados. Usa el botón para traer los vendidos y donados del evento."}
                   </Text>
                 </div>
               )}
@@ -277,8 +301,14 @@ export default function WheelItemsDialog({
                         key={card.id}
                         color={card.is_winner ? "amber" : "blue"}
                         className={card.is_winner ? "opacity-60 line-through" : ""}
+                        title={
+                          card.player_name
+                            ? `${card.player_name} · ${card.player_phone_number ?? ""}`
+                            : undefined
+                        }
                       >
                         #{card.card_number}
+                        {card.player_name ? ` · ${card.player_name}` : ""}
                         {!card.is_winner && (
                           <button
                             onClick={() => handleRemoveTombolaCard(card.id)}
