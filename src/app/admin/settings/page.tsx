@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   History,
   MessageSquare,
+  Gauge,
 } from "lucide-react";
 import { Card, Title, Text, Grid, Icon } from "@tremor/react";
 
@@ -59,6 +60,14 @@ export default function SettingsPage() {
       icon: History,
       href: "/admin/settings/logs",
       color: "gray",
+    },
+    {
+      title: "Límites de Registro",
+      description:
+        "Activa el modo evento (IP compartida del venue) o restaura la protección normal del formulario /registro.",
+      icon: Gauge,
+      href: "/admin/settings/registration-limits",
+      color: "orange",
     },
     {
       title: "Mensajes de Contacto",

@@ -133,10 +133,16 @@ Consecuencia con los límites actuales (`20261007000002`):
 
 ### Operación el día del evento (checklist)
 
-1. **ANTES de abrir el registro** (momento del QR): ejecutar en el SQL Editor
-   de Supabase el script **`loadtest/raise_limits.sql`** — eleva los límites a
+**Vía UI (recomendada):** Admin → Configuración → **Límites de Registro** —
+un clic cambia entre modo `normal` y `evento` (lee/escribe la tabla
+`registration_limits`, migración `20261008000000`). Los scripts SQL en
+`loadtest/` quedan como contingencia si el admin no está disponible.
+
+1. **ANTES de abrir el registro** (momento del QR): Configuración →
+   Límites de Registro → **"Activar modo Evento"** — eleva los límites a
    `500 envíos/min`, `15,000 cartones/día por IP`, `30 por teléfono`
    (dimensionado para 1,200 asistentes detrás de UNA sola IP).
+   *Contingencia SQL: `loadtest/raise_limits.sql`.*
 2. **Verificar**: `node --env-file=.env.local loadtest/probe-xff.mjs` →
    las 14 llamadas deben devolver `passed`.
 3. **Durante el registro** (monitoreo anti-abuso en vivo, SQL Editor):
@@ -146,11 +152,12 @@ Consecuencia con los límites actuales (`20261007000002`):
    WHERE attempted_at > now() - interval '10 minutes'
    GROUP BY client_ip ORDER BY 2 DESC;
    ```
-   Una IP con miles de intentos = enumeración en curso → ejecutar
-   `restore_limits.sql` de inmediato.
-4. **AL CERRAR el registro**: restaurar los límites normales ejecutando de
-   nuevo `supabase/migrations/20261007000002_registration_rate_limit.sql`
-   (o seguir `loadtest/restore_limits.sql` que incluye una verificación).
+   Una IP con miles de intentos = enumeración en curso → pulsar
+   **"Restaurar modo Normal"** de inmediato.
+4. **AL CERRAR el registro**: Configuración → Límites de Registro →
+   **"Restaurar modo Normal"**.
+   *Contingencia SQL: re-ejecutar `20261007000002_registration_rate_limit.sql`
+   o `loadtest/restore_limits.sql`.*
 5. **Verificar restauración**: el probe debe bloquear desde la llamada 11.
 
 ### Fix permanente (post-evento)
