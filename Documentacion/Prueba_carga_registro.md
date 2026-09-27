@@ -111,10 +111,61 @@ conexiones** PostgREST→Postgres, no por saturación de cómputo (CPU 9%).
    `20261007000002` para que un replay ordenado (`db push` en staging futuro)
    no falle — la tabla `wheels_presents_cards` se crea en `20261007000000`.
 
-## 8. Artefactos y limpieza
+## 8. ⚠️ HALLAZGO CRÍTICO — rate limit por IP vs. venue con red compartida
+
+### El riesgo
+
+El rate limit por IP **nunca fue probado bajo la condición real del evento**:
+la prueba simuló 1,200 IPs distintas a propósito. Pero el día del evento:
+
+- Si el venue ofrece **WiFi compartido** a los asistentes, todos los celulares
+  salen a internet por **la misma IP pública** (o unas pocas).
+- Con datos móviles, operadores en El Salvador usan **CGNAT** (varios usuarios
+  comparten una IP pública).
+
+Consecuencia con los límites actuales (`20261007000002`):
+
+| Límite | Efecto en IP compartida |
+|---|---|
+| 10 envíos/min por IP | El asistente #11+ del mismo minuto es bloqueado aunque sea real. Se autorregula con reintentos (~10/min), pero genera mala experiencia. |
+| **40 cartones/día por IP+evento** | **El fallo grave**: con ~4 cartones por persona, el asistente ~#10–13 agota el cupo de toda la IP. **Todos los demás quedan bloqueados 24 h** con "Se alcanzó el límite de registros por hoy". |
+| 30 cartones por teléfono | No afecta: cada asistente usa su propio número. |
+
+### Operación el día del evento (checklist)
+
+1. **ANTES de abrir el registro** (momento del QR): ejecutar en el SQL Editor
+   de Supabase el script **`loadtest/raise_limits.sql`** — eleva los límites a
+   `500 envíos/min`, `15,000 cartones/día por IP`, `30 por teléfono`
+   (dimensionado para 1,200 asistentes detrás de UNA sola IP).
+2. **Verificar**: `node --env-file=.env.local loadtest/probe-xff.mjs` →
+   las 14 llamadas deben devolver `passed`.
+3. **Durante el registro** (monitoreo anti-abuso en vivo, SQL Editor):
+   ```sql
+   SELECT client_ip, COUNT(*) AS intentos
+   FROM public.registration_attempts
+   WHERE attempted_at > now() - interval '10 minutes'
+   GROUP BY client_ip ORDER BY 2 DESC;
+   ```
+   Una IP con miles de intentos = enumeración en curso → ejecutar
+   `restore_limits.sql` de inmediato.
+4. **AL CERRAR el registro**: restaurar los límites normales ejecutando de
+   nuevo `supabase/migrations/20261007000002_registration_rate_limit.sql`
+   (o seguir `loadtest/restore_limits.sql` que incluye una verificación).
+5. **Verificar restauración**: el probe debe bloquear desde la llamada 11.
+
+### Fix permanente (post-evento)
+
+Para no depender de este paso manual en futuros eventos: Cloudflare Turnstile
+en `/registro` (gratis, invisible para humanos). Requiere que la escritura pase
+por un endpoint del servidor para validar el token — cambio mayor, planificar
+con calma.
+
+## 9. Artefactos y limpieza
 
 - Scripts: `loadtest/probe-xff.mjs`, `loadtest/seed.mjs`,
   `loadtest/load-test.mjs`, `loadtest/cleanup.sql` (reutilizables).
+- Operación día del evento: `loadtest/raise_limits.sql` (elevar límites),
+  `loadtest/restore_limits.sql` (restaurar) — ver §8.
 - Resultados crudos: `loadtest/loadtest-result-*.json`.
 - Limpieza post-test: `wheels_presents_cards`, `cards`, `wheel_configs`,
   `invoices`, `events` de `TESTCARGA01` y `registration_attempts` de las IPs
