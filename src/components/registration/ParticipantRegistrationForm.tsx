@@ -69,6 +69,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * registra ninguno y se muestra el motivo exacto por número. Incluye
  * jitter + reintentos con backoff para absorber la ráfaga de ~1,200
  * envíos simultáneos del evento.
+ *
+ * Anti-abuso: el RPC limita por IP (ráfaga y tope diario) y por teléfono;
+ * el campo honeypot "website" filtra bots simples sin fricción para el
+ * asistente (si viene lleno, se simula un registro exitoso sin llamar
+ * a la base de datos).
  */
 export default function ParticipantRegistrationForm({
   wheels,
@@ -88,6 +93,8 @@ export default function ParticipantRegistrationForm({
   const [cardErrors, setCardErrors] = useState<Map<number, string>>(new Map());
   const [formError, setFormError] = useState<string | null>(null);
   const [registered, setRegistered] = useState<number[] | null>(null);
+  /** Honeypot anti-bots: campo invisible; solo lo llenan scripts. */
+  const [website, setWebsite] = useState("");
   /** Folio(s) de confirmación: id de cada fila creada en la tabla. */
   const [confirmationIds, setConfirmationIds] = useState<number[]>([]);
 
@@ -130,6 +137,12 @@ export default function ParticipantRegistrationForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wheel || pending) return;
+
+    // Honeypot lleno = bot: simula éxito sin tocar la base de datos.
+    if (website) {
+      setRegistered(cardNumbers);
+      return;
+    }
 
     setFormError(null);
     setCardErrors(new Map());
@@ -328,6 +341,19 @@ export default function ParticipantRegistrationForm({
         onSubmit={handleSubmit}
         className="flex flex-col gap-3 sm:gap-5"
       >
+        {/* Honeypot: oculto fuera de pantalla (no display:none, que los bots
+            detectan). aria-hidden y tabIndex -1 lo ocultan a usuarios reales. */}
+        <input
+          type="text"
+          name="website"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="absolute -left-[9999px] h-0 w-0 opacity-0"
+        />
+
         {/* Nombre */}
         <div>
           <label className="mb-1 block text-[11px] font-bold sm:text-xs uppercase tracking-wider text-gray-500">
