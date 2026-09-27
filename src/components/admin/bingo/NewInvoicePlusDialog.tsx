@@ -12,12 +12,6 @@ import {
   Button,
 } from "@tremor/react";
 import { Smartphone, DollarSign, Search, Hash } from "lucide-react";
-import {
-  saveInvoice,
-  getSellersFromView,
-  checkCardsRange,
-  getNextAutoInvoiceNumber,
-} from "@/app/admin/bingo/actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface NewInvoicePlusDialogProps {
@@ -29,6 +23,17 @@ interface NewInvoicePlusDialogProps {
   onWhatsApp: (invoice: any) => void;
 }
 
+/**
+ * Diálogo "Nueva Factura Plus" optimizado para la cola de ventas del
+ * evento:
+ * - Layout compacto: todos los campos visibles sin scroll en pantalla
+ *   de laptop (grids de 3-4 columnas, espaciados reducidos).
+ * - Todas las operaciones van por los Route Handlers /api/bingo/* que
+ *   responden JSON puro; las Server Actions re-renderizaban /admin/bingo
+ *   completo y tardaban demasiado para atención en vivo.
+ * - "Hasta Cartón" copia "Desde Cartón" hasta que el operador lo edite
+ *   (venta típica = 1 cartón); al cambiarlo manualmente queda libre.
+ */
 export default function NewInvoicePlusDialog({
   isOpen,
   onClose,
@@ -48,6 +53,8 @@ export default function NewInvoicePlusDialog({
   const [selectedCards, setSelectedInvoiceCards] = useState<number[]>([]);
   const [fromCard, setFromCard] = useState("");
   const [toCard, setToCard] = useState("");
+  /** true si el operador editó "Hasta" manualmente: ya no se sincroniza. */
+  const [toCardTouched, setToCardTouched] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string>("efectivo");
   const [status, setStatus] = useState<string>("pagada");
   const [invoiceDate, setInvoiceDate] = useState<string>("");
@@ -63,17 +70,23 @@ export default function NewInvoicePlusDialog({
   const handleAutoNumber = async () => {
     if (!currentEvent) return;
     setAutoNumbering(true);
-    const result = await getNextAutoInvoiceNumber(
-      currentEvent.companyId,
-      currentEvent.eventId,
-    );
-    setAutoNumbering(false);
-    if (result?.data) {
-      setInvoiceNumber(result.data);
-    } else if (!redirectIfSessionExpired(result)) {
-      alert(
-        "Error: " + (result?.error || "No se pudo generar el número automático."),
+    try {
+      const res = await fetch(
+        `/api/bingo/invoices/next-number?companyId=${currentEvent.companyId}&eventId=${encodeURIComponent(currentEvent.eventId)}`,
       );
+      const result = await res.json();
+      if (result?.success && result.data) {
+        setInvoiceNumber(result.data);
+      } else if (!redirectIfSessionExpired(result)) {
+        alert(
+          "Error: " +
+            (result?.error || "No se pudo generar el número automático."),
+        );
+      }
+    } catch {
+      alert("Error de red al generar el número automático.");
+    } finally {
+      setAutoNumbering(false);
     }
   };
 
@@ -96,6 +109,7 @@ export default function NewInvoicePlusDialog({
       setInvoiceNumber("");
       setFromCard("");
       setToCard("");
+      setToCardTouched(false);
       loadInitialData();
     }
   }, [currentEvent, isOpen]);
@@ -110,12 +124,20 @@ export default function NewInvoicePlusDialog({
 
   const loadInitialData = async () => {
     if (!currentEvent) return;
-    const sellersRes = await getSellersFromView(currentEvent.companyId, currentEvent.eventId);
-    if (sellersRes.success && sellersRes.data) {
-      const uniqueSellers = Array.from(
-        new Set(sellersRes.data.map((s: any) => s.sold_by).filter(Boolean)),
-      ) as string[];
-      setSellers(uniqueSellers.sort());
+    try {
+      const res = await fetch(
+        `/api/bingo/sellers?companyId=${currentEvent.companyId}&eventId=${encodeURIComponent(currentEvent.eventId)}`,
+      );
+      const sellersRes = await res.json();
+      if (sellersRes.success && sellersRes.data) {
+        const uniqueSellers = Array.from(
+          new Set(sellersRes.data.map((s: any) => s.sold_by).filter(Boolean)),
+        ) as string[];
+        setSellers(uniqueSellers.sort());
+      }
+    } catch {
+      // Lista de vendedores es solo una ayuda de autocompletado; si falla
+      // el campo sigue aceptando texto libre.
     }
   };
 
@@ -137,14 +159,27 @@ export default function NewInvoicePlusDialog({
 
     setCheckingRange(true);
     try {
-      const result = await checkCardsRange(currentEvent.companyId, currentEvent.eventId, start, end);
+      const res = await fetch("/api/bingo/cards/check-range", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyId: currentEvent.companyId,
+          eventId: currentEvent.eventId,
+          start,
+          end,
+        }),
+      });
+      const result = await res.json();
       if (result?.success) {
         const newNums = (result.data || []).map((c: any) => c.card_number);
-        // Combine with existing selection
-        const combined = Array.from(new Set([...selectedCards, ...newNums])).sort((a, b) => a - b);
-        
+        const combined = Array.from(
+          new Set([...selectedCards, ...newNums]),
+        ).sort((a, b) => a - b);
+
         if (combined.length > cardsNumber) {
-          alert(`El rango cargado excederá la cantidad de cartones permitida (${cardsNumber}). Se truncará la lista.`);
+          alert(
+            `El rango cargado excederá la cantidad de cartones permitida (${cardsNumber}). Se truncará la lista.`,
+          );
           setSelectedInvoiceCards(combined.slice(0, cardsNumber));
         } else {
           setSelectedInvoiceCards(combined);
@@ -166,7 +201,9 @@ export default function NewInvoicePlusDialog({
       return;
     }
     if (selectedCards.length !== cardsNumber) {
-      alert(`Debe asociar exactamente ${cardsNumber} cartones (actualmente hay ${selectedCards.length} seleccionados).`);
+      alert(
+        `Debe asociar exactamente ${cardsNumber} cartones (actualmente hay ${selectedCards.length} seleccionados).`,
+      );
       return;
     }
 
@@ -174,9 +211,12 @@ export default function NewInvoicePlusDialog({
     const formData = new FormData(e.currentTarget);
 
     try {
-      const result = await saveInvoice(formData);
+      const res = await fetch("/api/bingo/invoices", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await res.json();
       if (result?.success) {
-        alert("Factura Plus guardada exitosamente");
         onSuccess();
         onClose();
       } else if (!redirectIfSessionExpired(result)) {
@@ -184,7 +224,10 @@ export default function NewInvoicePlusDialog({
       }
     } catch (error: any) {
       console.error("Error saving invoice:", error);
-      alert("Error inesperado: " + (error.message || "Consulte la consola para más detalles"));
+      alert(
+        "Error inesperado: " +
+          (error.message || "Consulte la consola para más detalles"),
+      );
     } finally {
       setLoading(false);
     }
@@ -201,28 +244,46 @@ export default function NewInvoicePlusDialog({
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
-            <Title className="text-larioja-azul dark:text-larioja-amarillo">Nueva Factura Plus</Title>
+        <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[98vh]">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
+            <Title className="text-larioja-azul dark:text-larioja-amarillo">
+              Nueva Factura Plus
+            </Title>
             <div className="text-right text-xs font-bold text-gray-500 space-y-0.5">
               <div>EVENTO: {currentEvent?.eventId}</div>
               {(invoiceNumber || customerName) && (
                 <div className="text-larioja-azul dark:text-larioja-amarillo">
-                  FACTURA #{invoiceNumber || "—"} {customerName ? `— ${customerName}` : ""}
+                  FACTURA #{invoiceNumber || "—"}{" "}
+                  {customerName ? `— ${customerName}` : ""}
                 </div>
               )}
             </div>
           </div>
 
-          <form onSubmit={handleSave} className="flex flex-col flex-grow overflow-hidden" encType="multipart/form-data">
-            <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
-              <input type="hidden" name="company_id" value={currentEvent?.companyId} />
-              <input type="hidden" name="event_id" value={currentEvent?.eventId} />
+          <form
+            onSubmit={handleSave}
+            className="flex flex-col flex-grow overflow-hidden"
+            encType="multipart/form-data"
+          >
+            <div className="p-4 overflow-y-auto space-y-3 custom-scrollbar">
+              <input
+                type="hidden"
+                name="company_id"
+                value={currentEvent?.companyId}
+              />
+              <input
+                type="hidden"
+                name="event_id"
+                value={currentEvent?.eventId}
+              />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Fila 1: factura, fecha, pago, estado */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">N° Factura</Text>
-                  <div className="flex gap-2">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    N° Factura
+                  </Text>
+                  <div className="flex gap-1">
                     <TextInput
                       name="invoice_number"
                       placeholder="F001-000001"
@@ -237,13 +298,13 @@ export default function NewInvoicePlusDialog({
                       loading={autoNumbering}
                       onClick={handleAutoNumber}
                       tooltip="Generar número automático (FactAut-…)"
-                    >
-                      Auto
-                    </Button>
+                    />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Fecha</Text>
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Fecha
+                  </Text>
                   <input
                     name="invoice_date"
                     type="date"
@@ -253,98 +314,15 @@ export default function NewInvoicePlusDialog({
                     className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Nombre del Cliente</Text>
-                  <TextInput
-                    name="customer_name"
-                    placeholder="Juan Pérez"
-                    value={customerName}
-                    onValueChange={setCustomerName}
-                    required
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Email del Cliente</Text>
-                  <TextInput
-                    name="customer_email"
-                    type="email"
-                    placeholder="juan@ejemplo.com"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Área</Text>
-                  <Select value={phoneArea} onValueChange={setPhoneArea} enableClear={false}>
-                    {countries.map((country) => (
-                      <SelectItem key={`${country.name}-${country.phone_code}`} value={country.phone_code}>
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={`https://flagcdn.com/w20/${country.iso2.toLowerCase()}.png`}
-                            alt={country.name}
-                            className="h-3.5 w-5 rounded-[2px] object-cover"
-                          />
-                          <span>{country.phone_code}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </Select>
-                  <input type="hidden" name="phone_area" value={phoneArea} />
-                </div>
-                <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Teléfono</Text>
-                  <TextInput
-                    name="phone_number"
-                    placeholder="1234567"
-                    value={phoneNumber}
-                    onValueChange={setPhoneNumber}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">WhatsApp</Text>
-                  <TextInput
-                    name="whatsapp_number"
-                    value={whatsappNumber}
-                    onValueChange={setWhatsappNumber}
-                    icon={Smartphone}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Vendido por (Manager)</Text>
-                <input
-                  name="manager_name"
-                  placeholder="Nombre del vendedor..."
-                  value={managerName}
-                  onChange={(e) => setInvoiceManagerName(e.target.value)}
-                  required
-                  list="sellers-list-plus"
-                  autoComplete="off"
-                  className="w-full text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2 text-gray-900 dark:text-gray-100"
-                />
-                <datalist id="sellers-list-plus">
-                  {sellers.map((s) => <option key={s} value={s} />)}
-                </datalist>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Imagen de Factura</Text>
-                  <input
-                    type="file"
-                    name="invoice_file"
-                    accept="image/*,.pdf"
-                    className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:bg-larioja-azul/10 file:text-larioja-azul hover:file:bg-larioja-azul/20"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Método de Pago</Text>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod} enableClear={false}>
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Método de Pago
+                  </Text>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                    enableClear={false}
+                  >
                     <SelectItem value="efectivo">Efectivo</SelectItem>
                     <SelectItem value="transferencia">Transferencia</SelectItem>
                     <SelectItem value="tarjeta debito">Tarjeta Débito</SelectItem>
@@ -353,7 +331,9 @@ export default function NewInvoicePlusDialog({
                   <input type="hidden" name="payment_method" value={paymentMethod} />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Estado</Text>
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Estado
+                  </Text>
                   <Select
                     value={status}
                     onValueChange={(v) => {
@@ -371,9 +351,122 @@ export default function NewInvoicePlusDialog({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Fila 2: cliente y email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">N° Cartones</Text>
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Nombre del Cliente
+                  </Text>
+                  <TextInput
+                    name="customer_name"
+                    placeholder="Juan Pérez"
+                    value={customerName}
+                    onValueChange={setCustomerName}
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Email del Cliente
+                  </Text>
+                  <TextInput
+                    name="customer_email"
+                    type="email"
+                    placeholder="juan@ejemplo.com"
+                  />
+                </div>
+              </div>
+
+              {/* Fila 3: contacto y vendedor */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Área
+                  </Text>
+                  <Select
+                    value={phoneArea}
+                    onValueChange={setPhoneArea}
+                    enableClear={false}
+                  >
+                    {countries.map((country) => (
+                      <SelectItem
+                        key={`${country.name}-${country.phone_code}`}
+                        value={country.phone_code}
+                      >
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={`https://flagcdn.com/w20/${country.iso2.toLowerCase()}.png`}
+                            alt={country.name}
+                            className="h-3.5 w-5 rounded-[2px] object-cover"
+                          />
+                          <span>{country.phone_code}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </Select>
+                  <input type="hidden" name="phone_area" value={phoneArea} />
+                </div>
+                <div className="space-y-1">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Teléfono
+                  </Text>
+                  <TextInput
+                    name="phone_number"
+                    placeholder="1234567"
+                    value={phoneNumber}
+                    onValueChange={setPhoneNumber}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    WhatsApp
+                  </Text>
+                  <TextInput
+                    name="whatsapp_number"
+                    value={whatsappNumber}
+                    onValueChange={setWhatsappNumber}
+                    icon={Smartphone}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Vendido por
+                  </Text>
+                  <input
+                    name="manager_name"
+                    placeholder="Nombre del vendedor..."
+                    value={managerName}
+                    onChange={(e) => setInvoiceManagerName(e.target.value)}
+                    required
+                    list="sellers-list-plus"
+                    autoComplete="off"
+                    className="w-full text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2 text-gray-900 dark:text-gray-100"
+                  />
+                  <datalist id="sellers-list-plus">
+                    {sellers.map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+
+              {/* Fila 4: imagen, cantidad, valor, total */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Imagen de Factura
+                  </Text>
+                  <input
+                    type="file"
+                    name="invoice_file"
+                    accept="image/*,.pdf"
+                    className="block w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-larioja-azul/10 file:text-larioja-azul hover:file:bg-larioja-azul/20"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    N° Cartones
+                  </Text>
                   <TextInput
                     name="cards_number"
                     type="number"
@@ -389,7 +482,9 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Valor Unitario</Text>
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Valor Unitario
+                  </Text>
                   <TextInput
                     name="card_price"
                     type="number"
@@ -402,91 +497,122 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Total</Text>
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    Total
+                  </Text>
                   <TextInput
                     value={formatCurrency(cardsNumber * cardPrice)}
                     disabled
                     icon={DollarSign}
                   />
-                  <input type="hidden" name="total_amount" value={cardsNumber * cardPrice} />
+                  <input
+                    type="hidden"
+                    name="total_amount"
+                    value={cardsNumber * cardPrice}
+                  />
                 </div>
               </div>
 
+              {/* Fila 5: observación de una línea */}
               <div className="space-y-1">
-                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Observación</Text>
-                <textarea
+                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  Observación
+                </Text>
+                <input
                   name="observation"
+                  type="text"
                   placeholder="Detalles adicionales de la factura..."
                   value={observation}
                   onChange={(e) => setObservation(e.target.value)}
-                  className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul min-h-[80px] resize-none"
+                  className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul"
                 />
               </div>
 
+              {/* Fila 6: cartones seleccionados + selector de rango */}
               <div className="space-y-1">
                 <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                   Asociar Cartones ({selectedCards.length} de {cardsNumber})
                 </Text>
-                <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-800/50">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-2 bg-gray-50 dark:bg-gray-800/50 space-y-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 max-h-20 overflow-y-auto">
                     {selectedCards.map((num) => (
                       <div
                         key={num}
-                        className="flex items-center justify-center p-2 rounded border cursor-pointer transition-colors text-xs font-bold bg-larioja-azul text-white border-larioja-azul hover:bg-rose-600 hover:border-rose-600"
+                        className="flex items-center justify-center p-1.5 rounded border cursor-pointer transition-colors text-xs font-bold bg-larioja-azul text-white border-larioja-azul hover:bg-rose-600 hover:border-rose-600"
                         onClick={() => {
-                          setSelectedInvoiceCards(selectedCards.filter((n) => n !== num));
+                          setSelectedInvoiceCards(
+                            selectedCards.filter((n) => n !== num),
+                          );
                         }}
                       >
                         #{num}
                       </div>
                     ))}
                     {selectedCards.length === 0 && (
-                      <div className="col-span-full py-4 text-center text-gray-400 italic text-xs">
-                        Utilice el selector de rango inferior para cargar cartones...
+                      <div className="col-span-full py-1 text-center text-gray-400 italic text-xs">
+                        Sin cartones seleccionados — use el rango inferior
                       </div>
                     )}
                   </div>
-                </div>
-                <input type="hidden" name="associated_cards" value={JSON.stringify(selectedCards)} />
-              </div>
-
-              <div className="p-4 bg-larioja-azul/5 dark:bg-larioja-azul/10 rounded-xl border border-larioja-azul/20 space-y-4">
-                <div className="flex items-end gap-4">
-                  <div className="flex-grow grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Desde Cartón</Text>
-                      <TextInput 
-                        type="number" 
-                        placeholder="xxxxxx" 
-                        value={fromCard}
-                        onValueChange={setFromCard}
-                      />
+                  <input
+                    type="hidden"
+                    name="associated_cards"
+                    value={JSON.stringify(selectedCards)}
+                  />
+                  <div className="flex items-end gap-2">
+                    <div className="flex-grow grid grid-cols-2 gap-2">
+                      <div className="space-y-0.5">
+                        <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                          Desde Cartón
+                        </Text>
+                        <TextInput
+                          type="number"
+                          placeholder="xxxxxx"
+                          value={fromCard}
+                          onValueChange={(v) => {
+                            setFromCard(v);
+                            // "Hasta" sigue a "Desde" hasta que el operador
+                            // lo edite (venta típica: un solo cartón)
+                            if (!toCardTouched) setToCard(v);
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                          Hasta Cartón
+                        </Text>
+                        <TextInput
+                          type="number"
+                          placeholder="xxxxxx"
+                          value={toCard}
+                          onValueChange={(v) => {
+                            setToCard(v);
+                            setToCardTouched(v !== "");
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Hasta Cartón</Text>
-                      <TextInput 
-                        type="number" 
-                        placeholder="xxxxxx" 
-                        value={toCard}
-                        onValueChange={setToCard}
-                      />
-                    </div>
+                    <Button
+                      type="button"
+                      icon={Search}
+                      className="bg-larioja-azul"
+                      onClick={handleVerifyRange}
+                      loading={checkingRange}
+                    >
+                      Verificar
+                    </Button>
                   </div>
-                  <Button 
-                    type="button" 
-                    icon={Search} 
-                    className="bg-larioja-azul"
-                    onClick={handleVerifyRange}
-                    loading={checkingRange}
-                  >
-                    Verificar
-                  </Button>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-shrink-0 bg-gray-50/50">
-              <Button variant="secondary" onClick={onClose} disabled={loading} type="button">
+            <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-shrink-0 bg-gray-50/50">
+              <Button
+                variant="secondary"
+                onClick={onClose}
+                disabled={loading}
+                type="button"
+              >
                 Cancelar
               </Button>
               <Button type="submit" loading={loading} className="bg-larioja-azul">

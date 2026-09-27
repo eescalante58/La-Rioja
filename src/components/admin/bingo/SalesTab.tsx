@@ -18,7 +18,7 @@ import {
   Badge,
 } from "@tremor/react";
 import { Plus, TrendingUp, Eye, Edit, Trash2, PlusSquare, Search } from "lucide-react";
-import { getInvoices, deleteInvoice } from "@/app/admin/bingo/actions";
+import { deleteInvoice } from "@/app/admin/bingo/actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import InvoiceDetailsDialog from "./InvoiceDetailsDialog";
 import NewInvoiceDialog from "./NewInvoiceDialog";
@@ -51,10 +51,18 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
   const [isNewInvoicePlusOpen, setIsNewInvoicePlusOpen] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
 
+  /**
+   * Carga las facturas del evento vía /api/bingo/invoices (JSON puro).
+   * La Server Action equivalente re-renderizaba /admin/bingo completo
+   * en cada respuesta y tardaba demasiado durante la venta en vivo.
+   */
   const loadInvoices = async (companyId: number, eventId: string) => {
     setLoading(true);
     try {
-      const result = await getInvoices(companyId, eventId);
+      const res = await fetch(
+        `/api/bingo/invoices?companyId=${companyId}&eventId=${encodeURIComponent(eventId)}`,
+      );
+      const result = await res.json();
       if (result.success) {
         setInvoices(result.data || []);
       }
