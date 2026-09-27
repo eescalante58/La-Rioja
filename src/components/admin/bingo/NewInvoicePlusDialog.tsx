@@ -62,6 +62,8 @@ export default function NewInvoicePlusDialog({
   const [customerName, setCustomerName] = useState<string>("");
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
   const [autoNumbering, setAutoNumbering] = useState(false);
+  /** Mensaje breve "guardada" tras cada alta (el diálogo queda abierto). */
+  const [savedFlash, setSavedFlash] = useState<string | null>(null);
 
   /**
    * Genera y asigna el siguiente número automático "FactAut-NNNNNN"
@@ -92,24 +94,33 @@ export default function NewInvoicePlusDialog({
 
   const todayLocal = () => new Date().toLocaleDateString("en-CA");
 
+  /**
+   * Deja el formulario en blanco para la siguiente factura de la cola:
+   * se conserva precio del evento, área, método de pago y fecha.
+   */
+  const resetForm = () => {
+    setCardPrice(currentEvent?.cardValue ?? 0);
+    setCardsNumber(1);
+    setPhoneArea("503");
+    setPhoneNumber("");
+    setWhatsappNumber("");
+    setInvoiceManagerName("");
+    setPaymentMethod("efectivo");
+    setStatus("pagada");
+    setInvoiceDate(todayLocal());
+    setObservation("");
+    setSelectedInvoiceCards([]);
+    setCustomerName("");
+    setInvoiceNumber("");
+    setFromCard("");
+    setToCard("");
+    setToCardTouched(false);
+  };
+
   useEffect(() => {
     if (currentEvent && isOpen) {
-      setCardPrice(currentEvent.cardValue);
-      setCardsNumber(1);
-      setPhoneArea("503");
-      setPhoneNumber("");
-      setWhatsappNumber("");
-      setInvoiceManagerName("");
-      setPaymentMethod("efectivo");
-      setStatus("pagada");
-      setInvoiceDate(todayLocal());
-      setObservation("");
-      setSelectedInvoiceCards([]);
-      setCustomerName("");
-      setInvoiceNumber("");
-      setFromCard("");
-      setToCard("");
-      setToCardTouched(false);
+      resetForm();
+      setSavedFlash(null);
       loadInitialData();
     }
   }, [currentEvent, isOpen]);
@@ -217,8 +228,12 @@ export default function NewInvoicePlusDialog({
       });
       const result = await res.json();
       if (result?.success) {
+        // Cola de ventas: el diálogo queda abierto y limpio para el
+        // siguiente comprador; la lista se refresca vía onSuccess.
         onSuccess();
-        onClose();
+        resetForm();
+        setSavedFlash(`Factura #${invoiceNumber} guardada`);
+        setTimeout(() => setSavedFlash(null), 3000);
       } else if (!redirectIfSessionExpired(result)) {
         alert("Error: " + (result?.error || "No se pudo guardar la factura."));
       }
@@ -244,7 +259,7 @@ export default function NewInvoicePlusDialog({
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[98vh]">
+        <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[98vh]">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
             <Title className="text-larioja-azul dark:text-larioja-amarillo">
               Nueva Factura Plus
@@ -280,26 +295,28 @@ export default function NewInvoicePlusDialog({
               {/* Fila 1: factura, fecha, pago, estado */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                    N° Factura
-                  </Text>
-                  <div className="flex gap-1">
-                    <TextInput
-                      name="invoice_number"
-                      placeholder="F001-000001"
-                      value={invoiceNumber}
-                      onValueChange={setInvoiceNumber}
-                      required
-                    />
-                    <Button
+                  <div className="flex items-center justify-between gap-2">
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      N° Factura
+                    </Text>
+                    <button
                       type="button"
-                      variant="secondary"
-                      icon={Hash}
-                      loading={autoNumbering}
                       onClick={handleAutoNumber}
-                      tooltip="Generar número automático (FactAut-…)"
-                    />
+                      disabled={autoNumbering}
+                      title="Generar número automático (FactAut-…)"
+                      className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-larioja-azul hover:bg-larioja-azul/10 disabled:opacity-50"
+                    >
+                      <Hash size={12} />
+                      {autoNumbering ? "…" : "Auto"}
+                    </button>
                   </div>
+                  <TextInput
+                    name="invoice_number"
+                    placeholder="F001-000001"
+                    value={invoiceNumber}
+                    onValueChange={setInvoiceNumber}
+                    required
+                  />
                 </div>
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
@@ -513,18 +530,18 @@ export default function NewInvoicePlusDialog({
                 </div>
               </div>
 
-              {/* Fila 5: observación de una línea */}
+              {/* Fila 5: observación con espacio para detalle */}
               <div className="space-y-1">
                 <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                   Observación
                 </Text>
-                <input
+                <textarea
                   name="observation"
-                  type="text"
                   placeholder="Detalles adicionales de la factura..."
                   value={observation}
                   onChange={(e) => setObservation(e.target.value)}
-                  className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul"
+                  rows={2}
+                  className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul resize-none"
                 />
               </div>
 
@@ -534,7 +551,7 @@ export default function NewInvoicePlusDialog({
                   Asociar Cartones ({selectedCards.length} de {cardsNumber})
                 </Text>
                 <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-2 bg-gray-50 dark:bg-gray-800/50 space-y-2">
-                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 max-h-20 overflow-y-auto">
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 max-h-32 overflow-y-auto">
                     {selectedCards.map((num) => (
                       <div
                         key={num}
@@ -606,7 +623,12 @@ export default function NewInvoicePlusDialog({
               </div>
             </div>
 
-            <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-shrink-0 bg-gray-50/50">
+            <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50/50">
+              {savedFlash && (
+                <span className="mr-auto rounded-full bg-larioja-verde/15 px-4 py-1.5 text-xs font-bold text-larioja-verde">
+                  ✓ {savedFlash} — listo para el siguiente
+                </span>
+              )}
               <Button
                 variant="secondary"
                 onClick={onClose}
