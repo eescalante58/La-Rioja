@@ -259,7 +259,7 @@ export default function NewInvoicePlusDialog({
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[98vh]">
+        <DialogPanel className="max-w-6xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[98vh]">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
             <Title className="text-larioja-azul dark:text-larioja-amarillo">
               Nueva Factura Plus
@@ -395,7 +395,7 @@ export default function NewInvoicePlusDialog({
               </div>
 
               {/* Fila 3: contacto y vendedor */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                     Área
@@ -445,7 +445,7 @@ export default function NewInvoicePlusDialog({
                     icon={Smartphone}
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 col-span-2">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                     Vendido por
                   </Text>
