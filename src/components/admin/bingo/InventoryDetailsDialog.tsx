@@ -41,15 +41,26 @@ export default function InventoryDetailsDialog({
 }: InventoryDetailsDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
+  /**
+   * Buscador multi-campo del inventario. Si el query es numérico corto
+   * (<8 dígitos) solo se busca en N° Cartón y N° Factura: los teléfonos
+   * con código de área tienen 11 dígitos y un número corto producía
+   * falsos positivos por subcadena (ej. "368" dentro de 50368807991).
+   * Con 8+ dígitos el query vuelve a considerar el teléfono.
+   */
   const filteredCards = useMemo(() => {
     if (!searchQuery) return cards;
     const query = searchQuery.toLowerCase();
+    const shortNumeric = /^\d{1,7}$/.test(query);
     return cards.filter((card) => {
       const cardNum = card.card_number.toString();
+      const invoiceNum = (card.invoice_number || "").toLowerCase();
+      if (shortNumeric) {
+        return cardNum.includes(query) || invoiceNum.includes(query);
+      }
       const cardType = (card.card_type || "").toLowerCase();
       const cardStatus = (card.card_status || "").toLowerCase();
       const soldBy = (card.sold_by || "").toLowerCase();
-      const invoiceNum = (card.invoice_number || "").toLowerCase();
       const playerName = (card.player_name || "").toLowerCase();
       const playerPhone = (card.player_phone_number || "").toLowerCase();
       return (
@@ -95,7 +106,7 @@ export default function InventoryDetailsDialog({
             </div>
 
             <TextInput
-              placeholder="Buscar por N° Cartón, Factura, Estado, Jugador, Teléfono o Vendedor..."
+              placeholder="Buscar por N° Cartón, Factura, Estado, Jugador, Teléfono o Vendedor... (números cortos solo buscan cartón/factura)"
               icon={Search}
               value={searchQuery}
               onValueChange={setSearchQuery}
