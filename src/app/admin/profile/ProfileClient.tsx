@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import { Card, Title, Text, TextInput, Button, Callout } from "@tremor/react";
 import { User, Mail, Phone, Camera, Save } from "lucide-react";
-import { updateMyProfile } from "./actions";
+import { callActionForm } from "@/lib/action-client";
 import { useUser } from "@/providers/UserProvider";
 
 interface ProfileClientProps {
@@ -60,7 +60,12 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
       formData.append("avatar_url", avatarFile);
     }
 
-    const result = await updateMyProfile(formData);
+    const result = await callActionForm<{
+      success?: boolean;
+      error?: string;
+      message?: string;
+      newAvatarUrl?: string;
+    }>("profile.updateMyProfile", formData);
 
     if (result.success) {
       await refreshProfile(); // Actualizar el contexto global

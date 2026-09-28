@@ -59,20 +59,29 @@ por un **Route Handler** (`/api/**`) que responde JSON puro.
 - [ ] ¿La respuesta es solo datos? → JSON; el RSC re-render es desperdicio.
 - [ ] ¿Hay suscripción Realtime? → verificar debounce/delta.
 
+## Dispatcher `POST /api/actions`
+
+Operaciones administrativas de menor frecuencia que ya eran Server Actions
+con guard propio (`withRole`/`withCompanyAccess`) se exponen a través del
+dispatcher whitelist en `src/app/api/actions/route.ts`, invocable desde el
+cliente con `callAction`/`callActionForm` (`src/lib/action-client.ts`).
+El dispatcher devuelve el JSON crudo de la acción; el guard interno de cada
+acción se ejecuta igual que antes.
+
+Para exponer una operación nueva desde un client component: registrar la
+función en `REGISTRY` con nombre `"dominio.accion"` y llamarla con
+`callAction` (JSON) o `callActionForm` (multipart/FormData).
+
 ## Deuda conocida (pendiente de migrar)
 
 Ya migrados a Route Handlers: dashboard completo (`/api/dashboard`),
 ciclo de factura (GET/POST/PUT/DELETE `/api/bingo/invoices`,
-`/api/bingo/cards`, `/api/bingo/whatsapp`), inventario de cartones.
+`/api/bingo/cards`, `/api/bingo/whatsapp`), inventario de cartones,
+gestión de ruletas y datos públicos de ruleta/tómbola, diálogos de
+inventario, carga/generación/limpieza de cartones, eventos, pestaña
+promocional, settings (students/companies/countries/contact/security/
+registration-limits/users), perfil, CMS/FAQ/galería y contacto público —
+todo vía `POST /api/actions` o rutas dedicadas.
 
-Pendientes del inventario original de la auditoría: gestión de ruletas
-(`WheelTab`/`WheelConfigDialog`/`WheelItemsDialog`: `getWheels`,
-`getWheelSpins`, `toggleWheelPublished`, `deleteWheelConfig`,
-`saveWheelConfig`, `saveWheelItems`), diálogos de inventario
-(`updateSingleCard`, `updateCardType`, `updateCardRangeType`),
-carga/generación de cartones (`uploadCardsBatch`, `generateCards`,
-`clearEventCards`, `logUploadActivity`, `verifyUpload`), `saveEvent`,
-`PromotionalTab` (clientes/promos/WhatsApp batch),
-`getPublicWheelData`/`getPublicTombolaData` en páginas públicas.
-Toda modificación sobre estos archivos debe migrar la operación a
-Route Handler en lugar de añadir más Server Actions.
+Sin deuda pendiente del inventario original. Quedan como Server Actions
+solo las excepciones documentadas arriba (SSR inicial y auth).

@@ -21,7 +21,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { updateCMSContent } from "./actions";
+import { callActionForm } from "@/lib/action-client";
 import { useRouter, useSearchParams } from "next/navigation";
 
 /**
@@ -105,7 +105,11 @@ export default function CMSEditForm({ item }: { item: any }) {
         submitData.append("file", selectedFile);
       }
 
-      const result = await updateCMSContent(item.id, submitData);
+      const result = await callActionForm<{ success?: boolean; error?: string }>(
+        "cms.updateCMSContent",
+        submitData,
+        [item.id],
+      );
 
       if (result.success) {
         setStatus({

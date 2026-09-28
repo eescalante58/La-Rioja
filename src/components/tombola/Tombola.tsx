@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Dices, Ticket, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
 import confetti from "canvas-confetti";
-import { getPublicTombolaData } from "@/app/admin/bingo/wheel-actions";
+import { callAction } from "@/lib/action-client";
 
 interface WheelSummary {
   id: number;
@@ -35,6 +35,15 @@ interface TombolaProps {
   wheels: WheelSummary[];
   /** URL de la imagen de la tarjeta voladora (desde site_content). */
   cardImageUrl: string;
+}
+
+/** Respuesta de la acción pública `bingo.getPublicTombolaData`. */
+interface TombolaData {
+  data?: {
+    config: TombolaConfig;
+    participants: number[];
+    winners: number[];
+  };
 }
 
 /** Tarjeta voladora en tránsito (de la tómbola a la galería). */
@@ -187,7 +196,9 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
     setAutoRunning(false);
     setDrumAngle(0);
     setCurrentBall(null);
-    getPublicTombolaData(selectedWheel.id).then((res) => {
+    callAction<TombolaData>("bingo.getPublicTombolaData", [
+      selectedWheel.id,
+    ]).then((res) => {
       if (res?.data) {
         setTombConfig(res.data.config);
         setParticipants(res.data.participants);

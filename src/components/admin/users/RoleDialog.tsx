@@ -10,7 +10,7 @@ import {
   Button,
 } from "@tremor/react";
 import { X, Save } from "lucide-react";
-import { createRole, updateRole } from "@/app/admin/settings/users/actions";
+import { callAction } from "@/lib/action-client";
 
 interface Role {
   role_id: number;
@@ -42,8 +42,14 @@ export default function RoleDialog({
       level: parseInt(formData.get("level") as string),
     };
     const res = role
-      ? await updateRole(role.role_id, data)
-      : await createRole(data);
+      ? await callAction<{ success?: boolean; error?: string }>(
+          "users.updateRole",
+          [role.role_id, data],
+        )
+      : await callAction<{ success?: boolean; error?: string }>(
+          "users.createRole",
+          [data],
+        );
     if (res.success) window.location.reload();
     else {
       alert("Error: " + res.error);

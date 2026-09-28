@@ -18,7 +18,7 @@ import {
   TableCell,
 } from "@tremor/react";
 import { Plus, Trash2, Ticket, Copy, Check } from "lucide-react";
-import { saveWheelItems } from "@/app/admin/bingo/wheel-actions";
+import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import { createClient } from "@/lib/supabase/client";
 import type { Wheel, WheelItem, TombolaCard } from "./wheel-types";
@@ -200,17 +200,20 @@ export default function WheelItemsDialog({
 
     setLoading(true);
     try {
-      const result = await saveWheelItems(
-        companyId,
-        wheel.id,
-        items.map((it, idx) => ({
-          label: it.label.trim(),
-          color: it.color || null,
-          quantity: Math.max(0, parseInt(String(it.quantity)) || 0),
-          initial_quantity: Math.max(0, parseInt(String(it.initial_quantity ?? it.quantity)) || 0),
-          position: idx + 1,
-          is_active: it.is_active,
-        })),
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "bingo.saveWheelItems",
+        [
+          companyId,
+          wheel.id,
+          items.map((it, idx) => ({
+            label: it.label.trim(),
+            color: it.color || null,
+            quantity: Math.max(0, parseInt(String(it.quantity)) || 0),
+            initial_quantity: Math.max(0, parseInt(String(it.initial_quantity ?? it.quantity)) || 0),
+            position: idx + 1,
+            is_active: it.is_active,
+          })),
+        ],
       );
 
       if (result?.success) {

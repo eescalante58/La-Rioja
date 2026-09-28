@@ -20,12 +20,7 @@ import {
 } from "@tremor/react";
 import { Dices, Plus, Edit, Trash2, Eye, EyeOff, History, Monitor } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import {
-  getWheels,
-  getWheelSpins,
-  toggleWheelPublished,
-  deleteWheelConfig,
-} from "@/app/admin/bingo/wheel-actions";
+import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import WheelConfigDialog from "./WheelConfigDialog";
 import WheelItemsDialog from "./WheelItemsDialog";
@@ -78,15 +73,19 @@ export default function WheelTab({ events }: WheelTabProps) {
     // Spinner global solo en la primera carga para evitar parpadeo con Realtime
     if (!initialLoadDone.current) setLoading(true);
     try {
-      const result = await getWheels(ev.company_id, ev.event_id);
+      const result = await callAction<{ data?: Wheel[] }>("bingo.getWheels", [
+        ev.company_id,
+        ev.event_id,
+      ]);
       if (result?.data) {
-        setWheels(result.data);
+        const wheelList = result.data;
+        setWheels(wheelList);
         initialLoadDone.current = true;
         // Si el modal de segmentos está abierto, refrescamos su wheel.
         // Se usa update funcional para leer el estado actual, no el del closure.
         setItemsWheel((prev) =>
           prev
-            ? (result.data.find((w: Wheel) => w.id === prev.id) ?? prev)
+            ? (wheelList.find((w: Wheel) => w.id === prev.id) ?? prev)
             : prev,
         );
       } else {
@@ -172,10 +171,9 @@ export default function WheelTab({ events }: WheelTabProps) {
   }, [selectedEvent?.event_id, selectedEvent?.company_id]);
 
   const handleTogglePublish = async (wheel: Wheel) => {
-    const result = await toggleWheelPublished(
-      wheel.company_id,
-      wheel.id,
-      !wheel.published,
+    const result = await callAction<{ success?: boolean; error?: string }>(
+      "bingo.toggleWheelPublished",
+      [wheel.company_id, wheel.id, !wheel.published],
     );
     if (result?.success) {
       if (selectedEvent) loadWheels(selectedEvent);
@@ -191,7 +189,10 @@ export default function WheelTab({ events }: WheelTabProps) {
       )
     )
       return;
-    const result = await deleteWheelConfig(wheel.company_id, wheel.id);
+    const result = await callAction<{ success?: boolean; error?: string }>(
+      "bingo.deleteWheelConfig",
+      [wheel.company_id, wheel.id],
+    );
     if (result?.success) {
       if (selectedEvent) loadWheels(selectedEvent);
     } else if (!redirectIfSessionExpired(result)) {
@@ -202,10 +203,9 @@ export default function WheelTab({ events }: WheelTabProps) {
   const handleShowHistory = async (wheel: Wheel) => {
     setHistoryWheel(wheel);
     setSpins([]);
-    const result = await getWheelSpins(
-      wheel.company_id,
-      wheel.event_id,
-      wheel.id,
+    const result = await callAction<{ data?: WheelSpin[] }>(
+      "bingo.getWheelSpins",
+      [wheel.company_id, wheel.event_id, wheel.id],
     );
     if (result?.data) setSpins(result.data);
   };

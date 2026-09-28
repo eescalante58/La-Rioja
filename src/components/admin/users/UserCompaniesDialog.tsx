@@ -18,11 +18,7 @@ import {
   Badge,
 } from "@tremor/react";
 import { X, Building2, Trash } from "lucide-react";
-import {
-  getUserCompanies,
-  assignUserToCompany,
-  removeUserFromCompany,
-} from "@/app/admin/settings/users/actions";
+import { callAction } from "@/lib/action-client";
 
 interface User {
   id: string;
@@ -75,7 +71,7 @@ export default function UserCompaniesDialog({
   const loadUserCompanies = async () => {
     if (!user) return;
     setLoadingData(true);
-    const data = await getUserCompanies(user.id);
+    const data = await callAction("users.getUserCompanies", [user.id]);
     setUserCompanies(data as any);
     setLoadingData(false);
   };
@@ -85,10 +81,13 @@ export default function UserCompaniesDialog({
     if (!user) return;
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    const res = await assignUserToCompany(
-      user.id,
-      parseInt(formData.get("company_id") as string),
-      parseInt(formData.get("role_id") as string),
+    const res = await callAction<{ success?: boolean; error?: string }>(
+      "users.assignUserToCompany",
+      [
+        user.id,
+        parseInt(formData.get("company_id") as string),
+        parseInt(formData.get("role_id") as string),
+      ],
     );
     if (res.success) {
       await loadUserCompanies();
@@ -102,7 +101,10 @@ export default function UserCompaniesDialog({
   const handleRemove = async (companyId: number) => {
     if (!user || !confirm("¿Eliminar acceso a esta empresa?")) return;
     setLoading(true);
-    const res = await removeUserFromCompany(user.id, companyId);
+    const res = await callAction<{ success?: boolean; error?: string }>(
+      "users.removeUserFromCompany",
+      [user.id, companyId],
+    );
     if (res.success) {
       await loadUserCompanies();
     } else {

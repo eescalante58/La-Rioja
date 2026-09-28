@@ -11,7 +11,7 @@ import {
   Text,
 } from "@tremor/react";
 import { Calendar, Ticket, TrendingUp, Users, Dices } from "lucide-react";
-import { deleteEvent } from "./actions";
+import { callAction } from "@/lib/action-client";
 import dynamic from "next/dynamic";
 
 // Dynamic imports for sub-components
@@ -129,7 +129,10 @@ export default function BingoManagerClient({
         "¿Estás seguro de eliminar este evento? Esta acción no se puede deshacer.",
       )
     ) {
-      const result = await deleteEvent(id);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "bingo.deleteEvent",
+        [id],
+      );
       if (result.success) {
         window.location.reload();
       } else {

@@ -27,11 +27,7 @@ import {
   Badge,
   Callout,
 } from "@tremor/react";
-import {
-  getContactSubmissions,
-  deleteContactSubmission,
-  resendContactEmail,
-} from "./actions";
+import { callAction } from "@/lib/action-client";
 
 /**
  * Client component for managing contact submissions in admin.
@@ -48,7 +44,11 @@ export default function ContactSubmissionsClient() {
 
   const loadSubmissions = useCallback(async () => {
     setLoading(true);
-    const result = await getContactSubmissions(searchQuery);
+    const result = await callAction<{
+      success?: boolean;
+      data?: any[];
+      error?: string;
+    }>("contactSettings.getContactSubmissions", [searchQuery]);
     if (result.success) {
       setSubmissions(result.data || []);
     } else {
@@ -76,7 +76,10 @@ export default function ContactSubmissionsClient() {
       return;
 
     setActionLoading(id);
-    const result = await deleteContactSubmission(id);
+    const result = await callAction<{ success?: boolean; error?: string }>(
+      "contactSettings.deleteContactSubmission",
+      [id],
+    );
     if (result.success) {
       setFeedback({
         type: "success",
@@ -94,7 +97,10 @@ export default function ContactSubmissionsClient() {
 
   const handleResend = async (id: string) => {
     setActionLoading(id);
-    const result = await resendContactEmail(id);
+    const result = await callAction<{ success?: boolean; error?: string }>(
+      "contactSettings.resendContactEmail",
+      [id],
+    );
     if (result.success) {
       setFeedback({
         type: "success",

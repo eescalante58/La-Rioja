@@ -14,7 +14,7 @@ import {
   Callout,
 } from "@tremor/react";
 import { X as XIcon, Save, ImageIcon, AlertCircle, CheckCircle } from "lucide-react";
-import { createCMSContent } from "@/app/admin/cms/actions";
+import { callActionForm } from "@/lib/action-client";
 
 interface CMSCreateDialogProps {
   isOpen: boolean;
@@ -101,7 +101,10 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
       submitData.append("image_url", newFormData.image_url);
       if (newSelectedFile) submitData.append("file", newSelectedFile);
 
-      const result = await createCMSContent(submitData);
+      const result = await callActionForm<{ success?: boolean; error?: string }>(
+        "cms.createCMSContent",
+        submitData,
+      );
       if (result.success) {
         setCreateStatus({ type: "success", message: "Sección creada correctamente." });
         setTimeout(() => {

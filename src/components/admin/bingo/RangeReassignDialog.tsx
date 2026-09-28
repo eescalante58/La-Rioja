@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Dialog, DialogPanel, Title, Text, TextInput, Button, Select, SelectItem } from "@tremor/react";
 import { RefreshCw } from "lucide-react";
-import { updateCardRangeType } from "@/app/admin/bingo/actions";
+import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface RangeReassignDialogProps {
@@ -31,14 +31,18 @@ export default function RangeReassignDialog({
 
     setLoading(true);
     try {
-      const result = await updateCardRangeType(
+      const result = await callAction<{
+        success?: boolean;
+        error?: string;
+        updated_count?: number;
+      }>("bingo.updateCardRangeType", [
         event.company_id,
         event.event_id,
         rangeStart,
         rangeEnd,
         rangeNewType,
         officialName,
-      );
+      ]);
 
       if (result?.success) {
         alert(`Se actualizaron ${result.updated_count} cartones a ${rangeNewType} exitosamente.`);

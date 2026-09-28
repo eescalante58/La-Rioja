@@ -26,7 +26,7 @@ import {
   Phone,
 } from "lucide-react";
 import Link from "next/link";
-import { saveCompany, deleteCompany } from "./actions";
+import { callAction, callActionForm } from "@/lib/action-client";
 
 interface Company {
   company_id: number;
@@ -64,7 +64,10 @@ export default function CompanyManagerClient({
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    const result = await saveCompany(formData);
+    const result = await callActionForm<{ success?: boolean; error?: string }>(
+      "companies.saveCompany",
+      formData,
+    );
 
     if (result.success) {
       window.location.reload();
@@ -80,7 +83,10 @@ export default function CompanyManagerClient({
         "¿Estás seguro de eliminar esta empresa? Esto podría afectar a usuarios vinculados.",
       )
     ) {
-      const result = await deleteCompany(id);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "companies.deleteCompany",
+        [id],
+      );
       if (result.success) {
         window.location.reload();
       } else {

@@ -26,13 +26,7 @@ import {
   Loader2,
   Minus,
 } from "lucide-react";
-import {
-  uploadCardsBatch,
-  uploadSingleCardImage,
-  clearEventCards,
-  logUploadActivity,
-  verifyUpload,
-} from "@/app/admin/bingo/actions";
+import { callAction, callActionForm } from "@/lib/action-client";
 
 interface Event {
   id: number;
@@ -247,11 +241,9 @@ export default function UploadCardsDialog({
       if (deletePrevious) {
         setIsClearing(true);
         setProcessSteps(prev => ({ ...prev, clearing: 'running' }));
-        const clearResult = await clearEventCards(
-          currentEvent.company_id,
-          currentEvent.event_id,
-          start,
-          end
+        const clearResult = await callAction<{ error?: string }>(
+          "bingo.clearEventCards",
+          [currentEvent.company_id, currentEvent.event_id, start, end],
         );
         setIsClearing(false);
         if (clearResult.error) {
@@ -318,13 +310,20 @@ export default function UploadCardsDialog({
           }
           formData.append("card_type", type);
 
-          const result = await uploadCardsBatch(
+          const result = await callActionForm<{
+            success?: boolean;
+            error?: string;
+            successCount?: number;
+            errorCount?: number;
+            errors?: string[];
+            maxCardNumber?: number | null;
+            minCardNumber?: number;
+          }>("bingo.uploadCardsBatch", formData, [
             currentEvent.company_id,
             currentEvent.event_id,
             price,
             type,
-            formData
-          );
+          ]);
 
           if (result.success) {
             successCount += result.successCount || 0;
@@ -356,18 +355,28 @@ export default function UploadCardsDialog({
       await new Promise(resolve => setTimeout(resolve, 800));
 
       // Final verification with DB
-      const verifyResult = await verifyUpload(currentEvent.company_id, currentEvent.event_id);
+      const verifyResult = await callAction<{
+        success?: boolean;
+        count?: number;
+      }>("bingo.verifyUpload", [
+        currentEvent.company_id,
+        currentEvent.event_id,
+      ]);
       const dbCount = verifyResult.success ? verifyResult.count : 0;
 
       // Log the activity summary
       if (successCount > 0) {
-        await logUploadActivity(currentEvent.company_id, currentEvent.event_id, {
-          success_count: successCount,
-          error_count: errorCount,
-          deleted_previous: deletePrevious,
-          total_files: filesList.length,
-          verified_db_count: dbCount,
-        });
+        await callAction("bingo.logUploadActivity", [
+          currentEvent.company_id,
+          currentEvent.event_id,
+          {
+            success_count: successCount,
+            error_count: errorCount,
+            deleted_previous: deletePrevious,
+            total_files: filesList.length,
+            verified_db_count: dbCount,
+          },
+        ]);
       }
 
       setUploadSummary({

@@ -13,7 +13,7 @@ import {
   Switch,
 } from "@tremor/react";
 import { ExternalLink } from "lucide-react";
-import { saveWheelConfig } from "@/app/admin/bingo/wheel-actions";
+import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import type { Wheel } from "./wheel-types";
 
@@ -91,17 +91,23 @@ export default function WheelConfigDialog({
 
     setLoading(true);
     try {
-      const result = await saveWheelConfig({
-        id: wheel?.id,
-        company_id: companyId,
-        event_id: eventId,
-        mode,
-        wheel_name: wheelName.trim(),
-        time_rotation: mode === "Premios" ? 0 : rotation,
-        is_automatic_rotation: isAutomaticRotation,
-        automatic_timeout_rotation: automaticTimeout,
-        prizes_number: totalPrizes,
-      });
+      const result = await callAction<{
+        success?: boolean;
+        error?: string;
+        id?: number;
+      }>("bingo.saveWheelConfig", [
+        {
+          id: wheel?.id,
+          company_id: companyId,
+          event_id: eventId,
+          mode,
+          wheel_name: wheelName.trim(),
+          time_rotation: mode === "Premios" ? 0 : rotation,
+          is_automatic_rotation: isAutomaticRotation,
+          automatic_timeout_rotation: automaticTimeout,
+          prizes_number: totalPrizes,
+        },
+      ]);
 
       if (result?.success) {
         onSuccess();

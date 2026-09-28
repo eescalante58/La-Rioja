@@ -12,7 +12,7 @@ import {
   SelectItem,
 } from "@tremor/react";
 import { DollarSign, Upload, AlertCircle } from "lucide-react";
-import { generateCards } from "@/app/admin/bingo/actions";
+import { callAction } from "@/lib/action-client";
 
 interface Event {
   id: number;
@@ -104,7 +104,10 @@ export default function GenerateCardsDialog({
 
     if (confirm(message)) {
       try {
-        const result = await generateCards(
+        const result = await callAction<{
+          success?: boolean;
+          error?: string;
+        }>("bingo.generateCards", [
           event.company_id,
           event.event_id,
           start,
@@ -112,7 +115,7 @@ export default function GenerateCardsDialog({
           price,
           type,
           deleteExisting,
-        );
+        ]);
 
         if (result.success) {
           alert("Cartones generados exitosamente");

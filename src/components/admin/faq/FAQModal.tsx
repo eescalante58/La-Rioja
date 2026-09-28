@@ -13,7 +13,7 @@ import {
   Switch,
 } from "@tremor/react";
 import { X as XIcon, Save } from "lucide-react";
-import { createFAQ, updateFAQ } from "@/app/admin/cms/actions";
+import { callActionForm } from "@/lib/action-client";
 
 interface FAQ {
   id: string;
@@ -84,11 +84,18 @@ export default function FAQModal({
       submitData.append("is_active", String(formData.is_active));
       submitData.append("content_order", String(formData.content_order));
 
-      let result;
+      let result: { success?: boolean; error?: string };
       if (faq) {
-        result = await updateFAQ(faq.id, submitData);
+        result = await callActionForm<{ success?: boolean; error?: string }>(
+          "cms.updateFAQ",
+          submitData,
+          [faq.id],
+        );
       } else {
-        result = await createFAQ(submitData);
+        result = await callActionForm<{ success?: boolean; error?: string }>(
+          "cms.createFAQ",
+          submitData,
+        );
       }
 
       if (result.success) {

@@ -11,7 +11,7 @@ import {
   Switch,
 } from "@tremor/react";
 import { X as XIcon, Save } from "lucide-react";
-import { createFAQSection, updateFAQSection } from "@/app/admin/cms/actions";
+import { callActionForm } from "@/lib/action-client";
 
 interface FAQSection {
   id: string;
@@ -70,11 +70,18 @@ export default function FAQSectionModal({
       submitData.append("is_active", String(formData.is_active));
       submitData.append("content_order", String(formData.content_order));
 
-      let result;
+      let result: { success?: boolean; error?: string };
       if (section) {
-        result = await updateFAQSection(section.id, submitData);
+        result = await callActionForm<{ success?: boolean; error?: string }>(
+          "cms.updateFAQSection",
+          submitData,
+          [section.id],
+        );
       } else {
-        result = await createFAQSection(submitData);
+        result = await callActionForm<{ success?: boolean; error?: string }>(
+          "cms.createFAQSection",
+          submitData,
+        );
       }
 
       if (result.success) {

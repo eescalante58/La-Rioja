@@ -37,19 +37,7 @@ import {
   Check,
   Download,
 } from "lucide-react";
-import {
-  getCustomers,
-  saveCustomer,
-  deleteCustomer,
-  getPromoTemplates,
-  syncCustomers,
-  logPromoMessage,
-  getBatchLogs,
-  getBatchDetails,
-  uploadPromoImage,
-  sendWhatsAppAutomation,
-  checkWhatsAppInstanceStatus,
-} from "@/app/admin/bingo/actions";
+import { callAction, callActionForm } from "@/lib/action-client";
 
 interface Customer {
   id: number;
@@ -104,7 +92,10 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
   }, [companyId]);
 
   const loadBatchLogs = async (id: number) => {
-    const result = await getBatchLogs(id);
+    const result = await callAction<{ success?: boolean; data?: any[] }>(
+      "bingo.getBatchLogs",
+      [id],
+    );
     if (result.success && result.data) {
       setBatchLogs(result.data);
     }
@@ -113,7 +104,10 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
   const loadCustomers = async (id: number) => {
     setLoadingCustomers(true);
     try {
-      const result = await getCustomers(id);
+      const result = await callAction<{ success?: boolean; data?: Customer[] }>(
+        "bingo.getCustomers",
+        [id],
+      );
       if (result.success && result.data) {
         setCustomers(result.data);
         setSelectedCustomerIds(result.data.map((c: any) => c.id));
@@ -128,7 +122,10 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
   const loadTemplates = async () => {
     setLoadingTemplates(true);
     try {
-      const result = await getPromoTemplates();
+      const result = await callAction<{
+        success?: boolean;
+        data?: PromoTemplate[];
+      }>("bingo.getPromoTemplates");
       if (result.success && result.data) {
         setPromoTemplates(result.data);
       }
@@ -152,7 +149,10 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
     };
 
     try {
-      const result = await saveCustomer(payload);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "bingo.saveCustomer",
+        [payload],
+      );
       if (result.success) {
         await loadCustomers(companyId);
         setIsCustomerDialogOpen(false);
@@ -178,7 +178,10 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
 
     setLoadingCustomers(true);
     try {
-      const result = await deleteCustomer(id);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "bingo.deleteCustomer",
+        [id],
+      );
       if (result.success) {
         await loadCustomers(companyId);
       }
@@ -191,7 +194,12 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
     if (!companyId) return;
     setLoadingCustomers(true);
     try {
-      const result = await syncCustomers(companyId);
+      const result = await callAction<{
+        success?: boolean;
+        error?: string;
+        imported?: number;
+        updated?: number;
+      }>("bingo.syncCustomers", [companyId]);
       if (result.success) {
         await loadCustomers(companyId);
         alert(
@@ -275,7 +283,11 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
     formData.append("company_id", companyId.toString());
 
     try {
-      const result = await uploadPromoImage(formData);
+      const result = await callActionForm<{
+        success?: boolean;
+        url?: string;
+        error?: string;
+      }>("bingo.uploadPromoImage", formData);
       if (result.success && result.url) {
         setPromoImage(result.url);
         e.target.value = "";
@@ -301,7 +313,10 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
 
     // Verificar primero que la instancia de Ultramsg esté activa para
     // no iterar clientes cuando el servicio está caído o suspendido.
-    const instanceStatus = await checkWhatsAppInstanceStatus();
+    const instanceStatus = await callAction<{
+      success?: boolean;
+      error?: string;
+    }>("bingo.checkWhatsAppInstanceStatus");
     if (!instanceStatus.success) {
       setSendingBulk(false);
       alert(
@@ -323,12 +338,17 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
         customer.customer_name,
       );
 
-      const res = await sendWhatsAppAutomation({
-        to: customer.phone_number,
-        message: personalizedMessage,
-        templateImage: promoImage || undefined,
-        cardUrls: [],
-      });
+      const res = await callAction<{ success?: boolean; error?: string }>(
+        "bingo.sendWhatsAppAutomation",
+        [
+          {
+            to: customer.phone_number,
+            message: personalizedMessage,
+            templateImage: promoImage || undefined,
+            cardUrls: [],
+          },
+        ],
+      );
 
       if (res.success) {
         successCount++;
@@ -337,16 +357,18 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
         if (!firstError) firstError = res.error || "Error desconocido";
       }
 
-      await logPromoMessage({
-        batch_id: batchId,
-        company_id: companyId,
-        customer_name: customer.customer_name,
-        phone_number: customer.phone_number,
-        message_body: personalizedMessage,
-        image_url: promoImage || undefined,
-        status: res.success ? "success" : "error",
-        error_message: res.error || undefined,
-      });
+      await callAction("bingo.logPromoMessage", [
+        {
+          batch_id: batchId,
+          company_id: companyId,
+          customer_name: customer.customer_name,
+          phone_number: customer.phone_number,
+          message_body: personalizedMessage,
+          image_url: promoImage || undefined,
+          status: res.success ? "success" : "error",
+          error_message: res.error || undefined,
+        },
+      ]);
 
       setBulkProgress({ sent: i + 1, total: selectedCustomers.length });
     }
@@ -792,7 +814,10 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
                           icon={Eye}
                           size="xs"
                           onClick={async () => {
-                            const res = await getBatchDetails(batch.batch_id);
+                            const res = await callAction<{
+                              success?: boolean;
+                              data?: any[];
+                            }>("bingo.getBatchDetails", [batch.batch_id]);
                             if (res.success && res.data) {
                               setSelectedBatchDetails(res.data);
                               setIsBatchDetailsOpen(true);

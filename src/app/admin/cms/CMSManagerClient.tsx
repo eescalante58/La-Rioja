@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Title, Text, Button } from "@tremor/react";
 import { Plus } from "lucide-react";
-import { deleteCMSContent } from "./actions";
+import { callAction } from "@/lib/action-client";
 import dynamic from "next/dynamic";
 
 // Dynamic imports for sub-components to improve performance
@@ -89,7 +89,10 @@ export default function CMSManagerClient({
     if (!selectedItem) return;
     setIsDeleting(true);
     try {
-      const result = await deleteCMSContent(selectedItem.id);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "cms.deleteCMSContent",
+        [selectedItem.id],
+      );
       if (result.success) {
         setIsDeleteOpen(false);
         setSelectedItem(null);

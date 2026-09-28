@@ -2,7 +2,6 @@ import {
   getSecurityAdvisors,
   getRLSStatus,
   getViewsStatus,
-  getTablePolicies,
 } from "./actions";
 import SecurityManagerClient from "./SecurityManagerClient";
 
@@ -22,7 +21,6 @@ export default async function SecurityPage() {
       initialAdvisors={advisors}
       initialRLS={rlsStatus}
       initialViews={viewsStatus}
-      fetchTablePolicies={getTablePolicies}
     />
   );
 }

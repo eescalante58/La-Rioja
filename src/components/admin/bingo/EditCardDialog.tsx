@@ -9,7 +9,7 @@ import {
   TextInput,
   Button,
 } from "@tremor/react";
-import { updateSingleCard } from "@/app/admin/bingo/actions";
+import { callActionForm } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface Country {
@@ -101,11 +101,10 @@ export default function EditCardDialog({
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     try {
-      const result = await updateSingleCard(
-        event.company_id,
-        event.event_id,
-        card.card_number,
+      const result = await callActionForm<{ success?: boolean; error?: string }>(
+        "bingo.updateSingleCard",
         formData,
+        [event.company_id, event.event_id, card.card_number],
       );
 
       if (result?.success) {

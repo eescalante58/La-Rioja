@@ -62,16 +62,16 @@ interface Policy {
   definition: string;
 }
 
+import { callAction } from "@/lib/action-client";
+
 export default function SecurityManagerClient({
   initialAdvisors,
   initialRLS,
   initialViews,
-  fetchTablePolicies,
 }: {
   initialAdvisors: Advisor[];
   initialRLS: TableRLS[];
   initialViews: ViewSecurity[];
-  fetchTablePolicies: (tableName: string) => Promise<Policy[]>;
 }) {
   const [advisors] = useState<Advisor[]>(initialAdvisors);
   const [rlsStatus] = useState<TableRLS[]>(initialRLS);
@@ -98,8 +98,10 @@ export default function SecurityManagerClient({
     setIsDialogOpen(true);
     try {
       if (type === "table") {
-        const data = await fetchTablePolicies(name);
-        setPolicies(data);
+        const data = await callAction<Policy[]>("security.getTablePolicies", [
+          name,
+        ]);
+        setPolicies(Array.isArray(data) ? data : []);
       } else {
         // Para vistas podríamos mostrar su definición o algo similar,
         // por ahora solo vaciamos políticas

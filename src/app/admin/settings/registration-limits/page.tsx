@@ -1,4 +1,4 @@
-import { getRegistrationLimits, setRegistrationMode } from "./actions";
+import { getRegistrationLimits } from "./actions";
 import RegistrationLimitsClient from "./RegistrationLimitsClient";
 
 /**
@@ -9,9 +9,6 @@ export default async function RegistrationLimitsPage() {
   const result = await getRegistrationLimits();
 
   return (
-    <RegistrationLimitsClient
-      initial={result}
-      setMode={setRegistrationMode}
-    />
+    <RegistrationLimitsClient initial={result} />
   );
 }

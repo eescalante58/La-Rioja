@@ -13,7 +13,7 @@ import {
   Button,
 } from "@tremor/react";
 import { DollarSign, TrendingUp, Hash, MapPin } from "lucide-react";
-import { saveEvent } from "@/app/admin/bingo/actions";
+import { callActionForm } from "@/lib/action-client";
 
 interface Event {
   id: number;
@@ -95,7 +95,10 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     try {
-      const result = await saveEvent(formData);
+      const result = await callActionForm<{ success?: boolean; error?: string }>(
+        "bingo.saveEvent",
+        formData,
+      );
       if (result.success) {
         window.location.reload();
       } else {

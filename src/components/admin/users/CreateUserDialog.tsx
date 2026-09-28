@@ -12,7 +12,7 @@ import {
   SelectItem,
 } from "@tremor/react";
 import { X, UserPlus, Upload, Smartphone } from "lucide-react";
-import { createNewUser, uploadUserAvatar } from "@/app/admin/settings/users/actions";
+import { callAction, callActionForm } from "@/lib/action-client";
 
 interface Role {
   role_id: number;
@@ -58,7 +58,10 @@ export default function CreateUserDialog({
     let avatarUrl = "";
     const avatarFile = formData.get("avatar") as File;
     if (avatarFile && avatarFile.size > 0) {
-      const uploadRes = await uploadUserAvatar(formData);
+      const uploadRes = await callActionForm<{ publicUrl?: string }>(
+        "users.uploadUserAvatar",
+        formData,
+      );
       if (uploadRes.publicUrl) avatarUrl = uploadRes.publicUrl;
     }
     const data = {
@@ -70,7 +73,10 @@ export default function CreateUserDialog({
       avatar_url: avatarUrl,
       status: "active" as const,
     };
-    const res = await createNewUser(data);
+    const res = await callAction<{ success?: boolean; error?: string }>(
+      "users.createNewUser",
+      [data],
+    );
     if (res.success) window.location.reload();
     else {
       alert("Error: " + res.error);

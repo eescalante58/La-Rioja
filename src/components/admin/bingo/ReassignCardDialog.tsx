@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Dialog, DialogPanel, Title, Text, TextInput, Button } from "@tremor/react";
 import { RefreshCw } from "lucide-react";
-import { updateCardType } from "@/app/admin/bingo/actions";
+import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface ReassignCardDialogProps {
@@ -32,12 +32,9 @@ export default function ReassignCardDialog({
     const newType = card.card_type === "Virtual" ? "Fisico" : "Virtual";
 
     try {
-      const result = await updateCardType(
-        event.company_id,
-        event.event_id,
-        card.card_number,
-        newType,
-        officialName,
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "bingo.updateCardType",
+        [event.company_id, event.event_id, card.card_number, newType, officialName],
       );
 
       if (result?.success) {

@@ -29,12 +29,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import Link from "next/link";
-import {
-  saveCountryCode,
-  deleteCountryCode,
-  importCountryCodes,
-  logExportActivity,
-} from "./actions";
+import { callAction, callActionForm } from "@/lib/action-client";
 
 interface CountryCode {
   id: number;
@@ -114,7 +109,10 @@ export default function CountryManagerClient({
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    const result = await saveCountryCode(formData);
+    const result = await callActionForm<{ success?: boolean; error?: string }>(
+      "countries.saveCountryCode",
+      formData,
+    );
 
     if (result.success) {
       window.location.reload();
@@ -136,7 +134,7 @@ export default function CountryManagerClient({
     linkElement.click();
 
     // Log the export activity
-    await logExportActivity(countries.length);
+    await callAction("countries.logExportActivity", [countries.length]);
   };
 
   const handleDownloadCSV = async () => {
@@ -162,13 +160,16 @@ export default function CountryManagerClient({
     document.body.removeChild(link);
 
     // Log the export activity
-    await logExportActivity(countries.length);
+    await callAction("countries.logExportActivity", [countries.length]);
   };
 
   const processImport = async (json: any[]) => {
     setLoading(true);
     try {
-      const result = await importCountryCodes(json);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "countries.importCountryCodes",
+        [json],
+      );
       if (result.success) {
         alert("Importación exitosa");
         window.location.reload();
@@ -238,7 +239,10 @@ export default function CountryManagerClient({
 
   const handleDelete = async (id: number) => {
     if (confirm("¿Estás seguro de eliminar este país?")) {
-      const result = await deleteCountryCode(id);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "countries.deleteCountryCode",
+        [id],
+      );
       if (result.success) {
         window.location.reload();
       } else {

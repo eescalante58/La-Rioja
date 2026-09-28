@@ -42,19 +42,7 @@ import {
   FileText,
 } from "lucide-react";
 import Link from "next/link";
-import {
-  saveStudent,
-  deleteStudent,
-  importStudents,
-  logExportActivity,
-  getStudentCards,
-  assignCardToStudent,
-  unassignCardFromStudent,
-  bulkAssignCards,
-  getAllAssignedCards,
-  getEventCardsInfo,
-  assignCardRangeToStudent,
-} from "./actions";
+import { callAction, callActionForm } from "@/lib/action-client";
 
 interface Student {
   id: number;
@@ -163,7 +151,7 @@ export default function StudentManagerClient({
     linkElement.setAttribute("download", exportFileDefaultName);
     linkElement.click();
 
-    await logExportActivity(students.length);
+    await callAction("students.logExportActivity", [students.length]);
   };
 
   const handleDownloadCSV = async () => {
@@ -196,7 +184,7 @@ export default function StudentManagerClient({
     link.click();
     document.body.removeChild(link);
 
-    await logExportActivity(students.length);
+    await callAction("students.logExportActivity", [students.length]);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -259,7 +247,12 @@ export default function StudentManagerClient({
           throw new Error("No se encontraron datos para importar");
 
         setLoading(true);
-        const result = await importStudents(data);
+        const result = await callAction<{
+          success?: boolean;
+          error?: string;
+          inserted?: number;
+          updated?: number;
+        }>("students.importStudents", [data]);
         if (result.success) {
           alert(
             `Importación exitosa: ${result.inserted} alumnos nuevos, ${result.updated} ya existían (se actualizaron)`
@@ -283,7 +276,10 @@ export default function StudentManagerClient({
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    const result = await saveStudent(formData);
+    const result = await callActionForm<{ success?: boolean; error?: string }>(
+      "students.saveStudent",
+      formData,
+    );
 
     if (result.success) {
       window.location.reload();
@@ -295,7 +291,10 @@ export default function StudentManagerClient({
 
   const handleDelete = async (id: number) => {
     if (confirm("¿Estás seguro de eliminar este alumno?")) {
-      const result = await deleteStudent(id);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "students.deleteStudent",
+        [id],
+      );
       if (result.success) {
         window.location.reload();
       } else {
@@ -311,11 +310,11 @@ export default function StudentManagerClient({
     setStudentCards([]);
 
     try {
-      const cards = await getStudentCards(
+      const cards = await callAction<any[]>("students.getStudentCards", [
         student.student_id,
         student.company_id,
         student.event_id,
-      );
+      ]);
       setStudentCards(cards || []);
     } catch (error) {
       console.error("Error loading cards:", error);
@@ -332,7 +331,9 @@ export default function StudentManagerClient({
 
   const handleDownloadAssignments = async () => {
     try {
-      const res = await getAllAssignedCards();
+      const res = await callAction<any[] | { error: string }>(
+        "students.getAllAssignedCards",
+      );
       
       if ("error" in res) {
         alert(`Error al obtener asignaciones: ${res.error}`);
@@ -379,7 +380,7 @@ export default function StudentManagerClient({
       link.click();
       document.body.removeChild(link);
 
-      await logExportActivity(data.length);
+      await callAction("students.logExportActivity", [data.length]);
     } catch (error) {
       console.error("Error downloading assignments:", error);
       alert("Error al descargar las asignaciones.");
@@ -391,21 +392,24 @@ export default function StudentManagerClient({
 
     setIsProcessingAssignment(true);
     try {
-      const result = await assignCardToStudent(
-        selectedStudent.student_id,
-        selectedStudent.company_id,
-        selectedStudent.event_id,
-        parseInt(quickCardNumber),
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "students.assignCardToStudent",
+        [
+          selectedStudent.student_id,
+          selectedStudent.company_id,
+          selectedStudent.event_id,
+          parseInt(quickCardNumber),
+        ],
       );
 
       if (result.success) {
         setQuickCardNumber("");
         // Refresh cards list
-        const cards = await getStudentCards(
+        const cards = await callAction<any[]>("students.getStudentCards", [
           selectedStudent.student_id,
           selectedStudent.company_id,
           selectedStudent.event_id,
-        );
+        ]);
         setStudentCards(cards || []);
         // Refresh students count (hacky but works)
         setStudents((prev) =>
@@ -434,20 +438,23 @@ export default function StudentManagerClient({
 
     setIsProcessingAssignment(true);
     try {
-      const result = await unassignCardFromStudent(
-        selectedStudent.student_id,
-        selectedStudent.company_id,
-        selectedStudent.event_id,
-        cardNumber,
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "students.unassignCardFromStudent",
+        [
+          selectedStudent.student_id,
+          selectedStudent.company_id,
+          selectedStudent.event_id,
+          cardNumber,
+        ],
       );
 
       if (result.success) {
         // Refresh cards list
-        const cards = await getStudentCards(
+        const cards = await callAction<any[]>("students.getStudentCards", [
           selectedStudent.student_id,
           selectedStudent.company_id,
           selectedStudent.event_id,
-        );
+        ]);
         setStudentCards(cards || []);
         // Refresh students count
         setStudents((prev) =>
@@ -501,7 +508,10 @@ export default function StudentManagerClient({
 
     if (!key) return;
     const [cId, eId] = key.split("|");
-    const info = await getEventCardsInfo(parseInt(cId), eId);
+    const info = await callAction<{ success?: boolean; error?: string }>(
+      "students.getEventCardsInfo",
+      [parseInt(cId), eId],
+    );
     if (info.success) {
       setAssignEventInfo(info as any);
     } else {
@@ -552,13 +562,17 @@ export default function StudentManagerClient({
     setAssignFormLoading(true);
 
     try {
-      const result = await assignCardRangeToStudent(
+      const result = await callAction<{
+        success?: boolean;
+        error?: string;
+        count?: number;
+      }>("students.assignCardRangeToStudent", [
         assignStudent.student_id,
         parseInt(cId),
         eId,
         from,
         to,
-      );
+      ]);
 
       if (result.success) {
         alert(
@@ -576,7 +590,10 @@ export default function StudentManagerClient({
               : s,
           ),
         );
-        const info = await getEventCardsInfo(parseInt(cId), eId);
+        const info = await callAction<{ success?: boolean }>(
+          "students.getEventCardsInfo",
+          [parseInt(cId), eId],
+        );
         if (info.success) setAssignEventInfo(info as any);
       } else {
         alert("Error: " + result.error);
@@ -646,7 +663,10 @@ export default function StudentManagerClient({
         }
 
         setAssignFormLoading(true);
-        const result = await bulkAssignCards(data);
+        const result = await callAction<{ success?: boolean; error?: string }>(
+          "students.bulkAssignCards",
+          [data],
+        );
         if (result.success) {
           alert(`Éxito: Se asignaron ${data.length} cartones.`);
           setIsAssignDialogOpen(false);

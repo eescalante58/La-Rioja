@@ -16,10 +16,7 @@ import {
   HelpCircle,
   LayoutGrid,
 } from "lucide-react";
-import {
-  deleteFAQ,
-  deleteFAQSection,
-} from "@/app/admin/cms/actions";
+import { callAction } from "@/lib/action-client";
 import dynamic from "next/dynamic";
 
 // Dynamic imports for sub-components to improve performance
@@ -71,7 +68,10 @@ export default function FAQManager({
   const handleDelete = async (faq: FAQ) => {
     if (!confirm("¿Estás seguro de que deseas eliminar esta pregunta?")) return;
     try {
-      const result = await deleteFAQ(faq.id);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "cms.deleteFAQ",
+        [faq.id],
+      );
       if (result.success) window.location.reload();
       else alert("Error al eliminar FAQ: " + result.error);
     } catch (error) {
@@ -82,7 +82,10 @@ export default function FAQManager({
   const handleSectionDelete = async (section: FAQSection) => {
     if (!confirm("¿Estás seguro de eliminar esta sección? Se verán afectadas las preguntas asociadas.")) return;
     try {
-      const result = await deleteFAQSection(section.id);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "cms.deleteFAQSection",
+        [section.id],
+      );
       if (result.success) window.location.reload();
       else alert("Error al eliminar sección: " + result.error);
     } catch (error) {

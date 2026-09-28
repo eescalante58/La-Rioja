@@ -12,7 +12,7 @@ import {
   SelectItem,
 } from "@tremor/react";
 import { X, Save, Upload, Smartphone } from "lucide-react";
-import { updateUser, uploadUserAvatar } from "@/app/admin/settings/users/actions";
+import { callAction, callActionForm } from "@/lib/action-client";
 
 interface User {
   id: string;
@@ -77,7 +77,10 @@ export default function UserDialog({
     let avatarUrl = user.avatar_url || "";
     const avatarFile = formData.get("avatar") as File;
     if (avatarFile && avatarFile.size > 0) {
-      const uploadRes = await uploadUserAvatar(formData);
+      const uploadRes = await callActionForm<{ publicUrl?: string }>(
+        "users.uploadUserAvatar",
+        formData,
+      );
       if (uploadRes.publicUrl) avatarUrl = uploadRes.publicUrl;
     }
     const data = {
@@ -88,7 +91,10 @@ export default function UserDialog({
       phone: `${formData.get("phone_code")}${formData.get("phone_number")}`,
       avatar_url: avatarUrl,
     };
-    const res = await updateUser(user.id, data);
+    const res = await callAction<{ success?: boolean; error?: string }>(
+      "users.updateUser",
+      [user.id, data],
+    );
     if (res.success) window.location.reload();
     else {
       alert("Error: " + res.error);

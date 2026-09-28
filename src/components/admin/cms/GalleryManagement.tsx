@@ -29,7 +29,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { bulkUploadGalleryImages, deleteGalleryImage, updateGalleryImagesOrder } from "@/app/admin/cms/gallery-actions";
+import { callAction, callActionForm } from "@/lib/action-client";
 import Image from "next/image";
 
 interface GalleryImage {
@@ -211,7 +211,10 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
     const updates = updatedFiltered.map(img => ({ id: img.id, content_order: img.content_order }));
 
     setIsReordering(true);
-    const result = await updateGalleryImagesOrder(updates);
+    const result = await callAction<{ success?: boolean; error?: string }>(
+      "cms.updateGalleryImagesOrder",
+      [updates],
+    );
 
     if (!result.success) {
       alert("Error al guardar el nuevo orden: " + result.error);
@@ -237,7 +240,12 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
     });
 
     try {
-      const result = await bulkUploadGalleryImages(formData);
+      const result = await callActionForm<{
+        success?: boolean;
+        error?: string;
+        count?: number;
+        data?: any;
+      }>("cms.bulkUploadGalleryImages", formData);
       if (result.success) {
         setMessage({ text: `Se subieron ${result.count} imágenes con éxito.`, type: 'success' });
         // Actualizar el estado local con las nuevas imágenes si el server las devuelve
@@ -264,7 +272,10 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
 
     setDeletingId(id);
     try {
-      const result = await deleteGalleryImage(id);
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "cms.deleteGalleryImage",
+        [id],
+      );
       if (result.success) {
         setImages(images.filter(img => img.id !== id));
       } else {

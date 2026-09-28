@@ -3,9 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Dices, Trophy, RotateCw, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
 import confetti from "canvas-confetti";
-import {
-  getPublicWheelData,
-} from "@/app/admin/bingo/wheel-actions";
+import { callAction } from "@/lib/action-client";
 
 interface Segment {
   itemId: number | null;
@@ -32,6 +30,15 @@ interface WheelConfig {
   is_automatic_rotation?: boolean;
   automatic_timeout_rotation?: number;
   prizes_number?: number;
+}
+
+/** Respuesta de la acción pública `bingo.getPublicWheelData`. */
+interface PublicWheelData {
+  data?: {
+    config: WheelConfig;
+    segments: Segment[];
+    spinsCount?: number;
+  };
 }
 
 /** Respuesta del endpoint POST /api/wheel/spin. */
@@ -176,7 +183,9 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
     setWinner(null);
     setRotation(0);
     setAutoRunning(false);
-    getPublicWheelData(selectedWheel.id).then((res) => {
+    callAction<PublicWheelData>("bingo.getPublicWheelData", [
+      selectedWheel.id,
+    ]).then((res) => {
       if (res?.data) {
         setWheelConfig(res.data.config);
         setSegments(res.data.segments);

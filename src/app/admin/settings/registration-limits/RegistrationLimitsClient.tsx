@@ -48,18 +48,12 @@ interface Result {
  * registration_limits que lee el RPC en cada llamada — equivalente
  * a ejecutar raise_limits.sql / restore_limits.sql sin tocar SQL.
  */
+import { callAction } from "@/lib/action-client";
+
 export default function RegistrationLimitsClient({
   initial,
-  setMode,
 }: {
   initial: Result;
-  setMode: (mode: "normal" | "evento") => Promise<{
-    success: boolean;
-    error?: string;
-    max_attempts_minute?: number;
-    max_cards_day_ip?: number;
-    max_cards_phone?: number;
-  }>;
 }) {
   const [limits, setLimits] = useState<Limits | null>(initial.limits ?? null);
   const [error, setError] = useState<string | null>(initial.error ?? null);
@@ -82,7 +76,13 @@ export default function RegistrationLimitsClient({
     setLoading(mode);
     setMessage(null);
     setError(null);
-    const res = await setMode(mode);
+    const res = await callAction<{
+      success: boolean;
+      error?: string;
+      max_attempts_minute?: number;
+      max_cards_day_ip?: number;
+      max_cards_phone?: number;
+    }>("registrationLimits.setRegistrationMode", [mode]);
     setLoading(null);
     if (!res.success) {
       setError(res.error ?? "Error desconocido");

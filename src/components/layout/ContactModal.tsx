@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Send, CheckCircle2, AlertCircle } from "lucide-react";
-import { submitContactForm } from "@/app/actions/contact";
+import { callAction } from "@/lib/action-client";
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -40,10 +40,10 @@ export function ContactModal({
     setError(null);
 
     try {
-      const result = await submitContactForm({
-        ...formData,
-        targetEmail,
-      });
+      const result = await callAction<{ success?: boolean; error?: string }>(
+        "contact.submitContactForm",
+        [{ ...formData, targetEmail }],
+      );
 
       if (result.success) {
         setIsSuccess(true);

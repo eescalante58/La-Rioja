@@ -21,7 +21,7 @@ import {
   Users as UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { deleteUser, deleteRole } from "./actions";
+import { callAction } from "@/lib/action-client";
 import dynamic from "next/dynamic";
 
 // Dynamic imports for sub-components
@@ -124,14 +124,20 @@ export default function UserManagerClient({
 
   const handleDeleteUser = async (id: string) => {
     if (!confirm("¿Eliminar usuario?")) return;
-    const res = await deleteUser(id);
+    const res = await callAction<{ success?: boolean; error?: string }>(
+      "users.deleteUser",
+      [id],
+    );
     if (res.success) window.location.reload();
     else alert("Error: " + res.error);
   };
 
   const handleDeleteRole = async (id: number) => {
     if (!confirm("¿Eliminar rol?")) return;
-    const res = await deleteRole(id);
+    const res = await callAction<{ success?: boolean; error?: string }>(
+      "users.deleteRole",
+      [id],
+    );
     if (res.success) window.location.reload();
     else alert("Error: " + res.error);
   };
