@@ -17,7 +17,7 @@ import {
   TableBody,
   TableCell,
 } from "@tremor/react";
-import { Plus, Trash2, Ticket, Copy, Check } from "lucide-react";
+import { Plus, Trash2, Ticket, Copy, Check, ExternalLink } from "lucide-react";
 import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import { createClient } from "@/lib/supabase/client";
@@ -81,6 +81,17 @@ export default function WheelItemsDialog({
 
   // Tómbola aplica a Cartones y Participantes (cartones vendidos del evento)
   const isCardsMode = wheel?.mode === "Cartones" || wheel?.mode === "Participantes";
+
+  /**
+   * URL de la página pública de proyección correspondiente al modo:
+   * Premios → /ruleta; Cartones y Participantes → /tombola.
+   * Los params evento/nombre fijan esta ruleta puntual en la página.
+   */
+  const publicProjectionUrl = wheel
+    ? wheel.mode === "Premios"
+      ? `/ruleta?evento=${encodeURIComponent(eventId ?? "")}&tipo=${encodeURIComponent(wheel.mode)}&nombre=${encodeURIComponent(wheel.wheel_name)}`
+      : `/tombola?evento=${encodeURIComponent(eventId ?? "")}&nombre=${encodeURIComponent(wheel.wheel_name)}`
+    : "/ruleta";
 
   // Las operaciones de tómbola van por /api/tombola/cards (Route Handler):
   // las Server Actions re-renderizan /admin/bingo completo y tardaban minutos.
@@ -245,7 +256,22 @@ export default function WheelItemsDialog({
         <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
           <div className="flex items-center justify-between mb-2">
             <Title>{wheel?.wheel_name}</Title>
-            <Badge color="blue">{wheel?.mode}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge color="blue">{wheel?.mode}</Badge>
+              <Button
+                size="xs"
+                variant="secondary"
+                icon={ExternalLink}
+                tooltip={
+                  wheel?.mode === "Premios"
+                    ? "Abrir la página de proyección /ruleta"
+                    : "Abrir la página de proyección /tombola"
+                }
+                onClick={() => window.open(publicProjectionUrl, "_blank")}
+              >
+                {wheel?.mode === "Premios" ? "Abrir Ruleta" : "Abrir Tómbola"}
+              </Button>
+            </div>
           </div>
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
