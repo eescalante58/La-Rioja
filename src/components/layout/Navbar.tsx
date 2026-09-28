@@ -117,9 +117,11 @@ export function Navbar({
           <div className="flex items-center justify-between">
           {/* Logo — en modo simple (ruleta/tómbola) flota a la izquierda del
               masthead sin ocupar altura: la ruleta sube ~96px. Oculto en
-              móviles donde el masthead ya cubre la marca. */}
+              móviles donde el masthead ya cubre la marca.
+              En simple redirige a /admin/bingo (acceso rápido del operador
+              desde la pantalla de proyección). */}
           <Link
-            href="/"
+            href={simple ? "/admin/bingo" : "/"}
             className={`${
               simple
                 ? "absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 hidden sm:block"

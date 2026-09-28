@@ -314,7 +314,7 @@ export default function NewInvoicePlusDialog({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                    <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                       N° Factura
                     </Text>
                     <button
@@ -337,7 +337,7 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Fecha
                   </Text>
                   <input
@@ -350,7 +350,7 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Método de Pago
                   </Text>
                   <Select
@@ -366,7 +366,7 @@ export default function NewInvoicePlusDialog({
                   <input type="hidden" name="payment_method" value={paymentMethod} />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Estado
                   </Text>
                   <Select
@@ -389,7 +389,7 @@ export default function NewInvoicePlusDialog({
               {/* Fila 2: cliente y email */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Nombre del Cliente
                   </Text>
                   <TextInput
@@ -401,7 +401,7 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Email del Cliente
                   </Text>
                   <TextInput
@@ -416,7 +416,7 @@ export default function NewInvoicePlusDialog({
               {/* Fila 3: contacto y vendedor */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Código de Área
                   </Text>
                   <Select
@@ -443,7 +443,7 @@ export default function NewInvoicePlusDialog({
                   <input type="hidden" name="phone_area" value={phoneArea} />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Teléfono
                   </Text>
                   <TextInput
@@ -454,7 +454,7 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     WhatsApp
                   </Text>
                   <TextInput
@@ -465,7 +465,7 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1 col-span-2">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Vendido por
                   </Text>
                   <input
@@ -489,7 +489,7 @@ export default function NewInvoicePlusDialog({
               {/* Fila 4: imagen, cantidad, valor, total */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Imagen de Factura
                   </Text>
                   <input
@@ -501,7 +501,7 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     N° Cartones
                   </Text>
                   <TextInput
@@ -519,7 +519,7 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Valor Unitario
                   </Text>
                   <TextInput
@@ -534,7 +534,7 @@ export default function NewInvoicePlusDialog({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Total
                   </Text>
                   <TextInput
@@ -552,7 +552,7 @@ export default function NewInvoicePlusDialog({
 
               {/* Fila 5: observación con espacio para detalle */}
               <div className="space-y-1">
-                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                   Observación
                 </Text>
                 <textarea
@@ -567,7 +567,7 @@ export default function NewInvoicePlusDialog({
 
               {/* Fila 6: cartones seleccionados + selector de rango */}
               <div className="space-y-1">
-                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                   Asociar Cartones ({selectedCards.length} de {cardsNumber})
                 </Text>
                 <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-2 bg-gray-50 dark:bg-gray-800/50 space-y-2">
@@ -599,7 +599,7 @@ export default function NewInvoicePlusDialog({
                   <div className="flex items-end gap-2">
                     <div className="flex-grow grid grid-cols-2 gap-2">
                       <div className="space-y-0.5">
-                        <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                           Desde Cartón
                         </Text>
                         <TextInput
@@ -615,7 +615,7 @@ export default function NewInvoicePlusDialog({
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                           Hasta Cartón
                         </Text>
                         <TextInput

@@ -646,11 +646,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
           </div>
 
           {(loading && segments.length === 0) ? (
-            <div className="flex h-[300px] w-[300px] items-center justify-center md:h-[520px] md:w-[520px]">
+            <div className="flex h-[340px] w-[340px] items-center justify-center md:h-[640px] md:w-[640px]">
               <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-larioja-amarillo" />
             </div>
           ) : segments.length === 0 ? (
-            <div className="flex h-[300px] w-[300px] flex-col items-center justify-center gap-3 md:h-[520px] md:w-[520px]">
+            <div className="flex h-[340px] w-[340px] flex-col items-center justify-center gap-3 md:h-[640px] md:w-[640px]">
               <Dices size={48} className="text-white/30" />
               <p className="max-w-xs text-center text-sm text-white/60">
                 No existen premios para esta Ruleta
@@ -659,7 +659,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
           ) : (
             <svg
               viewBox="0 0 500 500"
-              className={`h-[300px] w-[300px] drop-shadow-2xl md:h-[520px] md:w-[520px] transition-transform duration-1000 ${spinning ? 'scale-105' : 'scale-100'}`}
+              className={`h-[340px] w-[340px] drop-shadow-2xl md:h-[640px] md:w-[640px] transition-transform duration-1000 ${spinning ? 'scale-105' : 'scale-100'}`}
             >
               {spinning && (
                 <defs>
@@ -743,7 +743,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
               <circle cx={CX} cy={CY} r={R} fill="none" stroke="#ffffff" strokeWidth={4} />
               <circle cx={CX} cy={CY} r={62} fill="#ffffff" stroke="#eeeeee" strokeWidth="1" />
-              <image href="/logo.png" x={CX - 45} y={CY - 34} width={90} height={68} preserveAspectRatio="xMidYMid meet" />
+              {/* Logo central: enlace a la consola admin (acceso rápido
+                  del operador desde la pantalla de proyección) */}
+              <a href="/admin/bingo">
+                <image href="/logo.png" x={CX - 45} y={CY - 34} width={90} height={68} preserveAspectRatio="xMidYMid meet" />
+              </a>
             </svg>
           )}
           </div>
