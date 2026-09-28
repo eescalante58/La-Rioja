@@ -61,11 +61,18 @@ por un **Route Handler** (`/api/**`) que responde JSON puro.
 
 ## Deuda conocida (pendiente de migrar)
 
-Inventariado en la auditoría de re-renders: `RealtimeDashboardWrapper`
-(refresh sin debounce sobre 5 tablas), `NewInvoiceDialog` (edición de
-factura + `getEventCards`), `WhatsAppPopup`, `deleteInvoice` en `SalesTab`,
-`WheelTab`/`WheelConfigDialog`/`WheelItemsDialog`, diálogos de inventario
-(`getEventCards`, `updateSingleCard`, `updateCardType`,
-`updateCardRangeType`), `getPublicWheelData`/`getPublicTombolaData` en
-páginas públicas. Toda modificación sobre estos archivos debe migrar la
-operación a Route Handler en lugar de añadir más Server Actions.
+Ya migrados a Route Handlers: dashboard completo (`/api/dashboard`),
+ciclo de factura (GET/POST/PUT/DELETE `/api/bingo/invoices`,
+`/api/bingo/cards`, `/api/bingo/whatsapp`), inventario de cartones.
+
+Pendientes del inventario original de la auditoría: gestión de ruletas
+(`WheelTab`/`WheelConfigDialog`/`WheelItemsDialog`: `getWheels`,
+`getWheelSpins`, `toggleWheelPublished`, `deleteWheelConfig`,
+`saveWheelConfig`, `saveWheelItems`), diálogos de inventario
+(`updateSingleCard`, `updateCardType`, `updateCardRangeType`),
+carga/generación de cartones (`uploadCardsBatch`, `generateCards`,
+`clearEventCards`, `logUploadActivity`, `verifyUpload`), `saveEvent`,
+`PromotionalTab` (clientes/promos/WhatsApp batch),
+`getPublicWheelData`/`getPublicTombolaData` en páginas públicas.
+Toda modificación sobre estos archivos debe migrar la operación a
+Route Handler en lugar de añadir más Server Actions.

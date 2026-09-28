@@ -17,13 +17,6 @@ import {
   FileText,
   Ticket,
 } from "lucide-react";
-import {
-  getWhatsAppMessageTemplate,
-  getCardsForInvoice,
-  sendWhatsAppAutomation,
-  updateInvoiceWhatsAppStatus,
-} from "@/app/admin/bingo/actions";
-
 interface WhatsAppPopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -57,13 +50,12 @@ export default function WhatsAppPopup({
   const loadData = async () => {
     setLoading(true);
     try {
+      // Route Handlers JSON (sin re-render RSC de /admin/bingo)
       const [tplRes, cardsRes] = await Promise.all([
-        getWhatsAppMessageTemplate(),
-        getCardsForInvoice(
-          invoice.company_id,
-          invoice.event_id,
-          invoice.invoice_number,
-        ),
+        fetch(`/api/bingo/whatsapp?view=template&companyId=${invoice.company_id}`).then((r) => r.json()),
+        fetch(
+          `/api/bingo/cards?companyId=${invoice.company_id}&eventId=${encodeURIComponent(invoice.event_id)}&invoice=${encodeURIComponent(invoice.invoice_number)}`,
+        ).then((r) => r.json()),
       ]);
 
       if (tplRes.success && tplRes.data) {
@@ -90,11 +82,20 @@ export default function WhatsAppPopup({
     }
   };
 
+  /** POST JSON a /api/bingo/whatsapp (send o status). */
+  const postWhatsApp = (body: Record<string, any>) =>
+    fetch("/api/bingo/whatsapp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companyId: invoice.company_id, ...body }),
+    }).then((r) => r.json());
+
   const handleSend = async () => {
     setSending(true);
     try {
       const cleanNumber = number.replace(/\D/g, "");
-      const res = await sendWhatsAppAutomation({
+      const res = await postWhatsApp({
+        action: "send",
         to: cleanNumber,
         message: message,
         templateImage: image || undefined,
@@ -104,7 +105,7 @@ export default function WhatsAppPopup({
 
       if (res.success) {
         const status = `Enviado Automáticamente vía Ultramsg el ${new Date().toLocaleString()}. Incluyó factura y ${cardUrls.length} cartones.`;
-        await updateInvoiceWhatsAppStatus(invoice.id, status);
+        await postWhatsApp({ action: "status", invoiceId: invoice.id, status });
         alert("¡Envío automático completado!");
         onClose();
       } else {
@@ -115,7 +116,7 @@ export default function WhatsAppPopup({
           "_blank",
         );
         const status = `Enviado exitosamente (Manual) el ${new Date().toLocaleString()}. Incluyó factura y ${cardUrls.length} cartones.`;
-        await updateInvoiceWhatsAppStatus(invoice.id, status);
+        await postWhatsApp({ action: "status", invoiceId: invoice.id, status });
         onClose();
       }
     } catch (error) {

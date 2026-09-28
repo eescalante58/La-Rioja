@@ -12,13 +12,6 @@ import {
   Button,
 } from "@tremor/react";
 import { Smartphone, MessageCircle, DollarSign, CheckCircle, Eye, Hash } from "lucide-react";
-import {
-  saveInvoice,
-  updateInvoice,
-  getEventCards,
-  getSellersFromView,
-  getNextAutoInvoiceNumber,
-} from "@/app/admin/bingo/actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface NewInvoiceDialogProps {
@@ -68,10 +61,11 @@ export default function NewInvoiceDialog({
   const handleAutoNumber = async () => {
     if (!currentEvent) return;
     setAutoNumbering(true);
-    const result = await getNextAutoInvoiceNumber(
-      currentEvent.companyId,
-      currentEvent.eventId,
+    // Route Handler JSON — la Server Action re-renderizaba la página
+    const res = await fetch(
+      `/api/bingo/invoices/next-number?companyId=${currentEvent.companyId}&eventId=${encodeURIComponent(currentEvent.eventId)}`,
     );
+    const result = await res.json();
     setAutoNumbering(false);
     if (result?.data) {
       setInvoiceNumber(result.data);
@@ -194,9 +188,14 @@ export default function NewInvoiceDialog({
     }
 
     try {
-      // Fetch sellers and cards in parallel
-      const sellersPromise = getSellersFromView(currentEvent.companyId, currentEvent.eventId);
-      const cardsPromise = getEventCards(currentEvent.companyId, currentEvent.eventId);
+      // Vendedores y cartones por Route Handlers JSON (sin re-render RSC)
+      const evId = encodeURIComponent(currentEvent.eventId);
+      const sellersPromise = fetch(
+        `/api/bingo/sellers?companyId=${currentEvent.companyId}&eventId=${evId}`,
+      ).then((r) => r.json());
+      const cardsPromise = fetch(
+        `/api/bingo/cards?companyId=${currentEvent.companyId}&eventId=${evId}`,
+      ).then((r) => r.json());
 
       const [sellersRes, cardsRes] = await Promise.all([sellersPromise, cardsPromise]);
       if (seq !== loadSeq.current) return; // respuesta obsoleta
@@ -267,7 +266,12 @@ export default function NewInvoiceDialog({
     const formData = new FormData(e.currentTarget);
 
     try {
-      const result = invoice ? await updateInvoice(formData) : await saveInvoice(formData);
+      // POST crea / PUT actualiza — mismo Route Handler JSON
+      const res = await fetch("/api/bingo/invoices", {
+        method: invoice ? "PUT" : "POST",
+        body: formData,
+      });
+      const result = await res.json();
 
       if (result?.success) {
         alert(invoice ? "Factura actualizada exitosamente" : "Factura guardada exitosamente");

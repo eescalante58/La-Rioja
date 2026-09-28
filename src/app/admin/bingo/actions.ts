@@ -10,7 +10,6 @@ import { withRole, withCompanyAccess } from "@/lib/auth/guards";
 import { 
   eventSchema, 
   invoiceSchema,
-  invoiceUpdateSchema, 
   generateCardsSchema, 
   updateCardTypeSchema, 
   updateCardRangeTypeSchema, 
@@ -22,7 +21,18 @@ import {
   saveInvoiceCore,
   checkCardsRangeCore,
   getSellersCore,
+  getEventCardsCore,
+  getCardsForInvoiceCore,
+  updateInvoiceCore,
+  deleteInvoiceCore,
 } from "./invoice-core";
+import {
+  getWhatsAppMessageTemplateCore,
+  updateInvoiceWhatsAppStatusCore,
+  checkWhatsAppInstanceStatusCore,
+  sendWhatsAppAutomationCore,
+} from "./whatsapp-core";
+import { getCustomersCore } from "../dashboard-core";
 
 /**
  * Sanitizes string input for Bingo operations.
@@ -603,17 +613,7 @@ async function fetchAllRows(
 }
 
 async function getEventCardsInternal(companyId: number, eventId: string) {
-  const supabase = createAdminClient();
-  const { data, error } = await fetchAllRows(
-    supabase,
-    "cards",
-    "*",
-    companyId,
-    eventId,
-    "card_number",
-  );
-  if (error) return { error: error.message };
-  return { data };
+  return getEventCardsCore(companyId, eventId);
 }
 
 export const getEventCards = withRole(4, withCompanyAccess(getEventCardsInternal, 0));
@@ -1118,283 +1118,16 @@ async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
 export const saveInvoice = withRole(4, withCompanyAccess(saveInvoiceInternal, 0));
 
 /**
- * Libera los cartones vinculados a una factura limpiando los datos de venta.
- * Cada cartón vuelve a "Asignado" si está ligado a un alumno en
- * students_cards; en caso contrario queda "Disponible".
- */
-async function releaseInvoiceCards(
-  supabase: any,
-  companyId: number,
-  eventId: string,
-  invoiceNumber: string,
-) {
-  const { data: linkedCards } = await supabase
-    .from("cards")
-    .select("card_number")
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .eq("invoice_number", invoiceNumber);
-
-  const numbers = (linkedCards || []).map((c: any) => c.card_number);
-  if (numbers.length === 0) return;
-
-  // Cuáles de esos cartones siguen asignados a un alumno
-  const { data: assigned } = await supabase
-    .from("students_cards")
-    .select("card_number")
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .in("card_number", numbers);
-
-  const assignedSet = new Set(
-    (assigned || []).map((r: any) => r.card_number),
-  );
-
-  const releaseFields = {
-    invoice_number: null,
-    sales_price: null,
-    sold_by: null,
-    player_name: null,
-    player_phone_number: null,
-    player_email: null,
-    updated_at: new Date().toISOString(),
-  };
-
-  const toAssigned = numbers.filter((n: number) => assignedSet.has(n));
-  const toAvailable = numbers.filter((n: number) => !assignedSet.has(n));
-
-  if (toAssigned.length > 0) {
-    await supabase
-      .from("cards")
-      .update({ ...releaseFields, card_status: "Asignado" })
-      .eq("company_id", companyId)
-      .eq("event_id", eventId)
-      .in("card_number", toAssigned);
-  }
-  if (toAvailable.length > 0) {
-    const { error } = await supabase
-      .from("cards")
-      .update({ ...releaseFields, card_status: "Disponible" })
-      .eq("company_id", companyId)
-      .eq("event_id", eventId)
-      .in("card_number", toAvailable);
-    if (error) throw error;
-  }
-}
-
-/**
  * Update an existing invoice and associated cards.
+ * La lógica vive en invoice-core.ts (compartida con PUT /api/bingo/invoices).
  */
 async function updateInvoiceInternal(formData: FormData, context: { user: any }) {
-  const { user } = context;
-  const id = formData.get("id") as string;
-
-  const associatedCardsRaw =
-    (formData.get("associated_cards") as string) ||
-    (formData.get("selected_cards") as string) ||
-    "[]";
-  let associatedCards: number[] = [];
-  try {
-    associatedCards = JSON.parse(associatedCardsRaw);
-  } catch (e) {
-    associatedCards = [];
+  const result = await updateInvoiceCore(formData, context.user?.id);
+  if ((result as any)?.success) {
+    revalidatePath("/admin/bingo");
+    revalidatePath("/admin");
   }
-
-  const rawData = {
-    company_id: parseInt(formData.get("company_id") as string),
-    event_id: formData.get("event_id") as string,
-    invoice_number: formData.get("invoice_number") as string,
-    invoice_date: formData.get("invoice_date") as string,
-    customer_name: formData.get("customer_name") as string,
-    customer_email: (formData.get("customer_email") as string) || "",
-    phone_area: (formData.get("phone_area") as string) || "",
-    phone_number: (formData.get("phone_number") as string) || "",
-    whatsapp_number: (formData.get("whatsapp_number") as string) || "",
-    manager_name: formData.get("manager_name") as string,
-    cards_number: parseInt(formData.get("cards_number") as string),
-    card_price: parseFloat(formData.get("card_price") as string),
-    total_amount: parseFloat(formData.get("total_amount") as string),
-    payment_method: (formData.get("payment_method") as string) || "efectivo",
-    status: (formData.get("status") as string) || "pagada",
-    observation: (formData.get("observation") as string) || "",
-    associated_cards: associatedCards,
-  };
-
-  // Validation with Zod
-  const validation = invoiceUpdateSchema.safeParse(rawData);
-  if (!validation.success) {
-    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
-  }
-
-  const data = validation.data;
-  const supabase = createAdminClient();
-
-  // 1. Get current invoice to handle file cleanup if needed
-  const { data: currentInvoice } = await supabase
-    .from("invoices")
-    .select("url_invoice, invoice_number, status")
-    .eq("id", id)
-    .single();
-
-  // Si el número de factura cambió, verificar que no esté duplicado en el evento
-  if (
-    data.invoice_number &&
-    data.invoice_number !== currentInvoice?.invoice_number
-  ) {
-    const { data: duplicate } = await supabase
-      .from("invoices")
-      .select("id")
-      .eq("company_id", data.company_id || 0)
-      .eq("event_id", data.event_id || "")
-      .eq("invoice_number", data.invoice_number)
-      .neq("id", id)
-      .maybeSingle();
-
-    if (duplicate) {
-      return {
-        error: `Ya existe una factura con el número ${data.invoice_number} en este evento.`,
-      };
-    }
-  }
-
-  let url_invoice = currentInvoice?.url_invoice || null;
-
-  // 2. Handle File Upload if present
-  const invoice_file = formData.get("invoice_file") as File;
-  if (invoice_file && invoice_file instanceof File && invoice_file.size > 0) {
-    try {
-      const fileExt = invoice_file.name.split(".").pop();
-      const fileName = `${data.invoice_number}_${Date.now()}.${fileExt}`;
-      const storagePath = `${data.company_id}/${data.event_id}/${fileName}`;
-
-      const arrayBuffer = await invoice_file.arrayBuffer();
-
-      const { error: uploadError } = await supabase.storage
-        .from("invoices_images")
-        .upload(storagePath, arrayBuffer, {
-          cacheControl: "3600",
-          upsert: true,
-          contentType: invoice_file.type,
-        });
-
-      if (uploadError) {
-        return {
-          error: `Error al subir imagen de factura: ${uploadError.message}`,
-        };
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("invoices_images").getPublicUrl(storagePath);
-
-      // Cleanup: Delete old file from Storage if it exists
-      if (currentInvoice?.url_invoice) {
-        try {
-          const oldUrlParts = currentInvoice.url_invoice.split("/invoices_images/");
-          if (oldUrlParts.length > 1) {
-            const oldStoragePath = oldUrlParts[1];
-            await supabase.storage.from("invoices_images").remove([oldStoragePath]);
-          }
-        } catch (cleanupError) {
-          console.warn("Error cleaning up old invoice:", cleanupError);
-        }
-      }
-
-      url_invoice = publicUrl;
-    } catch (err: any) {
-      console.error("Error processing invoice file update:", err);
-      return { error: `Error procesando archivo de factura: ${err.message}` };
-    }
-  }
-
-  const { associated_cards, ...invoiceFields } = data;
-
-  const invoiceData: Record<string, any> = {
-    updated_at: new Date().toISOString(),
-  };
-  if (invoiceFields.company_id !== undefined) invoiceData.company_id = invoiceFields.company_id;
-  if (invoiceFields.event_id !== undefined) invoiceData.event_id = invoiceFields.event_id;
-  if (invoiceFields.invoice_number !== undefined) invoiceData.invoice_number = sanitizeInput(invoiceFields.invoice_number || "");
-  if (invoiceFields.invoice_date !== undefined) invoiceData.invoice_date = invoiceFields.invoice_date;
-  if (invoiceFields.customer_name !== undefined) invoiceData.customer_name = toTitleCase(sanitizeInput(invoiceFields.customer_name || ""));
-  if (invoiceFields.customer_email !== undefined) invoiceData.customer_email = sanitizeInput(invoiceFields.customer_email || "");
-  if (invoiceFields.phone_area !== undefined) invoiceData.phone_area = sanitizeInput(invoiceFields.phone_area || "");
-  if (invoiceFields.phone_number !== undefined) invoiceData.phone_number = sanitizeInput(invoiceFields.phone_number || "");
-  if (invoiceFields.whatsapp_number !== undefined) invoiceData.whatsapp_number = sanitizeInput(invoiceFields.whatsapp_number || "");
-  if (invoiceFields.manager_name !== undefined) invoiceData.manager_name = toTitleCase(sanitizeInput(invoiceFields.manager_name || ""));
-  const isDonada =
-    (invoiceFields.status ?? currentInvoice?.status) === "Donada";
-  if (invoiceFields.cards_number !== undefined) invoiceData.cards_number = invoiceFields.cards_number;
-  if (invoiceFields.card_price !== undefined) invoiceData.card_price = isDonada ? 0 : invoiceFields.card_price;
-  if (invoiceFields.total_amount !== undefined) invoiceData.total_amount = isDonada ? 0 : invoiceFields.total_amount;
-  if (invoiceFields.payment_method !== undefined) invoiceData.payment_method = invoiceFields.payment_method;
-  if (invoiceFields.status !== undefined) invoiceData.status = invoiceFields.status;
-  if (invoiceFields.observation !== undefined) invoiceData.observation = sanitizeInput(invoiceFields.observation || "");
-  if (url_invoice) invoiceData.url_invoice = url_invoice;
-
-  // 3. Update Invoice
-  const { error: invoiceError } = await supabase
-    .from("invoices")
-    .update(invoiceData)
-    .eq("id", id);
-
-  if (invoiceError) return { error: invoiceError.message };
-
-  // 4. Update Associated Cards
-  // First, clear previous cards linked to this invoice number. Cada cartón
-  // vuelve a "Asignado" si pertenece a un alumno, si no a "Disponible".
-  if (currentInvoice?.invoice_number) {
-    await releaseInvoiceCards(
-      supabase,
-      data.company_id || 0,
-      data.event_id || "",
-      currentInvoice.invoice_number,
-    );
-  }
-
-  // Now link the new selection. Factura "Donada" → cartones 'Donado'.
-  if (data.associated_cards && data.associated_cards.length > 0) {
-    const { error: cardsError } = await supabase
-      .from("cards")
-      .update({
-        card_status: isDonada ? "Donado" : "Vendido",
-        invoice_number: data.invoice_number,
-        sales_price: data.card_price,
-        sold_by: invoiceData.manager_name || data.manager_name,
-        player_name: invoiceData.customer_name || data.customer_name,
-        player_phone_number: data.whatsapp_number,
-        player_email: data.customer_email,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("company_id", data.company_id || 0)
-      .eq("event_id", data.event_id || "")
-      .in("card_number", data.associated_cards);
-
-    if (cardsError) {
-      return {
-        error: `Factura actualizada pero error al vincular cartones: ${cardsError.message}`,
-      };
-    }
-  }
-
-  // 5. Log activity
-  await supabase.from("user_activity_log").insert({
-    user_id: user.id,
-    action: "UPDATE",
-    entity: "invoices",
-    metadata: {
-      invoice_id: id,
-      invoice_number: data.invoice_number,
-      event_id: data.event_id,
-      customer_name: data.customer_name,
-      associated_cards: data.associated_cards,
-      timestamp: new Date().toISOString(),
-    },
-  });
-
-  revalidatePath("/admin/bingo");
-  revalidatePath("/admin");
-  return { success: true };
+  return result;
 }
 
 export const updateInvoice = withRole(4, withCompanyAccess(updateInvoiceInternal, 0));
@@ -1422,137 +1155,36 @@ export const sendWhatsAppAutomation = withRole(
 
 /**
  * Delete an invoice and release its associated cards.
- * Cards linked to the invoice are reset to "Disponible" and all
- * invoice-derived fields are cleared to keep referential integrity.
+ * La lógica vive en invoice-core.ts (compartida con DELETE /api/bingo/invoices).
  */
 async function deleteInvoiceInternal(id: string, context: { user: any }) {
-  const { user } = context;
-  const supabase = createAdminClient();
-
-  // 1. Get invoice data needed to release cards and cleanup storage
-  const { data: invoice, error: fetchError } = await supabase
-    .from("invoices")
-    .select("invoice_number, event_id, company_id, url_invoice")
-    .eq("id", id)
-    .single();
-
-  if (fetchError) return { error: fetchError.message };
-  if (!invoice) return { error: "Factura no encontrada." };
-
-  // 2. Release associated cards BEFORE deleting (idempotent: if the
-  //    delete fails and the user retries, this update matches 0 rows).
-  //    Los cartones asignados a un alumno vuelven a "Asignado".
-  try {
-    await releaseInvoiceCards(
-      supabase,
-      invoice.company_id,
-      invoice.event_id,
-      invoice.invoice_number,
-    );
-  } catch (cardsError: any) {
-    return {
-      error: `Error al liberar cartones asociados: ${cardsError.message}`,
-    };
+  const result = await deleteInvoiceCore(id, context.user?.id);
+  if ((result as any)?.success) {
+    revalidatePath("/admin/bingo");
+    revalidatePath("/admin");
   }
-
-  // 3. Delete invoice image from Storage if present
-  if (invoice.url_invoice) {
-    try {
-      const urlParts = invoice.url_invoice.split("/invoices_images/");
-      if (urlParts.length > 1) {
-        await supabase.storage.from("invoices_images").remove([urlParts[1]]);
-      }
-    } catch (cleanupError) {
-      console.warn("Error cleaning up invoice image:", cleanupError);
-    }
-  }
-
-  // 4. Delete the invoice record
-  const { error } = await supabase.from("invoices").delete().eq("id", id);
-
-  if (error) return { error: error.message };
-
-  // 5. Log activity for audit
-  if (user) {
-    await supabase.from("user_activity_log").insert({
-      user_id: user.id,
-      action: "DELETE",
-      entity: "invoices",
-      metadata: {
-        invoice_id: id,
-        invoice_number: invoice.invoice_number,
-        event_id: invoice.event_id,
-        cards_released: true,
-        timestamp: new Date().toISOString(),
-      },
-    });
-  }
-
-  revalidatePath("/admin/bingo");
-  revalidatePath("/admin");
-  return { success: true };
+  return result;
 }
 
 export const deleteInvoice = withRole(4, deleteInvoiceInternal);
 
 async function updateInvoiceWhatsAppStatusInternal(id: string, status: string, context: { user: any }) {
-  const { user } = context;
-  const supabase = await createClient();
-
-  // 1. Get invoice details for logging
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("invoice_number, event_id, customer_name")
-    .eq("id", id)
-    .single();
-
-  // 2. Update the invoice status
-  const { error } = await supabase
-    .from("invoices")
-    .update({
-      send_whatsapp_message: status,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
-
-  if (error) return { success: false, error: error.message };
-
-  // 3. Log activity for audit
-  if (user) {
-    await supabase.from("user_activity_log").insert({
-      user_id: user.id,
-      action: "SEND_WHATSAPP",
-      entity: "invoices",
-      metadata: {
-        invoice_id: id,
-        invoice_number: invoice?.invoice_number,
-        event_id: invoice?.event_id,
-        customer_name: invoice?.customer_name,
-        status: status,
-        timestamp: new Date().toISOString(),
-      },
-    });
+  const result = await updateInvoiceWhatsAppStatusCore(
+    id,
+    status,
+    context.user?.id,
+  );
+  if (result?.success) {
+    revalidatePath("/admin/bingo");
+    revalidatePath("/admin");
   }
-
-  revalidatePath("/admin/bingo");
-  revalidatePath("/admin");
-  return { success: true };
+  return result;
 }
 
 export const updateInvoiceWhatsAppStatus = withRole(4, updateInvoiceWhatsAppStatusInternal);
 
 async function getWhatsAppMessageTemplateInternal() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("site_content")
-    .select("*")
-    .eq("page", "whatsapp message")
-    .eq("section_key", "cartones")
-    .eq("is_active", true)
-    .single();
-
-  if (error) return { success: false, error: error.message };
-  return { success: true, data };
+  return getWhatsAppMessageTemplateCore();
 }
 
 export const getWhatsAppMessageTemplate = withRole(4, getWhatsAppMessageTemplateInternal);
@@ -1562,16 +1194,7 @@ async function getCardsForInvoiceInternal(
   eventId: string,
   invoiceNumber: string,
 ) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("cards")
-    .select("*")
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .eq("invoice_number", invoiceNumber);
-
-  if (error) return { success: false, error: error.message };
-  return { success: true, data };
+  return getCardsForInvoiceCore(companyId, eventId, invoiceNumber);
 }
 
 export const getCardsForInvoice = withRole(4, withCompanyAccess(getCardsForInvoiceInternal, 0));
@@ -1587,15 +1210,7 @@ export const getSellersFromView = withRole(4, withCompanyAccess(getSellersFromVi
  */
 
 async function getCustomersInternal(companyId: number) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("customer_phone_number")
-    .select("*")
-    .eq("company_id", companyId)
-    .order("customer_name");
-
-  if (error) return { success: false, error: error.message };
-  return { success: true, data };
+  return getCustomersCore(companyId);
 }
 
 export const getCustomers = withRole(4, withCompanyAccess(getCustomersInternal, 0));
@@ -1904,76 +1519,10 @@ async function uploadPromoImageInternal(formData: FormData) {
 
 export const uploadPromoImage = withRole(6, uploadPromoImageInternal);
 
-/**
- * Envía un POST a la API de Ultramsg y evalúa la respuesta.
- * La API reporta errores en el body ({"error": "..."} o {"sent": "false"})
- * incluso cuando el HTTP status es 200, por lo que hay que leerlo siempre.
- */
-async function ultramsgPost(
-  url: string,
-  params: Record<string, string>,
-): Promise<{ ok: boolean; status: number; error?: string }> {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams(params),
-  });
-  const data = await res.json().catch(() => null);
-
-  const error =
-    data?.error ||
-    (data?.sent === "false" || data?.sent === false
-      ? data?.message || "Ultramsg rechazó el envío"
-      : null) ||
-    (!res.ok ? `Error HTTP ${res.status} de Ultramsg` : null);
-
-  return { ok: !error, status: res.status, error: error || undefined };
-}
-
-/**
- * Consulta el estado de la instancia de Ultramsg para detectar suspensión
- * por falta de pago, desconexión u otros errores de la API antes de enviar.
- */
+// La lógica de Ultramsg vive en whatsapp-core.ts (compartida con
+// POST /api/bingo/whatsapp); aquí solo quedan las delegaciones.
 async function checkWhatsAppInstanceStatusInternal() {
-  const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
-  const token = process.env.ULTRAMSG_TOKEN;
-
-  if (!instanceId || !token) {
-    return { success: false, error: "Ultramsg credentials not configured." };
-  }
-
-  try {
-    const res = await fetch(
-      `https://api.ultramsg.com/${instanceId}/instance/status?token=${token}`,
-    );
-    const data = await res.json().catch(() => null);
-
-    if (!res.ok || data?.error) {
-      return {
-        success: false,
-        error: data?.error || `Error HTTP ${res.status} consultando la instancia.`,
-      };
-    }
-
-    const accountStatus =
-      data?.status?.accountStatus?.status ??
-      data?.status?.accountStatus ??
-      null;
-
-    if (
-      typeof accountStatus === "string" &&
-      !/authenticated|normal|connected|standby/i.test(accountStatus)
-    ) {
-      return {
-        success: false,
-        error: `La instancia de Ultramsg no está activa (estado: ${accountStatus}).`,
-      };
-    }
-
-    return { success: true, status: accountStatus };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
+  return checkWhatsAppInstanceStatusCore();
 }
 
 export const checkWhatsAppInstanceStatus = withRole(
@@ -1988,96 +1537,5 @@ async function sendWhatsAppAutomationInternal(payload: {
   invoiceUrl?: string;
   cardUrls: string[];
 }) {
-  const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
-  const token = process.env.ULTRAMSG_TOKEN;
-
-  if (!instanceId || !token) {
-    return { success: false, error: "Ultramsg credentials not configured." };
-  }
-
-  const baseUrl = `https://api.ultramsg.com/${instanceId}/messages`;
-
-  // 0. Verificar que la instancia esté activa antes de enviar
-  const status = await checkWhatsAppInstanceStatusInternal();
-  if (!status.success) {
-    return { success: false, error: status.error };
-  }
-
-  try {
-    const steps: { step: string; url: string; params: Record<string, string> }[] = [];
-
-    // 1. Send Template Image (if provided)
-    if (payload.templateImage) {
-      steps.push({
-        step: "template_image",
-        url: `${baseUrl}/image`,
-        params: {
-          token,
-          to: payload.to,
-          image: payload.templateImage,
-          caption: "Bingo La Rioja",
-          priority: "10",
-        },
-      });
-    }
-
-    // 2. Send Text Message
-    steps.push({
-      step: "text",
-      url: `${baseUrl}/chat`,
-      params: {
-        token,
-        to: payload.to,
-        body: payload.message,
-        priority: "10",
-      },
-    });
-
-    // 3. Send Invoice PDF (if provided)
-    if (payload.invoiceUrl) {
-      steps.push({
-        step: "invoice_pdf",
-        url: `${baseUrl}/document`,
-        params: {
-          token,
-          to: payload.to,
-          document: payload.invoiceUrl,
-          filename: "Factura_Bingo.pdf",
-          caption: "Factura de Compra",
-          priority: "10",
-        },
-      });
-    }
-
-    // 4. Send Card PDFs
-    payload.cardUrls.forEach((cardUrl, index) => {
-      steps.push({
-        step: `card_pdf_${index + 1}`,
-        url: `${baseUrl}/document`,
-        params: {
-          token,
-          to: payload.to,
-          document: cardUrl,
-          filename: `Carton_Bingo_${index + 1}.pdf`,
-          caption: `Cartón de Bingo #${index + 1}`,
-          priority: "10",
-        },
-      });
-    });
-
-    const results = [];
-    for (const s of steps) {
-      const r = await ultramsgPost(s.url, s.params);
-      results.push({ step: s.step, status: r.status, error: r.error });
-      // Abortar al primer error: si la instancia está caída o el número es
-      // inválido, los siguientes pasos fallarán igual.
-      if (!r.ok) {
-        return { success: false, error: r.error, results };
-      }
-    }
-
-    return { success: true, results };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
+  return sendWhatsAppAutomationCore(payload);
 }

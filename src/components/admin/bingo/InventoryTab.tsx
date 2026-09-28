@@ -7,7 +7,6 @@ import InventoryDetailsDialog from "./InventoryDetailsDialog";
 import ReassignCardDialog from "./ReassignCardDialog";
 import RangeReassignDialog from "./RangeReassignDialog";
 import EditCardDialog from "./EditCardDialog";
-import { getEventCards } from "@/app/admin/bingo/actions";
 
 interface Event {
   id: number;
@@ -42,10 +41,17 @@ export default function InventoryTab({
   const [isRangeOpen, setIsRangeOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  /**
+   * Inventario del evento vía /api/bingo/cards (JSON puro; la Server
+   * Action equivalente re-renderizaba /admin/bingo completo).
+   */
   const loadCards = async (event: Event) => {
     setLoading(true);
     try {
-      const result = await getEventCards(event.company_id, event.event_id);
+      const res = await fetch(
+        `/api/bingo/cards?companyId=${event.company_id}&eventId=${encodeURIComponent(event.event_id)}`,
+      );
+      const result = await res.json();
       if (typeof result === "object" && "data" in result) {
         setCards(result.data || []);
       }

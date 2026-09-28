@@ -18,7 +18,6 @@ import {
   Badge,
 } from "@tremor/react";
 import { Plus, TrendingUp, Eye, Edit, Trash2, PlusSquare, Search } from "lucide-react";
-import { deleteInvoice } from "@/app/admin/bingo/actions";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import InvoiceDetailsDialog from "./InvoiceDetailsDialog";
 import NewInvoiceDialog from "./NewInvoiceDialog";
@@ -88,6 +87,10 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
     }
   };
 
+  /**
+   * Elimina la factura vía DELETE /api/bingo/invoices (JSON puro; la
+   * Server Action equivalente re-renderizaba /admin/bingo completo).
+   */
   const handleDelete = async (id: string) => {
     if (
       !confirm(
@@ -95,7 +98,11 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
       )
     )
       return;
-    const result = await deleteInvoice(id);
+    const res = await fetch(
+      `/api/bingo/invoices?id=${encodeURIComponent(id)}&companyId=${currentEventInfo?.companyId}`,
+      { method: "DELETE" },
+    );
+    const result = await res.json();
     if (result?.success) {
       alert("Factura eliminada");
       setIsDetailsOpen(false);

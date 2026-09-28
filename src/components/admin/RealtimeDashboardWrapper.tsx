@@ -1,21 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import {
-  getDashboardData,
-  getInvoicesByDate,
-  getSalesByManager,
-  getInvoicesByManager,
-  getInvoiceCards,
-  getCardTypeSummary,
-  getAssignmentByLevel,
-  getStudentCards,
-  getBingoCountries,
-  getRegisteredCards,
-} from "@/app/admin/actions";
-import { getCustomers } from "@/app/admin/bingo/actions";
 import {
   Card,
   Title,
@@ -145,10 +132,17 @@ export default function RealtimeDashboardWrapper({
 
   const supabase = createClient();
 
+  /**
+   * GET JSON al Route Handler /api/dashboard (sin re-render RSC:
+   * las Server Actions re-renderizaban la página completa por llamada).
+   */
+  const dashApi = (view: string, query = "") =>
+    fetch(`/api/dashboard?view=${view}${query}`).then((r) => r.json());
+
   // Function to refresh data from server
   const refreshData = async () => {
     console.log("Realtime update detected, refreshing dashboard data...");
-    const newData = await getDashboardData();
+    const newData = await dashApi("data");
     if (newData.success) {
       setData(newData);
       // El conteo fresco ya incluye los INSERTs recibidos: reset del delta
@@ -158,18 +152,25 @@ export default function RealtimeDashboardWrapper({
     loadAssignmentByLevel();
   };
 
+  /** Debounce: la ráfaga realtime agrupa refrescos en uno cada ~1s. */
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleRefresh = () => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(refreshData, 1000);
+  };
+
   const loadCardTypeSummary = async () => {
-    const res = await getCardTypeSummary();
+    const res = await dashApi("card-type-summary");
     if (res.success && res.data) setCardTypeSummary(res.data);
   };
 
   const loadAssignmentByLevel = async () => {
-    const res = await getAssignmentByLevel();
+    const res = await dashApi("assignment-by-level");
     if (res.success && res.data) setAssignmentByLevel(res.data);
   };
 
   const loadCountries = async () => {
-    const res = await getBingoCountries();
+    const res = await dashApi("countries");
     if (res.success && res.data) setCountries(res.data);
   };
 
@@ -182,7 +183,10 @@ export default function RealtimeDashboardWrapper({
   const handleDateDrillDown = async (date: string) => {
     setSelectedDate(date);
     setIsLoadingDrillDown(true);
-    const res = await getInvoicesByDate(date);
+    const res = await dashApi(
+      "invoices-by-date",
+      `&date=${encodeURIComponent(date)}`,
+    );
     if (res.success && res.data) {
       setDateInvoices(res.data);
       setIsDateDetailOpen(true);
@@ -194,7 +198,7 @@ export default function RealtimeDashboardWrapper({
 
   const handleManagerDrillDown = async () => {
     setIsLoadingDrillDown(true);
-    const res = await getSalesByManager();
+    const res = await dashApi("sales-by-manager");
     if (res.success && res.data) {
       setManagerBreakdown(res.data);
       setSelectedManager(null);
@@ -210,7 +214,10 @@ export default function RealtimeDashboardWrapper({
 
   const handleManagerInvoices = async (managerName: string) => {
     setIsLoadingDrillDown(true);
-    const res = await getInvoicesByManager(managerName);
+    const res = await dashApi(
+      "invoices-by-manager",
+      `&manager=${encodeURIComponent(managerName)}`,
+    );
     if (res.success && res.data) {
       setSelectedManager(managerName);
       setManagerInvoices(res.data);
@@ -224,7 +231,10 @@ export default function RealtimeDashboardWrapper({
 
   const handleInvoiceCards = async (invoiceNumber: string) => {
     setIsLoadingDrillDown(true);
-    const res = await getInvoiceCards(invoiceNumber);
+    const res = await dashApi(
+      "invoice-cards",
+      `&invoice=${encodeURIComponent(invoiceNumber)}`,
+    );
     if (res.success && res.data) {
       setSelectedInvoice(invoiceNumber);
       setInvoiceCards(res.data);
@@ -236,7 +246,7 @@ export default function RealtimeDashboardWrapper({
 
   const handleStudentDrillDown = async (student: any) => {
     setIsLoadingDrillDown(true);
-    const res = await getStudentCards(student.id);
+    const res = await dashApi("student-cards", `&studentId=${student.id}`);
     if (res.success && res.data) {
       setSelectedStudent(student);
       setStudentCards(res.data);
@@ -250,7 +260,7 @@ export default function RealtimeDashboardWrapper({
   const handleCustomerDrillDown = async () => {
     if (!data.companyId) return;
     setIsLoadingDrillDown(true);
-    const res = await getCustomers(Number(data.companyId));
+    const res = await dashApi("customers");
     if (res.success && res.data) {
       setCustomerList(res.data);
       setIsCustomerListOpen(true);
@@ -263,7 +273,7 @@ export default function RealtimeDashboardWrapper({
   /** Drill-down: cartones auto-registrados en /registro (Participantes). */
   const handleRegisteredDrillDown = async () => {
     setIsLoadingDrillDown(true);
-    const res = await getRegisteredCards();
+    const res = await dashApi("registered-cards");
     if (res.success && res.data) {
       setRegisteredCards(res.data);
       setIsRegisteredOpen(true);
@@ -287,7 +297,7 @@ export default function RealtimeDashboardWrapper({
   useEffect(() => {
     if (!isRegisteredOpen || reportedDelta === 0) return;
     const t = setTimeout(async () => {
-      const res = await getRegisteredCards();
+      const res = await dashApi("registered-cards");
       if (res.success && res.data) setRegisteredCards(res.data);
     }, 1500);
     return () => clearTimeout(t);
@@ -420,7 +430,7 @@ export default function RealtimeDashboardWrapper({
         table: "invoices",
         filter: data.companyId ? `company_id=eq.${data.companyId}` : undefined,
       },
-      () => refreshData(),
+      () => scheduleRefresh(),
     );
 
     // 2. Subscribe to changes in site_content table (global)
@@ -431,7 +441,7 @@ export default function RealtimeDashboardWrapper({
         schema: "public",
         table: "site_content",
       },
-      () => refreshData(),
+      () => scheduleRefresh(),
     );
 
     // 3. Subscribe to changes in customer_phone_number table (filtered by company)
@@ -443,7 +453,7 @@ export default function RealtimeDashboardWrapper({
         table: "customer_phone_number",
         filter: data.companyId ? `company_id=eq.${data.companyId}` : undefined,
       },
-      () => refreshData(),
+      () => scheduleRefresh(),
     );
 
     // 4. Subscribe to changes in events table (filtered by company)
@@ -455,7 +465,7 @@ export default function RealtimeDashboardWrapper({
         table: "events",
         filter: data.companyId ? `company_id=eq.${data.companyId}` : undefined,
       },
-      () => refreshData(),
+      () => scheduleRefresh(),
     );
 
     // 5. Subscribe to changes in contact_submissions table (global)
@@ -466,7 +476,7 @@ export default function RealtimeDashboardWrapper({
         schema: "public",
         table: "contact_submissions",
       },
-      () => refreshData(),
+      () => scheduleRefresh(),
     );
 
     // 6. Registros de /registro (Participantes): el INSERT solo mueve el
