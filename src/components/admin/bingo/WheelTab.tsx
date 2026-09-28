@@ -35,6 +35,8 @@ interface Event {
 
 interface WheelTabProps {
   events: Event[];
+  /** Evento por defecto de la empresa (companies.def_dash_event_id). */
+  defaultEvent?: Event | null;
 }
 
 const MODE_COLORS: Record<string, string> = {
@@ -44,13 +46,14 @@ const MODE_COLORS: Record<string, string> = {
 };
 
 /**
- * Pestaña "Ruleta" de Gestión de Bingo.
+ * Pestaña "Sorteos/Juegos" de Gestión de Bingo.
  * Permite crear/editar ruletas por evento (Premios, Cartones, Participantes),
  * administrar sus segmentos, publicarlas para proyección en /ruleta y
  * consultar el historial de giros.
  */
-export default function WheelTab({ events }: WheelTabProps) {
+export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [eventSelectValue, setEventSelectValue] = useState<string>("");
   const [wheels, setWheels] = useState<Wheel[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -170,6 +173,30 @@ export default function WheelTab({ events }: WheelTabProps) {
     };
   }, [selectedEvent?.event_id, selectedEvent?.company_id]);
 
+  /**
+   * Aplica la selección de evento (manual o por defecto de la empresa):
+   * limpia la lista y recarga las ruletas del evento.
+   */
+  const applyEventSelection = (val: string) => {
+    const [cId, eId] = val.split("|");
+    const ev = events.find(
+      (e) => e.company_id === parseInt(cId) && e.event_id === eId,
+    );
+    setEventSelectValue(val);
+    setSelectedEvent(ev || null);
+    setWheels([]);
+    initialLoadDone.current = false;
+    if (ev) loadWheels(ev);
+  };
+
+  // Preselecciona el evento por defecto de la empresa al entrar a la pestaña.
+  useEffect(() => {
+    if (defaultEvent && !eventSelectValue) {
+      applyEventSelection(`${defaultEvent.company_id}|${defaultEvent.event_id}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultEvent]);
+
   const handleTogglePublish = async (wheel: Wheel) => {
     const result = await callAction<{ success?: boolean; error?: string }>(
       "bingo.toggleWheelPublished",
@@ -215,7 +242,7 @@ export default function WheelTab({ events }: WheelTabProps) {
       <Card className="mt-4 shadow-sm sm:shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
           <div>
-            <Title>Ruletas por Evento</Title>
+            <Title>Sorteos/Juegos por Evento</Title>
             <Text>
               Crea ruletas de Premios, Cartones o Participantes y publícalas
               para proyectarlas en /ruleta.
@@ -225,16 +252,8 @@ export default function WheelTab({ events }: WheelTabProps) {
             <Select
               placeholder="Selecciona un evento..."
               className="min-w-64"
-              onValueChange={(val) => {
-                const [cId, eId] = val.split("|");
-                const ev = events.find(
-                  (e) => e.company_id === parseInt(cId) && e.event_id === eId,
-                );
-                setSelectedEvent(ev || null);
-                setWheels([]);
-                initialLoadDone.current = false;
-                if (ev) loadWheels(ev);
-              }}
+              value={eventSelectValue}
+              onValueChange={applyEventSelection}
             >
               {events.map((ev) => (
                 <SelectItem

@@ -121,6 +121,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "La ruleta no tiene segmentos disponibles." }, { status: 400 });
     }
 
+    // En Premios, si solo quedan segmentos sin derecho a premio el
+    // sorteo terminó aunque no se haya alcanzado prizes_number.
+    if (cfg.mode === "Premios" && segments.every((s) => s.isPrize === false)) {
+      return NextResponse.json(
+        {
+          success: false,
+          finished: true,
+          error: "Sorteo finalizado — ya no quedan premios en la ruleta.",
+          spinsCount: spinsCount ?? 0,
+          prizesNumber,
+        },
+        { status: 400 },
+      );
+    }
+
     // 3. Select winner
     const winnerIndex = randomInt(0, segments.length);
     const winner = segments[winnerIndex];

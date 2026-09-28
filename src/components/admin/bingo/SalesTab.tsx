@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   Title,
@@ -35,10 +35,17 @@ interface Event {
 interface SalesTabProps {
   events: Event[];
   countries: any[];
+  /** Evento por defecto de la empresa (companies.def_dash_event_id). */
+  defaultEvent?: Event | null;
 }
 
-export default function SalesTab({ events, countries }: SalesTabProps) {
+export default function SalesTab({
+  events,
+  countries,
+  defaultEvent,
+}: SalesTabProps) {
   const [currentEventInfo, setCurrentEventInfo] = useState<any>(null);
+  const [eventSelectValue, setEventSelectValue] = useState<string>("");
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [invoiceSearch, setInvoiceSearch] = useState("");
@@ -86,6 +93,34 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
       setLoading(false);
     }
   };
+
+  /**
+   * Aplica la selección de evento (manual o por defecto de la empresa):
+   * guarda el contexto y carga facturas + totales del día.
+   */
+  const applyEventSelection = (val: string) => {
+    const [cId, eId] = val.split("|");
+    const event = events.find(
+      (e) => e.company_id === parseInt(cId) && e.event_id === eId,
+    );
+    if (!event) return;
+    setEventSelectValue(val);
+    setCurrentEventInfo({
+      companyId: event.company_id,
+      eventId: event.event_id,
+      cardValue: event.card_value,
+    });
+    setInvoiceSearch("");
+    loadInvoices(event.company_id, event.event_id);
+  };
+
+  // Preselecciona el evento por defecto de la empresa al entrar a la pestaña.
+  useEffect(() => {
+    if (defaultEvent && !eventSelectValue) {
+      applyEventSelection(`${defaultEvent.company_id}|${defaultEvent.event_id}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultEvent]);
 
   /**
    * Elimina la factura vía DELETE /api/bingo/invoices (JSON puro; la
@@ -236,21 +271,8 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
               </Text>
               <Select
                 placeholder="Selecciona un evento..."
-                onValueChange={(val) => {
-                  const [cId, eId] = val.split("|");
-                  const event = events.find(
-                    (e) => e.company_id === parseInt(cId) && e.event_id === eId,
-                  );
-                  if (event) {
-                    setCurrentEventInfo({
-                      companyId: event.company_id,
-                      eventId: event.event_id,
-                      cardValue: event.card_value,
-                    });
-                    setInvoiceSearch("");
-                    loadInvoices(event.company_id, event.event_id);
-                  }
-                }}
+                value={eventSelectValue}
+                onValueChange={applyEventSelection}
               >
                 {events.map((ev) => (
                   <SelectItem

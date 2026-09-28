@@ -290,7 +290,16 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
   }, [segments]);
 
   const prizesNumber = wheelConfig?.prizes_number ?? winnerData?.prizesNumber ?? 0;
-  const prizeLimitReached = prizesNumber > 0 && spinsCount >= prizesNumber;
+  /**
+   * Solo quedan segmentos sin derecho a premio: el sorteo terminó aunque
+   * no se haya alcanzado el prizes_number configurado.
+   */
+  const onlyNoPrizeLeft =
+    selectedWheel?.mode === "Premios" &&
+    segments.length > 0 &&
+    segments.every((s) => s.isPrize === false);
+  const prizeLimitReached =
+    (prizesNumber > 0 && spinsCount >= prizesNumber) || onlyNoPrizeLeft;
   const isAutomaticRotation = wheelConfig?.is_automatic_rotation ?? false;
   const automaticTimeout = Math.max(0, wheelConfig?.automatic_timeout_rotation ?? 5);
 

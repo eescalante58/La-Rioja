@@ -580,6 +580,15 @@ export async function spinWheel(wheelId: number) {
     return { error: "La ruleta no tiene segmentos disponibles." };
   }
 
+  // En Premios, si solo quedan segmentos sin derecho a premio el
+  // sorteo terminó aunque no se haya alcanzado prizes_number.
+  if (cfg.mode === "Premios" && segments.every((s) => s.isPrize === false)) {
+    return {
+      error: "Sorteo finalizado — ya no quedan premios en la ruleta.",
+      finished: true,
+    };
+  }
+
   const winnerIndex = randomInt(0, segments.length);
   const winner = segments[winnerIndex];
 

@@ -73,6 +73,8 @@ interface Event {
 interface Company {
   company_id: number;
   company_name: string;
+  /** Evento por defecto de la empresa (companies.def_dash_event_id). */
+  def_dash_event_id?: string | null;
 }
 
 interface Country {
@@ -94,6 +96,27 @@ export default function BingoManagerClient({
   selectedCompanyId?: number;
 }) {
   const [events] = useState(initialEvents);
+
+  /**
+   * Evento por defecto de la empresa activa (companies.def_dash_event_id).
+   * Las pestañas con selector de evento (Ventas, Sorteos/Juegos) lo
+   * preseleccionan al entrar; el usuario puede cambiarlo manualmente.
+   */
+  const defaultEvent = (() => {
+    const target = selectedCompanyId
+      ? companies.filter((c) => c.company_id === selectedCompanyId)
+      : companies;
+    for (const c of target) {
+      if (!c.def_dash_event_id) continue;
+      const ev = events.find(
+        (e) =>
+          e.company_id === c.company_id &&
+          e.event_id === c.def_dash_event_id,
+      );
+      if (ev) return ev;
+    }
+    return null;
+  })();
   const [selectedTab, setSelectedTab] = useState(0);
   const [isEventDialogOpen, setIsEventEventDialogOpen] = useState(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
@@ -157,11 +180,21 @@ export default function BingoManagerClient({
 
       <TabGroup index={selectedTab} onIndexChange={setSelectedTab}>
         <TabList className="mt-8">
-          <Tab icon={Calendar}>Eventos</Tab>
-          <Tab icon={Ticket}>Inventario de Cartones</Tab>
-          <Tab icon={TrendingUp}>Ventas y Facturación</Tab>
-          <Tab icon={Users}>Mensajes Promocionales</Tab>
-          <Tab icon={Dices}>Ruleta</Tab>
+          <Tab icon={Calendar} className="text-base sm:text-lg">
+            Eventos
+          </Tab>
+          <Tab icon={Ticket} className="text-base sm:text-lg">
+            Inventario de Cartones
+          </Tab>
+          <Tab icon={TrendingUp} className="text-base sm:text-lg">
+            Ventas y Facturación
+          </Tab>
+          <Tab icon={Users} className="text-base sm:text-lg">
+            Mensajes Promocionales
+          </Tab>
+          <Tab icon={Dices} className="text-base sm:text-lg">
+            Sorteos/Juegos
+          </Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
@@ -189,7 +222,11 @@ export default function BingoManagerClient({
           </TabPanel>
 
           <TabPanel>
-            <SalesTab events={events} countries={countries} />
+            <SalesTab
+              events={events}
+              countries={countries}
+              defaultEvent={defaultEvent}
+            />
           </TabPanel>
 
           <TabPanel>
@@ -199,7 +236,7 @@ export default function BingoManagerClient({
           </TabPanel>
 
           <TabPanel>
-            <WheelTab events={events} />
+            <WheelTab events={events} defaultEvent={defaultEvent} />
           </TabPanel>
         </TabPanels>
       </TabGroup>

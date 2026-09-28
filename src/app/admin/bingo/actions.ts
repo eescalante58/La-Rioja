@@ -425,7 +425,7 @@ async function getBingoDataInternal(context: { user: any, level: number }) {
   let eventsQuery = supabase.from("events").select("*");
   let companiesQuery = supabase
     .from("companies")
-    .select("company_id, company_name");
+    .select("company_id, company_name, def_dash_event_id");
 
   if (level < 10) {
     const { data: memberships } = await supabase
