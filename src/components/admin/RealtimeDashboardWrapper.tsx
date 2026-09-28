@@ -907,7 +907,7 @@ export default function RealtimeDashboardWrapper({
       >
         <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
-          <DialogPanel className="max-w-3xl w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogPanel className="max-w-5xl w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
@@ -917,7 +917,12 @@ export default function RealtimeDashboardWrapper({
                   <Title className="dark:text-white">
                     Ventas del Día: {selectedDate}
                   </Title>
-                  <Text className="text-xs">Detalle de facturas cobradas</Text>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Text className="text-xs">Detalle de facturas cobradas</Text>
+                    <Badge size="xs" color="blue">
+                      {dateInvoices.length} factura{dateInvoices.length === 1 ? "" : "s"}
+                    </Badge>
+                  </div>
                 </div>
               </div>
               <Button
