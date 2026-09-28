@@ -17,7 +17,7 @@ import {
   TableBody,
   TableCell,
 } from "@tremor/react";
-import { Plus, Trash2, Ticket, Copy, Check, ExternalLink } from "lucide-react";
+import { Plus, Trash2, Ticket, Copy, Check, ExternalLink, Ban } from "lucide-react";
 import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import { createClient } from "@/lib/supabase/client";
@@ -56,6 +56,13 @@ export default function WheelItemsDialog({
 }: WheelItemsDialogProps) {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<EditableItem[]>([]);
+  /**
+   * Segmentos sin premio (solo modo Premios): cantidad y texto único.
+   * Al guardar se expanden a N wheel_items con is_prize=false que el
+   * servidor intercala aleatoriamente sin adyacentes.
+   */
+  const [noPrizeCount, setNoPrizeCount] = useState<number>(0);
+  const [noPrizeLabel, setNoPrizeLabel] = useState<string>("Sigue participando");
   const [tombolaCards, setTombolaCards] = useState<TombolaCard[] | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [loadingTombola, setLoadingTombola] = useState(false);
@@ -115,14 +122,21 @@ export default function WheelItemsDialog({
     // Sincronización Directa: Mantenemos el estado 'items' actualizado con la prop 'wheel'
     // pero solo si el usuario NO está interactuando activamente (para no moverle el cursor)
     const currentItems = wheel?.items || [];
+    // Los segmentos sin premio (is_prize=false) no se editan en la tabla:
+    // se administran por cantidad+texto en el bloque "Sin premio".
+    const losers = currentItems.filter((i: WheelItem) => i.is_prize === false);
+    setNoPrizeCount(losers.length);
+    if (losers.length > 0) setNoPrizeLabel(losers[0].label);
     setItems(
-      currentItems.map((i: WheelItem) => ({
-        label: i.label,
-        color: i.color || "#012060",
-        quantity: i.quantity ?? 1,
-        initial_quantity: i.initial_quantity ?? i.quantity ?? 1,
-        is_active: i.is_active ?? true,
-      })),
+      currentItems
+        .filter((i: WheelItem) => i.is_prize !== false)
+        .map((i: WheelItem) => ({
+          label: i.label,
+          color: i.color || "#012060",
+          quantity: i.quantity ?? 1,
+          initial_quantity: i.initial_quantity ?? i.quantity ?? 1,
+          is_active: i.is_active ?? true,
+        })),
     );
   }, [isOpen, wheel?.items, companyId, eventId]); // Escuchamos específicamente los items del wheel
 
@@ -209,6 +223,28 @@ export default function WheelItemsDialog({
       return;
     }
 
+    const isPremios = wheel.mode === "Premios";
+    const nLosers = isPremios ? Math.max(0, noPrizeCount) : 0;
+    if (
+      nLosers > items.length &&
+      !window.confirm(
+        `Hay ${nLosers} segmentos sin premio y solo ${items.length} con premio: algunos quedarán adyacentes (en el círculo hay un hueco por premio). ¿Continuar?`,
+      )
+    ) {
+      return;
+    }
+
+    // Los segmentos sin premio se envían al final; el servidor los
+    // intercala aleatoriamente en huecos distintos (sin adyacentes).
+    const loserItems = Array.from({ length: nLosers }, () => ({
+      label: noPrizeLabel.trim() || "Sigue participando",
+      color: "#6b7280",
+      quantity: 1,
+      initial_quantity: 1,
+      is_active: true,
+      is_prize: false,
+    }));
+
     setLoading(true);
     try {
       const result = await callAction<{ success?: boolean; error?: string }>(
@@ -216,14 +252,18 @@ export default function WheelItemsDialog({
         [
           companyId,
           wheel.id,
-          items.map((it, idx) => ({
-            label: it.label.trim(),
-            color: it.color || null,
-            quantity: Math.max(0, parseInt(String(it.quantity)) || 0),
-            initial_quantity: Math.max(0, parseInt(String(it.initial_quantity ?? it.quantity)) || 0),
-            position: idx + 1,
-            is_active: it.is_active,
-          })),
+          [
+            ...items.map((it, idx) => ({
+              label: it.label.trim(),
+              color: it.color || null,
+              quantity: Math.max(0, parseInt(String(it.quantity)) || 0),
+              initial_quantity: Math.max(0, parseInt(String(it.initial_quantity ?? it.quantity)) || 0),
+              position: idx + 1,
+              is_active: it.is_active,
+              is_prize: true,
+            })),
+            ...loserItems,
+          ],
         ],
       );
 
@@ -385,6 +425,43 @@ export default function WheelItemsDialog({
             </div>
           ) : (
             <>
+              {wheel?.mode === "Premios" && (
+                <div className="mb-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Ban size={14} className="text-gray-400" />
+                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                      Segmentos sin derecho a premio
+                    </Text>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-3 items-end">
+                    <div className="space-y-1">
+                      <Text className="text-[10px] text-gray-400">Cantidad</Text>
+                      <TextInput
+                        type="number"
+                        min={0}
+                        value={String(noPrizeCount)}
+                        onValueChange={(v) =>
+                          setNoPrizeCount(Math.max(0, parseInt(v) || 0))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Text className="text-[10px] text-gray-400">Texto del segmento</Text>
+                      <TextInput
+                        value={noPrizeLabel}
+                        onValueChange={setNoPrizeLabel}
+                        placeholder="Ej: Sigue participando"
+                      />
+                    </div>
+                  </div>
+                  <Text className="text-[10px] text-gray-400 italic mt-2">
+                    Se distribuyen aleatoriamente en la ruleta, siempre
+                    separados por al menos un segmento con premio (máximo
+                    recomendado: {items.length}, el total de premios).
+                  </Text>
+                </div>
+              )}
+
               <div className="max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar">
                 <Table>
                   <TableHead>

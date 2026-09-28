@@ -17,6 +17,8 @@ export interface WheelItem {
   initial_quantity?: number;
   position: number | null;
   is_active: boolean;
+  /** false = segmento sin derecho a premio (solo modo Premios). */
+  is_prize: boolean;
 }
 
 /** Configuración de ruleta (wheel_configs) con sus segmentos anidados. */

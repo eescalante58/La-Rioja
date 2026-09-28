@@ -49,7 +49,47 @@ const wheelItemSchema = z.object({
   initial_quantity: z.number().int().min(0).optional(),
   position: z.number().int().min(0).nullable().optional(),
   is_active: z.boolean().default(true),
+  // false = segmento sin derecho a premio (solo modo Premios): participa
+  // siempre, no descuenta stock y se intercala sin adyacentes al guardar.
+  is_prize: z.boolean().default(true),
 });
+
+/**
+ * Mezcla Fisher-Yates con randomInt criptográfico.
+ */
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randomInt(0, i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * Intercala los segmentos sin premio entre los premiados de forma
+ * aleatoria garantizando que no queden adyacentes: la ruleta es circular
+ * y con P premios hay P huecos, así que cada "sin premio" ocupa un hueco
+ * distinto. Si los sin-premio superan a los premios, los excedentes se
+ * reparten por hueco (adyacencia inevitable, se advierte en la UI).
+ */
+function interleaveNoPrize<T extends { is_prize?: boolean }>(items: T[]): T[] {
+  const prizes = items.filter((i) => i.is_prize !== false);
+  const losers = items.filter((i) => i.is_prize === false);
+  if (losers.length === 0 || prizes.length === 0) return items;
+
+  const gapPool = shuffleArray(prizes.map((_, i) => i));
+  const gapOf = losers.map((_, i) => gapPool[i % gapPool.length]);
+
+  const ordered: T[] = [];
+  prizes.forEach((prize, i) => {
+    ordered.push(prize);
+    losers.forEach((loser, li) => {
+      if (gapOf[li] === i) ordered.push(loser);
+    });
+  });
+  return ordered;
+}
 
 // ============================================================================
 // ADMIN — lectura
@@ -243,6 +283,7 @@ async function saveWheelItemsInternal(
     quantity?: number;
     position?: number | null;
     is_active?: boolean;
+    is_prize?: boolean;
   }>,
 ) {
   const supabase = await createClient();
@@ -274,8 +315,16 @@ async function saveWheelItemsInternal(
 
   if (delError) return { error: delError.message };
 
-  if (validation.data.length > 0) {
-    const rows = validation.data.map((item, idx) => ({
+  // En Premios los segmentos sin premio se reordenan intercalados en
+  // huecos aleatorios del círculo (sin adyacentes); el position final
+  // refleja ese orden para que la ruleta pública lo respete.
+  const ordered =
+    cfg.mode === "Premios"
+      ? interleaveNoPrize(validation.data)
+      : validation.data;
+
+  if (ordered.length > 0) {
+    const rows = ordered.map((item, idx) => ({
       wheel_id: wheelId,
       company_id: companyId,
       event_id: cfg.event_id,
@@ -285,8 +334,9 @@ async function saveWheelItemsInternal(
       color: item.color ?? null,
       quantity: item.quantity ?? 1,
       initial_quantity: item.initial_quantity ?? item.quantity ?? 1,
-      position: item.position ?? idx + 1,
+      position: idx + 1,
       is_active: item.is_active ?? true,
+      is_prize: item.is_prize ?? true,
     }));
 
     const { error: insError } = await supabase
@@ -361,6 +411,8 @@ interface WheelSegment {
   label: string;
   color: string | null;
   cardNumber?: number;
+  /** false = segmento sin derecho a premio (modo Premios). */
+  isPrize?: boolean;
 }
 
 /**
@@ -391,14 +443,17 @@ async function buildSegments(
 
   let query = supabase
     .from("wheel_items")
-    .select("id, label, color, quantity")
+    .select("id, label, color, quantity, is_prize")
     .eq("wheel_id", cfg.id)
     .eq("is_active", true)
     .order("position", { ascending: true, nullsFirst: false })
     .order("id");
 
-  // En Premios solo participan segmentos con stock > 0
-  if (cfg.mode === "Premios") query = query.gt("quantity", 0);
+  // En Premios solo participan segmentos con stock > 0, más los
+  // segmentos sin premio (is_prize=false), que no usan stock.
+  if (cfg.mode === "Premios") {
+    query = query.or("quantity.gt.0,is_prize.eq.false");
+  }
 
   const { data } = await query;
   return (data || []).map((i: any) => ({
@@ -407,6 +462,7 @@ async function buildSegments(
     color: i.color,
     quantity: i.quantity,
     initial_quantity: i.initial_quantity,
+    isPrize: i.is_prize !== false,
   }));
 }
 
@@ -538,14 +594,16 @@ export async function spinWheel(wheelId: number) {
     item_id: winner.itemId,
     winner_label: winner.label,
     card_number: winner.cardNumber ?? null,
-    prize_label: cfg.mode === "Premios" ? winner.label : null,
+    // Segmento sin premio: prize_label queda NULL (no hubo premio)
+    prize_label:
+      cfg.mode === "Premios" && winner.isPrize !== false ? winner.label : null,
     spun_by: null, // giro público
   });
 
   if (auditError) return { error: auditError.message };
 
-  // Descuenta stock en modo Premios
-  if (cfg.mode === "Premios" && winner.itemId) {
+  // Descuenta stock en modo Premios (los segmentos sin premio no tienen stock)
+  if (cfg.mode === "Premios" && winner.itemId && winner.isPrize !== false) {
     const { data: item } = await supabase
       .from("wheel_items")
       .select("quantity")

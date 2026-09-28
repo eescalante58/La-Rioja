@@ -12,6 +12,8 @@ interface WheelSegment {
   color: string | null;
   cardNumber?: number;
   quantity?: number;
+  /** false = segmento sin derecho a premio (modo Premios). */
+  isPrize?: boolean;
 }
 
 /**
@@ -41,20 +43,25 @@ async function buildSegments(
 
   let query = supabase
     .from("wheel_items")
-    .select("id, label, color, quantity")
+    .select("id, label, color, quantity, is_prize")
     .eq("wheel_id", cfg.id)
     .eq("is_active", true)
     .order("position", { ascending: true, nullsFirst: false })
     .order("id");
 
-  if (cfg.mode === "Premios") query = query.gt("quantity", 0);
+  // En Premios participan segmentos con stock > 0, más los segmentos
+  // sin premio (is_prize=false), que no usan stock.
+  if (cfg.mode === "Premios") {
+    query = query.or("quantity.gt.0,is_prize.eq.false");
+  }
 
   const { data } = await query;
-  return (data || []).map((i: { id: number; label: string; color: string | null; quantity: number }) => ({
+  return (data || []).map((i: { id: number; label: string; color: string | null; quantity: number; is_prize: boolean }) => ({
     itemId: i.id,
     label: i.label,
     color: i.color,
     quantity: i.quantity,
+    isPrize: i.is_prize !== false,
   }));
 }
 
@@ -129,7 +136,8 @@ export async function POST(request: NextRequest) {
       item_id: winner.itemId,
       winner_label: winner.label,
       card_number: winner.cardNumber ?? null,
-      prize_label: cfg.mode === "Premios" ? winner.label : null,
+      // Segmento sin premio: prize_label queda NULL (no hubo premio)
+      prize_label: cfg.mode === "Premios" && winner.isPrize !== false ? winner.label : null,
       spun_by: null, // Public spin
     });
 
@@ -147,7 +155,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (cfg.mode === "Premios" && winner.itemId) {
+    // Descuenta stock solo en segmentos con premio (los sin premio no tienen stock)
+    if (cfg.mode === "Premios" && winner.itemId && winner.isPrize !== false) {
       const { data: item } = await supabase
         .from("wheel_items")
         .select("quantity, initial_quantity")
