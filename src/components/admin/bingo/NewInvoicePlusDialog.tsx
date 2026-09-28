@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Dialog,
   DialogPanel,
@@ -64,6 +64,12 @@ export default function NewInvoicePlusDialog({
   const [autoNumbering, setAutoNumbering] = useState(false);
   /** Mensaje breve "guardada" tras cada alta (el diálogo queda abierto). */
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  /**
+   * Refs a los inputs no controlados (email y archivo): FormData los lee
+   * directo del DOM, así que resetForm debe limpiarlos manualmente.
+   */
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   /**
    * Países ordenados alfabéticamente por nombre (es-ES). El prop ya viene
@@ -125,6 +131,8 @@ export default function NewInvoicePlusDialog({
     setFromCard("");
     setToCard("");
     setToCardTouched(false);
+    if (emailInputRef.current) emailInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   useEffect(() => {
@@ -397,6 +405,7 @@ export default function NewInvoicePlusDialog({
                     Email del Cliente
                   </Text>
                   <TextInput
+                    ref={emailInputRef}
                     name="customer_email"
                     type="email"
                     placeholder="juan@ejemplo.com"
@@ -484,6 +493,7 @@ export default function NewInvoicePlusDialog({
                     Imagen de Factura
                   </Text>
                   <input
+                    ref={fileInputRef}
                     type="file"
                     name="invoice_file"
                     accept="image/*,.pdf"
