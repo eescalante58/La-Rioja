@@ -299,8 +299,8 @@ export default function NewInvoiceDialog({
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]">
-          <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
+        <DialogPanel className={`${readOnly ? "max-w-4xl" : "max-w-2xl"} w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]`}>
+          <div className={`${readOnly ? "p-4" : "p-6"} border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md`}>
             <Title className="text-larioja-azul dark:text-larioja-amarillo">
               {readOnly ? "Consulta de Factura" : (invoice ? "Editar Factura" : "Nueva Factura")}
             </Title>
@@ -315,12 +315,14 @@ export default function NewInvoiceDialog({
           </div>
 
           <form onSubmit={handleSave} className="flex flex-col flex-grow overflow-hidden" encType="multipart/form-data">
-            <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+            {/* Consulta (readOnly): layout denso para que toda la factura
+                quepa en pantalla sin scroll vertical. */}
+            <div className={`${readOnly ? "p-4 space-y-3" : "p-6 space-y-6"} overflow-y-auto custom-scrollbar`}>
               {invoice && <input type="hidden" name="id" value={invoice.id} />}
               <input type="hidden" name="company_id" value={currentEvent?.companyId} />
               <input type="hidden" name="event_id" value={currentEvent?.eventId} />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${readOnly ? "sm:grid-cols-4" : ""}`}>
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">N° Factura</Text>
                   <div className="flex gap-2">
@@ -358,20 +360,7 @@ export default function NewInvoiceDialog({
                     className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul disabled:opacity-50"
                   />
                 </div>
-              </div>
-
-              {invoice?.send_whatsapp_message && (
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/30 rounded-lg">
-                  <Text className="text-[10px] font-bold uppercase text-green-600 dark:text-green-400 tracking-wider mb-1 flex items-center gap-1">
-                    <CheckCircle size={12} /> Registro de envío WhatsApp
-                  </Text>
-                  <p className="text-xs text-green-700 dark:text-green-300 italic">
-                    {invoice.send_whatsapp_message}
-                  </p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* En consulta cliente/email suben a la primera fila (4 col) */}
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Nombre del Cliente</Text>
                   <TextInput
@@ -395,7 +384,18 @@ export default function NewInvoiceDialog({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {invoice?.send_whatsapp_message && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/30 rounded-lg">
+                  <Text className="text-[10px] font-bold uppercase text-green-600 dark:text-green-400 tracking-wider mb-1 flex items-center gap-1">
+                    <CheckCircle size={12} /> Registro de envío WhatsApp
+                  </Text>
+                  <p className="text-xs text-green-700 dark:text-green-300 italic">
+                    {invoice.send_whatsapp_message}
+                  </p>
+                </div>
+              )}
+
+              <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${readOnly ? "sm:grid-cols-4" : ""}`}>
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Área</Text>
                   <Select value={phoneArea} onValueChange={setPhoneArea} enableClear={false} disabled={readOnly}>
@@ -443,24 +443,25 @@ export default function NewInvoiceDialog({
                     />
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-1">
-                <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Vendido por (Manager)</Text>
-                <input
-                  name="manager_name"
-                  placeholder="Nombre del vendedor..."
-                  value={managerName}
-                  onChange={(e) => setInvoiceManagerName(e.target.value)}
-                  required
-                  disabled={readOnly}
-                  list="sellers-list-final"
-                  autoComplete="off"
-                  className="w-full text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2 text-gray-900 dark:text-gray-100 disabled:opacity-50"
-                />
-                <datalist id="sellers-list-final">
-                  {sellers.map((s) => <option key={s} value={s} />)}
-                </datalist>
+                {/* En edición ocupa su propia fila (col-span-3); en consulta
+                    es la 4ª columna de la fila de contacto */}
+                <div className={`space-y-1 ${readOnly ? "" : "sm:col-span-3"}`}>
+                  <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Vendido por (Manager)</Text>
+                  <input
+                    name="manager_name"
+                    placeholder="Nombre del vendedor..."
+                    value={managerName}
+                    onChange={(e) => setInvoiceManagerName(e.target.value)}
+                    required
+                    disabled={readOnly}
+                    list="sellers-list-final"
+                    autoComplete="off"
+                    className="w-full text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+                  />
+                  <datalist id="sellers-list-final">
+                    {sellers.map((s) => <option key={s} value={s} />)}
+                  </datalist>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -567,7 +568,7 @@ export default function NewInvoiceDialog({
                   value={observation}
                   onChange={(e) => setObservation(e.target.value)}
                   disabled={readOnly}
-                  className="w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul disabled:opacity-50 min-h-[80px] resize-none"
+                  className={`w-full p-2 text-sm rounded-lg border border-gray-200 dark:border-gray-800 bg-transparent dark:text-white focus:outline-none focus:ring-2 focus:ring-larioja-azul disabled:opacity-50 resize-none ${readOnly ? "min-h-[48px]" : "min-h-[80px]"}`}
                 />
               </div>
 
@@ -575,7 +576,7 @@ export default function NewInvoiceDialog({
                 <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
                   {readOnly ? "Cartones Vendidos" : "Asociar Cartones"} ({selectedCards.length} de {cardsNumber})
                 </Text>
-                <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-40 overflow-y-auto bg-gray-50 dark:bg-gray-800/50 min-h-[100px] flex items-center justify-center relative">
+                <div className={`border border-gray-200 dark:border-gray-800 rounded-lg p-3 ${readOnly ? "max-h-28 min-h-[64px]" : "max-h-40 min-h-[100px]"} overflow-y-auto bg-gray-50 dark:bg-gray-800/50 flex items-center justify-center relative`}>
                   {loadingInitial ? (
                     <div className="flex flex-col items-center gap-2">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-larioja-azul" />
@@ -627,7 +628,7 @@ export default function NewInvoiceDialog({
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-shrink-0 bg-gray-50/50">
+            <div className={`${readOnly ? "p-3" : "p-6"} border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 flex-shrink-0 bg-gray-50/50`}>
               <Button variant="secondary" onClick={onClose} disabled={loading} type="button">
                 {readOnly ? "Cerrar" : "Cancelar"}
               </Button>
