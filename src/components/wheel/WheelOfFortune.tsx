@@ -11,6 +11,8 @@ interface Segment {
   color: string | null;
   quantity?: number;
   cardNumber?: number;
+  /** false = segmento sin derecho a premio (modo Premios). */
+  isPrize?: boolean;
 }
 
 interface WheelSummary {
@@ -391,7 +393,10 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
     // AHORA SÍ: Actualizamos la ruleta con los nuevos stocks (o quitamos los de stock 0)
     if (winnerData?.segments) {
       const nextSegments = (winnerData.segments as Segment[]).filter((s) =>
-        selectedWheel?.mode !== "Premios" || (s.quantity === undefined || s.quantity > 0)
+        selectedWheel?.mode !== "Premios" ||
+        s.isPrize === false ||
+        s.quantity === undefined ||
+        s.quantity > 0
       );
       segmentsRef.current = nextSegments;
       setSegments(nextSegments);
@@ -557,7 +562,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
           <p className="mt-1 font-montserrat text-sm font-bold uppercase tracking-widest text-white/70">
             Total de premios:{" "}
             <span className="text-larioja-amarillo">
-              {segments.reduce((sum, s) => sum + (s.quantity ?? 0), 0)}
+              {/* Solo stock real: los segmentos "sin premio" no suman */}
+              {segments.reduce(
+                (sum, s) => sum + (s.isPrize === false ? 0 : (s.quantity ?? 0)),
+                0,
+              )}
             </span>
           </p>
         )}
@@ -706,7 +715,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                             {line}
                           </tspan>
                         ))}
-                        {selectedWheel.mode === "Premios" && seg.quantity !== undefined && (
+                        {selectedWheel.mode === "Premios" && seg.isPrize !== false && seg.quantity !== undefined && (
                           <tspan
                             x={tp.x}
                             dy="1.4em"
