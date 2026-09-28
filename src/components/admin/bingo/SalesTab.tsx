@@ -43,6 +43,15 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [invoiceSearch, setInvoiceSearch] = useState("");
+  /**
+   * Totales del día (facturas, cartones y monto) filtrados por
+   * invoice_date = hoy en el servidor — no dependen del set local.
+   */
+  const [dailyTotals, setDailyTotals] = useState<{
+    invoices: number;
+    cards: number;
+    total: number;
+  } | null>(null);
 
   // Dialog states
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
@@ -59,12 +68,20 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
   const loadInvoices = async (companyId: number, eventId: string) => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/bingo/invoices?companyId=${companyId}&eventId=${encodeURIComponent(eventId)}`,
-      );
-      const result = await res.json();
+      const evId = encodeURIComponent(eventId);
+      const [invRes, totalsRes] = await Promise.all([
+        fetch(`/api/bingo/invoices?companyId=${companyId}&eventId=${evId}`),
+        fetch(
+          `/api/bingo/invoices/daily-totals?companyId=${companyId}&eventId=${evId}`,
+        ),
+      ]);
+      const result = await invRes.json();
       if (result.success) {
         setInvoices(result.data || []);
+      }
+      const totals = await totalsRes.json();
+      if (totals.success) {
+        setDailyTotals(totals.data);
       }
     } finally {
       setLoading(false);
@@ -149,8 +166,35 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
   return (
     <>
       <Card className="mt-4 shadow-sm sm:shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
-        <div className="flex justify-between items-center mb-6">
-          <Title>Ventas y Facturación</Title>
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Title>Ventas y Facturación</Title>
+            {currentEventInfo && dailyTotals && (
+              <div className="flex gap-2 flex-wrap">
+                <Badge
+                  size="lg"
+                  color="slate"
+                  tooltip="Facturas creadas hoy (fecha de factura)"
+                >
+                  Facturas hoy: {dailyTotals.invoices}
+                </Badge>
+                <Badge
+                  size="lg"
+                  color="amber"
+                  tooltip="Cartones vendidos hoy (suma de N° cartones)"
+                >
+                  Cartones: {dailyTotals.cards}
+                </Badge>
+                <Badge
+                  size="lg"
+                  color="emerald"
+                  tooltip="Monto total vendido hoy"
+                >
+                  {formatCurrency(dailyTotals.total)}
+                </Badge>
+              </div>
+            )}
+          </div>
           {currentEventInfo && (
             <div className="flex flex-col gap-2">
               <Button

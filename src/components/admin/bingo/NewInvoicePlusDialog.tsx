@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogPanel,
@@ -64,6 +64,16 @@ export default function NewInvoicePlusDialog({
   const [autoNumbering, setAutoNumbering] = useState(false);
   /** Mensaje breve "guardada" tras cada alta (el diálogo queda abierto). */
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
+
+  /**
+   * Países ordenados alfabéticamente por nombre (es-ES). El prop ya viene
+   * ordenado desde el servidor; el sort defensivo lo garantiza aunque la
+   * fuente cambie.
+   */
+  const sortedCountries = useMemo(
+    () => [...countries].sort((a, b) => a.name.localeCompare(b.name, "es")),
+    [countries],
+  );
 
   /**
    * Genera y asigna el siguiente número automático "FactAut-NNNNNN"
@@ -398,14 +408,14 @@ export default function NewInvoicePlusDialog({
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 <div className="space-y-1">
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                    Área
+                    Código de Área
                   </Text>
                   <Select
                     value={phoneArea}
                     onValueChange={setPhoneArea}
                     enableClear={false}
                   >
-                    {countries.map((country) => (
+                    {sortedCountries.map((country) => (
                       <SelectItem
                         key={`${country.name}-${country.phone_code}`}
                         value={country.phone_code}
@@ -631,9 +641,20 @@ export default function NewInvoicePlusDialog({
               )}
               <Button
                 variant="secondary"
+                color="rose"
                 onClick={onClose}
                 disabled={loading}
                 type="button"
+                tooltip="Abandonar el formulario y volver a Ventas y Facturación"
+              >
+                Salir
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={resetForm}
+                disabled={loading}
+                type="button"
+                tooltip="Limpiar los datos ingresados sin salir del formulario"
               >
                 Cancelar
               </Button>
