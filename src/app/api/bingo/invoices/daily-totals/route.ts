@@ -6,9 +6,10 @@ import { checkAdmin } from "../../check-admin";
  * GET /api/bingo/invoices/daily-totals?companyId=&eventId=
  *
  * Totales del día para el tab "Ventas y Facturación": cantidad de
- * facturas, cartones vendidos y monto total cuya invoice_date es hoy
- * (fecha local de El Salvador). Solo trae 2 columnas por fila y resuelve
- * el filtro con idx_invoices_company_event_date — barato incluso en vivo.
+ * facturas, cartones vendidos y monto total cuyo created_at cae hoy
+ * (día local de El Salvador, UTC-6). Solo trae 2 columnas por fila; el
+ * prefijo (company_id, event_id) de idx_invoices_company_event_date
+ * acota el escaneo al evento — barato incluso en vivo.
  */
 export async function GET(request: NextRequest) {
   const companyId = Number(request.nextUrl.searchParams.get("companyId"));
@@ -29,10 +30,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // "Hoy" en El Salvador (UTC-6): la fecha que el operador ve en la factura
+  // "Hoy" en El Salvador (UTC-6 fijo, sin DST): rango [00:00, 24:00) local
+  // traducido a created_at (timestamptz) para comparación exacta en BD.
   const todaySV = new Date().toLocaleDateString("en-CA", {
     timeZone: "America/El_Salvador",
   });
+  const dayStartUTC = new Date(`${todaySV}T00:00:00-06:00`);
+  const dayEndUTC = new Date(dayStartUTC.getTime() + 24 * 60 * 60 * 1000);
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -40,7 +44,8 @@ export async function GET(request: NextRequest) {
     .select("cards_number, total_amount")
     .eq("company_id", companyId)
     .eq("event_id", eventId)
-    .eq("invoice_date", todaySV);
+    .gte("created_at", dayStartUTC.toISOString())
+    .lt("created_at", dayEndUTC.toISOString());
 
   if (error) {
     return NextResponse.json(

@@ -44,7 +44,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
   const [invoiceSearch, setInvoiceSearch] = useState("");
   /**
    * Totales del día (facturas, cartones y monto) filtrados por
-   * invoice_date = hoy en el servidor — no dependen del set local.
+   * created_at = hoy en el servidor — no dependen del set local.
    */
   const [dailyTotals, setDailyTotals] = useState<{
     invoices: number;
@@ -181,7 +181,7 @@ export default function SalesTab({ events, countries }: SalesTabProps) {
                 <Badge
                   size="lg"
                   color="slate"
-                  tooltip="Facturas creadas hoy (fecha de factura)"
+                  tooltip="Facturas creadas hoy (fecha/hora de registro)"
                 >
                   Facturas hoy: {dailyTotals.invoices}
                 </Badge>
