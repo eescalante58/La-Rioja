@@ -59,6 +59,7 @@ export default function EditCardDialog({
 }: EditCardDialogProps) {
   const [loading, setLoading] = useState(false);
   const [phoneArea, setPhoneArea] = useState("+503");
+  const [phoneIso2, setPhoneIso2] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [areaListOpen, setAreaListOpen] = useState(false);
 
@@ -72,20 +73,34 @@ export default function EditCardDialog({
       .filter((c) => digits.startsWith(digitsOf(c.phone_code)))
       .sort((a, b) => digitsOf(b.phone_code).length - digitsOf(a.phone_code).length)[0];
     setPhoneArea(match ? `+${digitsOf(match.phone_code)}` : "+503");
+    setPhoneIso2(match?.iso2 || "");
     setPhoneNumber(match ? digits.slice(digitsOf(match.phone_code).length) : digits);
   }, [card, countries]);
 
-  // País detectado al digitar: exacto, o único candidato por prefijo.
+  // País detectado: prioritiza iso2 si existe (seleccion manual);
+  // si no (digitando), busca por codigo exacto o prefijo unico.
+  // Para el codigo +1, prioritiza Estados Unidos si no hay seleccion manual.
   const selectedCountry = useMemo(() => {
+    if (phoneIso2) {
+      const match = countries.find((c) => c.iso2 === phoneIso2);
+      if (match) return match;
+    }
     const digits = digitsOf(phoneArea);
     if (!digits) return null;
-    const exact = countries.find((c) => digitsOf(c.phone_code) === digits);
-    if (exact) return exact;
+    const exactMatches = countries.filter((c) => digitsOf(c.phone_code) === digits);
+    if (exactMatches.length > 0) {
+      // Si hay match exacto y es "1", prioritiza US
+      if (digits === "1") {
+        const us = exactMatches.find((c) => c.iso2 === "US");
+        if (us) return us;
+      }
+      return exactMatches[0];
+    }
     const candidates = countries.filter((c) =>
       digitsOf(c.phone_code).startsWith(digits),
     );
     return candidates.length === 1 ? candidates[0] : null;
-  }, [phoneArea, countries]);
+  }, [phoneArea, phoneIso2, countries]);
 
   // Lista del dropdown filtrada por lo que se va digitando.
   const filteredCountries = useMemo(() => {
@@ -158,6 +173,7 @@ export default function EditCardDialog({
                     onChange={(e) => {
                       const v = e.target.value.replace(/[^\d+]/g, "");
                       setPhoneArea(v === "" || v.startsWith("+") ? v : `+${v}`);
+                      setPhoneIso2(""); // Limpia para deteccion automatica al digitar
                       setAreaListOpen(true);
                     }}
                     onFocus={() => setAreaListOpen(true)}
@@ -175,6 +191,7 @@ export default function EditCardDialog({
                           type="button"
                           onMouseDown={() => {
                             setPhoneArea(`+${digitsOf(c.phone_code)}`);
+                            setPhoneIso2(c.iso2); // Fija el pais seleccionado
                             setAreaListOpen(false);
                           }}
                           className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"

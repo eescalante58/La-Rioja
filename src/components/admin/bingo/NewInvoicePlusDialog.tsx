@@ -46,6 +46,7 @@ export default function NewInvoicePlusDialog({
   const [cardsNumber, setCardsNumber] = useState<number>(1);
   const [cardPrice, setCardPrice] = useState<number>(0);
   const [phoneArea, setPhoneArea] = useState("+503");
+  const [phoneIso2, setPhoneIso2] = useState("SV");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [areaListOpen, setAreaListOpen] = useState(false);
   /** true si el usuario esta digitando en el area code (activa el filtro). */
@@ -91,17 +92,30 @@ export default function NewInvoicePlusDialog({
   const flagUrl = (iso2: string, w: 20 | 40 = 40) =>
     `https://flagcdn.com/w${w}/${iso2.toLowerCase()}.png`;
 
-  // País detectado al digitar: exacto, o único candidato por prefijo.
+  // País detectado: prioritiza iso2 si existe (seleccion manual);
+  // si no (digitando), busca por codigo exacto o prefijo unico.
+  // Para el codigo +1, prioritiza Estados Unidos si no hay seleccion manual.
   const selectedCountry = useMemo(() => {
+    if (phoneIso2) {
+      const match = countries.find((c) => c.iso2 === phoneIso2);
+      if (match) return match;
+    }
     const digits = digitsOf(phoneArea);
     if (!digits) return null;
-    const exact = countries.find((c) => digitsOf(c.phone_code) === digits);
-    if (exact) return exact;
+    const exactMatches = countries.filter((c) => digitsOf(c.phone_code) === digits);
+    if (exactMatches.length > 0) {
+      // Si hay match exacto y es "1", prioritiza US
+      if (digits === "1") {
+        const us = exactMatches.find((c) => c.iso2 === "US");
+        if (us) return us;
+      }
+      return exactMatches[0];
+    }
     const candidates = countries.filter((c) =>
       digitsOf(c.phone_code).startsWith(digits),
     );
     return candidates.length === 1 ? candidates[0] : null;
-  }, [phoneArea, countries]);
+  }, [phoneArea, phoneIso2, countries]);
 
   // Lista del dropdown: se ordena alfabéticamente. Se filtra solo si el
   // usuario está digitando activamente (isTypingArea). Si solo enfocó el
@@ -152,6 +166,7 @@ export default function NewInvoicePlusDialog({
     setCardPrice(currentEvent?.cardValue ?? 0);
     setCardsNumber(1);
     setPhoneArea("+503");
+    setPhoneIso2("SV");
     setPhoneNumber("");
     setWhatsappNumber("");
     setInvoiceManagerName("");
@@ -471,6 +486,7 @@ export default function NewInvoicePlusDialog({
                       onChange={(e) => {
                         const v = e.target.value.replace(/[^\d+]/g, "");
                         setPhoneArea(v === "" || v.startsWith("+") ? v : `+${v}`);
+                        setPhoneIso2(""); // Limpia iso2 para permitir deteccion por prefijo
                         setAreaListOpen(true);
                         setIsTypingArea(true);
                       }}
@@ -492,6 +508,7 @@ export default function NewInvoicePlusDialog({
                             type="button"
                             onMouseDown={() => {
                               setPhoneArea(country.phone_code.startsWith("+") ? country.phone_code : `+${country.phone_code}`);
+                              setPhoneIso2(country.iso2); // Fija el pais seleccionado (US vs CA)
                               setAreaListOpen(false);
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
