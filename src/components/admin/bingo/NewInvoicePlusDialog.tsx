@@ -48,6 +48,8 @@ export default function NewInvoicePlusDialog({
   const [phoneArea, setPhoneArea] = useState("+503");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [areaListOpen, setAreaListOpen] = useState(false);
+  /** true si el usuario esta digitando en el area code (activa el filtro). */
+  const [isTypingArea, setIsTypingArea] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [managerName, setInvoiceManagerName] = useState("");
   const [sellers, setSellers] = useState<string[]>([]);
@@ -101,12 +103,17 @@ export default function NewInvoicePlusDialog({
     return candidates.length === 1 ? candidates[0] : null;
   }, [phoneArea, countries]);
 
-  // Lista del dropdown filtrada por lo que se va digitando.
+  // Lista del dropdown: se ordena alfabéticamente. Se filtra solo si el
+  // usuario está digitando activamente (isTypingArea). Si solo enfocó el
+  // campo, mostramos la lista completa para facilitar la navegación.
   const filteredCountries = useMemo(() => {
+    if (!isTypingArea) return sortedCountries;
     const digits = digitsOf(phoneArea);
     if (!digits) return sortedCountries;
-    return sortedCountries.filter((c) => digitsOf(c.phone_code).startsWith(digits));
-  }, [phoneArea, sortedCountries]);
+    return sortedCountries.filter((c) =>
+      digitsOf(c.phone_code).startsWith(digits),
+    );
+  }, [phoneArea, sortedCountries, isTypingArea]);
 
   /**
    * Genera y asigna el siguiente número automático "FactAut-NNNNNN"
@@ -465,8 +472,12 @@ export default function NewInvoicePlusDialog({
                         const v = e.target.value.replace(/[^\d+]/g, "");
                         setPhoneArea(v === "" || v.startsWith("+") ? v : `+${v}`);
                         setAreaListOpen(true);
+                        setIsTypingArea(true);
                       }}
-                      onFocus={() => setAreaListOpen(true)}
+                      onFocus={() => {
+                        setAreaListOpen(true);
+                        setIsTypingArea(false);
+                      }}
                       onBlur={() => setTimeout(() => setAreaListOpen(false), 150)}
                       className={`w-full rounded-lg border border-gray-300 bg-white py-2 text-sm text-gray-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${
                         selectedCountry ? "pl-10 pr-2" : "px-3"
