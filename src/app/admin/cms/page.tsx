@@ -51,10 +51,16 @@ export default async function CMSManager() {
   return (
     <div className="space-y-6">
       <TabGroup defaultValue="1">
-        <TabList variant="line" color="blue">
-          <Tab value="1">Contenido General</Tab>
-          <Tab value="2">Preguntas Frecuentes (FAQ)</Tab>
-          <Tab value="3">Galería de Fotos</Tab>
+        <TabList className="mt-8">
+          <Tab value="1" icon={List} className="text-base sm:text-lg">
+            Contenido General
+          </Tab>
+          <Tab value="2" icon={HelpCircle} className="text-base sm:text-lg">
+            Preguntas Frecuentes (FAQ)
+          </Tab>
+          <Tab value="3" icon={ImageIcon} className="text-base sm:text-lg">
+            Galería de Fotos
+          </Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
