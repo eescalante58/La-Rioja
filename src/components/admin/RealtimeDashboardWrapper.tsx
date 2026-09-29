@@ -1372,7 +1372,7 @@ export default function RealtimeDashboardWrapper({
               />
             </div>
 
-            <div className="max-h-[60vh] overflow-auto custom-scrollbar">
+            <div className="max-h-[75vh] overflow-auto custom-scrollbar">
               <div className="min-w-[800px] md:min-w-full">
                 <Table>
                   <TableHead>
