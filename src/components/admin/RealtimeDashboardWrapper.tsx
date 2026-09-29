@@ -1452,6 +1452,12 @@ export default function RealtimeDashboardWrapper({
                   <Title className="text-sm font-bold uppercase text-gray-500">Detalle Diario</Title>
                   <div className="flex gap-4">
                     <div className="text-right">
+                      <Text className="text-[10px] font-bold uppercase text-slate-400">Total Facturas</Text>
+                      <Text className="text-sm font-black text-larioja-azul dark:text-larioja-amarillo">
+                        {(data.dailySales || []).reduce((acc: number, d: any) => acc + (d.count || 0), 0)}
+                      </Text>
+                    </div>
+                    <div className="text-right border-l border-gray-100 dark:border-gray-800 pl-4">
                       <Text className="text-[10px] font-bold uppercase text-slate-400">Total Cartones</Text>
                       <Text className="text-sm font-black text-larioja-azul dark:text-larioja-amarillo">
                         {(data.dailySales || []).reduce((acc: number, d: any) => acc + (d.cards || 0), 0)}
