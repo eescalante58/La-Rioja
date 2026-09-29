@@ -1448,7 +1448,23 @@ export default function RealtimeDashboardWrapper({
             <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Tabla de ventas por día */}
               <div className="flex flex-col">
-                <Title className="text-sm font-bold uppercase text-gray-500 mb-4">Detalle Diario</Title>
+                <Flex justifyContent="between" alignItems="center" className="mb-4">
+                  <Title className="text-sm font-bold uppercase text-gray-500">Detalle Diario</Title>
+                  <div className="flex gap-4">
+                    <div className="text-right">
+                      <Text className="text-[10px] font-bold uppercase text-slate-400">Total Cartones</Text>
+                      <Text className="text-sm font-black text-larioja-azul dark:text-larioja-amarillo">
+                        {(data.dailySales || []).reduce((acc: number, d: any) => acc + (d.cards || 0), 0)}
+                      </Text>
+                    </div>
+                    <div className="text-right border-l border-gray-100 dark:border-gray-800 pl-4">
+                      <Text className="text-[10px] font-bold uppercase text-slate-400">Total Ventas</Text>
+                      <Text className="text-sm font-black text-larioja-verde">
+                        {formatCurrency((data.dailySales || []).reduce((acc: number, d: any) => acc + d.total, 0))}
+                      </Text>
+                    </div>
+                  </div>
+                </Flex>
                 <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                   <Table>
                     <TableHead>

@@ -137,7 +137,7 @@ export async function getDashboardDataCore() {
           .eq("status", "pagada"),
         supabaseAdmin
           .from("invoices")
-          .select("invoice_date, total_amount")
+          .select("invoice_date, total_amount, cards_number")
           .eq("event_id", eventId)
           .eq("company_id", companyId)
           .eq("status", "pagada")
@@ -180,10 +180,11 @@ export async function getDashboardDataCore() {
     const dailySalesMap = dailySales?.reduce((acc: any, inv) => {
       const date = inv.invoice_date;
       if (!acc[date]) {
-        acc[date] = { total: 0, count: 0 };
+        acc[date] = { total: 0, count: 0, cards: 0 };
       }
       acc[date].total += Number(inv.total_amount || 0);
       acc[date].count += 1;
+      acc[date].cards += Number(inv.cards_number || 0);
       return acc;
     }, {});
 
@@ -191,6 +192,7 @@ export async function getDashboardDataCore() {
       date,
       total: dailySalesMap[date].total,
       count: dailySalesMap[date].count,
+      cards: dailySalesMap[date].cards,
     }));
 
     const yearlySalesMap = allEvents?.reduce((acc: any, ev) => {

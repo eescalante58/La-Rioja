@@ -5,7 +5,7 @@ import ReactECharts from "echarts-for-react";
 import { Card, Title, Text, Badge } from "@tremor/react";
 
 interface DailySalesChartProps {
-  data: { date: string; total: number; count?: number }[];
+  data: { date: string; total: number; count?: number; cards?: number }[];
   onDrillDown: (date: string) => void;
 }
 
