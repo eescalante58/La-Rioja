@@ -82,10 +82,12 @@ export default function ParticipantRegistrationForm({
 }: ParticipantRegistrationFormProps) {
   const [wheel, setWheel] = useState<WheelSummary | null>(initialWheel);
   const [name, setName] = useState("");
-  const [areaIso2, setAreaIso2] = useState(
-    countries.find((c) => c.iso2 === "SV")?.iso2 ?? countries[0]?.iso2 ?? "",
-  );
+  const [phoneArea, setPhoneArea] = useState("+503");
+  const [phoneIso2, setPhoneIso2] = useState("SV");
   const [phone, setPhone] = useState("");
+  const [areaListOpen, setAreaListOpen] = useState(false);
+  /** true si el usuario esta digitando en el area code (activa el filtro). */
+  const [isTypingArea, setIsTypingArea] = useState(false);
   const [cardInputs, setCardInputs] = useState<string[]>(
     Array.from({ length: MAX_CARDS }, () => ""),
   );
@@ -98,10 +100,59 @@ export default function ParticipantRegistrationForm({
   /** Folio(s) de confirmación: id de cada fila creada en la tabla. */
   const [confirmationIds, setConfirmationIds] = useState<number[]>([]);
 
-  const selectedCountry = useMemo(
-    () => countries.find((c) => c.iso2 === areaIso2),
-    [countries, areaIso2],
+  /** Solo dígitos: "+1-721" → "1721" (algunos códigos traen guiones). */
+  const digitsOf = (v: string) => v.replace(/\D/g, "");
+
+  /** URL de bandera por ISO2 (flagcdn — los emojis de bandera no se ven en Windows). */
+  const flagUrl = (iso2: string, w: 20 | 40 = 40) =>
+    `https://flagcdn.com/w${w}/${iso2.toLowerCase()}.png`;
+
+  /**
+   * Países ordenados alfabéticamente por nombre (es-ES).
+   */
+  const sortedCountries = useMemo(
+    () => [...countries].sort((a, b) => a.name.localeCompare(b.name, "es")),
+    [countries],
   );
+
+  // País detectado: prioritiza iso2 si existe (seleccion manual);
+  // si no (digitando), busca por codigo exacto o prefijo unico.
+  // Para el codigo +1, prioritiza Estados Unidos si no hay seleccion manual.
+  const selectedCountry = useMemo(() => {
+    if (phoneIso2) {
+      const match = countries.find((c) => c.iso2 === phoneIso2);
+      if (match) return match;
+    }
+    const digits = digitsOf(phoneArea);
+    if (!digits) return null;
+    const exactMatches = countries.filter(
+      (c) => digitsOf(c.phone_code) === digits,
+    );
+    if (exactMatches.length > 0) {
+      // Si hay match exacto y es "1", prioritiza US
+      if (digits === "1") {
+        const us = exactMatches.find((c) => c.iso2 === "US");
+        if (us) return us;
+      }
+      return exactMatches[0];
+    }
+    const candidates = countries.filter((c) =>
+      digitsOf(c.phone_code).startsWith(digits),
+    );
+    return candidates.length === 1 ? candidates[0] : null;
+  }, [phoneArea, phoneIso2, countries]);
+
+  // Lista del dropdown: se ordena alfabéticamente. Se filtra solo si el
+  // usuario está digitando activamente (isTypingArea). Si solo enfocó el
+  // campo, mostramos la lista completa para facilitar la navegación.
+  const filteredCountries = useMemo(() => {
+    if (!isTypingArea) return sortedCountries;
+    const digits = digitsOf(phoneArea);
+    if (!digits) return sortedCountries;
+    return sortedCountries.filter((c) =>
+      digitsOf(c.phone_code).startsWith(digits),
+    );
+  }, [phoneArea, sortedCountries, isTypingArea]);
 
   /** Números de cartón ingresados: únicos, positivos, en orden. */
   const cardNumbers = useMemo(
@@ -164,7 +215,7 @@ export default function ParticipantRegistrationForm({
     setPending(true);
     await jitter();
 
-    const fullPhone = `+${selectedCountry?.phone_code ?? ""} ${phoneDigits}`.trim();
+    const fullPhone = `${phoneArea} ${phoneDigits}`.trim();
     const supabase = createClient();
 
     let result: RpcResponse | null = null;
@@ -225,6 +276,8 @@ export default function ParticipantRegistrationForm({
   const handleReset = () => {
     setName("");
     setPhone("");
+    setPhoneArea("+503");
+    setPhoneIso2("SV");
     setCardInputs(Array.from({ length: MAX_CARDS }, () => ""));
     setRegistered(null);
     setFormError(null);
@@ -232,7 +285,7 @@ export default function ParticipantRegistrationForm({
   };
 
   const inputClass =
-    "w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-larioja-amarillo focus:border-transparent sm:px-4 sm:py-3 sm:text-base";
+    "w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-larioja-amarillo focus:border-transparent sm:px-4 sm:py-3 sm:text-base h-[46px] sm:h-[54px] flex items-center";
 
   // ── Selector de tómbola (varias publicadas) ─────────────────────────────
   if (!wheel) {
@@ -374,26 +427,78 @@ export default function ParticipantRegistrationForm({
 
         {/* Teléfono: código de área + número */}
         <div className="grid grid-cols-[1fr_1.6fr] gap-3">
-          <div>
-            <label className="mb-1 block text-[11px] font-bold sm:text-xs uppercase tracking-wider text-gray-500">
+          <div className="relative">
+            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-gray-500 sm:text-xs">
               Código de Área <span className="text-red-500">*</span>
             </label>
-            <select
-              value={areaIso2}
-              onChange={(e) => setAreaIso2(e.target.value)}
-              required
-              className={inputClass}
-            >
-              {countries.map((c) => (
-                <option key={c.iso2} value={c.iso2}>
-                  {c.flag_emoji ? `${c.flag_emoji} ` : ""}
-                  {c.name} (+{c.phone_code})
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              {selectedCountry && (
+                <img
+                  src={flagUrl(selectedCountry.iso2)}
+                  alt={selectedCountry.name}
+                  className="absolute left-3 top-1/2 h-4 w-6 -translate-y-1/2 rounded-[2px] object-cover sm:left-4 sm:h-5 sm:w-8"
+                />
+              )}
+              <input
+                type="text"
+                inputMode="tel"
+                autoComplete="off"
+                value={phoneArea}
+                placeholder="+503"
+                title={selectedCountry?.name}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/[^\d+]/g, "");
+                  setPhoneArea(v === "" || v.startsWith("+") ? v : `+${v}`);
+                  setPhoneIso2(""); // Limpia iso2 para permitir deteccion por prefijo
+                  setAreaListOpen(true);
+                  setIsTypingArea(true);
+                }}
+                onFocus={() => {
+                  setAreaListOpen(true);
+                  setIsTypingArea(false);
+                }}
+                onBlur={() => setTimeout(() => setAreaListOpen(false), 200)}
+                className={`${inputClass} ${
+                  selectedCountry ? "pl-11 sm:pl-16" : ""
+                }`}
+              />
+            </div>
+            {areaListOpen && filteredCountries.length > 0 && (
+              <ul className="custom-scrollbar absolute left-0 z-50 mt-1 max-h-60 w-72 overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+                {filteredCountries.map((country) => (
+                  <li key={`${country.name}-${country.phone_code}`}>
+                    <button
+                      type="button"
+                      onMouseDown={() => {
+                        setPhoneArea(
+                          country.phone_code.startsWith("+")
+                            ? country.phone_code
+                            : `+${country.phone_code}`,
+                        );
+                        setPhoneIso2(country.iso2);
+                        setAreaListOpen(false);
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 sm:text-base"
+                    >
+                      <img
+                        src={flagUrl(country.iso2, 20)}
+                        alt=""
+                        className="h-4 w-6 shrink-0 rounded-[2px] object-cover"
+                      />
+                      <span className="shrink-0 font-bold text-gray-800 dark:text-gray-100">
+                        {country.phone_code}
+                      </span>
+                      <span className="truncate text-gray-500 dark:text-gray-400">
+                        - {country.name}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div>
-            <label className="mb-1 block text-[11px] font-bold sm:text-xs uppercase tracking-wider text-gray-500">
+            <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-gray-500 sm:text-xs">
               Número de teléfono <span className="text-red-500">*</span>
             </label>
             <input
@@ -451,7 +556,7 @@ export default function ParticipantRegistrationForm({
                   }
                   required={idx === 0}
                   placeholder={`#${idx + 1}`}
-                  className={`w-full min-w-0 rounded-lg border px-0.5 py-2 text-center font-montserrat text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 sm:rounded-xl sm:py-2.5 sm:text-base md:text-lg ${
+                  className={`w-full min-w-0 rounded-lg border px-0.5 py-2 text-center font-montserrat text-sm font-bold text-gray-900 placeholder-gray-200 focus:outline-none focus:ring-2 sm:rounded-xl sm:py-2.5 sm:text-base md:text-lg ${
                     invalid
                       ? "border-red-400 bg-red-50 focus:ring-red-400"
                       : "border-gray-300 bg-white focus:ring-larioja-amarillo focus:border-transparent"
