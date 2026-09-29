@@ -30,8 +30,8 @@ function toTitleCase(str: string): string {
 }
 
 /**
- * Facturas de un evento ordenadas por fecha descendente.
- * Usa el índice idx_invoices_company_event_date.
+ * Facturas de un evento ordenadas por fecha de creación descendente.
+ * Usa el índice idx_invoices_company_event_created_at.
  */
 export async function getInvoicesCore(companyId: number, eventId: string) {
   const supabase = createAdminClient();
@@ -41,7 +41,7 @@ export async function getInvoicesCore(companyId: number, eventId: string) {
     .select("*")
     .eq("company_id", companyId)
     .eq("event_id", eventId)
-    .order("invoice_date", { ascending: false });
+    .order("created_at", { ascending: false });
 
   if (error) return { error: error.message };
   return { success: true, data };
