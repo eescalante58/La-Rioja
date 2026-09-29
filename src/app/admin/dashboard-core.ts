@@ -253,6 +253,27 @@ export async function getDashboardDataCore() {
 }
 
 /**
+ * Obtiene el timeout de sesión configurado para la empresa actualmente seleccionada.
+ */
+export async function getSessionTimeoutCore() {
+  const companyId = await getSelectedCompanyId();
+  if (!companyId) return { success: false, error: "No company selected" };
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("companies")
+    .select("session_timeout_minutes")
+    .eq("company_id", companyId)
+    .single();
+
+  if (error || !data) {
+    return { success: false, error: error?.message || "Company not found" };
+  }
+
+  return { success: true, timeout_minutes: data.session_timeout_minutes || 30 };
+}
+
+/**
  * Lista los cartones auto-registrados por asistentes en /registro
  * (wheels_presents_cards) para el evento del dashboard (Drill down de la
  * tarjeta "Cartones Reportados"). El id de la fila es el folio que el

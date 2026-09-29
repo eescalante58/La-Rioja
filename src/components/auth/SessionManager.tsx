@@ -2,7 +2,6 @@
 
 import { useAutoLogout } from "@/hooks/useAutoLogout";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 /**
  * Client component that provides auto-logout functionality.
@@ -10,32 +9,23 @@ import { createClient } from "@/lib/supabase/client";
  */
 export function SessionManager() {
   const [timeoutMinutes, setTimeoutMinutes] = useState(30);
-  const supabase = createClient();
 
   useEffect(() => {
     async function getSessionTimeout() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("user_companies")
-        .select("companies(session_timeout_minutes)")
-        .eq("user_id", user.id)
-        .limit(1)
-        .single();
-
-      if (!error && data?.companies) {
-        const minutes = (data.companies as any).session_timeout_minutes;
-        if (minutes) {
-          setTimeoutMinutes(minutes);
+      try {
+        const res = await fetch("/api/auth/session-config");
+        const result = await res.json();
+        
+        if (result.success && result.timeout_minutes) {
+          setTimeoutMinutes(result.timeout_minutes);
         }
+      } catch (error) {
+        console.error("Error fetching session timeout:", error);
       }
     }
 
     getSessionTimeout();
-  }, [supabase]);
+  }, []);
 
   const {} = useAutoLogout(timeoutMinutes);
 
