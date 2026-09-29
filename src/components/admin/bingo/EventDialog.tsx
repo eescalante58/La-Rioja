@@ -123,7 +123,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
             {event && <input type="hidden" name="id" value={event.id} />}
 
             <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase text-gray-500">Empresa Organizadora</Text>
+              <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Empresa Organizadora</Text>
               <input type="hidden" name="company_id" value={selectedCompany} />
               <Select value={selectedCompany} onValueChange={setSelectedCompany} enableClear={false}>
                 {companies.map((c) => (
@@ -136,7 +136,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">ID Evento (Slug)</Text>
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">ID Evento (Slug)</Text>
                 <TextInput
                   name="event_id"
                   placeholder="BINGO-2024"
@@ -145,7 +145,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
                 />
               </div>
               <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">Valor Cartón</Text>
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Valor Cartón</Text>
                 <TextInput
                   name="card_value_display"
                   placeholder="$0.00"
@@ -159,7 +159,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
             </div>
 
             <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase text-gray-500">Nombre del Evento</Text>
+              <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Nombre del Evento</Text>
               <TextInput
                 name="event_name"
                 placeholder="Gran Bingo Anual"
@@ -169,7 +169,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
             </div>
 
             <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase text-gray-500">Lugar del Evento</Text>
+              <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Lugar del Evento</Text>
               <TextInput
                 name="event_venue"
                 placeholder="Ej: Gimnasio Municipal"
@@ -179,7 +179,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
             </div>
 
             <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase text-gray-500">Método de Pago</Text>
+              <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Método de Pago</Text>
               <Textarea
                 name="Method_of_payment"
                 placeholder={"Ej:\nEfectivo\nTransferencia\nTarjeta"}
@@ -190,7 +190,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">Responsable</Text>
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Responsable</Text>
                 <TextInput
                   name="event_manager"
                   placeholder="Nombre del encargado"
@@ -198,7 +198,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
                 />
               </div>
               <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">Meta del Evento</Text>
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Meta del Evento</Text>
                 <TextInput
                   name="event_goal_display"
                   icon={TrendingUp}
@@ -212,7 +212,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">Número de Cartones</Text>
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Número de Cartones</Text>
                 <TextInput
                   name="event_cartons_number"
                   type="number"
@@ -222,7 +222,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
                 />
               </div>
               <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">Inicio Promoción</Text>
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Inicio Promoción</Text>
                 <input
                   name="event_start_promotion_date"
                   type="date"
@@ -234,7 +234,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">Fecha</Text>
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Fecha</Text>
                 <input
                   name="event_date"
                   type="date"
@@ -244,7 +244,7 @@ export default function EventDialog({ isOpen, onClose, event, companies }: Event
                 />
               </div>
               <div className="space-y-1">
-                <Text className="text-xs font-bold uppercase text-gray-500">Estado</Text>
+                <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">Estado</Text>
                 <input type="hidden" name="status" value={statusValue} />
                 <Select
                   value={statusValue}
