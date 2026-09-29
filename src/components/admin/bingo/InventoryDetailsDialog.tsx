@@ -16,7 +16,7 @@ import {
   TableBody,
   TableCell,
 } from "@tremor/react";
-import { Search, RefreshCw, Ticket, Eye, Edit } from "lucide-react";
+import { Search, RefreshCw, Ticket, Eye, Edit, UserCheck } from "lucide-react";
 
 interface InventoryDetailsDialogProps {
   isOpen: boolean;
@@ -26,6 +26,7 @@ interface InventoryDetailsDialogProps {
   loading: boolean;
   onReassignType: (card: any) => void;
   onRangeReassign: () => void;
+  onRangePlayerReassign: () => void;
   onEditCard: (card: any) => void;
 }
 
@@ -37,6 +38,7 @@ export default function InventoryDetailsDialog({
   loading,
   onReassignType,
   onRangeReassign,
+  onRangePlayerReassign,
   onEditCard,
 }: InventoryDetailsDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,6 +98,9 @@ export default function InventoryDetailsDialog({
                 <Text className="text-sm font-medium">Evento: {event?.event_name}</Text>
               </div>
               <div className="flex items-center gap-2">
+                <Button size="xs" variant="secondary" icon={UserCheck} onClick={onRangePlayerReassign}>
+                  Reasignar Jugador
+                </Button>
                 <Button size="xs" variant="secondary" icon={RefreshCw} onClick={onRangeReassign}>
                   Cambio en Rango
                 </Button>

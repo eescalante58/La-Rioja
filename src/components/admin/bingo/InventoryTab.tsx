@@ -6,6 +6,7 @@ import { Ticket } from "lucide-react";
 import InventoryDetailsDialog from "./InventoryDetailsDialog";
 import ReassignCardDialog from "./ReassignCardDialog";
 import RangeReassignDialog from "./RangeReassignDialog";
+import RangePlayerReassignDialog from "./RangePlayerReassignDialog";
 import EditCardDialog from "./EditCardDialog";
 
 interface Event {
@@ -39,6 +40,7 @@ export default function InventoryTab({
   const [isReassignOpen, setIsReassignOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState<any>(null);
   const [isRangeOpen, setIsRangeOpen] = useState(false);
+  const [isRangePlayerOpen, setIsRangePlayerOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   /**
@@ -126,6 +128,7 @@ export default function InventoryTab({
           setIsReassignOpen(true);
         }}
         onRangeReassign={() => setIsRangeOpen(true)}
+        onRangePlayerReassign={() => setIsRangePlayerOpen(true)}
         onEditCard={(card) => {
           setSelectedCard(card);
           setIsEditOpen(true);
@@ -145,6 +148,15 @@ export default function InventoryTab({
         isOpen={isRangeOpen}
         onClose={() => setIsRangeOpen(false)}
         event={selectedEvent}
+        onSuccess={() => selectedEvent && loadCards(selectedEvent)}
+      />
+
+      <RangePlayerReassignDialog
+        isOpen={isRangePlayerOpen}
+        onClose={() => setIsRangePlayerOpen(false)}
+        event={selectedEvent}
+        cards={cards}
+        countries={countries}
         onSuccess={() => selectedEvent && loadCards(selectedEvent)}
       />
 

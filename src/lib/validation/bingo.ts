@@ -93,6 +93,16 @@ export const updateCardRangeTypeSchema = z.object({
   official_name: z.string().min(1),
 });
 
+export const updateCardRangePlayerSchema = z.object({
+  company_id: z.number().int().positive(),
+  event_id: z.string().min(1),
+  start: z.number().int().min(1),
+  end: z.number().int().min(1),
+  player_name: z.string().min(1),
+  player_phone_number: z.string().min(1),
+  official_name: z.string().min(1),
+});
+
 export const singleCardSchema = z.object({
   card_type: z.enum(["Virtual", "Fisico"]),
   card_status: z.enum(["Disponible", "Vendido", "Asignado", "Reservado", "Anulado", "Donado"]),
@@ -112,4 +122,5 @@ export type InvoiceInput = z.infer<typeof invoiceSchema>;
 export type GenerateCardsInput = z.infer<typeof generateCardsSchema>;
 export type UpdateCardTypeInput = z.infer<typeof updateCardTypeSchema>;
 export type UpdateCardRangeTypeInput = z.infer<typeof updateCardRangeTypeSchema>;
+export type UpdateCardRangePlayerInput = z.infer<typeof updateCardRangePlayerSchema>;
 export type SingleCardInput = z.infer<typeof singleCardSchema>;

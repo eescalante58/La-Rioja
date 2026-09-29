@@ -12,7 +12,8 @@ import {
   invoiceSchema,
   generateCardsSchema, 
   updateCardTypeSchema, 
-  updateCardRangeTypeSchema, 
+  updateCardRangeTypeSchema,
+  updateCardRangePlayerSchema,
   singleCardSchema 
 } from "@/lib/validation/bingo";
 import {
@@ -940,6 +941,82 @@ async function updateCardRangeTypeInternal(
 }
 
 export const updateCardRangeType = withRole(4, withCompanyAccess(updateCardRangeTypeInternal, 0));
+
+/**
+ * Reassign player name and phone for a range of cards and log activity.
+ */
+async function updateCardRangePlayerInternal(
+  companyId: number,
+  eventId: string,
+  start: number,
+  end: number,
+  playerName: string,
+  playerPhone: string,
+  officialName: string,
+  context: { user: any }
+) {
+  const { user } = context;
+  const validation = updateCardRangePlayerSchema.safeParse({
+    company_id: companyId,
+    event_id: eventId,
+    start,
+    end,
+    player_name: playerName,
+    player_phone_number: playerPhone,
+    official_name: officialName,
+  });
+  if (!validation.success) {
+    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+  }
+  const data = validation.data;
+
+  const { authorized, error: accessError } = await requireCompanyAccess(data.company_id);
+  if (!authorized) return { error: accessError };
+
+  const supabase = await createClient();
+
+  if (data.start > data.end) {
+    return { error: "El rango inicial no puede ser mayor al final." };
+  }
+
+  const { error: updateError, data: updatedCards } = await supabase
+    .from("cards")
+    .update({
+      player_name: sanitizeInput(data.player_name),
+      player_phone_number: sanitizeInput(data.player_phone_number),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("company_id", data.company_id)
+    .eq("event_id", data.event_id)
+    .gte("card_number", data.start)
+    .lte("card_number", data.end)
+    .select("card_number");
+
+  if (updateError) {
+    return { error: updateError.message };
+  }
+
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "REASSIGN_CARD_RANGE_PLAYER",
+    entity: "cards",
+    metadata: {
+      company_id: data.company_id,
+      event_id: data.event_id,
+      range: `${data.start}-${data.end}`,
+      player_name: data.player_name,
+      player_phone_number: data.player_phone_number,
+      requested_by: data.official_name,
+      updated_count: updatedCards?.length || 0,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
+  revalidatePath("/admin/bingo");
+  return { success: true, updated_count: updatedCards?.length || 0 };
+}
+
+export const updateCardRangePlayer = withRole(4, withCompanyAccess(updateCardRangePlayerInternal, 0));
 
 /**
  * Update a single card's details and optionally its PDF image.
