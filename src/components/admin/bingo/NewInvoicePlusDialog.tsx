@@ -7,8 +7,6 @@ import {
   Title,
   Text,
   TextInput,
-  Select,
-  SelectItem,
   Button,
 } from "@tremor/react";
 import { Smartphone, DollarSign, Search, Hash } from "lucide-react";
@@ -45,8 +43,9 @@ export default function NewInvoicePlusDialog({
   const [checkingRange, setCheckingRange] = useState(false);
   const [cardsNumber, setCardsNumber] = useState<number>(1);
   const [cardPrice, setCardPrice] = useState<number>(0);
-  const [phoneArea, setPhoneArea] = useState("503");
+  const [phoneArea, setPhoneArea] = useState("+503");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [areaListOpen, setAreaListOpen] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [managerName, setInvoiceManagerName] = useState("");
   const [sellers, setSellers] = useState<string[]>([]);
@@ -80,6 +79,32 @@ export default function NewInvoicePlusDialog({
     () => [...countries].sort((a, b) => a.name.localeCompare(b.name, "es")),
     [countries],
   );
+
+  /** Solo dígitos: "+1-721" → "1721" (algunos códigos traen guiones). */
+  const digitsOf = (v: string) => v.replace(/\D/g, "");
+
+  /** URL de bandera por ISO2 (flagcdn — los emojis de bandera no se ven en Windows). */
+  const flagUrl = (iso2: string, w: 20 | 40 = 40) =>
+    `https://flagcdn.com/w${w}/${iso2.toLowerCase()}.png`;
+
+  // País detectado al digitar: exacto, o único candidato por prefijo.
+  const selectedCountry = useMemo(() => {
+    const digits = digitsOf(phoneArea);
+    if (!digits) return null;
+    const exact = countries.find((c) => digitsOf(c.phone_code) === digits);
+    if (exact) return exact;
+    const candidates = countries.filter((c) =>
+      digitsOf(c.phone_code).startsWith(digits),
+    );
+    return candidates.length === 1 ? candidates[0] : null;
+  }, [phoneArea, countries]);
+
+  // Lista del dropdown filtrada por lo que se va digitando.
+  const filteredCountries = useMemo(() => {
+    const digits = digitsOf(phoneArea);
+    if (!digits) return sortedCountries;
+    return sortedCountries.filter((c) => digitsOf(c.phone_code).startsWith(digits));
+  }, [phoneArea, sortedCountries]);
 
   /**
    * Genera y asigna el siguiente número automático "FactAut-NNNNNN"
@@ -117,7 +142,7 @@ export default function NewInvoicePlusDialog({
   const resetForm = () => {
     setCardPrice(currentEvent?.cardValue ?? 0);
     setCardsNumber(1);
-    setPhoneArea("503");
+    setPhoneArea("+503");
     setPhoneNumber("");
     setWhatsappNumber("");
     setInvoiceManagerName("");
@@ -415,31 +440,65 @@ export default function NewInvoicePlusDialog({
 
               {/* Fila 3: contacto y vendedor */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Código de Área
                   </Text>
-                  <Select
-                    value={phoneArea}
-                    onValueChange={setPhoneArea}
-                    enableClear={false}
-                  >
-                    {sortedCountries.map((country) => (
-                      <SelectItem
-                        key={`${country.name}-${country.phone_code}`}
-                        value={country.phone_code}
-                      >
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={`https://flagcdn.com/w20/${country.iso2.toLowerCase()}.png`}
-                            alt={country.name}
-                            className="h-3.5 w-5 rounded-[2px] object-cover"
-                          />
-                          <span>{country.phone_code}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </Select>
+                  <div className="relative">
+                    {selectedCountry && (
+                      <img
+                        src={flagUrl(selectedCountry.iso2)}
+                        alt={selectedCountry.name}
+                        className="absolute left-2.5 top-1/2 h-4 w-6 -translate-y-1/2 rounded-[2px] object-cover"
+                      />
+                    )}
+                    <input
+                      type="text"
+                      inputMode="tel"
+                      autoComplete="off"
+                      value={phoneArea}
+                      placeholder="+503"
+                      title={selectedCountry?.name}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^\d+]/g, "");
+                        setPhoneArea(v === "" || v.startsWith("+") ? v : `+${v}`);
+                        setAreaListOpen(true);
+                      }}
+                      onFocus={() => setAreaListOpen(true)}
+                      onBlur={() => setTimeout(() => setAreaListOpen(false), 150)}
+                      className={`w-full rounded-lg border border-gray-300 bg-white py-2 text-sm text-gray-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 ${
+                        selectedCountry ? "pl-10 pr-2" : "px-3"
+                      }`}
+                    />
+                  </div>
+                  {areaListOpen && filteredCountries.length > 0 && (
+                    <ul className="absolute left-0 z-50 mt-1 max-h-48 w-72 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 custom-scrollbar">
+                      {filteredCountries.map((country) => (
+                        <li key={`${country.name}-${country.phone_code}`}>
+                          <button
+                            type="button"
+                            onMouseDown={() => {
+                              setPhoneArea(country.phone_code.startsWith("+") ? country.phone_code : `+${country.phone_code}`);
+                              setAreaListOpen(false);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            <img
+                              src={flagUrl(country.iso2, 20)}
+                              alt=""
+                              className="h-3.5 w-5 shrink-0 rounded-[2px] object-cover"
+                            />
+                            <span className="shrink-0 font-bold text-gray-800 dark:text-gray-100">
+                              {country.phone_code}
+                            </span>
+                            <span className="truncate text-gray-500 dark:text-gray-400">
+                              - {country.name}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   <input type="hidden" name="phone_area" value={phoneArea} />
                 </div>
                 <div className="space-y-1">

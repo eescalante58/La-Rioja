@@ -20,6 +20,7 @@ import {
   TableBody,
   TableCell,
   Button,
+  AreaChart,
 } from "@tremor/react";
 import {
   FileEdit,
@@ -121,6 +122,8 @@ export default function RealtimeDashboardWrapper({
 
   const [isCustomerListOpen, setIsCustomerListOpen] = useState(false);
   const [customerList, setCustomerList] = useState<any[]>([]);
+
+  const [isRealizedOpen, setIsRealizedOpen] = useState(false);
 
   const [isRegisteredOpen, setIsRegisteredOpen] = useState(false);
   const [registeredCards, setRegisteredCards] = useState<any[]>([]);
@@ -268,6 +271,10 @@ export default function RealtimeDashboardWrapper({
       alert("Error al cargar clientes: " + (res.error || "Sin datos"));
     }
     setIsLoadingDrillDown(false);
+  };
+
+  const handleRealizedDrillDown = () => {
+    setIsRealizedOpen(true);
   };
 
   /** Drill-down: cartones auto-registrados en /registro (Participantes). */
@@ -533,6 +540,7 @@ export default function RealtimeDashboardWrapper({
       }).format(data.realized || 0),
       icon: Ticket,
       color: "amber",
+      onClick: data.userLevel >= 4 ? handleRealizedDrillDown : undefined,
     },
     {
       title: "Cumplimiento Meta",
@@ -1414,13 +1422,132 @@ export default function RealtimeDashboardWrapper({
         </div>
       </Dialog>
 
+      {/* Modal: Detalle de Ventas Realizadas (Drill down) */}
+      <Dialog open={isRealizedOpen} onClose={() => setIsRealizedOpen(false)} static={true}>
+        <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[100]" />
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <DialogPanel className="max-w-5xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-50 p-2 rounded-lg text-amber-600">
+                  <TrendingUp size={24} />
+                </div>
+                <div>
+                  <Title>Análisis de Ventas por Día</Title>
+                  <Text className="text-xs">Ventas acumuladas y conteo de facturas del evento.</Text>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRealizedOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Tabla de ventas por día */}
+              <div className="flex flex-col">
+                <Title className="text-sm font-bold uppercase text-gray-500 mb-4">Detalle Diario</Title>
+                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  <Table>
+                    <TableHead>
+                      <TableRow className="bg-gray-50 dark:bg-slate-800/50">
+                        <TableHeaderCell>Fecha</TableHeaderCell>
+                        <TableHeaderCell className="text-right">Facturas</TableHeaderCell>
+                        <TableHeaderCell className="text-right">Total Ventas</TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {[...(data.dailySales || [])]
+                        .sort((a, b) => b.date.localeCompare(a.date))
+                        .map((day) => (
+                          <TableRow key={day.date}>
+                            <TableCell className="font-medium">{day.date}</TableCell>
+                            <TableCell className="text-right">
+                              <Badge size="xs" color="blue">{day.count}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">
+                              {formatCurrency(day.total)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Gráfico de ventas acumuladas */}
+              <div className="flex flex-col">
+                <Title className="text-sm font-bold uppercase text-gray-500 mb-4">Ventas Acumuladas</Title>
+                <div className="flex-1 min-h-[300px]">
+                  {(() => {
+                    let cumulativeTotal = 0;
+                    let cumulativeCount = 0;
+                    const chartData = [...(data.dailySales || [])]
+                      .sort((a, b) => a.date.localeCompare(b.date))
+                      .map((day) => {
+                        cumulativeTotal += day.total;
+                        cumulativeCount += day.count;
+                        return {
+                          date: day.date,
+                          "Total Ventas": cumulativeTotal,
+                          "Cant. Facturas": cumulativeCount,
+                        };
+                      });
+
+                    return (
+                      <AreaChart
+                        className="h-72 mt-4"
+                        data={chartData}
+                        index="date"
+                        categories={["Total Ventas", "Cant. Facturas"]}
+                        colors={["amber", "blue"]}
+                        valueFormatter={(number: number) =>
+                          Intl.NumberFormat("us").format(number).toString()
+                        }
+                        yAxisWidth={60}
+                        showAnimation={true}
+                      />
+                    );
+                  })()}
+                </div>
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                   <Flex>
+                      <div>
+                        <Text className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">Total General</Text>
+                        <Metric className="text-xl font-black text-blue-900 dark:text-white">{formatCurrency(data.realized || 0)}</Metric>
+                      </div>
+                      <div className="text-right">
+                        <Text className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">Total Facturas</Text>
+                        <Metric className="text-xl font-black text-blue-900 dark:text-white">
+                          {(data.dailySales || []).reduce((acc: number, d: any) => acc + d.count, 0)}
+                        </Metric>
+                      </div>
+                   </Flex>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => setIsRealizedOpen(false)}
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
       {/* Panel 2: Resumen de actividad y estadísticas generales */}
       <section className="space-y-6 pt-6 border-t border-gray-100 dark:border-gray-800">
-        <div>
-          <Title className="text-xl font-bold text-larioja-azul dark:text-white">
+        <div className="px-4 sm:px-0">
+          <Title className="text-xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
             Resumen de Actividad y Estadísticas
           </Title>
-          <Text className="text-sm dark:text-slate-400">
+          <Text className="text-xs sm:text-sm mt-1 text-gray-500 dark:text-gray-400">
             Estadísticas generales de la plataforma para {data.companyName}.
           </Text>
         </div>
@@ -1447,10 +1574,10 @@ export default function RealtimeDashboardWrapper({
                   />
                 </div>
                 <div>
-                  <Text className="text-xs font-medium dark:text-slate-400 uppercase tracking-wider">
+                  <Text className="text-xs font-black uppercase text-larioja-azul dark:text-blue-300 tracking-wider">
                     {item.title}
                   </Text>
-                  <Metric className="text-xl font-bold dark:text-white">
+                  <Metric className="text-xl font-black dark:text-white">
                     {item.metric}
                   </Metric>
                 </div>

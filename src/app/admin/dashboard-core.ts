@@ -179,13 +179,18 @@ export async function getDashboardDataCore() {
 
     const dailySalesMap = dailySales?.reduce((acc: any, inv) => {
       const date = inv.invoice_date;
-      acc[date] = (acc[date] || 0) + Number(inv.total_amount || 0);
+      if (!acc[date]) {
+        acc[date] = { total: 0, count: 0 };
+      }
+      acc[date].total += Number(inv.total_amount || 0);
+      acc[date].count += 1;
       return acc;
     }, {});
 
     const dailySalesData = Object.keys(dailySalesMap || {}).map((date) => ({
       date,
-      total: dailySalesMap[date],
+      total: dailySalesMap[date].total,
+      count: dailySalesMap[date].count,
     }));
 
     const yearlySalesMap = allEvents?.reduce((acc: any, ev) => {

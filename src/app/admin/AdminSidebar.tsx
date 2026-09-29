@@ -82,36 +82,36 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
             href="/admin"
             className="flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-larioja-azul rounded-lg outline-none"
           >
-            <span className="text-xl font-bold text-larioja-azul dark:text-white">
+            <span className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
               La Rioja Admin
             </span>
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2">
+        <nav className="flex-1 px-4 space-y-3">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               target={link.external ? "_blank" : undefined}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-larioja-azul ${
+              className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 text-lg font-bold outline-none focus-visible:ring-2 focus-visible:ring-larioja-azul ${
                 pathname === link.href
-                  ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white"
+                  ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-lg shadow-larioja-azul/20"
                   : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
               }`}
             >
-              <link.icon size={18} />
+              <link.icon size={22} />
               <span>{link.label}</span>
             </Link>
           ))}
 
-          <div className="pt-8 border-t border-gray-100 dark:border-gray-800 mt-4">
+          <div className="pt-8 border-t border-gray-100 dark:border-gray-800 mt-6">
             <form action={signOut}>
               <button
                 type="submit"
-                className="flex items-center gap-3 px-4 py-2 w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors font-medium outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                className="flex items-center gap-4 px-4 py-3 w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-all duration-200 text-lg font-bold outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
-                <LogOut size={20} />
+                <LogOut size={24} />
                 <span>Cerrar Sesión</span>
               </button>
             </form>
