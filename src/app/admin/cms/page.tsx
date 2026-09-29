@@ -52,14 +52,23 @@ export default async function CMSManager() {
     <div className="space-y-6">
       <TabGroup defaultValue="1">
         <TabList className="mt-8">
-          <Tab value="1" icon={List} className="text-base sm:text-lg">
-            Contenido General
+          <Tab value="1" className="text-base sm:text-lg">
+            <div className="flex items-center gap-2">
+              <List size={20} />
+              <span>Contenido General</span>
+            </div>
           </Tab>
-          <Tab value="2" icon={HelpCircle} className="text-base sm:text-lg">
-            Preguntas Frecuentes (FAQ)
+          <Tab value="2" className="text-base sm:text-lg">
+            <div className="flex items-center gap-2">
+              <HelpCircle size={20} />
+              <span>Preguntas Frecuentes (FAQ)</span>
+            </div>
           </Tab>
-          <Tab value="3" icon={ImageIcon} className="text-base sm:text-lg">
-            Galería de Fotos
+          <Tab value="3" className="text-base sm:text-lg">
+            <div className="flex items-center gap-2">
+              <ImageIcon size={20} />
+              <span>Galería de Fotos</span>
+            </div>
           </Tab>
         </TabList>
         <TabPanels>
