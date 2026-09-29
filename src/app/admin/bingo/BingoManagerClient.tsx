@@ -10,9 +10,17 @@ import {
   Title,
   Text,
 } from "@tremor/react";
-import { Calendar, Ticket, TrendingUp, Users, Dices } from "lucide-react";
+import {
+  Calendar,
+  Ticket,
+  TrendingUp,
+  Users,
+  Dices,
+  BookOpen,
+} from "lucide-react";
 import { callAction } from "@/lib/action-client";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 // Dynamic imports for sub-components
 const EventsTab = dynamic(() => import("@/components/admin/bingo/EventsTab"), {
@@ -176,6 +184,16 @@ export default function BingoManagerClient({
             ventas del sistema.
           </Text>
         </div>
+        {/* Manual de usuario del módulo: pestaña nueva para no perder el
+            estado de la pestaña activa de Gestión de Bingo. */}
+        <Link
+          href="/admin/bingo/manual"
+          target="_blank"
+          className="inline-flex items-center gap-2 rounded-lg border border-larioja-azul/30 px-4 py-2 text-sm font-bold text-larioja-azul transition-colors hover:bg-larioja-azul/10 dark:border-larioja-amarillo/40 dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo/10"
+        >
+          <BookOpen size={18} />
+          Manual de Usuario
+        </Link>
       </div>
 
       <TabGroup index={selectedTab} onIndexChange={setSelectedTab}>
