@@ -1448,7 +1448,7 @@ export default function RealtimeDashboardWrapper({
       <Dialog open={isRealizedOpen} onClose={() => setIsRealizedOpen(false)} static={true}>
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[100]" />
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-5xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh]">
+          <DialogPanel className="max-w-5xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[95vh]">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="bg-amber-50 p-2 rounded-lg text-amber-600">
@@ -1467,33 +1467,33 @@ export default function RealtimeDashboardWrapper({
               </button>
             </div>
 
-            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Tabla de ventas por día */}
-              <div className="flex flex-col">
-                <Flex justifyContent="between" alignItems="center" className="mb-4">
-                  <Title className="text-sm font-bold uppercase text-gray-500">Detalle Diario</Title>
-                  <div className="flex gap-4">
-                    <div className="text-right">
-                      <Text className="text-[10px] font-bold uppercase text-slate-400">Total Facturas</Text>
-                      <Text className="text-sm font-black text-larioja-azul dark:text-larioja-amarillo">
-                        {(data.dailySales || []).reduce((acc: number, d: any) => acc + (d.count || 0), 0)}
-                      </Text>
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Tabla de ventas por día */}
+                <div className="flex flex-col">
+                  <Flex justifyContent="between" alignItems="center" className="mb-4">
+                    <Title className="text-sm font-bold uppercase text-gray-500">Detalle Diario</Title>
+                    <div className="flex gap-4">
+                      <div className="text-right">
+                        <Text className="text-[10px] font-bold uppercase text-slate-400">Total Facturas</Text>
+                        <Text className="text-sm font-black text-larioja-azul dark:text-larioja-amarillo">
+                          {(data.dailySales || []).reduce((acc: number, d: any) => acc + (d.count || 0), 0)}
+                        </Text>
+                      </div>
+                      <div className="text-right border-l border-gray-100 dark:border-gray-800 pl-4">
+                        <Text className="text-[10px] font-bold uppercase text-slate-400">Total Cartones</Text>
+                        <Text className="text-sm font-black text-larioja-azul dark:text-larioja-amarillo">
+                          {(data.dailySales || []).reduce((acc: number, d: any) => acc + (d.cards || 0), 0)}
+                        </Text>
+                      </div>
+                      <div className="text-right border-l border-gray-100 dark:border-gray-800 pl-4">
+                        <Text className="text-[10px] font-bold uppercase text-slate-400">Total Ventas</Text>
+                        <Text className="text-sm font-black text-larioja-verde">
+                          {formatCurrency((data.dailySales || []).reduce((acc: number, d: any) => acc + d.total, 0))}
+                        </Text>
+                      </div>
                     </div>
-                    <div className="text-right border-l border-gray-100 dark:border-gray-800 pl-4">
-                      <Text className="text-[10px] font-bold uppercase text-slate-400">Total Cartones</Text>
-                      <Text className="text-sm font-black text-larioja-azul dark:text-larioja-amarillo">
-                        {(data.dailySales || []).reduce((acc: number, d: any) => acc + (d.cards || 0), 0)}
-                      </Text>
-                    </div>
-                    <div className="text-right border-l border-gray-100 dark:border-gray-800 pl-4">
-                      <Text className="text-[10px] font-bold uppercase text-slate-400">Total Ventas</Text>
-                      <Text className="text-sm font-black text-larioja-verde">
-                        {formatCurrency((data.dailySales || []).reduce((acc: number, d: any) => acc + d.total, 0))}
-                      </Text>
-                    </div>
-                  </div>
-                </Flex>
-                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  </Flex>
                   <Table>
                     <TableHead>
                       <TableRow className="bg-gray-50 dark:bg-slate-800/50">
@@ -1519,56 +1519,56 @@ export default function RealtimeDashboardWrapper({
                     </TableBody>
                   </Table>
                 </div>
-              </div>
 
-              {/* Gráfico de ventas acumuladas */}
-              <div className="flex flex-col">
-                <Title className="text-sm font-bold uppercase text-gray-500 mb-4">Ventas Acumuladas</Title>
-                <div className="flex-1 min-h-[300px]">
-                  {(() => {
-                    let cumulativeTotal = 0;
-                    let cumulativeCount = 0;
-                    const chartData = [...(data.dailySales || [])]
-                      .sort((a, b) => a.date.localeCompare(b.date))
-                      .map((day) => {
-                        cumulativeTotal += day.total;
-                        cumulativeCount += day.count;
-                        return {
-                          date: day.date,
-                          "Total Ventas": cumulativeTotal,
-                          "Cant. Facturas": cumulativeCount,
-                        };
-                      });
+                {/* Gráfico de ventas acumuladas */}
+                <div className="flex flex-col">
+                  <Title className="text-sm font-bold uppercase text-gray-500 mb-4">Ventas Acumuladas</Title>
+                  <div className="min-h-[300px]">
+                    {(() => {
+                      let cumulativeTotal = 0;
+                      let cumulativeCount = 0;
+                      const chartData = [...(data.dailySales || [])]
+                        .sort((a, b) => a.date.localeCompare(b.date))
+                        .map((day) => {
+                          cumulativeTotal += day.total;
+                          cumulativeCount += day.count;
+                          return {
+                            date: day.date,
+                            "Total Ventas": cumulativeTotal,
+                            "Cant. Facturas": cumulativeCount,
+                          };
+                        });
 
-                    return (
-                      <AreaChart
-                        className="h-72 mt-4"
-                        data={chartData}
-                        index="date"
-                        categories={["Total Ventas", "Cant. Facturas"]}
-                        colors={["amber", "blue"]}
-                        valueFormatter={(number: number) =>
-                          Intl.NumberFormat("us").format(number).toString()
-                        }
-                        yAxisWidth={60}
-                        showAnimation={true}
-                      />
-                    );
-                  })()}
-                </div>
-                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
-                   <Flex>
-                      <div>
-                        <Text className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">Total General</Text>
-                        <Metric className="text-xl font-black text-blue-900 dark:text-white">{formatCurrency(data.realized || 0)}</Metric>
-                      </div>
-                      <div className="text-right">
-                        <Text className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">Total Facturas</Text>
-                        <Metric className="text-xl font-black text-blue-900 dark:text-white">
-                          {(data.dailySales || []).reduce((acc: number, d: any) => acc + d.count, 0)}
-                        </Metric>
-                      </div>
-                   </Flex>
+                      return (
+                        <AreaChart
+                          className="h-72 mt-4"
+                          data={chartData}
+                          index="date"
+                          categories={["Total Ventas", "Cant. Facturas"]}
+                          colors={["amber", "blue"]}
+                          valueFormatter={(number: number) =>
+                            Intl.NumberFormat("us").format(number).toString()
+                          }
+                          yAxisWidth={60}
+                          showAnimation={true}
+                        />
+                      );
+                    })()}
+                  </div>
+                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
+                    <Flex>
+                        <div>
+                          <Text className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">Total General</Text>
+                          <Metric className="text-xl font-black text-blue-900 dark:text-white">{formatCurrency(data.realized || 0)}</Metric>
+                        </div>
+                        <div className="text-right">
+                          <Text className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">Total Facturas</Text>
+                          <Metric className="text-xl font-black text-blue-900 dark:text-white">
+                            {(data.dailySales || []).reduce((acc: number, d: any) => acc + d.count, 0)}
+                          </Metric>
+                        </div>
+                    </Flex>
+                  </div>
                 </div>
               </div>
             </div>
