@@ -293,11 +293,29 @@ export default function WheelItemsDialog({
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-        <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
-          <div className="flex items-center justify-between mb-2">
-            <Title>{wheel?.wheel_name}</Title>
-            <div className="flex items-center gap-2">
-              <Badge color="blue">{wheel?.mode}</Badge>
+        <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[98vh]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div>
+              <Title>{wheel?.wheel_name}</Title>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge size="xs" color="blue">{wheel?.mode}</Badge>
+                <Text className="text-xs">Evento: {eventId}</Text>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {wheel?.mode === "Premios" && (
+                <>
+                  <div className="bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-700 text-center">
+                    <Text className="text-[9px] font-bold uppercase text-gray-400 leading-none mb-1">Inicial</Text>
+                    <Text className="text-sm font-black text-gray-600 dark:text-gray-300 leading-none">{totalInitial}</Text>
+                  </div>
+                  <div className="bg-larioja-azul/5 dark:bg-larioja-azul/10 px-3 py-1.5 rounded-lg border border-larioja-azul/20 text-center">
+                    <Text className="text-[9px] font-bold uppercase text-larioja-azul/60 leading-none mb-1">Actual</Text>
+                    <Text className="text-sm font-black text-larioja-azul dark:text-blue-400 leading-none">{totalCurrent}</Text>
+                  </div>
+                </>
+              )}
               <Button
                 size="xs"
                 variant="secondary"
@@ -309,26 +327,9 @@ export default function WheelItemsDialog({
                 }
                 onClick={() => window.open(publicProjectionUrl, "_blank")}
               >
-                {wheel?.mode === "Premios" ? "Abrir Ruleta" : "Abrir Tómbola"}
+                {wheel?.mode === "Premios" ? "Ruleta" : "Tómbola"}
               </Button>
             </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <Text className="text-sm">Evento: {eventId}</Text>
-            
-            {wheel?.mode === "Premios" && (
-              <div className="flex items-center gap-3">
-                <div className="bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-700">
-                  <Text className="text-[10px] font-bold uppercase text-gray-400 leading-none mb-1">Total Inicial</Text>
-                  <Text className="text-lg font-black text-gray-600 dark:text-gray-300 leading-none">{totalInitial}</Text>
-                </div>
-                <div className="bg-larioja-azul/5 dark:bg-larioja-azul/10 px-3 py-1.5 rounded-lg border border-larioja-azul/20">
-                  <Text className="text-[10px] font-bold uppercase text-larioja-azul/60 leading-none mb-1">Total Actual</Text>
-                  <Text className="text-lg font-black text-larioja-azul dark:text-blue-400 leading-none">{totalCurrent}</Text>
-                </div>
-              </div>
-            )}
           </div>
 
           {isCardsMode ? (
@@ -426,56 +427,48 @@ export default function WheelItemsDialog({
           ) : (
             <>
               {wheel?.mode === "Premios" && (
-                <div className="mb-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Ban size={14} className="text-gray-400" />
-                    <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                      Segmentos sin derecho a premio
-                    </Text>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-3 items-end">
-                    <div className="space-y-1">
-                      <Text className="text-[10px] text-gray-400">Cantidad</Text>
+                <div className="mb-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Ban size={14} className="text-gray-400" />
+                      <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                        Sin premio
+                      </Text>
+                    </div>
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-[100px_1fr] gap-2 items-center">
                       <TextInput
                         type="number"
                         min={0}
+                        placeholder="Cant."
                         value={String(noPrizeCount)}
                         onValueChange={(v) =>
                           setNoPrizeCount(Math.max(0, parseInt(v) || 0))
                         }
                       />
-                    </div>
-                    <div className="space-y-1">
-                      <Text className="text-[10px] text-gray-400">Texto del segmento</Text>
                       <TextInput
                         value={noPrizeLabel}
                         onValueChange={setNoPrizeLabel}
-                        placeholder="Ej: Sigue participando"
+                        placeholder="Texto (ej: Sigue participando)"
                       />
                     </div>
                   </div>
-                  <Text className="text-[10px] text-gray-400 italic mt-2">
-                    Se distribuyen aleatoriamente en la ruleta, siempre
-                    separados por al menos un segmento con premio (máximo
-                    recomendado: {items.length}, el total de premios).
-                  </Text>
                 </div>
               )}
 
-              <div className="max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="max-h-[70vh] overflow-y-auto pr-1 custom-scrollbar">
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableHeaderCell>Segmento</TableHeaderCell>
-                      <TableHeaderCell>Color</TableHeaderCell>
+                      <TableHeaderCell className="py-2">Segmento</TableHeaderCell>
+                      <TableHeaderCell className="py-2 text-center">Color</TableHeaderCell>
                       {wheel?.mode === "Premios" && (
                         <>
-                          <TableHeaderCell>Stock Inicial</TableHeaderCell>
-                          <TableHeaderCell>Stock Actual</TableHeaderCell>
+                          <TableHeaderCell className="py-2 text-center">Stock Base</TableHeaderCell>
+                          <TableHeaderCell className="py-2 text-center">Actual</TableHeaderCell>
                         </>
                       )}
-                      <TableHeaderCell>Activo</TableHeaderCell>
-                      <TableHeaderCell className="text-right">
+                      <TableHeaderCell className="py-2 text-center">Activo</TableHeaderCell>
+                      <TableHeaderCell className="py-2 text-right">
                         Quitar
                       </TableHeaderCell>
                     </TableRow>
@@ -483,46 +476,47 @@ export default function WheelItemsDialog({
                   <TableBody>
                     {items.map((item, idx) => (
                       <TableRow key={idx}>
-                        <TableCell>
+                        <TableCell className="py-1 px-1">
                           <Textarea
                             value={item.label}
                             onValueChange={(v) => updateItem(idx, { label: v })}
                             placeholder="Ej: Giftcard&#10;$50"
-                            rows={2}
-                            className="min-w-[200px]"
+                            rows={1}
+                            className="min-w-[200px] text-xs"
                           />
                         </TableCell>
-                        <TableCell>
-                          <input
-                            type="color"
-                            value={item.color}
-                            onChange={(e) =>
-                              updateItem(idx, { color: e.target.value })
-                            }
-                            className="h-9 w-14 cursor-pointer rounded border border-gray-200"
-                            title="Color del segmento"
-                          />
+                        <TableCell className="py-1 px-1 text-center">
+                          <div className="flex justify-center">
+                            <input
+                              type="color"
+                              value={item.color}
+                              onChange={(e) =>
+                                updateItem(idx, { color: e.target.value })
+                              }
+                              className="h-8 w-10 cursor-pointer rounded border border-gray-200"
+                              title="Color del segmento"
+                            />
+                          </div>
                         </TableCell>
                         {wheel?.mode === "Premios" && (
                           <>
-                            <TableCell>
+                            <TableCell className="py-1 px-1">
                               <TextInput
                                 type="number"
                                 min={0}
                                 value={String(item.initial_quantity ?? item.quantity)}
                                 onValueChange={(v) => {
                                   const val = parseInt(v) || 0;
-                                  // Si estamos creando un nuevo item, sincronizamos ambos
                                   updateItem(idx, { 
                                     initial_quantity: val,
                                     quantity: item.label === "" ? val : item.quantity 
                                   });
                                 }}
-                                className="w-24"
+                                className="w-16 mx-auto text-xs"
                                 placeholder="Base"
                               />
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-1 px-1">
                               <TextInput
                                 type="number"
                                 min={0}
@@ -530,23 +524,23 @@ export default function WheelItemsDialog({
                                 onValueChange={(v) =>
                                   updateItem(idx, { quantity: v })
                                 }
-                                className="w-24 font-bold text-larioja-azul"
+                                className="w-16 mx-auto font-bold text-larioja-azul text-xs"
                                 placeholder="Actual"
                               />
                             </TableCell>
                           </>
                         )}
-                        <TableCell>
+                        <TableCell className="py-1 px-1 text-center">
                           <input
                             type="checkbox"
                             checked={item.is_active}
                             onChange={(e) =>
                               updateItem(idx, { is_active: e.target.checked })
                             }
-                            className="h-5 w-5 accent-larioja-azul"
+                            className="h-4 w-4 accent-larioja-azul"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="py-1 px-1 text-right">
                           <Button
                             variant="light"
                             icon={Trash2}
