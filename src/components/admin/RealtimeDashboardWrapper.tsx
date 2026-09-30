@@ -692,95 +692,117 @@ export default function RealtimeDashboardWrapper({
                       <TableHeaderCell className="text-black dark:text-white font-bold text-right">
                         Vendido/Asignado
                       </TableHeaderCell>
+                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
+                        % Cumplimiento
+                      </TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {assignmentByLevel.map((lvl) => (
-                      <React.Fragment key={lvl.level}>
-                        <TableRow className="bg-gray-50/50 dark:bg-slate-900/30">
-                          <TableCell className="font-bold">
-                            <Flex justifyContent="start" className="gap-2">
-                              <button
-                                onClick={() => toggleLevel(lvl.level)}
-                                className="text-gray-500 hover:text-larioja-azul transition-colors"
-                              >
-                                {expandedLevels.has(lvl.level) ? (
-                                  <MinusSquare size={18} />
-                                ) : (
-                                  <PlusSquare size={18} />
-                                )}
-                              </button>
-                              <span className="text-larioja-azul dark:text-blue-400">
-                                {lvl.level}
-                              </span>
-                            </Flex>
+                    {assignmentByLevel.map((lvl) => {
+                      const levelPercentage = lvl.subtotal_assigned > 0 
+                        ? (lvl.subtotal_sold / lvl.subtotal_assigned) * 100 
+                        : 0;
+                      
+                      return (
+                        <React.Fragment key={lvl.level}>
+                          <TableRow className="bg-gray-50/50 dark:bg-slate-900/30">
+                            <TableCell className="font-bold">
+                              <Flex justifyContent="start" className="gap-2">
+                                <button
+                                  onClick={() => toggleLevel(lvl.level)}
+                                  className="text-gray-500 hover:text-larioja-azul transition-colors"
+                                >
+                                  {expandedLevels.has(lvl.level) ? (
+                                    <MinusSquare size={18} />
+                                  ) : (
+                                    <PlusSquare size={18} />
+                                  )}
+                                </button>
+                                <span className="text-larioja-azul dark:text-blue-400">
+                                  {lvl.level}
+                                </span>
+                              </Flex>
+                            </TableCell>
+                            <TableCell className="text-right font-bold">
+                              {lvl.subtotal_cards}
+                            </TableCell>
+                            <TableCell className="text-right font-bold">
+                              {formatCurrency(lvl.subtotal_assigned)}
+                            </TableCell>
+                            <TableCell className="text-right font-bold">
+                              {formatCurrency(lvl.subtotal_sold)}
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-larioja-azul dark:text-larioja-amarillo">
+                              {levelPercentage.toFixed(1)}%
+                            </TableCell>
+                          </TableRow>
+                          {expandedLevels.has(lvl.level) &&
+                            lvl.students.map((student: any, idx: number) => {
+                              const studentPercentage = student.assigned > 0 
+                                ? (student.sold / student.assigned) * 100 
+                                : 0;
+                              
+                              return (
+                                <TableRow
+                                  key={idx}
+                                  className="hover:bg-gray-50 dark:hover:bg-slate-800/50"
+                                >
+                                  <TableCell className="pl-12 text-sm">
+                                    <button
+                                      onClick={() => handleStudentDrillDown(student)}
+                                      className="text-gray-600 dark:text-slate-300 font-medium hover:text-larioja-verde hover:underline text-left"
+                                    >
+                                      {student.name}
+                                    </button>
+                                  </TableCell>
+                                  <TableCell className="text-right text-sm text-gray-500">
+                                    {student.card_count}
+                                  </TableCell>
+                                  <TableCell className="text-right text-sm text-gray-500">
+                                    {formatCurrency(student.assigned)}
+                                  </TableCell>
+                                  <TableCell className="text-right text-sm text-gray-500">
+                                    {student.sold > 0
+                                      ? formatCurrency(student.sold)
+                                      : "—"}
+                                  </TableCell>
+                                  <TableCell className="text-right text-xs text-gray-400 font-medium italic">
+                                    {studentPercentage.toFixed(1)}%
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                        </React.Fragment>
+                      );
+                    })}
+                    {(() => {
+                      const grandAssigned = assignmentByLevel.reduce((acc, l) => acc + l.subtotal_assigned, 0);
+                      const grandSold = assignmentByLevel.reduce((acc, l) => acc + l.subtotal_sold, 0);
+                      const grandPercentage = grandAssigned > 0 ? (grandSold / grandAssigned) * 100 : 0;
+
+                      return (
+                        <TableRow className="bg-[#d9e1f2] dark:bg-slate-800/80">
+                          <TableCell className="font-bold text-black dark:text-white">
+                            Total general
                           </TableCell>
-                          <TableCell className="text-right font-bold">
-                            {lvl.subtotal_cards}
+                          <TableCell className="text-right font-bold text-black dark:text-white">
+                            {assignmentByLevel.reduce(
+                              (acc, l) => acc + l.subtotal_cards,
+                              0,
+                            )}
                           </TableCell>
-                          <TableCell className="text-right font-bold">
-                            {formatCurrency(lvl.subtotal_assigned)}
+                          <TableCell className="text-right font-bold text-black dark:text-white">
+                            {formatCurrency(grandAssigned)}
                           </TableCell>
-                          <TableCell className="text-right font-bold">
-                            {formatCurrency(lvl.subtotal_sold)}
+                          <TableCell className="text-right font-bold text-black dark:text-white">
+                            {formatCurrency(grandSold)}
+                          </TableCell>
+                          <TableCell className="text-right font-black text-larioja-azul dark:text-white">
+                            {grandPercentage.toFixed(1)}%
                           </TableCell>
                         </TableRow>
-                        {expandedLevels.has(lvl.level) &&
-                          lvl.students.map((student: any, idx: number) => (
-                            <TableRow
-                              key={idx}
-                              className="hover:bg-gray-50 dark:hover:bg-slate-800/50"
-                            >
-                              <TableCell className="pl-12 text-sm">
-                                <button
-                                  onClick={() => handleStudentDrillDown(student)}
-                                  className="text-gray-600 dark:text-slate-300 font-medium hover:text-larioja-verde hover:underline text-left"
-                                >
-                                  {student.name}
-                                </button>
-                              </TableCell>
-                              <TableCell className="text-right text-sm text-gray-500">
-                                {student.card_count}
-                              </TableCell>
-                              <TableCell className="text-right text-sm text-gray-500">
-                                {formatCurrency(student.assigned)}
-                              </TableCell>
-                              <TableCell className="text-right text-sm text-gray-500">
-                                {student.sold > 0
-                                  ? formatCurrency(student.sold)
-                                  : "—"}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                      </React.Fragment>
-                    ))}
-                    <TableRow className="bg-[#d9e1f2] dark:bg-slate-800/80">
-                      <TableCell className="font-bold text-black dark:text-white">
-                        Total general
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-black dark:text-white">
-                        {assignmentByLevel.reduce(
-                          (acc, l) => acc + l.subtotal_cards,
-                          0,
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-black dark:text-white">
-                        {formatCurrency(
-                          assignmentByLevel.reduce(
-                            (acc, l) => acc + l.subtotal_assigned,
-                            0,
-                          ),
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-black dark:text-white">
-                        {formatCurrency(
-                          assignmentByLevel.reduce(
-                            (acc, l) => acc + l.subtotal_sold,
-                            0,
-                          ),
-                        )}
-                      </TableCell>
-                    </TableRow>
+                      );
+                    })()}
                   </TableBody>
                 </Table>
               </div>
