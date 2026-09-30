@@ -65,4 +65,5 @@ export interface WheelSpin {
   prize_label: string | null;
   spun_by: string | null;
   spun_at: string;
+  verification_hash?: string | null;
 }

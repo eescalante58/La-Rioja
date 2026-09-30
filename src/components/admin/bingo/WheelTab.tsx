@@ -18,7 +18,17 @@ import {
   TableBody,
   TableCell,
 } from "@tremor/react";
-import { Dices, Plus, Edit, Trash2, Eye, EyeOff, History, Monitor } from "lucide-react";
+import {
+  Dices,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  EyeOff,
+  History,
+  Monitor,
+  ShieldCheck,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
@@ -452,6 +462,9 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                       <TableHeaderCell>Fecha</TableHeaderCell>
                       <TableHeaderCell>Ganador</TableHeaderCell>
                       <TableHeaderCell>Premio</TableHeaderCell>
+                      <TableHeaderCell className="text-right">
+                        Integridad
+                      </TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -464,6 +477,21 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                           {spin.winner_label}
                         </TableCell>
                         <TableCell>{spin.prize_label || "—"}</TableCell>
+                        <TableCell className="text-right">
+                          {spin.verification_hash ? (
+                            <Badge
+                              color="emerald"
+                              icon={ShieldCheck}
+                              tooltip={spin.verification_hash}
+                            >
+                              Verificado
+                            </Badge>
+                          ) : (
+                            <Badge color="gray" tooltip="Giro previo a la auditoría reforzada">
+                              Legacy
+                            </Badge>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

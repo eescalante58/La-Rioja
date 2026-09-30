@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { randomInt } from "node:crypto";
+import { randomInt, createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -137,8 +137,39 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Select winner
-    const winnerIndex = randomInt(0, segments.length);
+    let winnerIndex = 0;
+    if (cfg.mode === "Premios") {
+      // Algoritmo de Suma Acumulada para probabilidad ponderada por stock.
+      // Un premio con stock 10 tiene 10x mas probabilidad que uno con stock 1.
+      // Los segmentos sin premio (isPrize=false) reciben peso 1 para mantener presencia.
+      const weights = segments.map((s) => (s.isPrize === false ? 1 : (s.quantity || 0)));
+      const totalWeight = weights.reduce((a, b) => a + b, 0);
+
+      if (totalWeight > 0) {
+        let randomWeight = randomInt(0, totalWeight);
+        for (let i = 0; i < weights.length; i++) {
+          if (randomWeight < weights[i]) {
+            winnerIndex = i;
+            break;
+          }
+          randomWeight -= weights[i];
+        }
+      } else {
+        winnerIndex = randomInt(0, segments.length);
+      }
+    } else {
+      // Probabilidad uniforme para Cartones / Participantes (todos 1 chance)
+      winnerIndex = randomInt(0, segments.length);
+    }
+
     const winner = segments[winnerIndex];
+    const spunAt = new Date().toISOString();
+
+    // Generar Hash de Verificación para auditoría reforzada (integridad).
+    // El hash incluye datos del giro y un salt secreto para evitar falsificaciones.
+    const salt = process.env.WHEEL_SALT || "larioja-secret-salt-2026";
+    const hashData = `${cfg.id}|${winner.itemId}|${winner.label}|${winner.cardNumber}|${spunAt}|${salt}`;
+    const verificationHash = createHash("sha256").update(hashData).digest("hex");
 
     // 4. Auditoría primero: si el trigger de prizes_number rechaza un giro
     // concurrente, el stock del premio no se descuenta por error.
@@ -152,8 +183,11 @@ export async function POST(request: NextRequest) {
       winner_label: winner.label,
       card_number: winner.cardNumber ?? null,
       // Segmento sin premio: prize_label queda NULL (no hubo premio)
-      prize_label: cfg.mode === "Premios" && winner.isPrize !== false ? winner.label : null,
+      prize_label:
+        cfg.mode === "Premios" && winner.isPrize !== false ? winner.label : null,
       spun_by: null, // Public spin
+      spun_at: spunAt,
+      verification_hash: verificationHash,
     });
 
     if (auditError) {
