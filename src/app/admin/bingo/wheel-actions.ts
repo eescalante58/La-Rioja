@@ -539,15 +539,16 @@ export async function getPublicWheelData(wheelId: number) {
 
   if (error || !cfg) return { error: "La ruleta no está disponible." };
 
-  const [{ count: spinsCount }, segments] = await Promise.all([
+  const [{ count: awardedPrizesCount }, segments] = await Promise.all([
     supabase
       .from("wheel_spins")
       .select("id", { count: "exact", head: true })
-      .eq("wheel_id", wheelId),
+      .eq("wheel_id", wheelId)
+      .not("prize_label", "is", null),
     buildSegments(supabase, cfg),
   ]);
 
-  return { data: { config: cfg, segments, spinsCount: spinsCount ?? 0 } };
+  return { data: { config: cfg, segments, spinsCount: awardedPrizesCount ?? 0 } };
 }
 
 /**
@@ -568,12 +569,13 @@ export async function spinWheel(wheelId: number) {
   if (error || !cfg) return { error: "La ruleta no está disponible." };
 
   const prizesNumber = cfg.prizes_number ?? 0;
-  const { count: spinsCount } = await supabase
+  const { count: awardedPrizesCount } = await supabase
     .from("wheel_spins")
     .select("id", { count: "exact", head: true })
-    .eq("wheel_id", wheelId);
+    .eq("wheel_id", wheelId)
+    .not("prize_label", "is", null);
 
-  if (prizesNumber > 0 && (spinsCount ?? 0) >= prizesNumber) {
+  if (prizesNumber > 0 && (awardedPrizesCount ?? 0) >= prizesNumber) {
     return { error: `La ruleta ya completó los ${prizesNumber} premios configurados.` };
   }
 
@@ -618,6 +620,12 @@ export async function spinWheel(wheelId: number) {
   const winner = segments[winnerIndex];
   const spunAt = new Date().toISOString();
 
+  // Determinar si el giro otorga un premio real. 
+  // En modo Premios, depende de la bandera is_prize del segmento.
+  // En otros modos (Cartones/Participantes), cada giro es un ganador.
+  const isPrize = cfg.mode !== "Premios" || winner.isPrize !== false;
+  const prizeLabel = isPrize ? winner.label : null;
+
   // Generar Hash de Verificación para auditoría reforzada (integridad).
   const salt = process.env.WHEEL_SALT || "larioja-secret-salt-2026";
   const hashData = `${cfg.id}|${winner.itemId}|${winner.label}|${winner.cardNumber}|${spunAt}|${salt}`;
@@ -634,9 +642,7 @@ export async function spinWheel(wheelId: number) {
     item_id: winner.itemId,
     winner_label: winner.label,
     card_number: winner.cardNumber ?? null,
-    // Segmento sin premio: prize_label queda NULL (no hubo premio)
-    prize_label:
-      cfg.mode === "Premios" && winner.isPrize !== false ? winner.label : null,
+    prize_label: prizeLabel,
     spun_by: null, // giro público
     spun_at: spunAt,
     verification_hash: verificationHash,
@@ -666,7 +672,7 @@ export async function spinWheel(wheelId: number) {
     winnerLabel: winner.label,
     cardNumber: winner.cardNumber ?? null,
     segments, // Enviamos los segmentos usados para sincronizar al cliente
-    spinsCount: (spinsCount ?? 0) + 1,
+    spinsCount: isPrize ? (awardedPrizesCount ?? 0) + 1 : (awardedPrizesCount ?? 0),
     prizesNumber,
   };
 }

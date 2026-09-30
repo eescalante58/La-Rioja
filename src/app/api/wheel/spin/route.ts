@@ -97,18 +97,19 @@ export async function POST(request: NextRequest) {
     }
 
     const prizesNumber = cfg.prizes_number ?? 0;
-    const { count: spinsCount } = await supabase
+    const { count: awardedPrizesCount } = await supabase
       .from("wheel_spins")
       .select("id", { count: "exact", head: true })
-      .eq("wheel_id", cfg.id);
+      .eq("wheel_id", cfg.id)
+      .not("prize_label", "is", null);
 
-    if (prizesNumber > 0 && (spinsCount ?? 0) >= prizesNumber) {
+    if (prizesNumber > 0 && (awardedPrizesCount ?? 0) >= prizesNumber) {
       return NextResponse.json(
         {
           success: false,
           finished: true,
           error: `La ruleta ya completó los ${prizesNumber} premios configurados.`,
-          spinsCount: spinsCount ?? 0,
+          spinsCount: awardedPrizesCount ?? 0,
           prizesNumber,
         },
         { status: 400 },
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
           success: false,
           finished: true,
           error: "Sorteo finalizado — ya no quedan premios en la ruleta.",
-          spinsCount: spinsCount ?? 0,
+          spinsCount: awardedPrizesCount ?? 0,
           prizesNumber,
         },
         { status: 400 },
@@ -164,6 +165,12 @@ export async function POST(request: NextRequest) {
 
     const winner = segments[winnerIndex];
     const spunAt = new Date().toISOString();
+    
+    // Determinar si el giro otorga un premio real. 
+    // En modo Premios, depende de la bandera is_prize del segmento.
+    // En otros modos (Cartones/Participantes), cada giro es un ganador.
+    const isPrize = cfg.mode !== "Premios" || winner.isPrize !== false;
+    const prizeLabel = isPrize ? winner.label : null;
 
     // Generar Hash de Verificación para auditoría reforzada (integridad).
     // El hash incluye datos del giro y un salt secreto para evitar falsificaciones.
@@ -182,9 +189,7 @@ export async function POST(request: NextRequest) {
       item_id: winner.itemId,
       winner_label: winner.label,
       card_number: winner.cardNumber ?? null,
-      // Segmento sin premio: prize_label queda NULL (no hubo premio)
-      prize_label:
-        cfg.mode === "Premios" && winner.isPrize !== false ? winner.label : null,
+      prize_label: prizeLabel,
       spun_by: null, // Public spin
       spun_at: spunAt,
       verification_hash: verificationHash,
@@ -197,7 +202,7 @@ export async function POST(request: NextRequest) {
           success: false,
           finished,
           error: auditError.message,
-          spinsCount: finished ? prizesNumber : (spinsCount ?? 0),
+          spinsCount: finished ? prizesNumber : (awardedPrizesCount ?? 0),
           prizesNumber,
         },
         { status: 400 },
@@ -235,7 +240,7 @@ export async function POST(request: NextRequest) {
       cardNumber: winner.cardNumber ?? null,
       itemId: winner.itemId,
       segments, // Devolvemos los segmentos usados en el giro con el stock actualizado
-      spinsCount: (spinsCount ?? 0) + 1,
+      spinsCount: isPrize ? (awardedPrizesCount ?? 0) + 1 : (awardedPrizesCount ?? 0),
       prizesNumber,
     });
   } catch (err: unknown) {

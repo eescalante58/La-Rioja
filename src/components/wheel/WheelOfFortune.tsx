@@ -339,6 +339,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
           setSpinsCount(result.spinsCount ?? prizesNumber);
           setSpinning(false);
           if (suspenseAudio.current) suspenseAudio.current.pause();
+          alert("Límite de premios alcanzado. El sorteo ha finalizado.");
           return;
         }
         throw new Error(result?.error || "Error en el sorteo");
@@ -581,8 +582,14 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
         )}
         {prizesNumber > 0 && (
           <p className="mt-1 font-montserrat text-xs font-bold uppercase tracking-widest text-white/60">
-            Premios sorteados:{" "}
-            <span className="text-larioja-amarillo">
+            {prizeLimitReached ? (
+              <span className="bg-red-600 text-white px-2 py-0.5 rounded mr-2 animate-pulse">
+                Sorteo Finalizado
+              </span>
+            ) : (
+              "Premios sorteados: "
+            )}
+            <span className={prizeLimitReached ? "text-white" : "text-larioja-amarillo"}>
               {Math.min(spinsCount, prizesNumber)} de {prizesNumber}
             </span>
             {isAutomaticRotation && " · Giro automático"}
@@ -729,8 +736,8 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
                             x={tp.x}
                             dy="1.4em"
                             fontSize={Math.max(fontSize - 4, 8)}
-                            fontWeight={400}
-                            fill="rgba(255,255,255,0.7)"
+                            fontWeight={800}
+                            fill="rgba(255,255,255,0.9)"
                           >
                             (Stock: {seg.quantity})
                           </tspan>
