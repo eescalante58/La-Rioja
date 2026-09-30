@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Dices, Ticket, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import { Dices, Ticket, Maximize, Minimize, Volume2, VolumeX, RotateCcw } from "lucide-react";
 import confetti from "canvas-confetti";
 import { callAction } from "@/lib/action-client";
 
@@ -559,6 +559,13 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
 
       {/* Controles flotantes */}
       <div className="fixed top-24 right-6 z-[120] flex flex-col gap-3">
+        <button
+          onClick={() => window.location.reload()}
+          className="p-3 rounded-full bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md border border-white/10 shadow-xl"
+          title="Refrescar pantalla (F5)"
+        >
+          <RotateCcw size={24} />
+        </button>
         <button
           onClick={() => setIsMuted(!isMuted)}
           className="p-3 rounded-full bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-all backdrop-blur-md border border-white/10 shadow-xl"
