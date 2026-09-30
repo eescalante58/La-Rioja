@@ -3,7 +3,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole, withCompanyAccess } from "@/lib/auth/guards";
-import { randomInt } from "node:crypto";
+import { randomInt, createHash } from "node:crypto";
 import { z } from "zod";
 
 /**
@@ -411,6 +411,7 @@ interface WheelSegment {
   label: string;
   color: string | null;
   cardNumber?: number;
+  quantity?: number;
   /** false = segmento sin derecho a premio (modo Premios). */
   isPrize?: boolean;
 }
@@ -463,6 +464,7 @@ async function buildSegments(
     quantity: i.quantity,
     initial_quantity: i.initial_quantity,
     isPrize: i.is_prize !== false,
+    weight: i.is_prize === false ? 1 : (i.quantity || 0),
   }));
 }
 
@@ -589,8 +591,37 @@ export async function spinWheel(wheelId: number) {
     };
   }
 
-  const winnerIndex = randomInt(0, segments.length);
+  let winnerIndex = 0;
+  if (cfg.mode === "Premios") {
+    // Algoritmo de Suma Acumulada para probabilidad ponderada por stock.
+    const weights = segments.map((s) =>
+      s.isPrize === false ? 1 : (s.quantity || 0),
+    );
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+
+    if (totalWeight > 0) {
+      let randomWeight = randomInt(0, totalWeight);
+      for (let i = 0; i < weights.length; i++) {
+        if (randomWeight < weights[i]) {
+          winnerIndex = i;
+          break;
+        }
+        randomWeight -= weights[i];
+      }
+    } else {
+      winnerIndex = randomInt(0, segments.length);
+    }
+  } else {
+    winnerIndex = randomInt(0, segments.length);
+  }
+
   const winner = segments[winnerIndex];
+  const spunAt = new Date().toISOString();
+
+  // Generar Hash de Verificación para auditoría reforzada (integridad).
+  const salt = process.env.WHEEL_SALT || "larioja-secret-salt-2026";
+  const hashData = `${cfg.id}|${winner.itemId}|${winner.label}|${winner.cardNumber}|${spunAt}|${salt}`;
+  const verificationHash = createHash("sha256").update(hashData).digest("hex");
 
   // Auditoría primero: si el trigger de prizes_number rechaza un giro
   // concurrente, el stock del premio no se descuenta por error.
@@ -607,6 +638,8 @@ export async function spinWheel(wheelId: number) {
     prize_label:
       cfg.mode === "Premios" && winner.isPrize !== false ? winner.label : null,
     spun_by: null, // giro público
+    spun_at: spunAt,
+    verification_hash: verificationHash,
   });
 
   if (auditError) return { error: auditError.message };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { randomInt } from "node:crypto";
+import { randomInt, createHash } from "node:crypto";
 
 interface ParticipatingCard {
   id: number;
@@ -146,6 +146,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Auditoría (mismo esquema que wheel_spins de la ruleta)
+    const spunAt = new Date().toISOString();
+    const salt = process.env.WHEEL_SALT || "larioja-secret-salt-2026";
+    const hashData = `${cfg.id}|null|Cartón #${winner.card_number}|${winner.card_number}|${spunAt}|${salt}`;
+    const verificationHash = createHash("sha256").update(hashData).digest("hex");
+
     const { error: auditError } = await supabase.from("wheel_spins").insert({
       wheel_id: cfg.id,
       company_id: cfg.company_id,
@@ -157,6 +162,8 @@ export async function POST(request: NextRequest) {
       card_number: winner.card_number,
       prize_label: null,
       spun_by: null, // giro público
+      spun_at: spunAt,
+      verification_hash: verificationHash,
     });
 
     if (auditError) {
