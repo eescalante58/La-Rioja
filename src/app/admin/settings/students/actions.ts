@@ -142,22 +142,68 @@ export const saveStudent = withRole(8, saveStudentInternal);
  */
 async function deleteStudentInternal(id: number, context: { user: any }) {
   const { user } = context;
-  const supabase = await createClient();
+  // Se usa createAdminClient para asegurar permisos de eliminación y limpieza
+  // de relaciones (students_cards), ya que el usuario admin (rol 8) debe
+  // poder limpiar la base independientemente de RLS restrictivos.
+  const supabase = createAdminClient();
 
-  // Get student details before deleting for the log
-  const { data: student } = await supabase
+  // 1. Obtener detalles del alumno antes de borrar
+  const { data: student, error: fetchError } = await supabase
     .from("students")
-    .select("student_name, student_id")
+    .select("student_name, student_id, company_id, event_id")
     .eq("id", id)
     .single();
 
-  const { error } = await supabase.from("students").delete().eq("id", id);
-
-  if (error) {
-    return { error: error.message };
+  if (fetchError || !student) {
+    return { error: "No se encontró el alumno o ya fue eliminado." };
   }
 
-  // Log activity
+  // 2. Limpiar asignaciones en students_cards y restaurar estado de cartones
+  // Buscamos qué cartones tiene asignados este alumno
+  const { data: assignments } = await supabase
+    .from("students_cards")
+    .select("card_number")
+    .eq("student_id", student.student_id)
+    .eq("company_id", student.company_id)
+    .eq("event_id", student.event_id);
+
+  const cardNumbers = (assignments || []).map((a) => a.card_number);
+
+  if (cardNumbers.length > 0) {
+    // 2a. Borrar las asignaciones
+    const { error: delAssigError } = await supabase
+      .from("students_cards")
+      .delete()
+      .eq("student_id", student.student_id)
+      .eq("company_id", student.company_id)
+      .eq("event_id", student.event_id);
+
+    if (delAssigError) {
+      return { error: "Error al eliminar asignaciones: " + delAssigError.message };
+    }
+
+    // 2b. Restaurar a 'Disponible' solo los cartones que estaban en estado 'Asignado'
+    // (no tocamos los que ya pasaron a 'Vendido')
+    await supabase
+      .from("cards")
+      .update({
+        card_status: "Disponible",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("company_id", student.company_id)
+      .eq("event_id", student.event_id)
+      .eq("card_status", "Asignado")
+      .in("card_number", cardNumbers);
+  }
+
+  // 3. Eliminar el alumno definitivamente
+  const { error: delError } = await supabase.from("students").delete().eq("id", id);
+
+  if (delError) {
+    return { error: "Error al eliminar alumno: " + delError.message };
+  }
+
+  // 4. Log activity
   if (user) {
     await supabase.from("user_activity_log").insert({
       user_id: user.id,
@@ -165,8 +211,9 @@ async function deleteStudentInternal(id: number, context: { user: any }) {
       entity: "students",
       metadata: {
         student_id: id,
-        academic_id: student?.student_id,
-        student_name: student?.student_name || "Unknown",
+        academic_id: student.student_id,
+        student_name: student.student_name,
+        cleaned_assignments: cardNumbers.length,
         timestamp: new Date().toISOString(),
       },
     });
@@ -413,13 +460,14 @@ async function unassignCardFromStudentInternal(
 
   if (deleteError) return { error: deleteError.message };
 
-  // 2. Restore card status to 'Disponible'
+  // 2. Restore card status to 'Disponible' only if it was 'Asignado'
   await supabase
     .from("cards")
     .update({ card_status: "Disponible", updated_at: new Date().toISOString() })
     .eq("company_id", companyId)
     .eq("event_id", eventId)
-    .eq("card_number", cardNumber);
+    .eq("card_number", cardNumber)
+    .eq("card_status", "Asignado");
 
   // 3. Log activity
   if (user) {
