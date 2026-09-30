@@ -275,16 +275,36 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
               ))}
             </Select>
             {selectedEvent && (
-              <Button
-                icon={Plus}
-                className="bg-larioja-azul"
-                onClick={() => {
-                  setEditingWheel(null);
-                  setIsConfigOpen(true);
-                }}
-              >
-                Nueva Ruleta
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  icon={History}
+                  onClick={() => {
+                    // Cargar historial de TODO el evento
+                    const dummyWheelForHistory: any = {
+                      id: null,
+                      wheel_name: "Todos los juegos del evento",
+                      mode: "General",
+                      company_id: selectedEvent.company_id,
+                      event_id: selectedEvent.event_id,
+                    };
+                    handleShowHistory(dummyWheelForHistory);
+                  }}
+                >
+                  Historial General
+                </Button>
+                <Button
+                  icon={Plus}
+                  className="bg-larioja-azul"
+                  onClick={() => {
+                    setEditingWheel(null);
+                    setIsConfigOpen(true);
+                  }}
+                >
+                  Nueva Ruleta
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -460,6 +480,9 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                   <TableHead>
                     <TableRow>
                       <TableHeaderCell>Fecha</TableHeaderCell>
+                      {historyWheel?.id === null && (
+                        <TableHeaderCell>Juego</TableHeaderCell>
+                      )}
                       <TableHeaderCell>Ganador</TableHeaderCell>
                       <TableHeaderCell>Premio</TableHeaderCell>
                       <TableHeaderCell className="text-right">
@@ -473,6 +496,14 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                         <TableCell>
                           {new Date(spin.spun_at).toLocaleString("es-SV")}
                         </TableCell>
+                        {historyWheel?.id === null && (
+                          <TableCell className="text-xs">
+                            {spin.wheel_name}
+                            <Badge size="xs" color={MODE_COLORS[spin.mode] || "gray"} className="ml-1.5 opacity-70">
+                              {spin.mode}
+                            </Badge>
+                          </TableCell>
+                        )}
                         <TableCell className="font-bold">
                           {spin.winner_label}
                         </TableCell>
