@@ -32,6 +32,8 @@ import {
   MinusSquare,
   LayoutGrid,
   DollarSign,
+  ClipboardList,
+  Percent,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -48,12 +50,17 @@ export default function DashboardManualPage() {
     {
       title: "Clientes Registrados",
       icon: Users,
-      desc: "Total de prospectos y compradores en su base de datos promocional.",
+      desc: "Total de prospectos y compradores. Haga clic para ver el listado detallado.",
+    },
+    {
+      title: "Cartones Reportados",
+      icon: ClipboardList,
+      desc: "Cartones auto-registrados en /registro, en vivo. Clic para ver el detalle.",
     },
     {
       title: "Venta Realizada",
       icon: Ticket,
-      desc: "Monto acumulado de facturas pagadas en el evento actual.",
+      desc: "Monto acumulado de facturas pagadas. Clic para abrir el Análisis de Ventas por Día.",
     },
     {
       title: "Cumplimiento Meta",
@@ -256,11 +263,19 @@ export default function DashboardManualPage() {
             <p className="text-slate-600">
               Visualice de un vistazo la carga de cartones asignados, el valor total bajo custodia del alumno y el monto efectivamente vendido.
             </p>
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border-l-4 border-emerald-500">
+              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300 leading-relaxed">
+                <span className="font-bold uppercase tracking-wider">💡 % Cumplimiento</span>:
+                La última columna calcula automáticamente el porcentaje de cumplimiento
+                (<strong>Valor Vendido / Valor Asignado</strong>) por alumno, por nivel y en el
+                <strong>Total General</strong>. Si el valor asignado es $0, se muestra 0.0%.
+              </p>
+            </div>
             <div className="bg-larioja-azul/5 dark:bg-blue-900/20 p-4 rounded-xl border-l-4 border-larioja-azul">
               <p className="text-sm font-bold text-larioja-azul dark:text-blue-300 leading-relaxed">
                 <span className="uppercase tracking-wider">💡 Consulta Detallada</span>:
-                Haga clic en el <strong className="text-larioja-verde underline">nombre del alumno</strong> para abrir el reporte detallado. 
-                Aquí encontrará el ID, nivel y la lista de cartones con su respectivo <strong>N° de Factura</strong>, asegurando una trazabilidad total de la gestión.
+                Haga clic en el <strong className="text-larioja-verde underline">nombre del alumno</strong> para abrir el reporte detallado.
+                Aquí encontrará el ID, nivel y la lista de cartones con su respectivo <strong>N° de Factura</strong> — la ventana muestra hasta <strong>15 filas visibles</strong> sin scroll.
               </p>
             </div>
           </div>
@@ -333,7 +348,7 @@ export default function DashboardManualPage() {
           </Badge>
           <Title className="text-2xl font-bold">Indicadores Clave de Desempeño (KPIs)</Title>
         </div>
-        <Grid numItems={1} numItemsSm={2} numItemsLg={4} className="gap-4">
+        <Grid numItems={1} numItemsSm={2} numItemsLg={5} className="gap-4">
           {kpis.map((kpi) => (
             <Card key={kpi.title} className="p-4 flex flex-col items-center text-center space-y-2 h-full shadow-md">
               <Icon icon={kpi.icon} variant="light" size="lg" color="blue" />
@@ -349,12 +364,81 @@ export default function DashboardManualPage() {
           <Badge size="xl" color="blue">
             7
           </Badge>
+          <Title className="text-2xl font-bold">Análisis de Ventas por Día</Title>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <Card className="p-0 overflow-hidden border-2 border-amber-200 shadow-lg">
+            <div className="bg-amber-50 p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+                <span className="font-bold text-xs text-amber-700 uppercase">Detalle Diario</span>
+                <div className="flex gap-3">
+                  <div className="h-3 w-14 bg-larioja-azul/20 rounded"></div>
+                  <div className="h-3 w-14 bg-larioja-azul/20 rounded"></div>
+                  <div className="h-3 w-14 bg-larioja-verde/30 rounded"></div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="h-2 w-20 bg-slate-300 rounded"></div>
+                  <div className="h-2 w-8 bg-blue-200 rounded"></div>
+                  <div className="h-2 w-16 bg-emerald-200 rounded"></div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-2 w-20 bg-slate-300 rounded"></div>
+                  <div className="h-2 w-8 bg-blue-200 rounded"></div>
+                  <div className="h-2 w-16 bg-emerald-200 rounded"></div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-2 w-20 bg-slate-300 rounded"></div>
+                  <div className="h-2 w-8 bg-blue-200 rounded"></div>
+                  <div className="h-2 w-16 bg-emerald-200 rounded"></div>
+                </div>
+              </div>
+              <div className="pt-2 flex items-end gap-1 h-20">
+                <div className="w-full bg-amber-300/60 rounded-t h-1/4"></div>
+                <div className="w-full bg-amber-300/70 rounded-t h-2/4"></div>
+                <div className="w-full bg-amber-400/80 rounded-t h-3/4"></div>
+                <div className="w-full bg-amber-500/90 rounded-t h-full"></div>
+              </div>
+            </div>
+            <div className="p-4 bg-white border-t border-amber-100 text-center">
+              <Flex justifyContent="center" className="gap-2">
+                <Percent size={16} className="text-amber-600" />
+                <Text className="text-[10px] font-bold uppercase text-amber-700">Detalle diario + curva acumulada</Text>
+              </Flex>
+            </div>
+          </Card>
+          <div className="space-y-4 text-lg">
+            <p>
+              <span className="font-bold text-larioja-azul">Acceso</span>: Haga clic en la tarjeta
+              <strong> Venta Realizada</strong> de la sección de KPIs.
+            </p>
+            <ul className="space-y-2 text-sm text-slate-600 list-disc pl-5">
+              <li><strong>Detalle Diario</strong>: Tabla día por día (más reciente primero) con cantidad de facturas y total vendido por jornada.</li>
+              <li><strong>Totales en Encabezado</strong>: <em>Total Facturas</em>, <em>Total Cartones</em> y <em>Total Ventas</em> del evento completo.</li>
+              <li><strong>Ventas Acumuladas</strong>: Gráfico de área con la curva de crecimiento de ventas y facturas, más el resumen del Total General.</li>
+            </ul>
+            <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border-l-4 border-amber-500">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300 leading-relaxed">
+                <span className="font-bold uppercase tracking-wider">💡 Navegación</span>:
+                La ventana permite <strong>scroll vertical</strong> para recorrer jornadas extensas sin perder de vista el encabezado.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-8">
+        <div className="flex items-center gap-3">
+          <Badge size="xl" color="blue">
+            8
+          </Badge>
           <Title className="text-2xl font-bold">Actividad Reciente y Contactos</Title>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="order-2 md:order-1 space-y-4 text-lg">
             <p>
-              <span className="font-bold text-larioja-azul">Últimas Ventas</span>: Listado rápido de las facturas más recientes con acceso directo a su estado.
+              <span className="font-bold text-larioja-azul">Últimas Ventas</span>: Listado rápido de las facturas más recientes con su cliente, cantidad de cartones, monto y fecha. Haga clic en una venta para abrir su <em>Ficha de Consulta</em> completa.
             </p>
             <p>
               <span className="font-bold text-larioja-azul">Mensajes de Contacto</span>: Visualice los últimos prospectos que han escrito a través de la página web para dar seguimiento inmediato.
@@ -380,7 +464,7 @@ export default function DashboardManualPage() {
           <Info className="text-larioja-amarillo" size={32} />
           <Title className="text-white text-2xl">Tips de Navegación</Title>
         </div>
-        <Grid numItems={1} numItemsSm={3} className="gap-8">
+        <Grid numItems={1} numItemsSm={2} numItemsLg={4} className="gap-8">
           <div className="space-y-2">
             <Flex justifyContent="start" className="gap-2">
               <ArrowLeftRight className="text-larioja-amarillo" size={20} />
@@ -406,6 +490,15 @@ export default function DashboardManualPage() {
             </Flex>
             <Text className="text-white/80 text-sm">
               Localice rápidamente por nombre, factura o teléfono dentro de las ventanas de detalle.
+            </Text>
+          </div>
+          <div className="space-y-2">
+            <Flex justifyContent="start" className="gap-2">
+              <Ticket className="text-larioja-amarillo" size={20} />
+              <span className="font-bold uppercase text-xs">Tarjetas Interactivas</span>
+            </Flex>
+            <Text className="text-white/80 text-sm">
+              Las tarjetas KPI con resaltado al pasar el cursor abren ventanas de detalle al hacer clic.
             </Text>
           </div>
         </Grid>

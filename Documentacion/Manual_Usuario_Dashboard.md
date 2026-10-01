@@ -46,7 +46,8 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 *   **Vista Jerárquica**: Los datos se agrupan por niveles (Ej: Terapéutico, Laboral). Use los iconos **[+]** o **[-]** para expandir y ver a los alumnos.
 *   **Métricas por Alumno**: Visualice cuántos cartones tiene cada estudiante, el valor asignado y cuánto ha logrado vender.
-*   **Consulta Detallada**: Haga clic en el **nombre del alumno** para abrir un reporte detallado con los números de cartón específicos y facturas asociadas a su gestión.
+*   **% Cumplimiento**: Columna final que calcula automáticamente el porcentaje de cumplimiento *(Valor Vendido / Valor Asignado)* para cada alumno, cada nivel y la fila de **Total General**. Si el valor asignado es $0, el porcentaje se muestra como 0.0%.
+*   **Consulta Detallada**: Haga clic en el **nombre del alumno** para abrir un reporte detallado con los números de cartón específicos y facturas asociadas a su gestión. La ventana muestra hasta **15 filas visibles** sin necesidad de scroll.
 
 ---
 
@@ -68,17 +69,32 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 | :--- | :--- |
 | **Secciones CMS** 📝 | Indica el número de áreas de contenido gestionable en la web pública. |
 | **Clientes Registrados** 👥 | Total de prospectos y compradores en su base de datos promocional. Haga clic en esta tarjeta para ver el listado detallado (Nombre y Teléfono). |
-| **Venta Realizada** 💰 | Monto acumulado de facturas pagadas en el evento actual. |
+| **Cartones Reportados** 📋 | Cartones auto-registrados por los asistentes en el formulario público `/registro`. Se actualiza en vivo durante el evento. Haga clic para ver el detalle por folio, cartón, asistente, teléfono, tómbola y estado (En juego / Ganador), con buscador interno. |
+| **Venta Realizada** 💰 | Monto acumulado de facturas pagadas en el evento actual. Haga clic para abrir el *Análisis de Ventas por Día* (ver sección 7). |
 | **Cumplimiento Meta** 🚀 | Porcentaje de avance respecto al objetivo financiero del evento. |
 
 ---
 
-## 7. 🕒 Actividad Reciente y Contactos
+## 7. � Análisis de Ventas por Día
+*Detalle ejecutivo de la recaudación del evento.*
+
+*   **Acceso**: Haga clic en la tarjeta **Venta Realizada** de la sección de KPIs.
+*   **Detalle Diario**: Tabla con la evolución día por día ordenada de la fecha más reciente a la más antigua, mostrando la cantidad de facturas y el total vendido por jornada.
+*   **Totales en Encabezado**: Junto al título *Detalle Diario* se muestran los grandes acumulados del evento:
+    *   **Total Facturas**: número de facturas procesadas.
+    *   **Total Cartones**: cartones vendidos.
+    *   **Total Ventas**: monto total recaudado.
+*   **Ventas Acumuladas**: Gráfico de área con la curva de crecimiento de ventas y facturas a lo largo del evento, más el resumen del **Total General**.
+*   **Navegación**: La ventana permite **scroll vertical** para recorrer jornadas extensas sin perder de vista el encabezado.
+
+---
+
+## 8. �🕒 Actividad Reciente y Contactos
 *Bitácora de interacciones en tiempo real.*
 
 ![Actividad](https://img.icons8.com/fluency/48/000000/activity-feed.png)
 
-*   **Últimas Ventas**: Listado rápido de las facturas más recientes con acceso directo a su estado.
+*   **Últimas Ventas**: Listado rápido de las facturas más recientes con su cliente, cantidad de cartones, monto y fecha. Haga clic en una venta para abrir su *Ficha de Consulta* completa.
 *   **Mensajes de Contacto**: Visualice los últimos prospectos que han escrito a través de la página web para dar seguimiento inmediato.
 
 ---
@@ -87,3 +103,5 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 1.  **Icono de Flecha (←)**: Utilícelo para retroceder niveles dentro de las ventanas emergentes (ej. de detalle de cartones volver a facturas).
 2.  **Tiempo Real**: No necesita refrescar la página; el dashboard se actualiza automáticamente cada vez que se registra una venta o cambio.
 3.  **Buscador**: En las ventanas de detalle, utilice el buscador para localizar rápidamente por nombre, número de factura o teléfono.
+4.  **Acceso al Manual**: Desde el encabezado del dashboard, el botón **"Manual de Usuario"** abre esta guía en cualquier momento.
+5.  **Tarjetas Interactivas**: Las tarjetas de KPI con efecto de resaltado al pasar el cursor (*Clientes Registrados*, *Cartones Reportados* y *Venta Realizada*) abren ventanas de detalle al hacer clic.
