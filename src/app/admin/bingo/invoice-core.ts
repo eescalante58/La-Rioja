@@ -427,6 +427,71 @@ export async function getEventCardsCore(companyId: number, eventId: string) {
   return { success: true, data };
 }
 
+/**
+ * Informe de cartones por estado dentro de un rango [from, to].
+ * Devuelve una fila por cartón con los datos de venta y el nombre del
+ * cliente tomado de la factura vinculada (join por invoice_number).
+ * Pagina en bloques de 1000 porque el inventario puede superar el
+ * límite por consulta de PostgREST.
+ */
+export async function getCardsStatusReportCore(
+  companyId: number,
+  eventId: string,
+  status: string,
+  fromCard: number,
+  toCard: number,
+) {
+  const supabase = createAdminClient();
+  const pageSize = 1000;
+  const all: Record<string, unknown>[] = [];
+
+  for (let from = 0; ; from += pageSize) {
+    let query = supabase
+      .from("cards")
+      .select(
+        `
+        card_number,
+        card_type,
+        card_status,
+        invoice_number,
+        player_name,
+        player_phone_number,
+        sold_by,
+        invoices:invoices ( customer_name )
+      `,
+      )
+      .eq("company_id", companyId)
+      .eq("event_id", eventId)
+      .gte("card_number", fromCard)
+      .lte("card_number", toCard)
+      .order("card_number", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (status && status !== "Todos") {
+      query = query.eq("card_status", status);
+    }
+
+    const { data, error } = await query;
+    if (error) return { error: error.message };
+    all.push(...((data || []) as Record<string, unknown>[]));
+    if (!data || data.length < pageSize) break;
+  }
+
+  const rows = all.map((r) => ({
+    card_number: r.card_number,
+    card_type: r.card_type,
+    card_status: r.card_status,
+    invoice_number: r.invoice_number,
+    customer_name:
+      (r.invoices as { customer_name?: string } | null)?.customer_name || "",
+    player_name: r.player_name,
+    player_phone_number: r.player_phone_number,
+    sold_by: r.sold_by,
+  }));
+
+  return { success: true, data: rows };
+}
+
 /** Cartones vinculados a un número de factura del evento. */
 export async function getCardsForInvoiceCore(
   companyId: number,

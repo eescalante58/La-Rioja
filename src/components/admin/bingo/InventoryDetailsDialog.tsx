@@ -16,7 +16,16 @@ import {
   TableBody,
   TableCell,
 } from "@tremor/react";
-import { Search, RefreshCw, Ticket, Eye, Edit, UserCheck } from "lucide-react";
+import {
+  Search,
+  RefreshCw,
+  Ticket,
+  Eye,
+  Edit,
+  UserCheck,
+  FileText,
+} from "lucide-react";
+import CardStatusReportDialog from "./CardStatusReportDialog";
 
 interface InventoryDetailsDialogProps {
   isOpen: boolean;
@@ -42,6 +51,7 @@ export default function InventoryDetailsDialog({
   onEditCard,
 }: InventoryDetailsDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   /**
    * Buscador multi-campo del inventario. Si el query es numérico corto
@@ -97,7 +107,17 @@ export default function InventoryDetailsDialog({
                 </Title>
                 <Text className="text-sm font-medium">Evento: {event?.event_name}</Text>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  icon={FileText}
+                  color="indigo"
+                  onClick={() => setIsReportOpen(true)}
+                  tooltip="Informe de cartones por estado en un rango (CSV/PDF)"
+                >
+                  Informe
+                </Button>
                 <Button size="xs" variant="secondary" icon={UserCheck} onClick={onRangePlayerReassign}>
                   Reasignar Jugador
                 </Button>
@@ -233,6 +253,13 @@ export default function InventoryDetailsDialog({
           </div>
         </DialogPanel>
       </div>
+
+      {/* Informe de cartones por estado en un rango (CSV/PDF) */}
+      <CardStatusReportDialog
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        event={event}
+      />
     </Dialog>
   );
 }
