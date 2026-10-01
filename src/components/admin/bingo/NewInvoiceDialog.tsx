@@ -413,6 +413,27 @@ export default function NewInvoiceDialog({
                   </div>
                 </div>
                 <div className="space-y-1">
+                  {invoice?.created_at && (
+                    <div className="space-y-1 mb-2">
+                      <Text className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Registrado (created_at)</Text>
+                      <input
+                        type="text"
+                        readOnly
+                        disabled
+                        value={new Date(invoice.created_at).toLocaleString("es-SV", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          hour12: true,
+                        })}
+                        title={new Date(invoice.created_at).toISOString()}
+                        className="w-full p-1.5 text-xs rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                      />
+                    </div>
+                  )}
                   <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Fecha</Text>
                   <input
                     name="invoice_date"
