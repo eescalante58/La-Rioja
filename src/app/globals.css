@@ -105,3 +105,15 @@
   bottom: 10%;
   right: -50px;
 }
+
+/**
+ * Diálogos usables en smartphone: iOS hace auto-zoom al enfocar inputs
+ * con font-size < 16px; forzamos 16px solo en pantallas pequeñas.
+ */
+@media (max-width: 640px) {
+  .dialog-mobile input,
+  .dialog-mobile select,
+  .dialog-mobile textarea {
+    font-size: 16px;
+  }
+}

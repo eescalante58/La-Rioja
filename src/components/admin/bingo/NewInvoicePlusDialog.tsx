@@ -325,16 +325,16 @@ export default function NewInvoicePlusDialog({
   return (
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <DialogPanel className="max-w-6xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[98vh]">
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
-            <Title className="text-larioja-azul dark:text-larioja-amarillo">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <DialogPanel className="dialog-mobile max-w-6xl w-full bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[100dvh] sm:max-h-[98vh]">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3 flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md">
+            <Title className="text-larioja-azul dark:text-larioja-amarillo whitespace-nowrap">
               Nueva Factura Plus
             </Title>
-            <div className="text-right text-xs font-bold text-gray-500 space-y-0.5">
-              <div>EVENTO: {currentEvent?.eventId}</div>
+            <div className="text-right text-[10px] sm:text-xs font-bold text-gray-500 space-y-0.5 min-w-0">
+              <div className="truncate">EVENTO: {currentEvent?.eventId}</div>
               {(invoiceNumber || customerName) && (
-                <div className="text-larioja-azul dark:text-larioja-amarillo">
+                <div className="text-larioja-azul dark:text-larioja-amarillo truncate">
                   FACTURA #{invoiceNumber || "—"}{" "}
                   {customerName ? `— ${customerName}` : ""}
                 </div>
@@ -361,29 +361,29 @@ export default function NewInvoicePlusDialog({
 
               {/* Fila 1: factura, fecha, pago, estado */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
-                      N° Factura
-                    </Text>
+                <div className="space-y-1 col-span-2 sm:col-span-1">
+                  <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
+                    N° Factura
+                  </Text>
+                  <div className="flex gap-2">
+                    <TextInput
+                      name="invoice_number"
+                      placeholder="F001-000001"
+                      value={invoiceNumber}
+                      onValueChange={setInvoiceNumber}
+                      required
+                    />
                     <button
                       type="button"
                       onClick={handleAutoNumber}
                       disabled={autoNumbering}
                       title="Generar número automático (FactAut-…)"
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-larioja-azul hover:bg-larioja-azul/10 disabled:opacity-50"
+                      className="inline-flex shrink-0 items-center gap-1 self-stretch rounded-lg border border-larioja-azul/30 px-2.5 text-[10px] font-bold uppercase tracking-wider text-larioja-azul hover:bg-larioja-azul/10 disabled:opacity-50"
                     >
                       <Hash size={12} />
                       {autoNumbering ? "…" : "Auto"}
                     </button>
                   </div>
-                  <TextInput
-                    name="invoice_number"
-                    placeholder="F001-000001"
-                    value={invoiceNumber}
-                    onValueChange={setInvoiceNumber}
-                    required
-                  />
                 </div>
                 <div className="space-y-1">
                   <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
@@ -537,6 +537,7 @@ export default function NewInvoicePlusDialog({
                   </Text>
                   <TextInput
                     name="phone_number"
+                    type="tel"
                     placeholder="1234567"
                     value={phoneNumber}
                     onValueChange={setPhoneNumber}
@@ -548,6 +549,7 @@ export default function NewInvoicePlusDialog({
                   </Text>
                   <TextInput
                     name="whatsapp_number"
+                    type="tel"
                     value={whatsappNumber}
                     onValueChange={setWhatsappNumber}
                     icon={Smartphone}
@@ -577,7 +579,7 @@ export default function NewInvoicePlusDialog({
 
               {/* Fila 4: imagen, cantidad, valor, total */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
+                <div className="space-y-1 col-span-2 sm:col-span-1 min-w-0">
                   <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Imagen de Factura
                   </Text>
@@ -685,7 +687,7 @@ export default function NewInvoicePlusDialog({
                     name="associated_cards"
                     value={JSON.stringify(selectedCards)}
                   />
-                  <div className="flex items-end gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-end gap-2">
                     <div className="flex-grow grid grid-cols-2 gap-2">
                       <div className="space-y-0.5">
                         <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
@@ -721,7 +723,7 @@ export default function NewInvoicePlusDialog({
                     <Button
                       type="button"
                       icon={Search}
-                      className="bg-larioja-azul"
+                      className="bg-larioja-azul w-full sm:w-auto"
                       onClick={handleVerifyRange}
                       loading={checkingRange}
                     >
@@ -732,9 +734,9 @@ export default function NewInvoicePlusDialog({
               </div>
             </div>
 
-            <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-3 flex-shrink-0 bg-gray-50/50">
+            <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3 flex-shrink-0 bg-gray-50/50">
               {savedFlash && (
-                <span className="mr-auto rounded-full bg-larioja-verde/15 px-4 py-1.5 text-xs font-bold text-larioja-verde">
+                <span className="sm:mr-auto rounded-full bg-larioja-verde/15 px-4 py-1.5 text-xs font-bold text-larioja-verde text-center">
                   ✓ {savedFlash} — listo para el siguiente
                 </span>
               )}
@@ -744,6 +746,7 @@ export default function NewInvoicePlusDialog({
                 onClick={onClose}
                 disabled={loading}
                 type="button"
+                className="w-full sm:w-auto"
                 tooltip="Abandonar el formulario y volver a Ventas y Facturación"
               >
                 Salir
@@ -753,11 +756,16 @@ export default function NewInvoicePlusDialog({
                 onClick={resetForm}
                 disabled={loading}
                 type="button"
+                className="w-full sm:w-auto"
                 tooltip="Limpiar los datos ingresados sin salir del formulario"
               >
                 Cancelar
               </Button>
-              <Button type="submit" loading={loading} className="bg-larioja-azul">
+              <Button
+                type="submit"
+                loading={loading}
+                className="bg-larioja-azul w-full sm:w-auto"
+              >
                 Guardar Factura
               </Button>
             </div>
