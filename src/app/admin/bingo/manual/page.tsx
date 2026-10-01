@@ -32,6 +32,10 @@ import {
   AlertTriangle,
   Smartphone,
   MousePointerClick,
+  ShieldCheck,
+  RotateCcw,
+  Volume2,
+  Maximize,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -276,8 +280,13 @@ export default function BingoManualPage() {
             <li>
               <strong>Cliente, Email, Observación</strong> y{" "}
               <strong>Teléfono/WhatsApp</strong> con{" "}
-              <strong>Código de Área</strong> (selector con banderas, por
-              defecto +503 El Salvador).
+              <strong>Código de Área</strong>: al enfocar el campo se
+              despliega la <strong>lista completa de países</strong> ordenada
+              alfabéticamente (bandera + código + nombre); al escribir dígitos
+              filtra por código. Por defecto{" "}
+              <strong>+503 El Salvador</strong>; para códigos compartidos
+              (ej. +1) se preselecciona Estados Unidos y la bandera elegida se
+              respeta.
             </li>
             <li>
               <strong>Rango de cartones</strong>: el sistema verifica
@@ -302,6 +311,11 @@ export default function BingoManualPage() {
 
           <Title className="text-lg">Tabla de facturas</Title>
           <ul className="list-disc pl-5 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <li>
+              <strong>Orden</strong>: la más reciente primero (por fecha/hora
+              real de registro, <code>created_at</code> descendente), para ver
+              de inmediato la última venta.
+            </li>
             <li>
               <strong>Buscador</strong>: por N° factura, cliente, gestor,
               teléfono, email o monto.
@@ -439,12 +453,26 @@ export default function BingoManualPage() {
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 <tr>
                   <td className="py-2 pr-4 font-semibold whitespace-nowrap">
+                    <History size={14} className="inline mr-1" /> Historial
+                    General
+                  </td>
+                  <td className="py-2 text-slate-600 dark:text-slate-300">
+                    Botón en el encabezado de la pestaña. Consulta{" "}
+                    <strong>todos los giros del evento</strong> (todas las
+                    ruletas y tómbolas) con una columna <em>Juego</em> que
+                    identifica de cuál salió cada resultado.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-2 pr-4 font-semibold whitespace-nowrap">
                     Nueva Ruleta
                   </td>
                   <td className="py-2 text-slate-600 dark:text-slate-300">
                     Crea una ruleta: nombre, modo, giro manual o{" "}
-                    <strong>automático</strong> (con segundos de espera) y
-                    número máximo de premios.
+                    <strong>automático</strong> (con segundos de espera) y{" "}
+                    <strong>número máximo de premios</strong> (
+                    <code>0</code> = sin límite; el contador se basa en el
+                    historial y <em>no se reinicia</em> al recargar stock).
                   </td>
                 </tr>
                 <tr>
@@ -452,7 +480,10 @@ export default function BingoManualPage() {
                     Editar/Ver Segmentos
                   </td>
                   <td className="py-2 text-slate-600 dark:text-slate-300">
-                    Mantiene los segmentos (nombre, color, stock por premio).
+                    Mantiene los segmentos (nombre, color, stock inicial y
+                    actual en <strong>negrita</strong>, activo, eliminar). El
+                    área de segmentos muestra los <strong>primeros 7 sin
+                    scroll</strong>; los demás se alcanzan con scroll interno.
                     En modo Premios incluye el bloque{" "}
                     <strong>"Segmentos sin derecho a premio"</strong>: se
                     indican cantidad y texto, y el sistema los distribuye
@@ -494,7 +525,11 @@ export default function BingoManualPage() {
                     <History size={14} className="inline mr-1" /> Historial
                   </td>
                   <td className="py-2 text-slate-600 dark:text-slate-300">
-                    Lista de giros realizados con su resultado.
+                    Lista de giros de esa ruleta con su resultado. Incluye la
+                    columna <strong>Integridad</strong>: badge{" "}
+                    <em>Verificado</em> con el hash SHA-256 que firma el
+                    registro (los giros anteriores a la mejora se marcan{" "}
+                    <em>Legacy</em>).
                   </td>
                 </tr>
                 <tr>
@@ -509,13 +544,40 @@ export default function BingoManualPage() {
             </table>
           </div>
 
-          <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border-l-4 border-amber-500">
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border-l-4 border-amber-500 space-y-2">
             <Text className="text-sm font-bold text-amber-800 dark:text-amber-300">
               <AlertTriangle size={16} className="inline mr-1" />
-              Fin del sorteo: la ruleta muestra "Sorteo finalizado" cuando se
-              agota el número de premios configurado o cuando solo quedan
-              segmentos sin premio.
+              Contador y fin del sorteo:
             </Text>
+            <ul className="list-disc pl-5 space-y-1 text-sm text-amber-800 dark:text-amber-300">
+              <li>
+                <strong>"Premios sorteados: X de Y"</strong> solo incrementa
+                cuando sale un premio real. Los segmentos{" "}
+                <em>sin derecho a premio</em> (ej. "Sigue participando") no
+                consumen stock ni mueven el contador.
+              </li>
+              <li>
+                Al llegar al límite configurado, la ruleta muestra la alerta y
+                el indicador rojo pulsante <strong>"SORTEO FINALIZADO"</strong>;
+                también finaliza si solo quedan segmentos sin premio.
+              </li>
+              <li>
+                <strong>Recargar stock no reactiva</strong> una ruleta
+                finalizada: el límite cuenta los premios del historial. Para
+                una nueva ronda, amplíe el <em>Número de premios</em> en{" "}
+                <strong>Datos</strong> (ej. de 7 a 14) o póngalo en{" "}
+                <code>0</code> para operar solo por stock.
+              </li>
+              <li>
+                <ShieldCheck size={14} className="inline mr-1" />
+                <strong>Aleatoriedad criptográfica</strong>: el ganador lo
+                decide el servidor con <code>crypto.randomInt</code> y{" "}
+                <strong>probabilidad ponderada por stock</strong> (un premio
+                con stock 10 tiene 10 veces más probabilidad que uno con 1 en
+                el mismo giro). Cada giro queda firmado con un hash de
+                verificación.
+              </li>
+            </ul>
           </div>
         </Card>
       </section>
@@ -546,7 +608,10 @@ export default function BingoManualPage() {
             <Text className="text-xs text-slate-600 dark:text-slate-300">
               Ruleta de premios para proyectar. Acepta{" "}
               <code>?evento=&lt;id&gt;&amp;nombre=&lt;ruleta&gt;</code>. El logo
-              de La Rioja lleva a la consola admin.
+              de La Rioja lleva a la consola admin. Controles flotantes:{" "}
+              <RotateCcw size={12} className="inline" /> refresco (F5),{" "}
+              <Volume2 size={12} className="inline" /> sonido y{" "}
+              <Maximize size={12} className="inline" /> pantalla completa.
             </Text>
           </Card>
           <Card className="p-4 space-y-2">
@@ -555,7 +620,8 @@ export default function BingoManualPage() {
             </Title>
             <Text className="text-xs text-slate-600 dark:text-slate-300">
               Tómbola de cartones/participantes para proyectar. Mismos
-              parámetros de URL que la ruleta; incluye{" "}
+              parámetros de URL y los mismos controles (refresco, sonido,
+              pantalla completa) que la ruleta; incluye{" "}
               <code>/tombola/monitor</code> para el staff.
             </Text>
           </Card>
