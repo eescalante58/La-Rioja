@@ -10,8 +10,8 @@ import { checkAdmin } from "../check-admin";
  * /api/bingo/whatsapp — flujo de envío posterior a la venta.
  *
  * Route Handler a propósito (JSON puro, sin re-render RSC de
- * /admin/bingo). El envío automático exige rol 6 como la Server Action
- * original; plantilla y marcado de estado exigen rol 4.
+ * /admin/bingo). Envío automático, plantilla y marcado de estado
+ * exigen rol 4 (perfil Ventas).
  *
  *   GET  ?view=template&companyId=          → plantilla activa
  *   POST { action:"send",   companyId, to, message, templateImage?,
@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === "send") {
-    // Envío automático Ultramsg: mismo piso de rol (6) que la acción original
-    const auth = await checkAdmin(companyId, 6);
+    // Envío automático Ultramsg: habilitado para operadores de venta (rol 4)
+    const auth = await checkAdmin(companyId, 4);
     if ("error" in auth) {
       return NextResponse.json(
         { success: false, error: auth.error },

@@ -189,7 +189,7 @@ async function uploadCardsBatchInternal(
   };
 }
 
-export const uploadCardsBatch = withRole(8, withCompanyAccess(uploadCardsBatchInternal, 0));
+export const uploadCardsBatch = withRole(4, withCompanyAccess(uploadCardsBatchInternal, 0));
 
 /**
  * Upload a single card image and create its record in the database.
@@ -268,7 +268,7 @@ async function uploadSingleCardImageInternal(
   }
 }
 
-export const uploadSingleCardImage = withRole(8, withCompanyAccess(uploadSingleCardImageInternal, 0));
+export const uploadSingleCardImage = withRole(4, withCompanyAccess(uploadSingleCardImageInternal, 0));
 
 /**
  * Delete 'Disponible' cards for an event within a specified range before a new upload batch.
@@ -347,7 +347,7 @@ async function clearEventCardsInternal(
   return { success: true };
 }
 
-export const clearEventCards = withRole(8, withCompanyAccess(clearEventCardsInternal, 0));
+export const clearEventCards = withRole(4, withCompanyAccess(clearEventCardsInternal, 0));
 
 /**
  * Log the summary of an upload operation.
@@ -395,7 +395,7 @@ async function logUploadActivityInternal(
   return { success: true };
 }
 
-export const logUploadActivity = withRole(8, withCompanyAccess(logUploadActivityInternal, 0));
+export const logUploadActivity = withRole(4, withCompanyAccess(logUploadActivityInternal, 0));
 
 /**
  * Verifies the number of cards in the database for a given event.
@@ -542,7 +542,7 @@ async function saveEventInternal(formData: FormData, context: { user: any }) {
   return { success: true };
 }
 
-export const saveEvent = withRole(8, saveEventInternal);
+export const saveEvent = withRole(4, saveEventInternal);
 
 /**
  * Delete a Bingo event.
@@ -582,7 +582,7 @@ async function deleteEventInternal(id: number, context: { user: any }) {
   return { success: true };
 }
 
-export const deleteEvent = withRole(10, deleteEventInternal);
+export const deleteEvent = withRole(4, deleteEventInternal);
 
 /**
  * Obtiene todas las filas de una tabla filtradas por empresa/evento,
@@ -787,7 +787,7 @@ async function generateCardsInternal(
   return { success: true };
 }
 
-export const generateCards = withRole(8, withCompanyAccess(generateCardsInternal, 0));
+export const generateCards = withRole(4, withCompanyAccess(generateCardsInternal, 0));
 
 /**
  * Reassign card type (Virtual/Fisico) and log activity.
@@ -1226,7 +1226,7 @@ async function checkCardsRangeInternal(
 export const checkCardsRange = withRole(4, withCompanyAccess(checkCardsRangeInternal, 0));
 
 export const sendWhatsAppAutomation = withRole(
-  6,
+  4,
   sendWhatsAppAutomationInternal,
 );
 
@@ -1314,7 +1314,7 @@ async function saveCustomerInternal(payload: {
   return { success: true, data };
 }
 
-export const saveCustomer = withRole(6, withCompanyAccess(saveCustomerInternal, 0));
+export const saveCustomer = withRole(4, withCompanyAccess(saveCustomerInternal, 0));
 
 async function deleteCustomerInternal(id: number) {
   const supabase = await createClient();
@@ -1327,7 +1327,7 @@ async function deleteCustomerInternal(id: number) {
   return { success: true };
 }
 
-export const deleteCustomer = withRole(6, deleteCustomerInternal);
+export const deleteCustomer = withRole(4, deleteCustomerInternal);
 
 async function getPromoTemplatesInternal() {
   const supabase = await createClient();
@@ -1373,7 +1373,7 @@ async function logPromoMessageInternal(payload: {
   return { success: true };
 }
 
-export const logPromoMessage = withRole(6, logPromoMessageInternal);
+export const logPromoMessage = withRole(4, logPromoMessageInternal);
 
 async function getBatchLogsInternal(companyId: number) {
   const supabase = await createClient();
@@ -1558,7 +1558,7 @@ async function syncCustomersInternal(companyId: number) {
 }
 
 export const syncCustomers = withRole(
-  6,
+  4,
   withCompanyAccess(syncCustomersInternal, 0),
 );
 
@@ -1594,7 +1594,7 @@ async function uploadPromoImageInternal(formData: FormData) {
   }
 }
 
-export const uploadPromoImage = withRole(6, uploadPromoImageInternal);
+export const uploadPromoImage = withRole(4, uploadPromoImageInternal);
 
 // La lógica de Ultramsg vive en whatsapp-core.ts (compartida con
 // POST /api/bingo/whatsapp); aquí solo quedan las delegaciones.
@@ -1603,7 +1603,7 @@ async function checkWhatsAppInstanceStatusInternal() {
 }
 
 export const checkWhatsAppInstanceStatus = withRole(
-  6,
+  4,
   checkWhatsAppInstanceStatusInternal,
 );
 
