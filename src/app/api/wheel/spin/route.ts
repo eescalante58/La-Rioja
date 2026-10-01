@@ -137,33 +137,79 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Select winner
-    let winnerIndex = 0;
-    if (cfg.mode === "Premios") {
-      // Algoritmo de Suma Acumulada para probabilidad ponderada por stock.
-      // Un premio con stock 10 tiene 10x mas probabilidad que uno con stock 1.
-      // Los segmentos sin premio (isPrize=false) reciben peso 1 para mantener presencia.
-      const weights = segments.map((s) => (s.isPrize === false ? 1 : (s.quantity || 0)));
-      const totalWeight = weights.reduce((a, b) => a + b, 0);
+    // 3. Select winner + decremento de stock ATOMICO (CAS):
+    // el UPDATE exige que quantity siga en el valor leido; si otro giro
+    // simultaneo lo altero, se descarta el segmento y se re-selecciona.
+    let winner: WheelSegment | null = null;
+    let winnerIndex = -1;
 
-      if (totalWeight > 0) {
-        let randomWeight = randomInt(0, totalWeight);
-        for (let i = 0; i < weights.length; i++) {
-          if (randomWeight < weights[i]) {
-            winnerIndex = i;
-            break;
+    for (let attempt = 0; attempt < 3 && !winner; attempt++) {
+      let idx = 0;
+      if (cfg.mode === "Premios") {
+        // Algoritmo de Suma Acumulada para probabilidad ponderada por stock.
+        // Un premio con stock 10 tiene 10x mas probabilidad que uno con stock 1.
+        // Los segmentos sin premio (isPrize=false) reciben peso 1 para mantener presencia.
+        const weights = segments.map((s) => (s.isPrize === false ? 1 : (s.quantity || 0)));
+        const totalWeight = weights.reduce((a, b) => a + b, 0);
+
+        if (totalWeight > 0) {
+          let randomWeight = randomInt(0, totalWeight);
+          for (let i = 0; i < weights.length; i++) {
+            if (randomWeight < weights[i]) {
+              idx = i;
+              break;
+            }
+            randomWeight -= weights[i];
           }
-          randomWeight -= weights[i];
+        } else {
+          idx = randomInt(0, segments.length);
         }
       } else {
-        winnerIndex = randomInt(0, segments.length);
+        // Probabilidad uniforme para Cartones / Participantes (todos 1 chance)
+        idx = randomInt(0, segments.length);
       }
-    } else {
-      // Probabilidad uniforme para Cartones / Participantes (todos 1 chance)
-      winnerIndex = randomInt(0, segments.length);
+
+      const picked = segments[idx];
+
+      // Decremento atomico solo en segmentos con premio (los sin premio no usan stock)
+      if (cfg.mode === "Premios" && picked.itemId && picked.isPrize !== false) {
+        const currentQty = picked.quantity || 0;
+        const { data: decremented, error: decError } = await supabase
+          .from("wheel_items")
+          .update({ quantity: currentQty - 1 })
+          .eq("id", picked.itemId)
+          .eq("quantity", currentQty)
+          .gt("quantity", 0)
+          .select("quantity");
+
+        if (decError) throw decError;
+
+        if (!decremented || decremented.length === 0) {
+          // Carrera: otro giro agoto/altero el stock — quitar el segmento
+          // de la vista local y re-seleccionar con datos consistentes.
+          segments.splice(idx, 1);
+          if (segments.length === 0) {
+            return NextResponse.json(
+              { success: false, finished: true, error: "Sorteo finalizado — ya no quedan premios en la ruleta." },
+              { status: 400 },
+            );
+          }
+          continue;
+        }
+        picked.quantity = decremented[0].quantity;
+      }
+
+      winner = picked;
+      winnerIndex = segments.indexOf(picked);
     }
 
-    const winner = segments[winnerIndex];
+    if (!winner) {
+      return NextResponse.json(
+        { success: false, error: "No fue posible completar el giro. Intenta de nuevo.", retry: true },
+        { status: 409 },
+      );
+    }
+
     const spunAt = new Date().toISOString();
     
     // Determinar si el giro otorga un premio real. 
@@ -178,8 +224,8 @@ export async function POST(request: NextRequest) {
     const hashData = `${cfg.id}|${winner.itemId}|${winner.label}|${winner.cardNumber}|${spunAt}|${salt}`;
     const verificationHash = createHash("sha256").update(hashData).digest("hex");
 
-    // 4. Auditoría primero: si el trigger de prizes_number rechaza un giro
-    // concurrente, el stock del premio no se descuenta por error.
+    // 4. Auditoría del giro. Si el trigger de prizes_number rechaza un giro
+    // concurrente, se restaura el stock descontado (compensacion CAS).
     const { error: auditError } = await supabase.from("wheel_spins").insert({
       wheel_id: cfg.id,
       company_id: cfg.company_id,
@@ -196,6 +242,18 @@ export async function POST(request: NextRequest) {
     });
 
     if (auditError) {
+      // Compensar el stock: volver a sumar solo si sigue en el valor
+      // que dejo nuestro decremento (nadie mas lo toco entre medio).
+      if (cfg.mode === "Premios" && winner.itemId && winner.isPrize !== false) {
+        const { error: restoreError } = await supabase
+          .from("wheel_items")
+          .update({ quantity: (winner.quantity ?? -1) + 1 })
+          .eq("id", winner.itemId)
+          .eq("quantity", winner.quantity ?? -1);
+        if (restoreError) {
+          console.error(`No se pudo restaurar stock del item ${winner.itemId}:`, restoreError);
+        }
+      }
       const finished = auditError.code === "23514";
       return NextResponse.json(
         {
@@ -209,29 +267,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Descuenta stock solo en segmentos con premio (los sin premio no tienen stock)
-    if (cfg.mode === "Premios" && winner.itemId && winner.isPrize !== false) {
-      const { data: item } = await supabase
-        .from("wheel_items")
-        .select("quantity, initial_quantity")
-        .eq("id", winner.itemId)
-        .single();
-
-      if (item && item.quantity > 0) {
-        const newQuantity = item.quantity - 1;
-        // Solo actualizamos la cantidad. El filtro quantity > 0 se encarga de ocultarlo.
-        const { error: updateError } = await supabase
-          .from("wheel_items")
-          .update({ 
-            quantity: newQuantity
-          })
-          .eq("id", winner.itemId);
-        
-        if (!updateError) {
-          winner.quantity = newQuantity;
-        }
-      }
-    }
+    // El stock ya quedo descontado atomicamente durante la seleccion (paso 3).
 
     return NextResponse.json({
       success: true,

@@ -16,25 +16,25 @@ No hay margen de reintento en vivo: un error de performance, seguridad o concurr
 
 ## 3. Alcance funcional a auditar
 
-| Función | Qué hace | Por qué importa para el evento |
-| --- | --- | --- |
-| Registro de facturas | Crea/edita facturas y actualiza el estado de los cartones vinculados | Se usa antes y durante el evento por el equipo de ventas; errores aquí afectan el inventario real de cartones |
-| Tómbola / ruleta en línea | Sortea premios y cartones ganadores, descuenta stock, sincroniza en tiempo real con la pantalla del evento | Es el momento más visible del evento — cualquier falla es pública e inmediata |
-| Registro de datos en línea | Formulario público donde hasta 1,200 asistentes registran nombre, teléfono y hasta 5 números de cartón | Es el punto de mayor concurrencia de escritura de toda la aplicación |
-| Dashboard ejecutivo | Monitoreo en tiempo real de facturación, registros y resultados del sorteo | Lo observa el cliente/directivos durante el evento; debe reflejar datos correctos sin retrasos perceptibles |
+| Función                    | Qué hace                                                                                                   | Por qué importa para el evento                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Registro de facturas       | Crea/edita facturas y actualiza el estado de los cartones vinculados                                       | Se usa antes y durante el evento por el equipo de ventas; errores aquí afectan el inventario real de cartones |
+| Tómbola / ruleta en línea  | Sortea premios y cartones ganadores, descuenta stock, sincroniza en tiempo real con la pantalla del evento | Es el momento más visible del evento — cualquier falla es pública e inmediata                                 |
+| Registro de datos en línea | Formulario público donde hasta 1,200 asistentes registran nombre, teléfono y hasta 5 números de cartón     | Es el punto de mayor concurrencia de escritura de toda la aplicación                                          |
+| Dashboard ejecutivo        | Monitoreo en tiempo real de facturación, registros y resultados del sorteo                                 | Lo observa el cliente/directivos durante el evento; debe reflejar datos correctos sin retrasos perceptibles   |
 
 Auditar estas cuatro funciones de punta a punta: UI → Server Action/Route Handler → base de datos (incluyendo RLS, triggers y constraints), no solo el código de frontend.
 
 ## 4. Stack técnico y arquitectura actual
 
-| Capa | Tecnología |
-| --- | --- |
-| Framework | Next.js 16 (App Router, Turbopack) |
-| UI | React + TypeScript, JavaScript con tipado estricto |
-| Backend | Next.js Server Actions + Route Handlers (`/api/...`) |
+| Capa          | Tecnología                                                       |
+| ------------- | ---------------------------------------------------------------- |
+| Framework     | Next.js 16 (App Router, Turbopack)                               |
+| UI            | React + TypeScript, JavaScript con tipado estricto               |
+| Backend       | Next.js Server Actions + Route Handlers (`/api/...`)             |
 | Base de datos | PostgreSQL (Supabase) — migraciones SQL, triggers, RLS, Realtime |
-| Conexión a BD | Supavisor (pooler) en modo transaction |
-| Deploy | Vercel |
+| Conexión a BD | Supavisor (pooler) en modo transaction                           |
+| Deploy        | Vercel                                                           |
 
 &#91;embedded content: arquitectura · navegador → Vercel → Supavisor → Postgres → dashboard (Realtime)\]
 

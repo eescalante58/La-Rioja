@@ -201,16 +201,21 @@ export async function saveInvoiceCore(formData: FormData, userId: string) {
     updated_at: new Date().toISOString(),
   };
 
-  // 2. INSERT de la factura
-  const { error: invoiceError } = await supabase
+  // 2. INSERT de la factura (con id para poder revertir si fallan los cartones)
+  const { data: insertedInvoice, error: invoiceError } = await supabase
     .from("invoices")
-    .insert([invoiceData]);
+    .insert([invoiceData])
+    .select("id")
+    .single();
 
   if (invoiceError) return { error: invoiceError.message };
 
-  // 3. UPDATE masivo de cartones asociados (una sola consulta por lote)
+  // 3. UPDATE masivo de cartones asociados — con guard anti-carrera:
+  // solo se reclaman cartones no Vendido/Anulado y se verifica que el
+  // conteo reclamado coincida con lo solicitado. Si dos cajas venden el
+  // mismo carton a la vez, la segunda factura se revierte completa.
   if (data.associated_cards.length > 0) {
-    const { error: cardsError } = await supabase
+    const { data: claimed, error: cardsError } = await supabase
       .from("cards")
       .update({
         card_status: data.status === "Donada" ? "Donado" : "Vendido",
@@ -224,11 +229,33 @@ export async function saveInvoiceCore(formData: FormData, userId: string) {
       })
       .eq("company_id", data.company_id)
       .eq("event_id", data.event_id)
-      .in("card_number", data.associated_cards);
+      .in("card_number", data.associated_cards)
+      .neq("card_status", "Vendido")
+      .neq("card_status", "Anulado")
+      .select("card_number");
 
-    if (cardsError) {
+    const claimedCount = claimed?.length ?? 0;
+    if (cardsError || claimedCount !== data.associated_cards.length) {
+      // Rollback: liberar los reclamados parcialmente y borrar la factura
+      await releaseInvoiceCards(
+        supabase,
+        data.company_id,
+        data.event_id,
+        data.invoice_number,
+      );
+      if (insertedInvoice?.id) {
+        await supabase.from("invoices").delete().eq("id", insertedInvoice.id);
+      }
+
+      if (cardsError) {
+        return { error: `Error al actualizar cartones: ${cardsError.message}` };
+      }
+      const claimedSet = new Set((claimed || []).map((c: any) => Number(c.card_number)));
+      const conflicted = data.associated_cards.filter(
+        (n: number) => !claimedSet.has(Number(n)),
+      );
       return {
-        error: `Factura guardada pero error al actualizar cartones: ${cardsError.message}`,
+        error: `Los cartones ${conflicted.join(", ")} acaban de ser vendidos o anulados por otra operación. La factura no fue registrada.`,
       };
     }
   }
@@ -640,8 +667,19 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
 
   if (invoiceError) return { error: invoiceError.message };
 
-  // Liberar los cartones previos y vincular la nueva selección
+  // Cartones actualmente ligados a la factura (para restaurarlos si la
+  // nueva vinculación falla por una carrera con otra operación).
+  let previousCards: number[] = [];
   if (currentInvoice?.invoice_number) {
+    const { data: oldCards } = await supabase
+      .from("cards")
+      .select("card_number")
+      .eq("company_id", data.company_id || 0)
+      .eq("event_id", data.event_id || "")
+      .eq("invoice_number", currentInvoice.invoice_number);
+    previousCards = (oldCards || []).map((c: any) => Number(c.card_number));
+
+    // Liberar los cartones previos antes de vincular la nueva selección
     await releaseInvoiceCards(
       supabase,
       data.company_id || 0,
@@ -651,7 +689,9 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
   }
 
   if (data.associated_cards && data.associated_cards.length > 0) {
-    const { error: cardsError } = await supabase
+    // Guard anti-carrera: solo reclamar cartones no Vendido/Anulado y
+    // verificar que se reclamaron todos los solicitados.
+    const { data: claimed, error: cardsError } = await supabase
       .from("cards")
       .update({
         card_status: isDonada ? "Donado" : "Vendido",
@@ -665,11 +705,41 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
       })
       .eq("company_id", data.company_id || 0)
       .eq("event_id", data.event_id || "")
-      .in("card_number", data.associated_cards);
+      .in("card_number", data.associated_cards)
+      .neq("card_status", "Vendido")
+      .neq("card_status", "Anulado")
+      .select("card_number");
 
-    if (cardsError) {
+    const claimedCount = claimed?.length ?? 0;
+    if (cardsError || claimedCount !== data.associated_cards.length) {
+      // Revertir: liberar lo reclamado y restaurar los cartones anteriores
+      await releaseInvoiceCards(
+        supabase,
+        data.company_id || 0,
+        data.event_id || "",
+        data.invoice_number || currentInvoice?.invoice_number || "",
+      );
+      if (previousCards.length > 0) {
+        await supabase
+          .from("cards")
+          .update({
+            card_status: currentInvoice?.status === "Donada" ? "Donado" : "Vendido",
+            invoice_number: currentInvoice?.invoice_number,
+          })
+          .eq("company_id", data.company_id || 0)
+          .eq("event_id", data.event_id || "")
+          .in("card_number", previousCards);
+      }
+
+      if (cardsError) {
+        return { error: `Error al vincular cartones: ${cardsError.message}` };
+      }
+      const claimedSet = new Set((claimed || []).map((c: any) => Number(c.card_number)));
+      const conflicted = data.associated_cards.filter(
+        (n: number) => !claimedSet.has(Number(n)),
+      );
       return {
-        error: `Factura actualizada pero error al vincular cartones: ${cardsError.message}`,
+        error: `Los cartones ${conflicted.join(", ")} acaban de ser vendidos o anulados por otra operación. La factura conservó su vinculación anterior.`,
       };
     }
   }

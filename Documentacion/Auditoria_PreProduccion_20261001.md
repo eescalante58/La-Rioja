@@ -216,6 +216,18 @@ Otros puntos del checklist:
 
 ---
 
+## 7.1 Actualización — hallazgos resueltos (2026-10-01, mismo día)
+
+Los siguientes hallazgos fueron corregidos y desplegados tras la auditoría:
+
+- ✅ **R-01** — `/api/wheel/spin`: el descuento de stock ahora es **atómico por CAS** (`UPDATE ... WHERE quantity = <leído> AND quantity > 0 RETURNING`). Si otro giro altera el stock en la ventana de carrera, el segmento se descarta y se re-selecciona ganador (máx. 3 intentos, 409 si no logra). Si el insert de auditoría es rechazado por el trigger de límite de premios, el stock se **restaura** (compensación también con CAS).
+- ✅ **R-04** — `invoice-core.ts`: la vinculación de cartones ahora exige `card_status <> Vendido/Anulado` y **verifica el conteo reclamado**. En creación, una carrera revierte la operación completa (cartones liberados + factura borrada) con mensaje de los cartones en conflicto; en edición, se restauran los cartones originalmente vinculados y la factura conserva su estado anterior.
+- ✅ **P-01** — migración `20261013000000_invoices_created_at_index.sql`: nuevo índice `(company_id, event_id, created_at DESC)` alineado con el orden real del listado de facturas.
+
+Pendientes sin cambios (operativos, del plan de la sección 7): R-02, R-03, C-01, C-02, C-03, P-03, S-01 (renombrar/rotar la key en Vercel) y S-02.
+
+---
+
 ## 8. Conclusión
 
 La aplicación llega al 3 de octubre **sólida en su núcleo**: el punto de máxima concurrencia (registro público) está probado, la seguridad RLS fue verificada en vivo con la credencial más débil del sistema, y la arquitectura de giros decide en el servidor con criptografía real. Los riesgos abiertos son **acotados y corregibles en horas**: dos patrones no atómicos (stock de ruleta, asignación de cartones), y tres piezas operativas (rollback documentado, drill de backup, monitoreo en vivo). Con la sección 7 ejecutada antes del 2 de octubre, el riesgo residual del día del evento queda en nivel bajo.
