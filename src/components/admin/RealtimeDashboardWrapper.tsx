@@ -627,6 +627,8 @@ export default function RealtimeDashboardWrapper({
 
           <Link
             href="/admin/manual"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-800 rounded-xl text-larioja-azul dark:text-blue-400 font-bold text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors order-2 md:order-3"
           >
             <BookOpen size={18} />
