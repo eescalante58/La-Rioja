@@ -226,6 +226,14 @@ Los siguientes hallazgos fueron corregidos y desplegados tras la auditoría:
 
 Pendientes sin cambios (operativos, del plan de la sección 7): R-02, R-03, C-01, C-02, C-03, P-03, S-01 (renombrar/rotar la key en Vercel) y S-02.
 
+## 7.2 Actualización 2 — misma jornada (continuación)
+
+- ✅ **C-01** — Creado `Documentacion/Plan_Rollback.md`: decisor único, drill de backup pg_dump/restore con checklist del 2-oct, respuestas por escenario (registro, ruleta, facturación, falla total), modo degradado del sorteo y plan de monitoreo en vivo.
+- ✅ **C-02 (parcial)** — El visor de bitácora (`user_activity_log`) ahora es accesible desde **nivel 8** (admin empresa), no solo SuperAdmin. El plan de monitoreo quedó documentado en Plan_Rollback.md §5 (vigilante de Vercel Logs pendiente de asignación humana).
+- ✅ **R-02 (preparación)** — Nuevo script `loadtest/combined-test.mjs`: ráfaga de registros + giros reales de tómbola en paralelo, con detección de ganadores duplicados. Listo para ejecutar cuando el equipo lo agende (ej. `node --env-file=.env.local loadtest/combined-test.mjs --wheel <ID> --total 300 --spins 20`).
+- 🔴→✅ **S-02 (escalado y purgado)** — Se confirmó que el repositorio es **público** y que `Documentacion/image.png` contiene el **secreto del cliente OAuth de Google**. El archivo y `Credenciales google.md` fueron eliminados de **todo el historial** (reescritura completa, 513 commits) y se hizo force-push a `main`. GitHub ya no sirve el archivo (404). **Acción humana pendiente (urgente):** rotar el secreto en Google Cloud Console y actualizar el provider Google en Supabase Auth — la purga no invalida el secreto por sí sola. Nota: GitHub puede conservar vistas cacheadas del commit viejo temporalmente; si se requiere eliminación definitiva del caché, contactar a GitHub Support (o hacer el repo privado además de rotar).
+- ⏸️ **S-01 (difiere al usuario)** — El fallback `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY` en `createAdminClient` se mantiene por ahora: producción solo tiene configurada la variante `NEXT_PUBLIC_` y quitar el fallback rompería el sitio. Cuando se agregue `SUPABASE_SERVICE_ROLE_KEY` (sin prefijo) en Vercel, se elimina el fallback en un commit posterior.
+
 ---
 
 ## 8. Conclusión
