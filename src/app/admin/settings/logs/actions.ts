@@ -26,4 +26,4 @@ async function getActivityLogsInternal() {
   return data;
 }
 
-export const getActivityLogs = withRole(10, getActivityLogsInternal);
+export const getActivityLogs = withRole(8, getActivityLogsInternal);
