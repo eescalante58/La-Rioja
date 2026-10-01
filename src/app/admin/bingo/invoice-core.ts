@@ -446,24 +446,16 @@ export async function getCardsForInvoiceCore(
 }
 
 /**
- * Libera los cartones vinculados a una factura limpiando los datos de venta.
+ * Libera un conjunto explícito de cartones limpiando los datos de venta.
  * Cada cartón vuelve a "Asignado" si está ligado a un alumno en
  * students_cards; en caso contrario queda "Disponible".
  */
-async function releaseInvoiceCards(
+async function releaseCardNumbers(
   supabase: any,
   companyId: number,
   eventId: string,
-  invoiceNumber: string,
+  numbers: number[],
 ) {
-  const { data: linkedCards } = await supabase
-    .from("cards")
-    .select("card_number")
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .eq("invoice_number", invoiceNumber);
-
-  const numbers = (linkedCards || []).map((c: any) => c.card_number);
   if (numbers.length === 0) return;
 
   // Cuáles de esos cartones siguen asignados a un alumno
@@ -508,6 +500,28 @@ async function releaseInvoiceCards(
       .in("card_number", toAvailable);
     if (error) throw error;
   }
+}
+
+/**
+ * Libera los cartones vinculados a una factura limpiando los datos de venta.
+ * Envuelve releaseCardNumbers: primero resuelve los números ligados al
+ * invoice_number y luego aplica la liberación por número.
+ */
+async function releaseInvoiceCards(
+  supabase: any,
+  companyId: number,
+  eventId: string,
+  invoiceNumber: string,
+) {
+  const { data: linkedCards } = await supabase
+    .from("cards")
+    .select("card_number")
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .eq("invoice_number", invoiceNumber);
+
+  const numbers = (linkedCards || []).map((c: any) => Number(c.card_number));
+  await releaseCardNumbers(supabase, companyId, eventId, numbers);
 }
 
 /**
@@ -670,81 +684,122 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
 
   if (invoiceError) return { error: invoiceError.message };
 
-  // Cartones actualmente ligados a la factura (para restaurarlos si la
-  // nueva vinculación falla por una carrera con otra operación).
-  let previousCards: number[] = [];
+  // Cartones actualmente ligados a la factura (con sus campos de venta
+  // para restaurarlos si la nueva vinculación falla).
+  let previousCards: any[] = [];
   if (currentInvoice?.invoice_number) {
     const { data: oldCards } = await supabase
       .from("cards")
-      .select("card_number")
+      .select(
+        "card_number, card_status, sales_price, sold_by, player_name, player_phone_number, player_email",
+      )
       .eq("company_id", data.company_id || 0)
       .eq("event_id", data.event_id || "")
       .eq("invoice_number", currentInvoice.invoice_number);
-    previousCards = (oldCards || []).map((c: any) => Number(c.card_number));
-
-    // Liberar los cartones previos antes de vincular la nueva selección
-    await releaseInvoiceCards(
-      supabase,
-      data.company_id || 0,
-      data.event_id || "",
-      currentInvoice.invoice_number,
-    );
+    previousCards = oldCards || [];
   }
 
-  if (data.associated_cards && data.associated_cards.length > 0) {
-    // Guard anti-carrera: solo reclamar cartones no Vendido/Anulado y
-    // verificar que se reclamaron todos los solicitados.
-    const { data: claimed, error: cardsError } = await supabase
-      .from("cards")
-      .update({
-        card_status: isDonada ? "Donado" : "Vendido",
-        invoice_number: data.invoice_number,
-        sales_price: data.card_price,
-        sold_by: invoiceData.manager_name || data.manager_name,
-        player_name: invoiceData.customer_name || data.customer_name,
-        player_phone_number: data.whatsapp_number,
-        player_email: data.customer_email,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("company_id", data.company_id || 0)
-      .eq("event_id", data.event_id || "")
-      .in("card_number", data.associated_cards)
-      .in("card_status", ["Disponible", "Asignado"])
-      .select("card_number");
+  const previousNumbers = new Set(
+    previousCards.map((c: any) => Number(c.card_number)),
+  );
+  const newSelection: number[] = (data.associated_cards || []).map(Number);
 
-    const claimedCount = claimed?.length ?? 0;
-    if (cardsError || claimedCount !== data.associated_cards.length) {
-      // Revertir: liberar lo reclamado y restaurar los cartones anteriores
+  if (newSelection.length > 0) {
+    // Reclamar ANTES de liberar: si el reclamo falla, los cartones
+    // vinculados quedan intactos (nunca quedan huérfanos en Disponible).
+    const claimFields = {
+      card_status: isDonada ? "Donado" : "Vendido",
+      invoice_number: data.invoice_number,
+      sales_price: data.card_price,
+      sold_by: invoiceData.manager_name || data.manager_name,
+      player_name: invoiceData.customer_name || data.customer_name,
+      player_phone_number: data.whatsapp_number,
+      player_email: data.customer_email,
+      updated_at: new Date().toISOString(),
+    };
+
+    const claimedNums = new Set<number>();
+    let cardsError: any = null;
+
+    // A) Cartones ya vinculados a esta factura: re-afirmar datos de venta.
+    //    El guard por invoice_number detecta si otra operación los liberó.
+    const alreadyLinked = newSelection.filter((n) => previousNumbers.has(n));
+    if (alreadyLinked.length > 0) {
+      const { data: relinked, error } = await supabase
+        .from("cards")
+        .update(claimFields)
+        .eq("company_id", data.company_id || 0)
+        .eq("event_id", data.event_id || "")
+        .eq("invoice_number", currentInvoice?.invoice_number || "")
+        .in("card_number", alreadyLinked)
+        .select("card_number");
+      (relinked || []).forEach((c: any) => claimedNums.add(Number(c.card_number)));
+      cardsError = error;
+    }
+
+    // B) Cartones nuevos: solo se reclaman si están libres para la venta
+    //    (whitelist del enum: Disponible/Asignado). Guard anti-carrera.
+    const toClaim = newSelection.filter((n) => !previousNumbers.has(n));
+    if (!cardsError && toClaim.length > 0) {
+      const { data: claimed, error } = await supabase
+        .from("cards")
+        .update(claimFields)
+        .eq("company_id", data.company_id || 0)
+        .eq("event_id", data.event_id || "")
+        .in("card_number", toClaim)
+        .in("card_status", ["Disponible", "Asignado"])
+        .select("card_number");
+      (claimed || []).forEach((c: any) => claimedNums.add(Number(c.card_number)));
+      cardsError = error;
+    }
+
+    if (cardsError || claimedNums.size !== newSelection.length) {
+      // Revertir: liberar lo reclamado con el número (nuevo) de esta
+      // factura y restaurar la vinculación previa con sus datos originales.
       await releaseInvoiceCards(
         supabase,
         data.company_id || 0,
         data.event_id || "",
         data.invoice_number || currentInvoice?.invoice_number || "",
       );
-      if (previousCards.length > 0) {
+      for (const prev of previousCards) {
         await supabase
           .from("cards")
           .update({
-            card_status: currentInvoice?.status === "Donada" ? "Donado" : "Vendido",
+            card_status: prev.card_status,
             invoice_number: currentInvoice?.invoice_number,
+            sales_price: prev.sales_price,
+            sold_by: prev.sold_by,
+            player_name: prev.player_name,
+            player_phone_number: prev.player_phone_number,
+            player_email: prev.player_email,
           })
           .eq("company_id", data.company_id || 0)
           .eq("event_id", data.event_id || "")
-          .in("card_number", previousCards);
+          .eq("card_number", prev.card_number);
       }
 
       if (cardsError) {
         return { error: `Error al vincular cartones: ${cardsError.message}` };
       }
-      const claimedSet = new Set((claimed || []).map((c: any) => Number(c.card_number)));
-      const conflicted = data.associated_cards.filter(
-        (n: number) => !claimedSet.has(Number(n)),
-      );
+      const conflicted = newSelection.filter((n) => !claimedNums.has(n));
       return {
         error: `Los cartones ${conflicted.join(", ")} acaban de ser vendidos o anulados por otra operación. La factura conservó su vinculación anterior.`,
       };
     }
   }
+
+  // Liberar solo los cartones que quedaron fuera de la nueva selección
+  // (después de un reclamo exitoso, para no desvincular en caso de error).
+  const freed = previousCards
+    .map((c: any) => Number(c.card_number))
+    .filter((n: number) => !newSelection.includes(n));
+  await releaseCardNumbers(
+    supabase,
+    data.company_id || 0,
+    data.event_id || "",
+    freed,
+  );
 
   await supabase.from("user_activity_log").insert({
     user_id: userId,
