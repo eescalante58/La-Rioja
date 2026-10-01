@@ -211,9 +211,11 @@ export async function saveInvoiceCore(formData: FormData, userId: string) {
   if (invoiceError) return { error: invoiceError.message };
 
   // 3. UPDATE masivo de cartones asociados — con guard anti-carrera:
-  // solo se reclaman cartones no Vendido/Anulado y se verifica que el
-  // conteo reclamado coincida con lo solicitado. Si dos cajas venden el
-  // mismo carton a la vez, la segunda factura se revierte completa.
+  // solo se reclaman cartones en estado Disponible/Asignado (whitelist:
+  // el enum card_status_enum no admite comparar contra valores que no
+  // existen, p.ej. "Anulado") y se verifica que el conteo reclamado
+  // coincida con lo solicitado. Si dos cajas venden el mismo carton a la
+  // vez, la segunda factura se revierte completa.
   if (data.associated_cards.length > 0) {
     const { data: claimed, error: cardsError } = await supabase
       .from("cards")
@@ -230,8 +232,7 @@ export async function saveInvoiceCore(formData: FormData, userId: string) {
       .eq("company_id", data.company_id)
       .eq("event_id", data.event_id)
       .in("card_number", data.associated_cards)
-      .neq("card_status", "Vendido")
-      .neq("card_status", "Anulado")
+      .in("card_status", ["Disponible", "Asignado"])
       .select("card_number");
 
     const claimedCount = claimed?.length ?? 0;
@@ -320,7 +321,9 @@ export async function checkCardsRangeCore(
     const status = cardMap.get(i);
     if (!status) {
       invalidCards.push({ card_number: i, status: "No encontrado" });
-    } else if (status === "Vendido" || status === "Anulado") {
+    } else if (status !== "Disponible" && status !== "Asignado") {
+      // Misma whitelist que el guard de vinculación: solo Disponible/Asignado
+      // son reclamables por una factura.
       invalidCards.push({ card_number: i, status });
     } else {
       results.push({ card_number: i, status });
@@ -706,8 +709,7 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
       .eq("company_id", data.company_id || 0)
       .eq("event_id", data.event_id || "")
       .in("card_number", data.associated_cards)
-      .neq("card_status", "Vendido")
-      .neq("card_status", "Anulado")
+      .in("card_status", ["Disponible", "Asignado"])
       .select("card_number");
 
     const claimedCount = claimed?.length ?? 0;
