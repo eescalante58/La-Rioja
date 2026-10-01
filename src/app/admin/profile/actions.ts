@@ -94,3 +94,82 @@ export async function updateMyProfile(formData: FormData) {
     newAvatarUrl: avatar_url,
   };
 }
+
+/**
+ * Cambia la contraseña del usuario autenticado.
+ * Re-autentica con la contraseña actual antes de actualizar para evitar
+ * cambios desde una sesión ajena; las cuentas de solo Google no tienen
+ * contraseña local y se rechazan con mensaje claro.
+ */
+export async function updateMyPassword(
+  currentPassword: string,
+  newPassword: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user || !user.email) {
+    return { success: false, error: "Usuario no autenticado." };
+  }
+
+  const hasEmailIdentity = (user.identities || []).some(
+    (i: any) => i.provider === "email",
+  );
+  if (!hasEmailIdentity) {
+    return {
+      success: false,
+      error:
+        "Tu cuenta inicia sesión con Google; la contraseña se gestiona en tu cuenta de Google.",
+    };
+  }
+
+  if (!currentPassword) {
+    return { success: false, error: "Ingresa tu contraseña actual." };
+  }
+  if (typeof newPassword !== "string" || newPassword.length < 8) {
+    return {
+      success: false,
+      error: "La nueva contraseña debe tener al menos 8 caracteres.",
+    };
+  }
+  if (currentPassword === newPassword) {
+    return {
+      success: false,
+      error: "La nueva contraseña debe ser distinta a la actual.",
+    };
+  }
+
+  // Re-autenticación: confirma que quien opera conoce la contraseña actual
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (signInError) {
+    return {
+      success: false,
+      error: "La contraseña actual es incorrecta.",
+    };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+  if (updateError) {
+    console.error("Error actualizando contraseña:", updateError);
+    return {
+      success: false,
+      error: "No se pudo actualizar la contraseña. Inténtalo de nuevo.",
+    };
+  }
+
+  await supabase.from("user_activity_log").insert({
+    user_id: user.id,
+    action: "UPDATE_PASSWORD",
+    entity: "users",
+    metadata: { timestamp: new Date().toISOString() },
+  });
+
+  return { success: true, message: "Contraseña actualizada correctamente." };
+}

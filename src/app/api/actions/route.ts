@@ -84,7 +84,10 @@ import {
   getUserCompanies,
 } from "@/app/admin/settings/users/actions";
 
-import { updateMyProfile } from "@/app/admin/profile/actions";
+import {
+  updateMyProfile,
+  updateMyPassword,
+} from "@/app/admin/profile/actions";
 
 import {
   createCMSContent,
@@ -199,6 +202,7 @@ const REGISTRY: Record<string, ActionFn> = {
 
   // Perfil propio
   "profile.updateMyProfile": updateMyProfile,
+  "profile.updateMyPassword": updateMyPassword,
 
   // CMS / FAQ / galería
   "cms.createCMSContent": createCMSContent,

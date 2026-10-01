@@ -3,8 +3,8 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { Card, Title, Text, TextInput, Button, Callout } from "@tremor/react";
-import { User, Mail, Phone, Camera, Save } from "lucide-react";
-import { callActionForm } from "@/lib/action-client";
+import { User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
+import { callAction, callActionForm } from "@/lib/action-client";
 import { useUser } from "@/providers/UserProvider";
 
 interface ProfileClientProps {
@@ -33,6 +33,17 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
     text: string;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Estado del bloque "Cambiar Contraseña"
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,6 +90,59 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
     }
 
     setIsSaving(false);
+  };
+
+  /**
+   * Envía el cambio de contraseña al dispatcher /api/actions.
+   * Valida coincidencia y longitud mínima en cliente antes de llamar.
+   */
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordMessage(null);
+
+    if (!currentPassword) {
+      setPasswordMessage({
+        type: "error",
+        text: "Ingresa tu contraseña actual.",
+      });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordMessage({
+        type: "error",
+        text: "La nueva contraseña debe tener al menos 8 caracteres.",
+      });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({
+        type: "error",
+        text: "La confirmación no coincide con la nueva contraseña.",
+      });
+      return;
+    }
+
+    setIsSavingPassword(true);
+    const result = await callAction<{ success?: boolean; error?: string; message?: string }>(
+      "profile.updateMyPassword",
+      [currentPassword, newPassword],
+    );
+
+    if (result.success) {
+      setPasswordMessage({
+        type: "success",
+        text: result.message || "Contraseña actualizada correctamente.",
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } else {
+      setPasswordMessage({
+        type: "error",
+        text: result.error || "Ocurrió un error al cambiar la contraseña.",
+      });
+    }
+    setIsSavingPassword(false);
   };
 
   return (
@@ -165,6 +229,85 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
           <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
             <Button icon={Save} loading={isSaving} type="submit">
               Guardar Cambios
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      <Card className="p-6 mt-6">
+        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Title className="text-lg flex items-center gap-2">
+                <KeyRound size={18} className="text-larioja-azul dark:text-larioja-amarillo" />
+                Cambiar Contraseña
+              </Title>
+              <Text className="text-xs text-gray-500">
+                Debe tener al menos 8 caracteres.
+              </Text>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPasswords(!showPasswords)}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              title={showPasswords ? "Ocultar contraseñas" : "Mostrar contraseñas"}
+            >
+              {showPasswords ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Text>Contraseña Actual</Text>
+              <TextInput
+                icon={Lock}
+                type={showPasswords ? "text" : "password"}
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Text>Nueva Contraseña</Text>
+              <TextInput
+                icon={Lock}
+                type={showPasswords ? "text" : "password"}
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+                minLength={8}
+              />
+            </div>
+            <div>
+              <Text>Confirmar Nueva</Text>
+              <TextInput
+                icon={Lock}
+                type={showPasswords ? "text" : "password"}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                error={confirmPassword.length > 0 && newPassword !== confirmPassword}
+                errorMessage="No coincide"
+              />
+            </div>
+          </div>
+
+          {passwordMessage && (
+            <Callout
+              title={passwordMessage.type === "success" ? "Éxito" : "Error"}
+              color={passwordMessage.type === "success" ? "teal" : "rose"}
+            >
+              {passwordMessage.text}
+            </Callout>
+          )}
+
+          <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+            <Button icon={KeyRound} loading={isSavingPassword} type="submit">
+              Actualizar Contraseña
             </Button>
           </div>
         </form>
