@@ -49,6 +49,7 @@ import {
   getAllAssignedCards,
   getEventCardsInfo,
   assignCardRangeToStudent,
+  getUnsoldAssignedCardsReport,
 } from "@/app/admin/settings/students/actions";
 
 import { saveCompany, deleteCompany } from "@/app/admin/settings/companies/actions";
@@ -173,6 +174,7 @@ const REGISTRY: Record<string, ActionFn> = {
   "students.getAllAssignedCards": getAllAssignedCards,
   "students.getEventCardsInfo": getEventCardsInfo,
   "students.assignCardRangeToStudent": assignCardRangeToStudent,
+  "students.getUnsoldAssignedCardsReport": getUnsoldAssignedCardsReport,
 
   // Settings — companies / countries / contact / security / limits
   "companies.saveCompany": saveCompany,

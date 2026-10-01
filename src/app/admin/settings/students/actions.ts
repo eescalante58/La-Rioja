@@ -840,3 +840,85 @@ export const assignCardRangeToStudent = withRole(
   8,
   assignCardRangeToStudentInternal,
 );
+
+/** Fila del informe de cartones asignados no vendidos. */
+export interface UnsoldAssignedCardRow {
+  student_id: number;
+  student_name: string;
+  student_level: string;
+  card_number: number;
+}
+
+/** Forma cruda que devuelve el join students_cards → students/cards. */
+interface RawStudentCardAssignment {
+  card_number: number;
+  student: {
+    student_id: number;
+    student_name: string;
+    student_level: string;
+  } | null;
+  cards: { card_status: string } | null;
+}
+
+/**
+ * Server action: informe de cartones asignados NO vendidos de un evento.
+ * Devuelve una fila por cartón (código, nombre y nivel del alumno, número
+ * de cartón) ordenada por nivel → nombre del alumno → número de cartón.
+ * "No vendido" = cualquier asignación cuyo cartón no esté en 'Vendido'
+ * (normalmente 'Asignado'; también cubre anulados/reservados por seguridad).
+ */
+async function getUnsoldAssignedCardsReportInternal(
+  companyId: number,
+  eventId: string,
+) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("students_cards")
+    .select(
+      `
+      card_number,
+      student:students!fk_students_cards_student (
+        student_id,
+        student_name,
+        student_level
+      ),
+      cards:cards!fk_students_cards_card (
+        card_status
+      )
+    `,
+    )
+    .eq("company_id", companyId)
+    .eq("event_id", eventId);
+
+  if (error) {
+    console.error("Error fetching unsold assigned cards:", error);
+    return { error: error.message };
+  }
+
+  const rows: UnsoldAssignedCardRow[] = (
+    (data ?? []) as unknown as RawStudentCardAssignment[]
+  )
+    .filter((r) => r.student !== null && r.cards?.card_status !== "Vendido")
+    .map((r) => ({
+      student_id: r.student!.student_id,
+      student_name: r.student!.student_name,
+      student_level: r.student!.student_level,
+      card_number: r.card_number,
+    }))
+    .sort(
+      (a, b) =>
+        (a.student_level || "").localeCompare(b.student_level || "", "es", {
+          numeric: true,
+        }) ||
+        (a.student_name || "").localeCompare(b.student_name || "", "es") ||
+        a.card_number - b.card_number,
+    );
+
+  return { success: true, data: rows };
+}
+
+export const getUnsoldAssignedCardsReport = withRole(
+  4,
+  getUnsoldAssignedCardsReportInternal,
+);

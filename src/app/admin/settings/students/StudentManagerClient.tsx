@@ -17,6 +17,8 @@ import {
   DialogPanel,
   Badge,
   Flex,
+  Select,
+  SelectItem,
 } from "@tremor/react";
 import {
   Plus,
@@ -89,6 +91,12 @@ export default function StudentManagerClient({
   const [assignFormLoading, setAssignFormLoading] = useState(false);
   const [quickCardNumber, setQuickCardNumber] = useState("");
   const [isProcessingAssignment, setIsProcessingAssignment] = useState(false);
+
+  // Informe de cartones asignados no vendidos: diálogo con selector de
+  // evento (la clave es "company_id|event_id") y descarga CSV/PDF.
+  const [isUnsoldReportOpen, setIsUnsoldReportOpen] = useState(false);
+  const [reportEventKey, setReportEventKey] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
 
   // Estado del flujo de asignación por rango: el evento se mantiene fijo
   // durante todo el proceso; luego se busca el alumno y el rango de cartones.
@@ -384,6 +392,120 @@ export default function StudentManagerClient({
     } catch (error) {
       console.error("Error downloading assignments:", error);
       alert("Error al descargar las asignaciones.");
+    }
+  };
+
+  /**
+   * Descarga del informe de cartones asignados no vendidos. El evento se
+   * elige en el diálogo (clave "company_id|event_id"); el formato puede ser
+   * CSV o PDF, ambos con el id y nombre del evento en el encabezado.
+   */
+  const handleUnsoldReport = async (format: "csv" | "pdf") => {
+    const event = events.find(
+      (e) => `${e.company_id}|${e.event_id}` === reportEventKey,
+    );
+    if (!event) {
+      alert("Seleccione un evento para generar el informe.");
+      return;
+    }
+
+    setReportLoading(true);
+    try {
+      const res = await callAction<
+        { success?: boolean; data?: any[]; error?: string }
+      >("students.getUnsoldAssignedCardsReport", [
+        event.company_id,
+        event.event_id,
+      ]);
+
+      if (!res?.success || !res.data) {
+        alert("Error: " + (res?.error || "No se pudo generar el informe."));
+        return;
+      }
+      if (res.data.length === 0) {
+        alert("No hay cartones asignados sin vender en este evento.");
+        return;
+      }
+
+      const rows = res.data as {
+        student_id: number;
+        student_name: string;
+        student_level: string;
+        card_number: number;
+      }[];
+
+      if (format === "csv") {
+        const headers = [
+          "Codigo Alumno",
+          "Nombre del Alumno",
+          "Nivel",
+          "# de Carton",
+        ];
+        const metaLines = [
+          `Evento ID,${event.event_id}`,
+          `Evento,${event.event_name}`,
+          "",
+        ];
+        const body = rows.map((r) =>
+          [
+            r.student_id,
+            `"${String(r.student_name).replace(/"/g, '""')}"`,
+            `"${String(r.student_level).replace(/"/g, '""')}"`,
+            r.card_number,
+          ].join(","),
+        );
+        const csvContent =
+          "data:text/csv;charset=utf-8,\ufeff" +
+          [...metaLines, headers.join(","), ...body].join("\n");
+
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csvContent));
+        link.setAttribute(
+          "download",
+          `cartones_asignados_no_vendidos_${event.event_id}.csv`,
+        );
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        const [{ default: JsPDF }, autoTableModule] = await Promise.all([
+          import("jspdf"),
+          import("jspdf-autotable"),
+        ]);
+        const autoTable = autoTableModule.default;
+
+        const doc = new JsPDF();
+        doc.setFontSize(14);
+        doc.text("Cartones Asignados No Vendidos", 14, 16);
+        doc.setFontSize(10);
+        doc.text(`Evento ID: ${event.event_id}`, 14, 23);
+        doc.text(`Evento: ${event.event_name}`, 14, 29);
+
+        autoTable(doc, {
+          startY: 34,
+          head: [
+            ["Codigo Alumno", "Nombre del Alumno", "Nivel", "# de Carton"],
+          ],
+          body: rows.map((r) => [
+            r.student_id,
+            r.student_name,
+            r.student_level,
+            r.card_number,
+          ]),
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [1, 22, 64] },
+        });
+
+        doc.save(`cartones_asignados_no_vendidos_${event.event_id}.pdf`);
+      }
+
+      await callAction("students.logExportActivity", [rows.length]);
+      setIsUnsoldReportOpen(false);
+    } catch (error) {
+      console.error("Error generating unsold-cards report:", error);
+      alert("Error al generar el informe.");
+    } finally {
+      setReportLoading(false);
     }
   };
 
@@ -751,6 +873,22 @@ export default function StudentManagerClient({
             tooltip="Descargar todas las asignaciones"
           >
             Descargar Asignaciones
+          </Button>
+          <Button
+            variant="secondary"
+            icon={FileText}
+            onClick={() => {
+              setReportEventKey(
+                events.length === 1
+                  ? `${events[0].company_id}|${events[0].event_id}`
+                  : "",
+              );
+              setIsUnsoldReportOpen(true);
+            }}
+            color="indigo"
+            tooltip="Informe de cartones asignados que aún no se han vendido"
+          >
+            No Vendidos
           </Button>
           <Button
             icon={Plus}
@@ -1464,6 +1602,72 @@ export default function StudentManagerClient({
             </div>
           </DialogPanel>
         </div>
+      </Dialog>
+
+      {/* Diálogo: informe de cartones asignados no vendidos */}
+      <Dialog
+        open={isUnsoldReportOpen}
+        onClose={() => setIsUnsoldReportOpen(false)}
+      >
+        <DialogPanel className="max-w-md">
+          <Title className="text-larioja-azul dark:text-larioja-amarillo">
+            Informe: Cartones Asignados No Vendidos
+          </Title>
+          <Text className="mt-1 text-sm text-gray-500">
+            Lista los cartones asignados a alumnos cuyo estado no es
+            &quot;Vendido&quot;, ordenados por nivel, alumno y número de
+            cartón.
+          </Text>
+
+          <div className="mt-4 space-y-1">
+            <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
+              Evento
+            </Text>
+            <Select
+              value={reportEventKey}
+              onValueChange={setReportEventKey}
+              enableClear={false}
+              placeholder="Seleccione un evento"
+            >
+              {events.map((e) => (
+                <SelectItem
+                  key={`${e.company_id}|${e.event_id}`}
+                  value={`${e.company_id}|${e.event_id}`}
+                >
+                  {e.event_name} — {e.event_id}
+                </SelectItem>
+              ))}
+            </Select>
+          </div>
+
+          <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setIsUnsoldReportOpen(false)}
+              disabled={reportLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="secondary"
+              icon={FileSpreadsheet}
+              onClick={() => handleUnsoldReport("csv")}
+              loading={reportLoading}
+              disabled={!reportEventKey}
+            >
+              CSV
+            </Button>
+            <Button
+              icon={FileText}
+              className="bg-larioja-azul"
+              onClick={() => handleUnsoldReport("pdf")}
+              loading={reportLoading}
+              disabled={!reportEventKey}
+            >
+              PDF
+            </Button>
+          </div>
+        </DialogPanel>
       </Dialog>
     </div>
   );
