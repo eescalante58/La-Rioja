@@ -6,6 +6,8 @@ import { Card, Title, Text, TextInput, Button, Callout } from "@tremor/react";
 import { User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 import { callAction, callActionForm } from "@/lib/action-client";
 import { useUser } from "@/providers/UserProvider";
+import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
+import { validatePasswordStrength } from "@/lib/auth/password";
 
 interface ProfileClientProps {
   userProfile: {
@@ -107,11 +109,9 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
       });
       return;
     }
-    if (newPassword.length < 8) {
-      setPasswordMessage({
-        type: "error",
-        text: "La nueva contraseña debe tener al menos 8 caracteres.",
-      });
+    const strengthError = validatePasswordStrength(newPassword);
+    if (strengthError) {
+      setPasswordMessage({ type: "error", text: strengthError });
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -243,7 +243,7 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
                 Cambiar Contraseña
               </Title>
               <Text className="text-xs text-gray-500">
-                Debe tener al menos 8 caracteres.
+                Debe cumplir los requisitos de seguridad.
               </Text>
             </div>
             <button
@@ -279,6 +279,10 @@ export default function ProfileClient({ userProfile }: ProfileClientProps) {
                 required
                 minLength={8}
               />
+              {/* Checklist en vivo, mismo componente que el login */}
+              {newPassword.length > 0 && (
+                <PasswordRequirements password={newPassword} />
+              )}
             </div>
             <div>
               <Text>Confirmar Nueva</Text>

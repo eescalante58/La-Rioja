@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { validatePasswordStrength } from "@/lib/auth/password";
 
 export async function updateMyProfile(formData: FormData) {
   const supabase = await createClient();
@@ -128,11 +129,9 @@ export async function updateMyPassword(
   if (!currentPassword) {
     return { success: false, error: "Ingresa tu contraseña actual." };
   }
-  if (typeof newPassword !== "string" || newPassword.length < 8) {
-    return {
-      success: false,
-      error: "La nueva contraseña debe tener al menos 8 caracteres.",
-    };
+  const strengthError = validatePasswordStrength(newPassword);
+  if (strengthError) {
+    return { success: false, error: strengthError };
   }
   if (currentPassword === newPassword) {
     return {
