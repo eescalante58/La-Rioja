@@ -8,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/server";
  *   GET  ?id=<wheel_id>  → config + participantes + ganadores con datos
  *                          registrados (orden de captura primero).
  *   POST { wheelId, cardNumber, winnerName, winnerPrize, documentType,
- *          documentNumber, winnerPhoneNumber }
+ *          documentNumber, winnerPhoneNumber, observation? }
  *                        → registra/actualiza los datos del ganador.
  *                          Valida que el cartón sea ganador del sorteo.
  *
@@ -35,6 +35,7 @@ const registerSchema = z.object({
     .trim()
     .regex(/^[+\d][\d\s-]{6,19}$/, "Teléfono inválido")
     .max(20),
+  observation: z.string().trim().max(500).optional().nullable(),
 });
 
 interface WinnerRow {
@@ -49,6 +50,7 @@ interface WinnerRow {
   document_number: string | null;
   winner_phone_number: string | null;
   winner_registered_at: string | null;
+  observation: string | null;
   /** Solo modo Participantes: datos que digitó el asistente en /registro. */
   player_name?: string | null;
   player_phone_number?: string | null;
@@ -103,7 +105,7 @@ export async function GET(request: NextRequest) {
         ? "wheels_presents_cards"
         : "wheel_participating_cards";
     const selectCols =
-      "card_number, is_winner, updated_at, won_at, winner_order, winner_name, winner_prize, document_type, document_number, winner_phone_number, winner_registered_at" +
+      "card_number, is_winner, updated_at, won_at, winner_order, winner_name, winner_prize, document_type, document_number, winner_phone_number, winner_registered_at, observation" +
       (cfg.mode === "Participantes" ? ", player_name, player_phone_number" : "");
 
     const { data: cards, error: cardsError } = await supabase
@@ -139,6 +141,7 @@ export async function GET(request: NextRequest) {
         documentNumber: c.document_number,
         winnerPhoneNumber: c.winner_phone_number,
         registeredAt: c.winner_registered_at,
+        observation: c.observation,
         playerName: c.player_name ?? null,
         playerPhoneNumber: c.player_phone_number ?? null,
       }));
@@ -210,6 +213,7 @@ export async function POST(request: NextRequest) {
     documentType,
     documentNumber,
     winnerPhoneNumber,
+    observation,
   } = parsed.data;
 
   const supabase = createAdminClient();
@@ -261,6 +265,7 @@ export async function POST(request: NextRequest) {
         document_type: documentType,
         document_number: documentNumber,
         winner_phone_number: winnerPhoneNumber,
+        observation: observation || null,
         // Solo fija la posición de captura la primera vez; las
         // correcciones posteriores conservan su lugar en la lista.
         winner_registered_at:

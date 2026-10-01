@@ -43,6 +43,7 @@ interface WinnerInfo {
   documentNumber: string | null;
   winnerPhoneNumber: string | null;
   registeredAt: string | null;
+  observation: string | null;
   /** Solo modo Participantes: datos digitados por el asistente en /registro. */
   playerName?: string | null;
   playerPhoneNumber?: string | null;
@@ -103,6 +104,7 @@ export default function TombolaMonitor({
   const [formDocType, setFormDocType] = useState("DUI");
   const [formDocNumber, setFormDocNumber] = useState("");
   const [formPhone, setFormPhone] = useState("");
+  const [formObservation, setFormObservation] = useState("");
   const [saving, setSaving] = useState(false);
   const [formMsg, setFormMsg] = useState<{
     ok: boolean;
@@ -242,6 +244,7 @@ export default function TombolaMonitor({
       setFormDocType(existing.documentType ?? "DUI");
       setFormDocNumber(existing.documentNumber ?? "");
       setFormPhone(existing.winnerPhoneNumber ?? "");
+      setFormObservation(existing.observation ?? "");
     } else if (existing?.playerName) {
       // Modo Participantes: precarga lo que el asistente digitó en
       // /registro — el staff solo confirma o corrige.
@@ -268,6 +271,7 @@ export default function TombolaMonitor({
           documentType: formDocType,
           documentNumber: formDocNumber.trim(),
           winnerPhoneNumber: formPhone.trim(),
+          observation: formObservation.trim() || null,
         }),
       });
       const json = await res.json();
@@ -279,6 +283,7 @@ export default function TombolaMonitor({
         setFormDocType("DUI");
         setFormDocNumber("");
         setFormPhone("");
+        setFormObservation("");
         await loadState();
       } else {
         setFormMsg({
@@ -487,6 +492,19 @@ export default function TombolaMonitor({
               maxLength={20}
               placeholder="Ej. +503 7707 7805"
               className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-white/50 mb-1.5">
+              Observación
+            </label>
+            <textarea
+              value={formObservation}
+              onChange={(e) => setFormObservation(e.target.value)}
+              maxLength={500}
+              rows={2}
+              placeholder="Nota interna del staff (opcional)"
+              className={`${inputClass} resize-none`}
             />
           </div>
           {formMsg && (
