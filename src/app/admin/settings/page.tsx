@@ -10,6 +10,7 @@ import {
   History,
   MessageSquare,
   Gauge,
+  Database,
 } from "lucide-react";
 import { Card, Title, Text, Grid, Icon } from "@tremor/react";
 
@@ -76,6 +77,14 @@ export default function SettingsPage() {
       icon: MessageSquare,
       href: "/admin/settings/contact",
       color: "cyan",
+    },
+    {
+      title: "Crear Datos de Prueba",
+      description:
+        "Copia cartones, facturas, alumnos y asignaciones de un evento a otro. Solo Super Admin.",
+      icon: Database,
+      href: "/admin/settings/test-data",
+      color: "violet",
     },
   ];
 
