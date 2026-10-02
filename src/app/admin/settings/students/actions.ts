@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { withRole } from "@/lib/auth/guards";
 
 /**
@@ -921,4 +922,38 @@ async function getUnsoldAssignedCardsReportInternal(
 export const getUnsoldAssignedCardsReport = withRole(
   4,
   getUnsoldAssignedCardsReportInternal,
+);
+
+/**
+ * Server action: devuelve el evento por defecto de la empresa activa
+ * (cookie selected_company_id → companies.def_dash_event_id) para
+ * preseleccionarlo en el informe de cartones no vendidos.
+ */
+async function getDefaultReportEventInternal() {
+  const cookieStore = await cookies();
+  const companyId = Number(cookieStore.get("selected_company_id")?.value);
+  if (!Number.isInteger(companyId) || companyId <= 0) {
+    return { success: true, data: null };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (error || !data?.def_dash_event_id) {
+    return { success: true, data: null };
+  }
+
+  return {
+    success: true,
+    data: { company_id: companyId, event_id: data.def_dash_event_id },
+  };
+}
+
+export const getDefaultReportEvent = withRole(
+  4,
+  getDefaultReportEventInternal,
 );

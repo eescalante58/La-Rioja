@@ -39,10 +39,12 @@ import {
   Search,
   Smartphone,
   ClipboardList,
+  FileText,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import NewInvoiceDialog from "./bingo/NewInvoiceDialog";
 import WhatsAppPopup from "./bingo/WhatsAppPopup";
+import UnsoldCardsReportDialog from "./UnsoldCardsReportDialog";
 
 // Dynamic imports for charts
 const SalesProgressChart = dynamic(
@@ -105,6 +107,7 @@ export default function RealtimeDashboardWrapper({
   const [isStudentDetailOpen, setIsStudentDetailOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [studentCards, setStudentCards] = useState<any[]>([]);
+  const [isUnsoldReportOpen, setIsUnsoldReportOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -672,11 +675,21 @@ export default function RealtimeDashboardWrapper({
                   Asignación de Cartones por Nivel
                 </Title>
               </div>
-              <div className="px-4 py-2 bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800">
+              <div className="px-4 py-2 bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3">
                 <Text className="text-xs font-bold text-larioja-azul dark:text-blue-400">
                   Click en el nombre del alumno para consultar detalle de
                   cartones asignados.
                 </Text>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  icon={FileText}
+                  color="indigo"
+                  onClick={() => setIsUnsoldReportOpen(true)}
+                  tooltip="Informe de cartones asignados que aún no se han vendido (CSV/PDF)"
+                >
+                  No Vendidos
+                </Button>
               </div>
               <div className="overflow-x-auto">
                 <Table>
@@ -1978,6 +1991,21 @@ export default function RealtimeDashboardWrapper({
           </DialogPanel>
         </div>
       </Dialog>
+
+      {/* Informe de cartones asignados no vendidos del evento del dashboard */}
+      {data.hasEvent && (
+        <UnsoldCardsReportDialog
+          isOpen={isUnsoldReportOpen}
+          onClose={() => setIsUnsoldReportOpen(false)}
+          events={[
+            {
+              company_id: data.companyId,
+              event_id: data.eventId,
+              event_name: data.eventName || "",
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }
