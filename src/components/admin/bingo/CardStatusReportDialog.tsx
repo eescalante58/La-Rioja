@@ -161,7 +161,7 @@ export default function CardStatusReportDialog({
         doc.setFontSize(10);
         doc.text(`Evento ID: ${event.event_id}`, 14, 22);
         doc.text(`Evento: ${event.event_name}`, 14, 28);
-        doc.text(`Rango: ${start} - ${end}   |   Filas: ${rows.length}`, 14, 34);
+        doc.text(`Rango: ${start} - ${end}   |   Cartones: ${rows.length}`, 14, 34);
 
         autoTable(doc, {
           startY: 38,
