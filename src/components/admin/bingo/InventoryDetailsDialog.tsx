@@ -144,7 +144,7 @@ export default function InventoryDetailsDialog({
               <Text>Cargando inventario...</Text>
             </div>
           ) : filteredCards.length > 0 ? (
-            <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="max-h-[60vh] overflow-auto pr-2 custom-scrollbar">
               <Table>
                 <TableHead>
                   <TableRow>

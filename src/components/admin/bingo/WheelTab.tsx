@@ -470,7 +470,7 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
               <Title>Historial — {historyWheel?.wheel_name}</Title>
               <Badge color="blue">{historyWheel?.mode}</Badge>
             </div>
-            <div className="max-h-[55vh] overflow-y-auto">
+            <div className="max-h-[55vh] overflow-auto">
               {spins.length === 0 ? (
                 <Text className="py-10 text-center text-gray-400 italic">
                   Sin giros registrados.

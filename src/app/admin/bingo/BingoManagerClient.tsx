@@ -173,7 +173,7 @@ export default function BingoManagerClient({
   };
 
   return (
-    <div className="space-y-6 px-6">
+    <div className="space-y-6 px-4 sm:px-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
         <div>
           <Title className="text-2xl font-black text-larioja-azul dark:text-white uppercase tracking-tight">
@@ -197,20 +197,22 @@ export default function BingoManagerClient({
       </div>
 
       <TabGroup index={selectedTab} onIndexChange={setSelectedTab}>
-        <TabList className="mt-8">
-          <Tab icon={Calendar} className="text-base sm:text-lg">
+        {/* En móvil la barra de pestañas desborda el viewport: scroll
+            horizontal con desplazamiento por deslizamiento. */}
+        <TabList className="mt-8 overflow-x-auto whitespace-nowrap custom-scrollbar">
+          <Tab icon={Calendar} className="text-sm sm:text-lg whitespace-nowrap">
             Eventos
           </Tab>
-          <Tab icon={Ticket} className="text-base sm:text-lg">
+          <Tab icon={Ticket} className="text-sm sm:text-lg whitespace-nowrap">
             Inventario de Cartones
           </Tab>
-          <Tab icon={TrendingUp} className="text-base sm:text-lg">
+          <Tab icon={TrendingUp} className="text-sm sm:text-lg whitespace-nowrap">
             Ventas y Facturación
           </Tab>
-          <Tab icon={Users} className="text-base sm:text-lg">
+          <Tab icon={Users} className="text-sm sm:text-lg whitespace-nowrap">
             Mensajes Promocionales
           </Tab>
-          <Tab icon={Dices} className="text-base sm:text-lg">
+          <Tab icon={Dices} className="text-sm sm:text-lg whitespace-nowrap">
             Sorteos/Juegos
           </Tab>
         </TabList>

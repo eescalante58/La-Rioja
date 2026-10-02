@@ -58,9 +58,14 @@ export default function EventsTab({
 
   return (
     <Card className="mt-4 shadow-sm sm:shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
-      <div className="flex justify-between items-center mb-6">
-        <Title>Listado de Eventos</Title>
-        <Button icon={Plus} onClick={onNewEvent} className="bg-larioja-azul">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+        <Title className="whitespace-nowrap">Listado de Eventos</Title>
+        <Button
+          icon={Plus}
+          onClick={onNewEvent}
+          className="bg-larioja-azul shrink-0"
+          size="xs"
+        >
           Nuevo Evento
         </Button>
       </div>
