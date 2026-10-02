@@ -634,14 +634,20 @@ async function bulkAssignCardsInternal(assignments: any[], context: { user: any 
 export const bulkAssignCards = withRole(8, bulkAssignCardsInternal);
 
 /**
- * Server action to fetch all assigned cards for download.
+ * Server action to fetch all assigned cards for download, acotadas a la
+ * empresa activa (cookie selected_company_id).
  */
-async function getAllAssignedCardsInternal() {
+async function getAllAssignedCardsInternal(context: {
+  user: any;
+  level: number;
+}) {
+  const { user, level } = context;
   const supabase = await createClient();
+  const companyScope = await resolveCompanyScope(supabase, user, level);
 
   // Se consulta desde students con left join para incluir también a los
   // alumnos que no tienen ningún cartón asignado.
-  const { data, error } = await supabase
+  let query = supabase
     .from("students")
     .select(
       `
@@ -661,6 +667,12 @@ async function getAllAssignedCardsInternal() {
     )
     .order("event_id", { ascending: true })
     .order("student_id", { ascending: true });
+
+  if (companyScope !== null) {
+    query = query.in("company_id", companyScope);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching all assigned cards:", error);
