@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Title, Text, Button, Grid } from "@tremor/react";
-import { Database, Copy, AlertTriangle, CheckCircle } from "lucide-react";
+import { Card, Title, Text, Grid } from "@tremor/react";
+import {
+  Database,
+  Copy,
+  AlertTriangle,
+  CheckCircle,
+  Loader2,
+  Circle,
+} from "lucide-react";
 import { callAction } from "@/lib/action-client";
 
 interface Company {
@@ -16,11 +23,27 @@ interface EventOption {
   event_name: string;
 }
 
-interface CloneResult {
+interface ValidateResult {
   success?: boolean;
   error?: string;
-  copied?: Record<string, number>;
+  totals?: Record<string, number>;
 }
+
+interface CopyStepResult {
+  success?: boolean;
+  error?: string;
+  table?: string;
+  count?: number;
+}
+
+interface CopyStep {
+  table: string;
+  status: "pending" | "copying" | "done" | "error";
+  count?: number;
+}
+
+/** Orden de copia: invoices primero por el trigger que valida factura-evento en cards. */
+const COPY_ORDER = ["invoices", "cards", "students", "students_cards"];
 
 const TABLE_LABELS: Record<string, string> = {
   invoices: "Facturas",
@@ -31,8 +54,10 @@ const TABLE_LABELS: Record<string, string> = {
 
 /**
  * Selectores empresa + evento (origen/destino) y botón de copia.
- * La copia se ejecuta vía `callAction` (POST /api/actions) — sin
- * re-render completo de página (regla no-rerender-completo).
+ * La copia se ejecuta por pasos vía `callAction` (POST /api/actions):
+ * primero `testData.validateCopy` y luego `testData.copyTable` por cada
+ * tabla, mostrando el avance en una lista — sin re-render completo de
+ * página (regla no-rerender-completo).
  */
 export default function TestDataClient({
   companies,
@@ -46,7 +71,9 @@ export default function TestDataClient({
   const [tgtCompany, setTgtCompany] = useState("");
   const [tgtEvent, setTgtEvent] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<CloneResult | null>(null);
+  const [steps, setSteps] = useState<CopyStep[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [finished, setFinished] = useState(false);
 
   const srcEvents = events.filter(
     (e) => String(e.company_id) === srcCompany,
@@ -57,28 +84,66 @@ export default function TestDataClient({
 
   const ready = srcCompany && srcEvent && tgtCompany && tgtEvent;
 
+  const companyLabel = (id: string) => {
+    const c = companies.find((x) => String(x.company_id) === id);
+    return c ? `${c.company_name} (ID ${c.company_id})` : `ID ${id}`;
+  };
+
+  const updateStep = (table: string, patch: Partial<CopyStep>) =>
+    setSteps((prev) =>
+      prev.map((s) => (s.table === table ? { ...s, ...patch } : s)),
+    );
+
   const handleClone = async () => {
     if (!ready) return;
     const confirmed = window.confirm(
       `Se copiarán cards, students, students_cards e invoices\n\n` +
-        `Desde: empresa ${srcCompany} / evento ${srcEvent}\n` +
-        `Hacia: empresa ${tgtCompany} / evento ${tgtEvent}\n\n` +
+        `Desde: ${companyLabel(srcCompany)} / evento ${srcEvent}\n` +
+        `Hacia: ${companyLabel(tgtCompany)} / evento ${tgtEvent}\n\n` +
         `El evento destino debe estar vacío. ¿Continuar?`,
     );
     if (!confirmed) return;
 
     setLoading(true);
-    setResult(null);
+    setError(null);
+    setFinished(false);
+    setSteps(COPY_ORDER.map((t) => ({ table: t, status: "pending" })));
+
+    const args = [
+      Number(srcCompany),
+      srcEvent,
+      Number(tgtCompany),
+      tgtEvent,
+    ];
+
     try {
-      const res = await callAction<CloneResult>("testData.cloneEventData", [
-        Number(srcCompany),
-        srcEvent,
-        Number(tgtCompany),
-        tgtEvent,
-      ]);
-      setResult(res);
+      const validation = await callAction<ValidateResult>(
+        "testData.validateCopy",
+        args,
+      );
+      if (validation.error || !validation.success) {
+        setError(validation.error || "La validación del par origen/destino falló.");
+        setSteps([]);
+        return;
+      }
+
+      for (const table of COPY_ORDER) {
+        updateStep(table, { status: "copying" });
+        const res = await callAction<CopyStepResult>(
+          "testData.copyTable",
+          [...args, table],
+        );
+        if (res.error || !res.success) {
+          updateStep(table, { status: "error" });
+          setError(res.error || `Error al copiar "${table}".`);
+          return;
+        }
+        updateStep(table, { status: "done", count: res.count ?? 0 });
+      }
+
+      setFinished(true);
     } catch {
-      setResult({ error: "Error de comunicación con el servidor." });
+      setError("Error de comunicación con el servidor.");
     } finally {
       setLoading(false);
     }
@@ -108,7 +173,9 @@ export default function TestDataClient({
             onChange={(e) => {
               setCompany(e.target.value);
               setEvent("");
-              setResult(null);
+              setSteps([]);
+              setError(null);
+              setFinished(false);
             }}
           >
             <option value="">Seleccione empresa…</option>
@@ -129,7 +196,9 @@ export default function TestDataClient({
             disabled={!company}
             onChange={(e) => {
               setEvent(e.target.value);
-              setResult(null);
+              setSteps([]);
+              setError(null);
+              setFinished(false);
             }}
           >
             <option value="">
@@ -145,6 +214,19 @@ export default function TestDataClient({
       </div>
     </Card>
   );
+
+  const stepIcon = (status: CopyStep["status"]) => {
+    switch (status) {
+      case "copying":
+        return <Loader2 size={15} className="animate-spin text-larioja-azul" />;
+      case "done":
+        return <CheckCircle size={15} className="text-emerald-500" />;
+      case "error":
+        return <AlertTriangle size={15} className="text-rose-500" />;
+      default:
+        return <Circle size={15} className="text-gray-300 dark:text-gray-600" />;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -187,47 +269,71 @@ export default function TestDataClient({
               es irreversible desde esta pantalla.
             </span>
           </div>
-          <Button
-            icon={Copy}
-            color="blue"
-            loading={loading}
-            disabled={!ready || loading}
+          {/* Botón nativo: el Button de Tremor dejaba el texto invisible
+              con la combinación color/loading del tema. */}
+          <button
+            type="button"
             onClick={handleClone}
+            disabled={!ready || loading}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-larioja-azul px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-larioja-azul/90 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-larioja-amarillo dark:text-larioja-azul dark:hover:bg-larioja-amarillo/90"
           >
-            {loading ? "Copiando…" : "Copiar Datos"}
-          </Button>
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Copy size={16} />
+            )}
+            {loading ? "Copiando…" : "Ejecutar Copia"}
+          </button>
         </div>
       </Card>
 
-      {result?.error && (
+      {steps.length > 0 && (
+        <Card
+          className={`border-l-4 p-4 ${
+            error
+              ? "border-rose-500"
+              : finished
+                ? "border-emerald-500"
+                : "border-larioja-azul"
+          }`}
+        >
+          <Text className="text-sm font-bold text-gray-700 dark:text-gray-200">
+            {finished
+              ? "Copia completada"
+              : error
+                ? "Copia interrumpida"
+                : "Copiando tablas…"}
+          </Text>
+          <ul className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+            {steps.map((step) => (
+              <li key={step.table} className="flex items-center gap-2">
+                {stepIcon(step.status)}
+                <Database size={13} className="text-gray-400" />
+                <span>
+                  {TABLE_LABELS[step.table] || step.table}
+                  {step.status === "copying" && " — copiando…"}
+                  {step.status === "done" && (
+                    <>
+                      {" — "}
+                      <b>{(step.count ?? 0).toLocaleString()}</b> filas
+                      copiadas
+                    </>
+                  )}
+                  {step.status === "error" && " — error"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {error && (
         <Card className="border-l-4 border-rose-500 p-4">
           <div className="flex items-start gap-2">
             <AlertTriangle size={18} className="mt-0.5 shrink-0 text-rose-500" />
             <Text className="text-sm text-rose-600 dark:text-rose-400">
-              {result.error}
+              {error}
             </Text>
-          </div>
-        </Card>
-      )}
-
-      {result?.success && result.copied && (
-        <Card className="border-l-4 border-emerald-500 p-4">
-          <div className="flex items-start gap-2">
-            <CheckCircle size={18} className="mt-0.5 shrink-0 text-emerald-500" />
-            <div>
-              <Text className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                Copia completada
-              </Text>
-              <ul className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                {Object.entries(result.copied).map(([table, count]) => (
-                  <li key={table} className="flex items-center gap-2">
-                    <Database size={13} className="text-gray-400" />
-                    {TABLE_LABELS[table] || table}:{" "}
-                    <b>{count.toLocaleString()}</b> filas
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
         </Card>
       )}

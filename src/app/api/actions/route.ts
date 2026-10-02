@@ -72,7 +72,10 @@ import { getTablePolicies } from "@/app/admin/settings/security/actions";
 
 import { setRegistrationMode } from "@/app/admin/settings/registration-limits/actions";
 
-import { cloneEventData } from "@/app/admin/settings/test-data/actions";
+import {
+  validateCopy,
+  copyTable,
+} from "@/app/admin/settings/test-data/actions";
 
 import {
   createNewUser,
@@ -192,7 +195,8 @@ const REGISTRY: Record<string, ActionFn> = {
   "contactSettings.resendContactEmail": resendContactEmail,
   "security.getTablePolicies": getTablePolicies,
   "registrationLimits.setRegistrationMode": setRegistrationMode,
-  "testData.cloneEventData": cloneEventData,
+  "testData.validateCopy": validateCopy,
+  "testData.copyTable": copyTable,
 
   // Settings — users
   "users.createNewUser": createNewUser,
