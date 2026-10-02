@@ -400,7 +400,7 @@ export default function StudentManagerClient({
    * elige en el diálogo (clave "company_id|event_id"); el formato puede ser
    * CSV o PDF, ambos con el id y nombre del evento en el encabezado.
    */
-  const handleUnsoldReport = async (format: "csv" | "pdf") => {
+  const handleUnsoldReport = async (format: "csv" | "pdf" | "pdf-preview") => {
     const event = events.find(
       (e) => `${e.company_id}|${e.event_id}` === reportEventKey,
     );
@@ -574,7 +574,14 @@ export default function StudentManagerClient({
           headStyles: { fillColor: [1, 22, 64] },
         });
 
-        doc.save(`cartones_asignados_no_vendidos_${event.event_id}.pdf`);
+        if (format === "pdf-preview") {
+          // Vista previa en pestaña nueva: el visor del navegador ya
+          // ofrece descargar/imprimir desde ahí.
+          const blobUrl = doc.output("bloburl");
+          window.open(blobUrl, "_blank");
+        } else {
+          doc.save(`cartones_asignados_no_vendidos_${event.event_id}.pdf`);
+        }
       }
 
       await callAction("students.logExportActivity", [rows.length]);
@@ -1736,11 +1743,22 @@ export default function StudentManagerClient({
               CSV
             </Button>
             <Button
+              variant="secondary"
+              icon={Eye}
+              onClick={() => handleUnsoldReport("pdf-preview")}
+              loading={reportLoading}
+              disabled={!reportEventKey}
+              tooltip="Abrir el PDF en una pestaña nueva para revisarlo antes de descargar"
+            >
+              Vista Previa
+            </Button>
+            <Button
               icon={FileText}
               className="bg-larioja-azul"
               onClick={() => handleUnsoldReport("pdf")}
               loading={reportLoading}
               disabled={!reportEventKey}
+              tooltip="Descargar el PDF directamente"
             >
               PDF
             </Button>
