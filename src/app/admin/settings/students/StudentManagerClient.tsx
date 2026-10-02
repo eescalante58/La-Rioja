@@ -481,17 +481,95 @@ export default function StudentManagerClient({
         doc.text(`Evento ID: ${event.event_id}`, 14, 23);
         doc.text(`Evento: ${event.event_name}`, 14, 29);
 
+        /**
+         * Cuerpo agrupado por alumno: los datos del alumno solo van en la
+         * primera fila de su bloque; al cerrar cada nivel se inserta una
+         * fila de subtotal y al final el total general de cartones.
+         */
+        const body: (
+          | (string | number)[]
+          | {
+              content: string;
+              colSpan: number;
+              styles: Record<string, unknown>;
+            }[]
+        )[] = [];
+
+        let currentLevel: string | null = null;
+        let levelCards = 0;
+        let i = 0;
+
+        const pushLevelSubtotal = () => {
+          body.push([
+            {
+              content: `Subtotal ${currentLevel}: ${levelCards} cartones`,
+              colSpan: 4,
+              styles: {
+                fontStyle: "bold",
+                fillColor: [226, 232, 240],
+                halign: "right",
+              },
+            },
+          ]);
+        };
+
+        while (i < rows.length) {
+          const student = rows[i];
+
+          if (student.student_level !== currentLevel) {
+            if (currentLevel !== null) pushLevelSubtotal();
+            currentLevel = student.student_level;
+            levelCards = 0;
+          }
+
+          // Cartones contiguos del mismo alumno (el servidor ya ordena
+          // por nivel → nombre → cartón).
+          const studentCards: number[] = [];
+          while (
+            i < rows.length &&
+            rows[i].student_id === student.student_id &&
+            rows[i].student_level === currentLevel
+          ) {
+            studentCards.push(rows[i].card_number);
+            i++;
+          }
+          levelCards += studentCards.length;
+
+          studentCards.forEach((cardNumber, idx) => {
+            body.push(
+              idx === 0
+                ? [
+                    student.student_id,
+                    student.student_name,
+                    student.student_level,
+                    cardNumber,
+                  ]
+                : ["", "", "", cardNumber],
+            );
+          });
+        }
+
+        if (currentLevel !== null) pushLevelSubtotal();
+
+        body.push([
+          {
+            content: `TOTAL GENERAL: ${rows.length} cartones`,
+            colSpan: 4,
+            styles: {
+              fontStyle: "bold",
+              fillColor: [1, 22, 64],
+              textColor: [255, 255, 255],
+              halign: "right",
+            },
+          },
+        ]);
+
         autoTable(doc, {
           startY: 34,
           head: [
             ["Codigo Alumno", "Nombre del Alumno", "Nivel", "# de Carton"],
           ],
-          body: rows.map((r) => [
-            r.student_id,
-            r.student_name,
-            r.student_level,
-            r.card_number,
-          ]),
+          body,
           styles: { fontSize: 9 },
           headStyles: { fillColor: [1, 22, 64] },
         });
