@@ -1399,7 +1399,7 @@ export default function StudentManagerClient({
                       <Calendar size={14} className="text-larioja-azul" />
                       <Text className="font-medium text-sm">
                         {new Date(
-                          selectedInvoice.invoice_date,
+                          `${selectedInvoice.invoice_date}T12:00:00`,
                         ).toLocaleDateString()}
                       </Text>
                     </Flex>

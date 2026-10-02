@@ -93,7 +93,9 @@ export default function EventsTab({
                   </div>
                 </TableCell>
                 <TableCell>
-                  {new Date(event.event_date).toLocaleDateString()}
+                  {/* event_date viene como YYYY-MM-DD; parsearla como fecha local
+                      (mediodía) evita que se retroceda un día en zonas UTC- */}
+                  {new Date(`${event.event_date}T12:00:00`).toLocaleDateString()}
                 </TableCell>
                 <TableCell>{formatCurrency(event.card_value)}</TableCell>
                 <TableCell>
