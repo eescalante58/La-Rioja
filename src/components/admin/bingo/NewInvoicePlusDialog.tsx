@@ -64,6 +64,23 @@ export default function NewInvoicePlusDialog({
   const [invoiceDate, setInvoiceDate] = useState<string>("");
   const [observation, setObservation] = useState<string>("");
   const [customerName, setCustomerName] = useState<string>("");
+  const [customerEmail, setCustomerEmail] = useState<string>("");
+
+  /**
+   * Datos de clientes ya facturados en el evento, para los contenedores
+   * de sugerencias de nombre/email/teléfono/vendedor.
+   */
+  interface CustomerHint {
+    name: string;
+    email: string;
+    phone: string;
+    area: string;
+  }
+  const [customerHints, setCustomerHints] = useState<CustomerHint[]>([]);
+  /** Qué lista de sugerencias está abierta (una a la vez). */
+  const [activeSuggest, setActiveSuggest] = useState<
+    "name" | "email" | "phone" | "seller" | null
+  >(null);
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
   const [autoNumbering, setAutoNumbering] = useState(false);
   /** Mensaje breve "guardada" tras cada alta (el diálogo queda abierto). */
@@ -72,7 +89,6 @@ export default function NewInvoicePlusDialog({
    * Refs a los inputs no controlados (email y archivo): FormData los lee
    * directo del DOM, así que resetForm debe limpiarlos manualmente.
    */
-  const emailInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /**
@@ -176,11 +192,12 @@ export default function NewInvoicePlusDialog({
     setObservation("");
     setSelectedInvoiceCards([]);
     setCustomerName("");
+    setCustomerEmail("");
     setInvoiceNumber("");
     setFromCard("");
     setToCard("");
     setToCardTouched(false);
-    if (emailInputRef.current) emailInputRef.current.value = "";
+    setActiveSuggest(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -217,7 +234,79 @@ export default function NewInvoicePlusDialog({
       // Lista de vendedores es solo una ayuda de autocompletado; si falla
       // el campo sigue aceptando texto libre.
     }
+
+    // Historial de facturas del evento → sugerencias de cliente,
+    // email, teléfono y vendedor (una entrada por nombre de cliente).
+    try {
+      const res = await fetch(
+        `/api/bingo/invoices?companyId=${currentEvent.companyId}&eventId=${encodeURIComponent(currentEvent.eventId)}`,
+      );
+      const result = await res.json();
+      if (result?.success && Array.isArray(result.data)) {
+        const byName = new Map<string, CustomerHint>();
+        const extraSellers = new Set<string>();
+        for (const inv of result.data as any[]) {
+          if (inv.manager_name) extraSellers.add(inv.manager_name);
+          if (!inv.customer_name || byName.has(inv.customer_name)) continue;
+          byName.set(inv.customer_name, {
+            name: inv.customer_name,
+            email: inv.customer_email || "",
+            phone: inv.phone_number || "",
+            area: inv.phone_area || "",
+          });
+        }
+        setCustomerHints(
+          [...byName.values()].sort((a, b) => a.name.localeCompare(b.name, "es")),
+        );
+        if (extraSellers.size > 0) {
+          setSellers((prev) =>
+            Array.from(new Set([...prev, ...extraSellers])).sort(),
+          );
+        }
+      }
+    } catch {
+      // Las sugerencias son una ayuda; si falla el formulario sigue manual.
+    }
   };
+
+  /** Aplica la sugerencia elegida: nombre + email + teléfono del cliente. */
+  const applyCustomerHint = (hint: CustomerHint) => {
+    setCustomerName(hint.name);
+    if (hint.email) setCustomerEmail(hint.email);
+    if (hint.phone) {
+      setPhoneNumber(hint.phone);
+      if (hint.area) {
+        setPhoneArea(hint.area.startsWith("+") ? hint.area : `+${hint.area}`);
+        setPhoneIso2(""); // permite que la bandera se redetecte por el código
+      }
+    }
+    setActiveSuggest(null);
+  };
+
+  /** Sugerencias filtradas según lo digitado (o todas si está vacío). */
+  const nameHints = useMemo(() => {
+    const q = customerName.trim().toLowerCase();
+    return q
+      ? customerHints.filter((h) => h.name.toLowerCase().includes(q))
+      : customerHints;
+  }, [customerHints, customerName]);
+
+  const emailHints = useMemo(() => {
+    const emails = customerHints.filter((h) => h.email);
+    const q = customerEmail.trim().toLowerCase();
+    return q ? emails.filter((h) => h.email.toLowerCase().includes(q)) : emails;
+  }, [customerHints, customerEmail]);
+
+  const phoneHints = useMemo(() => {
+    const phones = customerHints.filter((h) => h.phone);
+    const q = phoneNumber.replace(/\D/g, "");
+    return q ? phones.filter((h) => h.phone.replace(/\D/g, "").includes(q)) : phones;
+  }, [customerHints, phoneNumber]);
+
+  const sellerHints = useMemo(() => {
+    const q = managerName.trim().toLowerCase();
+    return q ? sellers.filter((s) => s.toLowerCase().includes(q)) : sellers;
+  }, [sellers, managerName]);
 
   const handleVerifyRange = async () => {
     if (!fromCard || !toCard) {
@@ -437,7 +526,7 @@ export default function NewInvoicePlusDialog({
 
               {/* Fila 2: cliente y email */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Nombre del Cliente
                   </Text>
@@ -446,19 +535,78 @@ export default function NewInvoicePlusDialog({
                     placeholder="Juan Pérez"
                     value={customerName}
                     onValueChange={setCustomerName}
+                    onFocus={() => setActiveSuggest("name")}
+                    onBlur={() =>
+                      setTimeout(
+                        () =>
+                          setActiveSuggest((s) => (s === "name" ? null : s)),
+                        150,
+                      )
+                    }
+                    autoComplete="off"
                     required
                   />
+                  {activeSuggest === "name" && nameHints.length > 0 && (
+                    <ul className="absolute left-0 z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 custom-scrollbar">
+                      {nameHints.map((h) => (
+                        <li key={h.name}>
+                          <button
+                            type="button"
+                            onMouseDown={() => applyCustomerHint(h)}
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            <span className="truncate font-medium text-gray-800 dark:text-gray-100">
+                              {h.name}
+                            </span>
+                            <span className="shrink-0 text-xs text-gray-400">
+                              {h.phone || h.email}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Email del Cliente
                   </Text>
                   <TextInput
-                    ref={emailInputRef}
                     name="customer_email"
                     type="email"
                     placeholder="juan@ejemplo.com"
+                    value={customerEmail}
+                    onValueChange={setCustomerEmail}
+                    onFocus={() => setActiveSuggest("email")}
+                    onBlur={() =>
+                      setTimeout(
+                        () =>
+                          setActiveSuggest((s) => (s === "email" ? null : s)),
+                        150,
+                      )
+                    }
+                    autoComplete="off"
                   />
+                  {activeSuggest === "email" && emailHints.length > 0 && (
+                    <ul className="absolute left-0 z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 custom-scrollbar">
+                      {emailHints.map((h) => (
+                        <li key={h.email}>
+                          <button
+                            type="button"
+                            onMouseDown={() => applyCustomerHint(h)}
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            <span className="truncate font-medium text-gray-800 dark:text-gray-100">
+                              {h.email}
+                            </span>
+                            <span className="shrink-0 text-xs text-gray-400">
+                              {h.name}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
 
@@ -531,7 +679,7 @@ export default function NewInvoicePlusDialog({
                   )}
                   <input type="hidden" name="phone_area" value={phoneArea} />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Teléfono
                   </Text>
@@ -541,7 +689,36 @@ export default function NewInvoicePlusDialog({
                     placeholder="1234567"
                     value={phoneNumber}
                     onValueChange={setPhoneNumber}
+                    onFocus={() => setActiveSuggest("phone")}
+                    onBlur={() =>
+                      setTimeout(
+                        () =>
+                          setActiveSuggest((s) => (s === "phone" ? null : s)),
+                        150,
+                      )
+                    }
+                    autoComplete="off"
                   />
+                  {activeSuggest === "phone" && phoneHints.length > 0 && (
+                    <ul className="absolute left-0 z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 custom-scrollbar">
+                      {phoneHints.map((h) => (
+                        <li key={`${h.phone}-${h.name}`}>
+                          <button
+                            type="button"
+                            onMouseDown={() => applyCustomerHint(h)}
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            <span className="truncate font-medium text-gray-800 dark:text-gray-100">
+                              {h.phone}
+                            </span>
+                            <span className="shrink-0 text-xs text-gray-400">
+                              {h.name}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
@@ -555,7 +732,7 @@ export default function NewInvoicePlusDialog({
                     icon={Smartphone}
                   />
                 </div>
-                <div className="space-y-1 col-span-2">
+                <div className="space-y-1 col-span-2 relative">
                   <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                     Vendido por
                   </Text>
@@ -565,15 +742,35 @@ export default function NewInvoicePlusDialog({
                     value={managerName}
                     onChange={(e) => setInvoiceManagerName(e.target.value)}
                     required
-                    list="sellers-list-plus"
                     autoComplete="off"
+                    onFocus={() => setActiveSuggest("seller")}
+                    onBlur={() =>
+                      setTimeout(
+                        () =>
+                          setActiveSuggest((s) => (s === "seller" ? null : s)),
+                        150,
+                      )
+                    }
                     className="w-full text-sm border border-gray-300 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 focus:ring-2 focus:ring-larioja-azul/20 focus:border-larioja-azul transition-all duration-200 p-2 text-gray-900 dark:text-gray-100"
                   />
-                  <datalist id="sellers-list-plus">
-                    {sellers.map((s) => (
-                      <option key={s} value={s} />
-                    ))}
-                  </datalist>
+                  {activeSuggest === "seller" && sellerHints.length > 0 && (
+                    <ul className="absolute left-0 z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 custom-scrollbar">
+                      {sellerHints.map((s) => (
+                        <li key={s}>
+                          <button
+                            type="button"
+                            onMouseDown={() => {
+                              setInvoiceManagerName(s);
+                              setActiveSuggest(null);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm font-medium text-gray-800 hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-800"
+                          >
+                            {s}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
 
