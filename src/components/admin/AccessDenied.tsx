@@ -69,7 +69,11 @@ export default function AccessDenied({
           Si necesitas acceso, solicítalo a un administrador del sistema.
         </Text>
         <Link href="/admin" className="inline-block mt-5">
-          <Button icon={ArrowLeft} variant="secondary">
+          {/* icon={ArrowLeft} pasa una función a un Client Component de
+              Tremor y rompe la serialización RSC; se renderiza como
+              elemento hijo en su lugar. */}
+          <Button variant="secondary">
+            <ArrowLeft size={16} className="mr-1.5 -ml-1 inline-block" />
             Volver al panel
           </Button>
         </Link>
