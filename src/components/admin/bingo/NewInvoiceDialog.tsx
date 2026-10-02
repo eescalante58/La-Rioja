@@ -146,8 +146,8 @@ export default function NewInvoiceDialog({
 
   useEffect(() => {
     if (invoice) {
-      setCardPrice(invoice.card_price);
-      setCardsNumber(invoice.cards_number);
+      setCardPrice(invoice.card_price ?? 0);
+      setCardsNumber(invoice.cards_number ?? 1);
       // Normaliza el código guardado a formato "+NNN"; el iso2 se deduce
       // del código (con prioridad a EE.UU. para el +1 compartido).
       setPhoneArea(
@@ -173,7 +173,9 @@ export default function NewInvoiceDialog({
         setSelectedInvoiceCards([]);
       }
     } else if (currentEvent) {
-      setCardPrice(currentEvent.cardValue);
+      // Empresas sin evento configurado pasan cardValue undefined —
+      // sin el fallback el render revienta en cardPrice.toString().
+      setCardPrice(currentEvent.cardValue ?? 0);
       setCardsNumber(1);
       setPhoneArea("+503");
       setPhoneIso2("SV");
