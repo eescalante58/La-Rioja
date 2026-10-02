@@ -75,6 +75,7 @@ import { setRegistrationMode } from "@/app/admin/settings/registration-limits/ac
 import {
   validateCopy,
   copyTable,
+  deleteCopy,
 } from "@/app/admin/settings/test-data/actions";
 
 import {
@@ -197,6 +198,7 @@ const REGISTRY: Record<string, ActionFn> = {
   "registrationLimits.setRegistrationMode": setRegistrationMode,
   "testData.validateCopy": validateCopy,
   "testData.copyTable": copyTable,
+  "testData.deleteCopy": deleteCopy,
 
   // Settings — users
   "users.createNewUser": createNewUser,

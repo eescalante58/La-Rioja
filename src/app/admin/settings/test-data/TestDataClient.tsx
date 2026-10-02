@@ -42,6 +42,12 @@ interface CopyStep {
   count?: number;
 }
 
+interface DeleteCopyResult {
+  success?: boolean;
+  error?: string;
+  deleted?: Record<string, number>;
+}
+
 /** Orden de copia: invoices primero por el trigger que valida factura-evento en cards. */
 const COPY_ORDER = ["invoices", "cards", "students", "students_cards"];
 
@@ -75,14 +81,30 @@ export default function TestDataClient({
   const [error, setError] = useState<string | null>(null);
   const [finished, setFinished] = useState(false);
 
+  const [delCompany, setDelCompany] = useState("");
+  const [delEvent, setDelEvent] = useState("");
+  const [delLoading, setDelLoading] = useState(false);
+  const [delResult, setDelResult] = useState<DeleteCopyResult | null>(null);
+
   const srcEvents = events.filter(
     (e) => String(e.company_id) === srcCompany,
   );
   const tgtEvents = events.filter(
     (e) => String(e.company_id) === tgtCompany,
   );
+  const delEvents = events.filter(
+    (e) => String(e.company_id) === delCompany,
+  );
 
   const ready = srcCompany && srcEvent && tgtCompany && tgtEvent;
+  const delReady = delCompany && delEvent;
+
+  const resetCopy = () => {
+    setSteps([]);
+    setError(null);
+    setFinished(false);
+  };
+  const resetDelete = () => setDelResult(null);
 
   const companyLabel = (id: string) => {
     const c = companies.find((x) => String(x.company_id) === id);
@@ -155,6 +177,30 @@ export default function TestDataClient({
   const selectClass =
     "w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-larioja-azul";
 
+  const handleDelete = async () => {
+    if (!delReady) return;
+    const confirmed = window.confirm(
+      `Se ELIMINARÁN todos los datos copiados del evento ${delEvent} de ${companyLabel(delCompany)}\n\n` +
+        `Se borrarán las filas de cards, students, students_cards e invoices de ese evento.\n\n` +
+        `Esta acción no se puede deshacer. ¿Continuar?`,
+    );
+    if (!confirmed) return;
+
+    setDelLoading(true);
+    setDelResult(null);
+    try {
+      const res = await callAction<DeleteCopyResult>(
+        "testData.deleteCopy",
+        [Number(delCompany), delEvent],
+      );
+      setDelResult(res);
+    } catch {
+      setDelResult({ error: "Error de comunicación con el servidor." });
+    } finally {
+      setDelLoading(false);
+    }
+  };
+
   const renderSelectors = (
     label: string,
     company: string,
@@ -163,6 +209,7 @@ export default function TestDataClient({
     setEvent: (v: string) => void,
     eventList: EventOption[],
     panelCompanyName: string,
+    onChange: () => void,
   ) => (
     <Card className="p-5">
       <Title className="text-base font-bold">{label}</Title>
@@ -177,9 +224,7 @@ export default function TestDataClient({
             onChange={(e) => {
               setCompany(e.target.value);
               setEvent("");
-              setSteps([]);
-              setError(null);
-              setFinished(false);
+              onChange();
             }}
           >
             <option value="">Seleccione empresa…</option>
@@ -200,9 +245,7 @@ export default function TestDataClient({
             disabled={!company}
             onChange={(e) => {
               setEvent(e.target.value);
-              setSteps([]);
-              setError(null);
-              setFinished(false);
+              onChange();
             }}
           >
             <option value="">
@@ -253,6 +296,7 @@ export default function TestDataClient({
           setSrcEvent,
           srcEvents,
           companyName(srcCompany),
+          resetCopy,
         )}
         {renderSelectors(
           "Hasta (destino)",
@@ -262,6 +306,7 @@ export default function TestDataClient({
           setTgtEvent,
           tgtEvents,
           companyName(tgtCompany),
+          resetCopy,
         )}
       </Grid>
 
@@ -343,6 +388,107 @@ export default function TestDataClient({
           </div>
         </Card>
       )}
+
+      {/* Eliminación de una copia ya creada (empresa + evento). */}
+      <Card className="border-l-4 border-rose-500 p-5">
+        <Title className="text-base font-bold">Eliminar una copia</Title>
+        <Text className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Borra las filas de cards, students, students_cards e invoices del
+          evento indicado. El evento en sí no se elimina.
+        </Text>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-bold uppercase text-gray-400">
+              Empresa
+            </label>
+            <select
+              className={selectClass}
+              value={delCompany}
+              onChange={(e) => {
+                setDelCompany(e.target.value);
+                setDelEvent("");
+                resetDelete();
+              }}
+            >
+              <option value="">Seleccione empresa…</option>
+              {companies.map((c) => (
+                <option key={c.company_id} value={c.company_id}>
+                  {c.company_name} (ID {c.company_id})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-bold uppercase text-gray-400">
+              Evento
+            </label>
+            <select
+              className={selectClass}
+              value={delEvent}
+              disabled={!delCompany}
+              onChange={(e) => {
+                setDelEvent(e.target.value);
+                resetDelete();
+              }}
+            >
+              <option value="">
+                {delCompany
+                  ? "Seleccione evento…"
+                  : "Primero elija la empresa"}
+              </option>
+              {delEvents.map((ev) => (
+                <option key={ev.event_id} value={ev.event_id}>
+                  {ev.event_name} ({ev.event_id}) — {companyName(delCompany)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={!delReady || delLoading}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {delLoading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <AlertTriangle size={16} />
+            )}
+            {delLoading ? "Eliminando…" : "Eliminar Copia"}
+          </button>
+        </div>
+
+        {delResult?.error && (
+          <div className="mt-4 flex items-start gap-2">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0 text-rose-500" />
+            <Text className="text-sm text-rose-600 dark:text-rose-400">
+              {delResult.error}
+            </Text>
+          </div>
+        )}
+
+        {delResult?.success && delResult.deleted && (
+          <div className="mt-4 flex items-start gap-2">
+            <CheckCircle size={18} className="mt-0.5 shrink-0 text-emerald-500" />
+            <div>
+              <Text className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                Copia eliminada
+              </Text>
+              <ul className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
+                {Object.entries(delResult.deleted).map(([table, count]) => (
+                  <li key={table} className="flex items-center gap-2">
+                    <Database size={13} className="text-gray-400" />
+                    {TABLE_LABELS[table] || table}:{" "}
+                    <b>{count.toLocaleString()}</b> filas eliminadas
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

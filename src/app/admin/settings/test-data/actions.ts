@@ -315,3 +315,77 @@ async function copyTableInternal(
 }
 
 export const copyTable = withRole(10, copyTableInternal);
+
+interface DeleteCopyResult {
+  success?: boolean;
+  error?: string;
+  deleted?: Record<string, number>;
+}
+
+/**
+ * Elimina la copia de datos de un evento (las 4 tablas gestionadas por
+ * esta herramienta) para el par empresa/evento indicado, en orden
+ * inverso a la inserción para respetar las FK. Valida que la empresa
+ * y el evento existan antes de borrar y registra la operación en la
+ * bitácora.
+ */
+async function deleteCopyInternal(
+  companyId: number,
+  eventId: string,
+  context: { user: { id: string; email?: string } },
+): Promise<DeleteCopyResult> {
+  if (!companyId || !eventId) {
+    return { error: "Debe indicar la empresa y el evento a eliminar." };
+  }
+
+  const supabase = createAdminClient();
+
+  const pairError = await validateCompanyEvent(
+    supabase,
+    companyId,
+    eventId,
+    "Destino",
+  );
+  if (pairError) return { error: pairError };
+
+  const deleted: Record<string, number> = {};
+
+  for (const table of CLEANUP_ORDER) {
+    const { count } = await supabase
+      .from(table)
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId)
+      .eq("event_id", eventId);
+
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq("company_id", companyId)
+      .eq("event_id", eventId);
+    if (error) {
+      return {
+        error: `Error al eliminar "${table}": ${error.message}`,
+        deleted,
+      };
+    }
+    deleted[table] = count || 0;
+  }
+
+  await supabase.from("user_activity_log").insert([
+    {
+      user_id: context.user.id,
+      action: "DELETE_TEST_DATA",
+      entity: "events",
+      entity_id: eventId,
+      metadata: {
+        target: { company_id: companyId, event_id: eventId },
+        deleted,
+      },
+      timestamp: new Date().toISOString(),
+    },
+  ]);
+
+  return { success: true, deleted };
+}
+
+export const deleteCopy = withRole(10, deleteCopyInternal);
