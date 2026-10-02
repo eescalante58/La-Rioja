@@ -89,6 +89,9 @@ export default function TestDataClient({
     return c ? `${c.company_name} (ID ${c.company_id})` : `ID ${id}`;
   };
 
+  const companyName = (id: string) =>
+    companies.find((x) => String(x.company_id) === id)?.company_name || "";
+
   const updateStep = (table: string, patch: Partial<CopyStep>) =>
     setSteps((prev) =>
       prev.map((s) => (s.table === table ? { ...s, ...patch } : s)),
@@ -159,6 +162,7 @@ export default function TestDataClient({
     setCompany: (v: string) => void,
     setEvent: (v: string) => void,
     eventList: EventOption[],
+    panelCompanyName: string,
   ) => (
     <Card className="p-5">
       <Title className="text-base font-bold">{label}</Title>
@@ -206,7 +210,7 @@ export default function TestDataClient({
             </option>
             {eventList.map((ev) => (
               <option key={ev.event_id} value={ev.event_id}>
-                {ev.event_name} ({ev.event_id})
+                {ev.event_name} ({ev.event_id}) — {panelCompanyName}
               </option>
             ))}
           </select>
@@ -232,7 +236,7 @@ export default function TestDataClient({
     <div className="space-y-6">
       <div>
         <Title className="text-2xl font-bold text-larioja-azul dark:text-larioja-amarillo">
-          Crear Datos de Prueba
+          Crear Datos de Backup/Prueba
         </Title>
         <Text className="text-gray-500 dark:text-gray-400">
           Copia la totalidad de cartones, facturas, alumnos y asignaciones
@@ -248,6 +252,7 @@ export default function TestDataClient({
           setSrcCompany,
           setSrcEvent,
           srcEvents,
+          companyName(srcCompany),
         )}
         {renderSelectors(
           "Hasta (destino)",
@@ -256,6 +261,7 @@ export default function TestDataClient({
           setTgtCompany,
           setTgtEvent,
           tgtEvents,
+          companyName(tgtCompany),
         )}
       </Grid>
 

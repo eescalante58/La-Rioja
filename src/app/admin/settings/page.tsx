@@ -79,7 +79,7 @@ export default function SettingsPage() {
       color: "cyan",
     },
     {
-      title: "Crear Datos de Prueba",
+      title: "Crear Datos de Backup/Prueba",
       description:
         "Copia cartones, facturas, alumnos y asignaciones de un evento a otro. Solo Super Admin.",
       icon: Database,

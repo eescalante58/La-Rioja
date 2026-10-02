@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import TestDataClient from "./TestDataClient";
 
 /**
- * Página "Crear datos de prueba" (nivel 10: Super Admin).
+ * Página "Crear datos de backup/prueba" (nivel 10: Super Admin).
  * Carga el catálogo empresa/evento en el servidor y delega la copia
  * al client component vía dispatcher (`testData.cloneEventData`).
  */
@@ -15,7 +15,7 @@ export default async function TestDataPage() {
       <AccessDenied
         requiredLevel={10}
         currentLevel={level}
-        section="Crear Datos de Prueba"
+        section="Crear Datos de Backup/Prueba"
       />
     );
   }
