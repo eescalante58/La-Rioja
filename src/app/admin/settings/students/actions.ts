@@ -6,13 +6,49 @@ import { cookies } from "next/headers";
 import { withRole } from "@/lib/auth/guards";
 
 /**
+ * Resuelve el alcance de empresas para los listados: la empresa activa
+ * (cookie selected_company_id) si el usuario tiene acceso a ella; si no,
+ * sus membresías (nivel < 10). Devuelve null cuando no hay restricción
+ * (nivel 10 sin cookie válida).
+ */
+async function resolveCompanyScope(
+  supabase: any,
+  user: any,
+  level: number,
+): Promise<number[] | null> {
+  const cookieStore = await cookies();
+  const raw = Number(cookieStore.get("selected_company_id")?.value);
+  const selected = Number.isInteger(raw) && raw > 0 ? raw : null;
+
+  if (level >= 10) {
+    return selected !== null ? [selected] : null;
+  }
+
+  const { data: memberships } = await supabase
+    .from("user_companies")
+    .select("company_id")
+    .eq("user_id", user?.id);
+  const companyIds = (memberships?.map((m: any) => m.company_id) ||
+    []) as number[];
+
+  // La cookie es manipulable por el cliente: solo se respeta si la
+  // empresa seleccionada pertenece al usuario.
+  if (selected !== null && companyIds.includes(selected)) {
+    return [selected];
+  }
+  return companyIds;
+}
+
+/**
  * Server action to fetch all students with their event names.
  */
-async function getStudentsInternal() {
+async function getStudentsInternal(context: { user: any; level: number }) {
+  const { user, level } = context;
   const supabase = await createClient();
+  const companyScope = await resolveCompanyScope(supabase, user, level);
 
   // Fetch students, their associated event names and cards count
-  const { data, error } = await supabase
+  let query = supabase
     .from("students")
     .select(
       `
@@ -32,13 +68,25 @@ async function getStudentsInternal() {
     )
     .order("student_name", { ascending: true });
 
+  if (companyScope !== null) {
+    query = query.in("company_id", companyScope);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
     console.error("Error fetching students:", error);
     // Fallback: try fetching without join if join fails
-    const { data: fallbackData, error: fallbackError } = await supabase
+    let fallbackQuery = supabase
       .from("students")
       .select("*")
       .order("student_name", { ascending: true });
+
+    if (companyScope !== null) {
+      fallbackQuery = fallbackQuery.in("company_id", companyScope);
+    }
+
+    const { data: fallbackData, error: fallbackError } = await fallbackQuery;
 
     if (fallbackError) return [];
     return fallbackData;
@@ -55,14 +103,24 @@ async function getStudentsInternal() {
 export const getStudents = withRole(4, getStudentsInternal);
 
 /**
- * Server action to fetch events for dropdown.
+ * Server action to fetch events for dropdown, acotados a la empresa
+ * activa (cookie selected_company_id).
  */
-async function getEventsInternal() {
+async function getEventsInternal(context: { user: any; level: number }) {
+  const { user, level } = context;
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const companyScope = await resolveCompanyScope(supabase, user, level);
+
+  let query = supabase
     .from("events")
     .select("company_id, event_id, event_name")
     .order("event_name", { ascending: true });
+
+  if (companyScope !== null) {
+    query = query.in("company_id", companyScope);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching events:", error);

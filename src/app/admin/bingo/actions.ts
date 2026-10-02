@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import {
   requireRoleLevel,
   requireCompanyAccess,
@@ -422,6 +423,14 @@ async function getBingoDataInternal(context: { user: any, level: number }) {
   const { user, level } = context;
   const supabase = await createClient();
 
+  // Los eventos se acotan a la empresa activa (cookie selected_company_id);
+  // sin esto, un usuario multi-empresa veía los eventos de todas sus
+  // empresas en el listado de Gestión de Bingo.
+  const cookieStore = await cookies();
+  const selectedCompanyId = Number(
+    cookieStore.get("selected_company_id")?.value,
+  );
+
   // If not Super Admin (100), only fetch data for the companies the user belongs to
   let eventsQuery = supabase.from("events").select("*");
   let companiesQuery = supabase
@@ -436,8 +445,17 @@ async function getBingoDataInternal(context: { user: any, level: number }) {
 
     const companyIds = memberships?.map((m) => m.company_id) || [];
 
-    eventsQuery = eventsQuery.in("company_id", companyIds);
+    // La cookie es manipulable por el cliente: solo se respeta si la
+    // empresa seleccionada pertenece al usuario; si no, se acota a sus
+    // membresías.
+    if (companyIds.includes(selectedCompanyId)) {
+      eventsQuery = eventsQuery.eq("company_id", selectedCompanyId);
+    } else {
+      eventsQuery = eventsQuery.in("company_id", companyIds);
+    }
     companiesQuery = companiesQuery.in("company_id", companyIds);
+  } else if (!Number.isNaN(selectedCompanyId)) {
+    eventsQuery = eventsQuery.eq("company_id", selectedCompanyId);
   }
 
   const [eventsRes, companiesRes, countriesRes] = await Promise.all([
@@ -542,7 +560,10 @@ async function saveEventInternal(formData: FormData, context: { user: any }) {
   return { success: true };
 }
 
-export const saveEvent = withRole(4, saveEventInternal);
+export const saveEvent = withRole(
+  4,
+  withCompanyAccess(saveEventInternal, 0),
+);
 
 /**
  * Delete a Bingo event.
@@ -551,12 +572,24 @@ async function deleteEventInternal(id: number, context: { user: any }) {
   const { user } = context;
   const supabase = await createClient();
 
-  // Get event details before deleting for the log
+  // Get event details before deleting for the log; company_id validates
+  // que el usuario sea miembro de la empresa dueña del evento.
   const { data: event } = await supabase
     .from("events")
-    .select("event_name, event_id")
+    .select("event_name, event_id, company_id")
     .eq("id", id)
     .single();
+
+  if (!event) {
+    return { error: "El evento no existe." };
+  }
+
+  const { authorized, error: accessError } = await requireCompanyAccess(
+    event.company_id,
+  );
+  if (!authorized) {
+    return { success: false, error: accessError || "Acceso denegado" };
+  }
 
   const { error } = await supabase.from("events").delete().eq("id", id);
 

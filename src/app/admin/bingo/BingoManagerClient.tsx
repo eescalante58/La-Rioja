@@ -103,7 +103,19 @@ export default function BingoManagerClient({
   countries: Country[];
   selectedCompanyId?: number;
 }) {
-  const [events] = useState(initialEvents);
+  // Los eventos se acotan a la empresa seleccionada al login; sin cookie
+  // se conserva el comportamiento anterior (todos los permitidos).
+  const [events] = useState(() =>
+    selectedCompanyId !== undefined
+      ? initialEvents.filter((e) => e.company_id === selectedCompanyId)
+      : initialEvents,
+  );
+  // El selector de empresa del diálogo de evento también se acota a la
+  // empresa activa para no crear eventos en otra empresa por descuido.
+  const activeCompanies =
+    selectedCompanyId !== undefined
+      ? companies.filter((c) => c.company_id === selectedCompanyId)
+      : companies;
 
   /**
    * Evento por defecto de la empresa activa (companies.def_dash_event_id).
@@ -265,7 +277,7 @@ export default function BingoManagerClient({
         isOpen={isEventDialogOpen}
         onClose={() => setIsEventEventDialogOpen(false)}
         event={editingEvent}
-        companies={companies}
+        companies={activeCompanies}
       />
 
       <GenerateCardsDialog
