@@ -134,7 +134,13 @@ export default function CardStatusReportDialog({
         );
         const csvContent =
           "data:text/csv;charset=utf-8,﻿" +
-          [...metaLines, headers.join(","), ...body].join("\n");
+          [
+            ...metaLines,
+            headers.join(","),
+            ...body,
+            "",
+            `Total de cartones,${rows.length}`,
+          ].join("\n");
 
         const link = document.createElement("a");
         link.setAttribute("href", encodeURI(csvContent).replace(/#/g, "%23"));
@@ -170,15 +176,29 @@ export default function CardStatusReportDialog({
               "Vendido por",
             ],
           ],
-          body: rows.map((r) => [
-            r.card_number,
-            r.card_type || "",
-            r.invoice_number || "",
-            r.customer_name || "",
-            r.player_name || "",
-            r.player_phone_number || "",
-            r.sold_by || "",
-          ]),
+          body: [
+            ...rows.map((r) => [
+              r.card_number,
+              r.card_type || "",
+              r.invoice_number || "",
+              r.customer_name || "",
+              r.player_name || "",
+              r.player_phone_number || "",
+              r.sold_by || "",
+            ]),
+            [
+              {
+                content: `TOTAL GENERAL: ${rows.length} cartones`,
+                colSpan: 7,
+                styles: {
+                  fontStyle: "bold",
+                  fillColor: [1, 22, 64],
+                  textColor: [255, 255, 255],
+                  halign: "right",
+                },
+              },
+            ],
+          ],
           styles: { fontSize: 8 },
           headStyles: { fillColor: [1, 22, 64] },
         });
