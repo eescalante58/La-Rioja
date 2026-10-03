@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Card,
   Title,
@@ -27,6 +27,7 @@ import {
   EyeOff,
   History,
   Monitor,
+  RefreshCw,
   ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -73,8 +74,18 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
   const [isItemsOpen, setIsItemsOpen] = useState(false);
   const [historyWheel, setHistoryWheel] = useState<Wheel | null>(null);
   const [spins, setSpins] = useState<WheelSpin[]>([]);
+  /** Error de la última carga del historial (null = sin error). */
+  const [spinsError, setSpinsError] = useState<string | null>(null);
   /** Filtro por juego dentro del Historial General ("all" = todos). */
   const [historyGameFilter, setHistoryGameFilter] = useState<string>("all");
+  /**
+   * Ref del historial abierto: permite que el listener Realtime sepa a qué
+   * ruleta/evento recargar sin depender del closure del estado.
+   */
+  const historyWheelRef = useRef<Wheel | null>(null);
+  useEffect(() => {
+    historyWheelRef.current = historyWheel;
+  }, [historyWheel]);
 
   const supabase = createClient();
   /**
@@ -111,6 +122,28 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
       setLoading(false);
     }
   };
+
+  /**
+   * Recarga el historial de giros de `wheel` (`wheel.id === null` → todos los
+   * juegos del evento). Distingue "sin datos" de un error de la acción para
+   * que el operador no vea un vacío silencioso (p. ej. sesión expirada).
+   */
+  const fetchSpins = useCallback(async (wheel: Wheel) => {
+    const result = await callAction<{
+      success?: boolean;
+      data?: WheelSpin[];
+      error?: string;
+    }>("bingo.getWheelSpins", [wheel.company_id, wheel.event_id, wheel.id]);
+    if (result?.data) {
+      setSpins(result.data);
+      setSpinsError(null);
+    } else {
+      setSpins([]);
+      if (!redirectIfSessionExpired(result)) {
+        setSpinsError(result?.error ?? "No se pudo cargar el historial.");
+      }
+    }
+  }, []);
 
   // Real-time subscription for wheel items and configs
   useEffect(() => {
@@ -173,6 +206,25 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
         (payload) => {
           console.log("[WheelTab] Cambio detectado en wheel_configs:", payload);
           loadWheels(selectedEvent);
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "wheel_spins",
+          filter: `company_id=eq.${selectedEvent.company_id}`,
+        },
+        (payload) => {
+          console.log("[WheelTab] Nuevo giro en wheel_spins:", payload);
+          /**
+           * Si el diálogo de historial está abierto, lo refresca en vivo:
+           * evita que quede "Sin giros registrados." para giros posteriores
+           * a la apertura del diálogo.
+           */
+          const openWheel = historyWheelRef.current;
+          if (openWheel) void fetchSpins(openWheel);
         }
       )
       .subscribe((status) => {
@@ -239,15 +291,12 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
     }
   };
 
-  const handleShowHistory = async (wheel: Wheel) => {
+  const handleShowHistory = (wheel: Wheel) => {
     setHistoryWheel(wheel);
     setSpins([]);
+    setSpinsError(null);
     setHistoryGameFilter("all");
-    const result = await callAction<{ data?: WheelSpin[] }>(
-      "bingo.getWheelSpins",
-      [wheel.company_id, wheel.event_id, wheel.id],
-    );
-    if (result?.data) setSpins(result.data);
+    void fetchSpins(wheel);
   };
 
   return (
@@ -493,21 +542,32 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                 <Title>Historial — {historyWheel?.wheel_name}</Title>
                 <Badge color="blue">{historyWheel?.mode}</Badge>
               </div>
-              {historyWheel?.id === null && (
-                <Select
-                  className="min-w-64"
-                  value={historyGameFilter}
-                  onValueChange={setHistoryGameFilter}
-                  placeholder="Filtrar por juego..."
-                >
-                  <SelectItem value="all">Todos los juegos</SelectItem>
-                  {wheels.map((w) => (
-                    <SelectItem key={w.id} value={String(w.id)}>
-                      {w.wheel_name}
-                    </SelectItem>
-                  ))}
-                </Select>
-              )}
+              <div className="flex items-center gap-2">
+                {historyWheel?.id === null && (
+                  <Select
+                    className="min-w-64"
+                    value={historyGameFilter}
+                    onValueChange={setHistoryGameFilter}
+                    placeholder="Filtrar por juego..."
+                  >
+                    <SelectItem value="all">Todos los juegos</SelectItem>
+                    {wheels.map((w) => (
+                      <SelectItem key={w.id} value={String(w.id)}>
+                        {w.wheel_name}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                )}
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  icon={RefreshCw}
+                  tooltip="Recargar historial"
+                  onClick={() =>
+                    historyWheel && void fetchSpins(historyWheel)
+                  }
+                />
+              </div>
             </div>
             <div className="max-h-[60vh] overflow-auto">
               {(() => {
@@ -517,7 +577,11 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                         (s) => s.wheel_id === Number(historyGameFilter),
                       )
                     : spins;
-                return filtered.length === 0 ? (
+                return spinsError ? (
+                  <Text className="py-10 text-center text-red-500 italic">
+                    {spinsError}
+                  </Text>
+                ) : filtered.length === 0 ? (
                   <Text className="py-10 text-center text-gray-400 italic">
                     Sin giros registrados.
                   </Text>
