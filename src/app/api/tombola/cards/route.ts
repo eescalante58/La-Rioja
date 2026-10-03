@@ -83,12 +83,16 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ data });
 }
 
+/** Tamaño de página para consultas grandes (PostgREST corta ~1000 filas). */
+const PAGE_SIZE = 1000;
+
 /**
  * POST /api/tombola/cards
- * Carga masiva: copia a wheel_participating_cards todos los cartones con
- * card_status 'Vendido' o 'Donado' del evento de la ruleta. Upsert
- * idempotente sobre la llave (company_id, event_id, card_number):
- * no duplica ni resetea ganadores.
+ * Carga masiva: copia a wheel_participating_cards los cartones 'Vendido'
+ * o 'Donado' del evento que aún no participan en NINGUNA tómbola del
+ * evento. Regla de rondas: un cartón ya registrado (ganador o no) en una
+ * tómbola previa no puede volver a entrar — así un mismo cartón no gana
+ * en otra ronda. Las filas existentes nunca se modifican ni resetean.
  */
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -139,24 +143,63 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: soldCards, error: cardsError } = await supabase
-    .from("cards")
-    .select("card_number")
-    .eq("company_id", companyId)
-    .eq("event_id", cfg.event_id)
-    .in("card_status", ["Vendido", "Donado"]);
+  // Cartones elegibles, paginados: el evento puede tener más de 1000 y
+  // PostgREST aplicaría su límite por defecto truncando la carga.
+  const soldCards: { card_number: number }[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error: cardsError } = await supabase
+      .from("cards")
+      .select("card_number")
+      .eq("company_id", companyId)
+      .eq("event_id", cfg.event_id)
+      .in("card_status", ["Vendido", "Donado"])
+      .range(from, from + PAGE_SIZE - 1);
 
-  if (cardsError) {
-    return NextResponse.json({ error: cardsError.message }, { status: 500 });
+    if (cardsError) {
+      return NextResponse.json({ error: cardsError.message }, { status: 500 });
+    }
+    soldCards.push(...(data ?? []));
+    if (!data || data.length < PAGE_SIZE) break;
   }
-  if (!soldCards || soldCards.length === 0) {
+
+  if (soldCards.length === 0) {
     return NextResponse.json(
       { error: "No hay cartones vendidos ni donados en este evento." },
       { status: 400 },
     );
   }
 
-  const rows = (soldCards as { card_number: number }[]).map((c) => ({
+  // Cartones ya presentes en CUALQUIER tómbola del mismo evento: quedan
+  // fuera de esta ronda. Se separan los ganadores solo para reportarlos.
+  const taken = new Set<number>();
+  const winners = new Set<number>();
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error: existingError } = await supabase
+      .from("wheel_participating_cards")
+      .select("card_number, is_winner")
+      .eq("company_id", companyId)
+      .eq("event_id", cfg.event_id)
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (existingError) {
+      return NextResponse.json(
+        { error: existingError.message },
+        { status: 500 },
+      );
+    }
+    for (const r of data ?? []) {
+      taken.add(r.card_number);
+      if (r.is_winner) winners.add(r.card_number);
+    }
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+
+  const newCards = soldCards.filter((c) => !taken.has(c.card_number));
+  const skippedWinners = soldCards.filter((c) =>
+    winners.has(c.card_number),
+  ).length;
+
+  const rows = newCards.map((c) => ({
     wheel_id: cfg.id,
     company_id: companyId,
     event_id: cfg.event_id,
@@ -165,17 +208,18 @@ export async function POST(request: NextRequest) {
     card_number: c.card_number,
   }));
 
-  // La llave incluye wheel_id: un cartón puede participar en varias
-  // tómbolas Cartones del mismo evento sin chocar con la otra carga.
-  const { error: upsertError } = await supabase
-    .from("wheel_participating_cards")
-    .upsert(rows, {
-      onConflict: "company_id,event_id,wheel_id,card_number",
-      ignoreDuplicates: true,
-    });
+  // INSERT ... ON CONFLICT DO NOTHING (sin target): idempotente ante
+  // cualquier restricción única — la compuesta con wheel_id y la única
+  // por (company_id, event_id, card_number) — y jamás toca
+  // is_winner/won_at de filas previas.
+  if (rows.length > 0) {
+    const { error: upsertError } = await supabase
+      .from("wheel_participating_cards")
+      .upsert(rows, { ignoreDuplicates: true });
 
-  if (upsertError) {
-    return NextResponse.json({ error: upsertError.message }, { status: 500 });
+    if (upsertError) {
+      return NextResponse.json({ error: upsertError.message }, { status: 500 });
+    }
   }
 
   const { count } = await supabase
@@ -185,6 +229,9 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     success: true,
+    found: soldCards.length,
+    skipped: soldCards.length - rows.length,
+    skippedWinners,
     loaded: rows.length,
     total: count ?? 0,
   });
