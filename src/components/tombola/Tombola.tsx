@@ -174,7 +174,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
       });
     }, 300);
     // La lluvia dura ~4s como celebración de cada ganador
-    setTimeout(stopConfetti, 4000);
+    setTimeout(stopConfetti, 3000);
   }, [stopConfetti]);
 
   useEffect(
