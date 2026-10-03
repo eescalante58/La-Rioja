@@ -20,6 +20,7 @@ import {
 } from "@tremor/react";
 import {
   Dices,
+  Download,
   Plus,
   Edit,
   Trash2,
@@ -78,6 +79,9 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
   const [spinsError, setSpinsError] = useState<string | null>(null);
   /** Filtro por juego dentro del Historial General ("all" = todos). */
   const [historyGameFilter, setHistoryGameFilter] = useState<string>("all");
+  /** Formato elegido para exportar el historial. */
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv");
+  const [exporting, setExporting] = useState(false);
   /**
    * Ref del historial abierto: permite que el listener Realtime sepa a qué
    * ruleta/evento recargar sin depender del closure del estado.
@@ -297,6 +301,143 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
     setSpinsError(null);
     setHistoryGameFilter("all");
     void fetchSpins(wheel);
+  };
+
+  /**
+   * Giros actualmente visibles en el diálogo de historial: respeta el
+   * filtro por juego cuando el historial es del evento completo.
+   */
+  const filteredSpins =
+    historyWheel?.id === null && historyGameFilter !== "all"
+      ? spins.filter((s) => s.wheel_id === Number(historyGameFilter))
+      : spins;
+
+  /**
+   * Exporta el historial visible (respeta el filtro por juego) al formato
+   * elegido en `exportFormat`. En PDF agrega una fila de totales con el
+   * número de ganadores.
+   */
+  const handleExportHistory = async () => {
+    const rows = filteredSpins;
+    if (rows.length === 0 || !historyWheel) return;
+    setExporting(true);
+    try {
+      const includeGameCol = historyWheel.id === null;
+      /** Nombre del juego mostrado como encabezado del archivo. */
+      const gameLabel =
+        historyWheel.id !== null
+          ? historyWheel.wheel_name
+          : historyGameFilter !== "all"
+            ? (wheels.find((w) => w.id === Number(historyGameFilter))
+                ?.wheel_name ?? "Juego seleccionado")
+            : "Todos los juegos del evento";
+      const slug = gameLabel
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+      const fileName = `historial_giros_${historyWheel.event_id}_${slug}`;
+
+      if (exportFormat === "csv") {
+        const csvCell = (v: unknown) =>
+          `"${String(v ?? "").replace(/"/g, '""')}"`;
+        const headers = [
+          "Fecha",
+          ...(includeGameCol ? ["Juego"] : []),
+          "Ganador",
+          "Premio",
+          "Integridad",
+        ];
+        const metaLines = [
+          `Evento,${csvCell(historyWheel.event_id)}`,
+          `Juego,${csvCell(gameLabel)}`,
+          "",
+        ];
+        const body = rows.map((s) =>
+          [
+            csvCell(new Date(s.spun_at).toLocaleString("es-SV")),
+            ...(includeGameCol ? [csvCell(s.wheel_name)] : []),
+            csvCell(s.winner_label),
+            csvCell(s.prize_label ?? ""),
+            csvCell(s.verification_hash ? "Verificado" : "Legacy"),
+          ].join(","),
+        );
+        const csvContent =
+          "data:text/csv;charset=utf-8,﻿" +
+          [
+            ...metaLines,
+            headers.join(","),
+            ...body,
+            "",
+            `Total ganadores,${rows.length}`,
+          ].join("\n");
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csvContent).replace(/#/g, "%23"));
+        link.setAttribute("download", `${fileName}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        const [{ default: JsPDF }, autoTableModule] = await Promise.all([
+          import("jspdf"),
+          import("jspdf-autotable"),
+        ]);
+        const autoTable = autoTableModule.default;
+
+        const doc = new JsPDF({ orientation: "landscape" });
+        doc.setFontSize(14);
+        doc.text(`Historial de giros — ${gameLabel}`, 14, 15);
+        doc.setFontSize(10);
+        doc.text(
+          `Evento: ${historyWheel.event_id}   |   Ganadores: ${rows.length}`,
+          14,
+          22,
+        );
+
+        const colSpan = includeGameCol ? 5 : 4;
+        autoTable(doc, {
+          startY: 26,
+          head: [
+            [
+              "Fecha",
+              ...(includeGameCol ? ["Juego"] : []),
+              "Ganador",
+              "Premio",
+              "Integridad",
+            ],
+          ],
+          body: [
+            ...rows.map((s) => [
+              new Date(s.spun_at).toLocaleString("es-SV"),
+              ...(includeGameCol ? [s.wheel_name] : []),
+              s.winner_label,
+              s.prize_label || "—",
+              s.verification_hash ? "Verificado" : "Legacy",
+            ]),
+            [
+              {
+                content: `TOTAL GANADORES: ${rows.length}`,
+                colSpan,
+                styles: {
+                  fontStyle: "bold",
+                  fillColor: [1, 22, 64],
+                  textColor: [255, 255, 255],
+                  halign: "right",
+                },
+              },
+            ],
+          ],
+          styles: { fontSize: 8 },
+          headStyles: { fillColor: [1, 22, 64] },
+        });
+
+        doc.save(`${fileName}.pdf`);
+      }
+    } catch (error) {
+      console.error("Error exportando historial de giros:", error);
+      alert("Error al exportar el historial.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -558,6 +699,23 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                     ))}
                   </Select>
                 )}
+                <Select
+                  className="w-24"
+                  value={exportFormat}
+                  onValueChange={(v) => setExportFormat(v as "csv" | "pdf")}
+                >
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                </Select>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  icon={Download}
+                  tooltip="Exportar historial"
+                  loading={exporting}
+                  disabled={exporting || filteredSpins.length === 0}
+                  onClick={() => void handleExportHistory()}
+                />
                 <Button
                   size="xs"
                   variant="secondary"
@@ -571,17 +729,11 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
             </div>
             <div className="max-h-[60vh] overflow-auto">
               {(() => {
-                const filtered =
-                  historyWheel?.id === null && historyGameFilter !== "all"
-                    ? spins.filter(
-                        (s) => s.wheel_id === Number(historyGameFilter),
-                      )
-                    : spins;
                 return spinsError ? (
                   <Text className="py-10 text-center text-red-500 italic">
                     {spinsError}
                   </Text>
-                ) : filtered.length === 0 ? (
+                ) : filteredSpins.length === 0 ? (
                   <Text className="py-10 text-center text-gray-400 italic">
                     Sin giros registrados.
                   </Text>
@@ -601,7 +753,7 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filtered.map((spin) => (
+                    {filteredSpins.map((spin) => (
                       <TableRow key={spin.id}>
                         <TableCell>
                           {new Date(spin.spun_at).toLocaleString("es-SV")}
