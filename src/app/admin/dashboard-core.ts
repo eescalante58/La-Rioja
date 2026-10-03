@@ -563,6 +563,71 @@ export async function getCardTypeSummaryCore() {
 }
 
 /**
+ * Resumen por precio de venta (sales_price) de los cartones 'Vendido' y
+ * 'Donado' del evento por defecto: conteo y total por combinación
+ * precio/estado. Sirve para ver cuántos cartones se vendieron a cada
+ * precio (descuentos, precios especiales, donados).
+ */
+export async function getCardPriceSummaryCore() {
+  const supabase = createAdminClient();
+  const companyId = await getSelectedCompanyId();
+
+  if (!companyId) return { success: false, error: "No company" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  // Paginar: el evento puede superar el límite de 1000 filas por consulta
+  const pageSize = 1000;
+  const rows: any[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data: page, error } = await supabase
+      .from("cards")
+      .select("card_status, sales_price")
+      .eq("company_id", companyId)
+      .eq("event_id", company.def_dash_event_id)
+      .in("card_status", ["Vendido", "Donado"])
+      .order("card_number", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) return { success: false, error: error.message };
+    rows.push(...(page || []));
+    if (!page || page.length < pageSize) break;
+  }
+
+  const grouped = new Map<string, { count: number; total: number }>();
+  for (const c of rows) {
+    const key = `${Number(c.sales_price || 0)}|${c.card_status || "—"}`;
+    const g = grouped.get(key) || { count: 0, total: 0 };
+    g.count++;
+    g.total += Number(c.sales_price || 0);
+    grouped.set(key, g);
+  }
+
+  const data = [...grouped.entries()]
+    .map(([key, g]) => {
+      const [price, card_status] = key.split("|");
+      return {
+        sales_price: Number(price),
+        card_status,
+        count: g.count,
+        total: g.total,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.sales_price - a.sales_price ||
+        a.card_status.localeCompare(b.card_status),
+    );
+
+  return { success: true, data };
+}
+
+/**
  * Fetches card assignments by level and student for the current event.
  */
 export async function getAssignmentByLevelCore() {

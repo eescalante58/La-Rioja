@@ -10,6 +10,7 @@ import {
   getInvoicesByCustomerCore,
   getInvoiceCardsCore,
   getCardTypeSummaryCore,
+  getCardPriceSummaryCore,
   getAssignmentByLevelCore,
   getStudentCardsCore,
   getBingoCountriesCore,
@@ -29,8 +30,8 @@ import {
  *
  * Vistas: data | registered-cards | invoices-by-date | sales-by-manager |
  * invoices-by-manager | invoices-by-customer | invoice-cards |
- * card-type-summary | assignment-by-level | student-cards | countries |
- * customers
+ * card-type-summary | card-price-summary | assignment-by-level |
+ * student-cards | countries | customers
  */
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -82,6 +83,8 @@ export async function GET(request: NextRequest) {
     }
     case "card-type-summary":
       return NextResponse.json(await getCardTypeSummaryCore());
+    case "card-price-summary":
+      return NextResponse.json(await getCardPriceSummaryCore());
     case "assignment-by-level":
       return NextResponse.json(await getAssignmentByLevelCore());
     case "student-cards": {

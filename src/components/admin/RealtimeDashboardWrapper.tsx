@@ -103,6 +103,11 @@ export default function RealtimeDashboardWrapper({
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [invoiceCards, setInvoiceCards] = useState<any[]>([]);
   const [cardTypeSummary, setCardTypeSummary] = useState<any[]>([]);
+  /** Resumen por precio de venta (sales_price) de cartones Vendido/Donado. */
+  const [cardPriceSummary, setCardPriceSummary] = useState<any[]>([]);
+  const [expandedCardPrices, setExpandedCardPrices] = useState<Set<string>>(
+    new Set(),
+  );
   const [assignmentByLevel, setAssignmentByLevel] = useState<any[]>([]);
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
   const [expandedCardTypes, setExpandedCardTypes] = useState<Set<string>>(
@@ -159,6 +164,7 @@ export default function RealtimeDashboardWrapper({
       setReportedDelta(0);
     }
     loadCardTypeSummary();
+    loadCardPriceSummary();
     loadAssignmentByLevel();
   };
 
@@ -174,6 +180,20 @@ export default function RealtimeDashboardWrapper({
     if (res.success && res.data) setCardTypeSummary(res.data);
   };
 
+  const loadCardPriceSummary = async () => {
+    const res = await dashApi("card-price-summary");
+    if (res.success && res.data) setCardPriceSummary(res.data);
+  };
+
+  const toggleCardPrice = (key: string) => {
+    setExpandedCardPrices((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const loadAssignmentByLevel = async () => {
     const res = await dashApi("assignment-by-level");
     if (res.success && res.data) setAssignmentByLevel(res.data);
@@ -186,6 +206,7 @@ export default function RealtimeDashboardWrapper({
 
   useEffect(() => {
     loadCardTypeSummary();
+    loadCardPriceSummary();
     loadAssignmentByLevel();
     loadCountries();
   }, []);
@@ -982,6 +1003,126 @@ export default function RealtimeDashboardWrapper({
                                     </button>
                                     <span className="text-larioja-azul dark:text-blue-400">
                                       {type}
+                                    </span>
+                                  </Flex>
+                                </TableCell>
+                                <TableCell className="text-right font-bold">
+                                  {sub.count}
+                                </TableCell>
+                                <TableCell className="text-right font-bold">
+                                  {formatCurrency(sub.total)}
+                                </TableCell>
+                              </TableRow>
+                              {isExpanded &&
+                                rows.map((row, idx) => (
+                                  <TableRow
+                                    key={idx}
+                                    className="hover:bg-gray-50 dark:hover:bg-slate-800/50"
+                                  >
+                                    <TableCell className="pl-12 text-sm text-gray-600 dark:text-slate-300 italic">
+                                      {row.card_status}
+                                    </TableCell>
+                                    <TableCell className="text-right text-sm text-gray-500">
+                                      {row.count}
+                                    </TableCell>
+                                    <TableCell className="text-right text-sm text-gray-500 font-medium">
+                                      {row.total > 0
+                                        ? formatCurrency(row.total)
+                                        : "—"}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                            </React.Fragment>
+                          );
+                        })}
+                        <TableRow className="bg-larioja-azul/10 dark:bg-blue-900/30">
+                          <TableCell
+                            className="font-black text-larioja-azul dark:text-white"
+                          >
+                            TOTAL GENERAL
+                          </TableCell>
+                          <TableCell className="text-right font-black text-larioja-azul dark:text-white">
+                            {grand.count}
+                          </TableCell>
+                          <TableCell className="text-right font-black text-larioja-azul dark:text-white">
+                            {formatCurrency(grand.total)}
+                          </TableCell>
+                        </TableRow>
+                      </>
+                    );
+                  })()}
+                </TableBody>
+              </Table>
+            </Card>
+          </div>
+        )}
+
+        {data.hasEvent && cardPriceSummary.length > 0 && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-0">
+            <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
+              <Title className="text-sm font-bold uppercase tracking-wider text-larioja-azul dark:text-white mb-1">
+                Resumen por Precio de Cartón
+              </Title>
+              <Text className="text-xs dark:text-slate-400 mb-4">
+                Cartones vendidos y donados del evento actual agrupados por
+                precio de venta.
+              </Text>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>Precio / Estado</TableHeaderCell>
+                    <TableHeaderCell className="text-right">
+                      N° Cartones
+                    </TableHeaderCell>
+                    <TableHeaderCell className="text-right">
+                      Total (sales_price)
+                    </TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(() => {
+                    const byPrice = new Map<number, any[]>();
+                    for (const row of cardPriceSummary) {
+                      const list = byPrice.get(row.sales_price) || [];
+                      list.push(row);
+                      byPrice.set(row.sales_price, list);
+                    }
+                    const grand = cardPriceSummary.reduce(
+                      (acc, r) => ({
+                        count: acc.count + r.count,
+                        total: acc.total + r.total,
+                      }),
+                      { count: 0, total: 0 },
+                    );
+                    return (
+                      <>
+                        {[...byPrice.entries()].map(([price, rows]) => {
+                          const sub = rows.reduce(
+                            (acc, r) => ({
+                              count: acc.count + r.count,
+                              total: acc.total + r.total,
+                            }),
+                            { count: 0, total: 0 },
+                          );
+                          const key = String(price);
+                          const isExpanded = expandedCardPrices.has(key);
+                          return (
+                            <React.Fragment key={key}>
+                              <TableRow className="bg-gray-50/50 dark:bg-slate-900/30">
+                                <TableCell className="font-bold">
+                                  <Flex justifyContent="start" className="gap-2">
+                                    <button
+                                      onClick={() => toggleCardPrice(key)}
+                                      className="text-gray-500 hover:text-larioja-azul transition-colors"
+                                    >
+                                      {isExpanded ? (
+                                        <MinusSquare size={18} />
+                                      ) : (
+                                        <PlusSquare size={18} />
+                                      )}
+                                    </button>
+                                    <span className="text-larioja-azul dark:text-blue-400">
+                                      {formatCurrency(price)}
                                     </span>
                                   </Flex>
                                 </TableCell>
