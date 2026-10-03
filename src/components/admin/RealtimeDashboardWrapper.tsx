@@ -667,6 +667,50 @@ export default function RealtimeDashboardWrapper({
           )}
         </div>
 
+        {data.hasEvent && (data.topCustomers || []).length > 0 && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-0">
+            <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-0 overflow-hidden shadow-md">
+              <div className="bg-larioja-azul py-3 px-4 text-center">
+                <Title className="text-white font-bold text-lg uppercase tracking-wider">
+                  Clientes con más Cartones
+                </Title>
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHead>
+                    <TableRow className="bg-[#d9e1f2] dark:bg-slate-800/80">
+                      <TableHeaderCell className="text-black dark:text-white font-bold w-12">
+                        #
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-black dark:text-white font-bold">
+                        Cliente
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
+                        Cartones
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
+                        Valor Cartones
+                      </TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.topCustomers.map((c: any, idx: number) => (
+                      <TableRow key={c.customer_name}>
+                        <TableCell className="text-gray-500">{idx + 1}</TableCell>
+                        <TableCell className="font-bold">{c.customer_name}</TableCell>
+                        <TableCell className="text-right">{c.cards}</TableCell>
+                        <TableCell className="text-right text-larioja-azul dark:text-larioja-amarillo font-bold">
+                          {formatCurrency(c.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </div>
+        )}
+
         {data.hasEvent && assignmentByLevel.length > 0 && (
           <div className="max-w-6xl mx-auto px-4 sm:px-0">
             <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black p-0 overflow-hidden shadow-md">

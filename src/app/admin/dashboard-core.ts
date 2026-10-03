@@ -137,7 +137,7 @@ export async function getDashboardDataCore() {
           .eq("status", "pagada"),
         supabaseAdmin
           .from("invoices")
-          .select("invoice_date, total_amount, cards_number")
+          .select("invoice_date, total_amount, cards_number, customer_name")
           .eq("event_id", eventId)
           .eq("company_id", companyId)
           .eq("status", "pagada")
@@ -217,6 +217,23 @@ export async function getDashboardDataCore() {
       return acc;
     }, {});
 
+    // Ranking de clientes por cartones comprados (facturas pagadas del
+    // evento): nombre, total de cartones y valor acumulado. Ordenado
+    // descendente por cantidad de cartones.
+    const customersMap = dailySales?.reduce((acc: any, inv: any) => {
+      const name = (inv.customer_name || "").trim();
+      if (!name) return acc;
+      if (!acc[name]) {
+        acc[name] = { customer_name: name, cards: 0, amount: 0 };
+      }
+      acc[name].cards += Number(inv.cards_number || 0);
+      acc[name].amount += Number(inv.total_amount || 0);
+      return acc;
+    }, {});
+    const topCustomers = Object.values(customersMap || {})
+      .sort((a: any, b: any) => b.cards - a.cards || b.amount - a.amount)
+      .slice(0, 10);
+
     const yearlySalesData = Object.keys(yearlySalesMap || {})
       .map((year) => ({
         year,
@@ -237,6 +254,7 @@ export async function getDashboardDataCore() {
       percentage,
       dailySales: dailySalesData,
       yearlySales: yearlySalesData,
+      topCustomers,
       stats: {
         cmsCount: cmsCount || 0,
         customersCount: customersCount || 0,
