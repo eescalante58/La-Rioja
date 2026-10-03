@@ -73,6 +73,8 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
   const [isItemsOpen, setIsItemsOpen] = useState(false);
   const [historyWheel, setHistoryWheel] = useState<Wheel | null>(null);
   const [spins, setSpins] = useState<WheelSpin[]>([]);
+  /** Filtro por juego dentro del Historial General ("all" = todos). */
+  const [historyGameFilter, setHistoryGameFilter] = useState<string>("all");
 
   const supabase = createClient();
   /**
@@ -240,6 +242,7 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
   const handleShowHistory = async (wheel: Wheel) => {
     setHistoryWheel(wheel);
     setSpins([]);
+    setHistoryGameFilter("all");
     const result = await callAction<{ data?: WheelSpin[] }>(
       "bingo.getWheelSpins",
       [wheel.company_id, wheel.event_id, wheel.id],
@@ -484,17 +487,41 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
       >
         <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[70]" />
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between mb-4">
-              <Title>Historial — {historyWheel?.wheel_name}</Title>
-              <Badge color="blue">{historyWheel?.mode}</Badge>
+          <DialogPanel className="max-w-5xl w-full bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <Title>Historial — {historyWheel?.wheel_name}</Title>
+                <Badge color="blue">{historyWheel?.mode}</Badge>
+              </div>
+              {historyWheel?.id === null && (
+                <Select
+                  className="min-w-64"
+                  value={historyGameFilter}
+                  onValueChange={setHistoryGameFilter}
+                  placeholder="Filtrar por juego..."
+                >
+                  <SelectItem value="all">Todos los juegos</SelectItem>
+                  {wheels.map((w) => (
+                    <SelectItem key={w.id} value={String(w.id)}>
+                      {w.wheel_name}
+                    </SelectItem>
+                  ))}
+                </Select>
+              )}
             </div>
-            <div className="max-h-[55vh] overflow-auto">
-              {spins.length === 0 ? (
-                <Text className="py-10 text-center text-gray-400 italic">
-                  Sin giros registrados.
-                </Text>
-              ) : (
+            <div className="max-h-[60vh] overflow-auto">
+              {(() => {
+                const filtered =
+                  historyWheel?.id === null && historyGameFilter !== "all"
+                    ? spins.filter(
+                        (s) => s.wheel_id === Number(historyGameFilter),
+                      )
+                    : spins;
+                return filtered.length === 0 ? (
+                  <Text className="py-10 text-center text-gray-400 italic">
+                    Sin giros registrados.
+                  </Text>
+                ) : (
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -510,7 +537,7 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {spins.map((spin) => (
+                    {filtered.map((spin) => (
                       <TableRow key={spin.id}>
                         <TableCell>
                           {new Date(spin.spun_at).toLocaleString("es-SV")}
@@ -546,7 +573,8 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                     ))}
                   </TableBody>
                 </Table>
-              )}
+                );
+              })()}
             </div>
             <div className="flex justify-end mt-6">
               <Button variant="secondary" onClick={() => setHistoryWheel(null)}>
