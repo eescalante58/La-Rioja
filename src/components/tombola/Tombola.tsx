@@ -349,9 +349,9 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
       }
       fireConfetti();
 
-      // El número ganador se muestra primero en un círculo grande 2s,
+      // El número ganador se muestra primero en un círculo grande 3s,
       // luego se suelta la tarjeta voladora hacia la galería.
-      await new Promise((r) => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, 3000));
       setWinnerReveal(null);
 
       // Tarjeta voladora: de la tómbola a la galería
