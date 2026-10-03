@@ -7,6 +7,7 @@ import {
   getInvoicesByDateCore,
   getSalesByManagerCore,
   getInvoicesByManagerCore,
+  getInvoicesByCustomerCore,
   getInvoiceCardsCore,
   getCardTypeSummaryCore,
   getAssignmentByLevelCore,
@@ -27,8 +28,9 @@ import {
  * originales, que no exigían piso de rol).
  *
  * Vistas: data | registered-cards | invoices-by-date | sales-by-manager |
- * invoices-by-manager | invoice-cards | card-type-summary |
- * assignment-by-level | student-cards | countries | customers
+ * invoices-by-manager | invoices-by-customer | invoice-cards |
+ * card-type-summary | assignment-by-level | student-cards | countries |
+ * customers
  */
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -67,6 +69,11 @@ export async function GET(request: NextRequest) {
       const manager = params.get("manager");
       if (!manager) return badParams();
       return NextResponse.json(await getInvoicesByManagerCore(manager));
+    }
+    case "invoices-by-customer": {
+      const customer = params.get("customer");
+      if (!customer) return badParams();
+      return NextResponse.json(await getInvoicesByCustomerCore(customer));
     }
     case "invoice-cards": {
       const invoice = params.get("invoice");

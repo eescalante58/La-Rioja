@@ -96,6 +96,10 @@ export default function RealtimeDashboardWrapper({
   const [isLoadingDrillDown, setIsLoadingDrillDown] = useState(false);
   const [selectedManager, setSelectedManager] = useState<string | null>(null);
   const [managerInvoices, setManagerInvoices] = useState<any[]>([]);
+  /** Drill-down "Clientes con más Cartones": cliente → facturas → cartones. */
+  const [isCustomerDetailOpen, setIsCustomerDetailOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  const [customerInvoices, setCustomerInvoices] = useState<any[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [invoiceCards, setInvoiceCards] = useState<any[]>([]);
   const [cardTypeSummary, setCardTypeSummary] = useState<any[]>([]);
@@ -233,6 +237,35 @@ export default function RealtimeDashboardWrapper({
       alert("Error al cargar facturas: " + (res.error || "Sin datos"));
     }
     setIsLoadingDrillDown(false);
+  };
+
+  /** Facturas pagadas de un cliente del ranking (drill-down). */
+  const handleCustomerInvoices = async (customerName: string) => {
+    setIsLoadingDrillDown(true);
+    const res = await dashApi(
+      "invoices-by-customer",
+      `&customer=${encodeURIComponent(customerName)}`,
+    );
+    if (res.success && res.data) {
+      setSelectedCustomer(customerName);
+      setCustomerInvoices(res.data);
+      setSelectedInvoice(null);
+      setInvoiceCards([]);
+      setIsCustomerDetailOpen(true);
+    } else {
+      alert(
+        "Error al cargar facturas del cliente: " + (res.error || "Sin datos"),
+      );
+    }
+    setIsLoadingDrillDown(false);
+  };
+
+  const closeCustomerModal = () => {
+    setIsCustomerDetailOpen(false);
+    setSelectedCustomer(null);
+    setCustomerInvoices([]);
+    setSelectedInvoice(null);
+    setInvoiceCards([]);
   };
 
   const handleInvoiceCards = async (invoiceNumber: string) => {
@@ -675,6 +708,12 @@ export default function RealtimeDashboardWrapper({
                   Clientes con más Cartones
                 </Title>
               </div>
+              <div className="px-4 py-2 bg-white dark:bg-black border-b border-gray-100 dark:border-gray-800">
+                <Text className="text-xs font-bold text-larioja-azul dark:text-blue-400">
+                  Click en el nombre del cliente para ver el detalle de sus
+                  facturas.
+                </Text>
+              </div>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHead>
@@ -697,7 +736,17 @@ export default function RealtimeDashboardWrapper({
                     {data.topCustomers.map((c: any, idx: number) => (
                       <TableRow key={c.customer_name}>
                         <TableCell className="text-gray-500">{idx + 1}</TableCell>
-                        <TableCell className="font-bold">{c.customer_name}</TableCell>
+                        <TableCell>
+                          <button
+                            type="button"
+                            className="font-bold text-left hover:text-larioja-verde hover:underline transition-colors"
+                            onClick={() =>
+                              handleCustomerInvoices(c.customer_name)
+                            }
+                          >
+                            {c.customer_name}
+                          </button>
+                        </TableCell>
                         <TableCell className="text-right">{c.cards}</TableCell>
                         <TableCell className="text-right text-larioja-azul dark:text-larioja-amarillo font-bold">
                           {formatCurrency(c.amount)}
@@ -1321,6 +1370,173 @@ export default function RealtimeDashboardWrapper({
                     closeManagerModal();
                   }
                 }}
+                className="w-full bg-larioja-azul"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Modal: Facturas de un Cliente (drill-down del top de clientes) */}
+      <Dialog
+        open={isCustomerDetailOpen}
+        onClose={closeCustomerModal}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
+          <DialogPanel className="max-w-7xl w-full bg-gray-100 dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between mb-6 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                {selectedInvoice && (
+                  <Button
+                    variant="light"
+                    icon={ArrowLeft}
+                    onClick={() => {
+                      setSelectedInvoice(null);
+                      setInvoiceCards([]);
+                    }}
+                    tooltip="Volver"
+                  />
+                )}
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">
+                  <User size={24} />
+                </div>
+                <div>
+                  <Title className="dark:text-white">
+                    {selectedInvoice
+                      ? `Factura N° ${selectedInvoice}`
+                      : selectedCustomer}
+                  </Title>
+                  <Text className="text-xs dark:text-slate-400">
+                    {selectedInvoice
+                      ? `${invoiceCards.length} cartón(es) — ${selectedCustomer}`
+                      : `${customerInvoices.length} factura(s)`}
+                  </Text>
+                </div>
+              </div>
+              <Button variant="light" icon={X} onClick={closeCustomerModal} />
+            </div>
+
+            {!selectedInvoice ? (
+              <div className="flex-1 overflow-auto custom-scrollbar">
+                <Text className="text-xs font-bold text-larioja-azul dark:text-blue-400 mb-2">
+                  Click en el número de factura, para ver el detalle de
+                  cartones.
+                </Text>
+                <div className="min-w-[800px] md:min-w-full">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>N° Factura</TableHeaderCell>
+                        <TableHeaderCell>Teléfono</TableHeaderCell>
+                        <TableHeaderCell>Fecha</TableHeaderCell>
+                        <TableHeaderCell className="text-right">
+                          N° Cartones
+                        </TableHeaderCell>
+                        <TableHeaderCell className="text-right">
+                          Valor Cartón
+                        </TableHeaderCell>
+                        <TableHeaderCell className="text-right">
+                          Total
+                        </TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {customerInvoices.map((inv, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            <button
+                              type="button"
+                              className="text-larioja-verde font-bold hover:underline whitespace-nowrap"
+                              onClick={() =>
+                                handleInvoiceCards(inv.invoice_number)
+                              }
+                            >
+                              {inv.invoice_number}
+                            </button>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {inv.whatsapp_number ||
+                              `${inv.phone_area || ""}${inv.phone_number || ""}` ||
+                              "—"}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {inv.invoice_date
+                              ? new Date(
+                                  `${inv.invoice_date}T12:00:00`,
+                                ).toLocaleDateString("es-SV")
+                              : "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {inv.cards_number}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(Number(inv.card_price || 0))}
+                          </TableCell>
+                          <TableCell className="text-right font-bold">
+                            {formatCurrency(Number(inv.total_amount || 0))}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-auto custom-scrollbar">
+                <div className="min-w-[800px] md:min-w-full">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>N° Cartón</TableHeaderCell>
+                        <TableHeaderCell>Tipo</TableHeaderCell>
+                        <TableHeaderCell>Estado</TableHeaderCell>
+                        <TableHeaderCell>Jugador</TableHeaderCell>
+                        <TableHeaderCell>Teléfono</TableHeaderCell>
+                        <TableHeaderCell>Alumno</TableHeaderCell>
+                        <TableHeaderCell>Nivel</TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {invoiceCards.map((card, idx) => {
+                        const sc = Array.isArray(card.students_cards)
+                          ? card.students_cards[0]
+                          : card.students_cards;
+                        const student = sc?.students;
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell className="font-bold">
+                              {card.card_number}
+                            </TableCell>
+                            <TableCell>{card.card_type || "—"}</TableCell>
+                            <TableCell>{card.card_status || "—"}</TableCell>
+                            <TableCell className="max-w-[150px] truncate">
+                              {card.player_name || "—"}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {card.player_phone_number || "—"}
+                            </TableCell>
+                            <TableCell className="max-w-[150px] truncate">
+                              {student?.student_name || "—"}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {student?.student_level || "—"}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-8 flex-shrink-0">
+              <Button
+                onClick={closeCustomerModal}
                 className="w-full bg-larioja-azul"
               >
                 Cerrar

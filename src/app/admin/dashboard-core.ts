@@ -432,6 +432,48 @@ export async function getInvoicesByManagerCore(managerName: string) {
 }
 
 /**
+ * Facturas pagadas de un cliente en el evento del dashboard
+ * (drill-down de "Clientes con más Cartones"). El nombre llega
+ * normalizado desde la agregación del ranking; se compara en JS por
+ * trim+lowercase para no depender de espacios/mayúsculas del registro.
+ */
+export async function getInvoicesByCustomerCore(customerName: string) {
+  const supabase = createAdminClient();
+  const companyId = await getSelectedCompanyId();
+
+  if (!companyId) return { success: false, error: "No company" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  const { data, error } = await supabase
+    .from("invoices")
+    .select(
+      "invoice_number, invoice_date, customer_name, phone_area, phone_number, whatsapp_number, cards_number, card_price, total_amount",
+    )
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id)
+    .eq("status", "pagada")
+    .order("invoice_date", { ascending: false });
+
+  if (error) return { success: false, error: error.message };
+
+  const target = customerName.trim().toLowerCase();
+  return {
+    success: true,
+    data: (data || []).filter(
+      (inv) =>
+        (inv.customer_name || "").trim().toLowerCase() === target,
+    ),
+  };
+}
+
+/**
  * Fetches the cards linked to an invoice, including the assigned student
  * (if any) via students_cards -> students.
  */
