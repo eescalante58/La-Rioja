@@ -349,15 +349,34 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                       {wheel.is_automatic_rotation
                         ? `Automático · espera ${wheel.automatic_timeout_rotation ?? 0}s`
                         : "Giro manual"}
-                      {(wheel.prizes_number ?? 0) > 0
-                        ? ` · ${wheel.prizes_number} premios`
-                        : " · sin límite"}
                     </Text>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <Badge color={MODE_COLORS[wheel.mode] || "gray"} size="xs">
                       {wheel.mode}
                     </Badge>
+                    {(wheel.mode === "Cartones" ||
+                      wheel.mode === "Participantes") &&
+                    (wheel.prizes_number ?? 0) > 0 ? (
+                      <Badge
+                        color={
+                          (wheel.winners_count ?? 0) >= wheel.prizes_number
+                            ? "red"
+                            : "amber"
+                        }
+                        size="xs"
+                        tooltip="Premios sorteados / límite de la ronda"
+                      >
+                        Premios: {wheel.winners_count ?? 0} de{" "}
+                        {wheel.prizes_number}
+                      </Badge>
+                    ) : (
+                      <Badge color="gray" size="xs">
+                        {(wheel.prizes_number ?? 0) > 0
+                          ? `Premios: ${wheel.prizes_number}`
+                          : "Sin límite"}
+                      </Badge>
+                    )}
                     {wheel.published && (
                       <Badge color="emerald" size="xs">
                         Publicada

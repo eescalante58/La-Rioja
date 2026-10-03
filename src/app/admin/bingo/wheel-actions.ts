@@ -124,8 +124,30 @@ async function getWheelsInternal(companyId: number, eventId: string) {
 
   if (itemsError) return { error: itemsError.message };
 
+  // Premios ya sorteados por ruleta (modos tómbola): cuenta filas
+  // is_winner de la tabla que corresponde a cada modo.
+  const winnerCounts = new Map<number, number>();
+  const wheelIdsByMode = (mode: string) =>
+    (configs || []).filter((c) => c.mode === mode).map((c) => c.id);
+  const participantTables: [string, number[]][] = [
+    ["wheel_participating_cards", wheelIdsByMode("Cartones")],
+    ["wheels_presents_cards", wheelIdsByMode("Participantes")],
+  ];
+  for (const [table, ids] of participantTables) {
+    if (ids.length === 0) continue;
+    const { data: winnerRows } = await supabase
+      .from(table)
+      .select("wheel_id")
+      .in("wheel_id", ids)
+      .eq("is_winner", true);
+    for (const r of winnerRows ?? []) {
+      winnerCounts.set(r.wheel_id, (winnerCounts.get(r.wheel_id) ?? 0) + 1);
+    }
+  }
+
   const wheels = (configs || []).map((cfg) => ({
     ...cfg,
+    winners_count: winnerCounts.get(cfg.id) ?? 0,
     items: (items || []).filter((i) => i.wheel_id === cfg.id),
   }));
 

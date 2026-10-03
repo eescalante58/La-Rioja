@@ -37,6 +37,8 @@ export interface Wheel {
   automatic_timeout_rotation: number;
   /** Máximo de premios/giros configurados; 0 = sin límite. */
   prizes_number: number;
+  /** Premios ya sorteados en esta ruleta (modos tómbola; 0 en Premios). */
+  winners_count?: number;
   items: WheelItem[];
 }
 
