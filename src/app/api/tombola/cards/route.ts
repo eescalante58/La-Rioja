@@ -89,10 +89,10 @@ const PAGE_SIZE = 1000;
 /**
  * POST /api/tombola/cards
  * Carga masiva: copia a wheel_participating_cards los cartones 'Vendido'
- * o 'Donado' del evento que aún no participan en NINGUNA tómbola del
- * evento. Regla de rondas: un cartón ya registrado (ganador o no) en una
- * tómbola previa no puede volver a entrar — así un mismo cartón no gana
- * en otra ronda. Las filas existentes nunca se modifican ni resetean.
+ * o 'Donado' del evento. Regla de rondas: un cartón que ya GANÓ en
+ * cualquier tómbola del evento no puede volver a entrar (no gana en otra
+ * ronda); los participantes no ganadores sí pueden repetir ronda. Las
+ * filas existentes nunca se modifican ni resetean.
  */
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -169,14 +169,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Cartones ya presentes en CUALQUIER tómbola del mismo evento: quedan
-  // fuera de esta ronda. Se separan los ganadores solo para reportarlos.
-  const taken = new Set<number>();
+  // Ganadores de CUALQUIER tómbola del mismo evento: quedan fuera de
+  // esta ronda. Los cartones ya presentes en ESTA tómbola solo se
+  // reportan (la inserción los ignora).
   const winners = new Set<number>();
+  const inThisWheel = new Set<number>();
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data, error: existingError } = await supabase
       .from("wheel_participating_cards")
-      .select("card_number, is_winner")
+      .select("card_number, is_winner, wheel_id")
       .eq("company_id", companyId)
       .eq("event_id", cfg.event_id)
       .range(from, from + PAGE_SIZE - 1);
@@ -188,16 +189,18 @@ export async function POST(request: NextRequest) {
       );
     }
     for (const r of data ?? []) {
-      taken.add(r.card_number);
       if (r.is_winner) winners.add(r.card_number);
+      if (r.wheel_id === wheelId) inThisWheel.add(r.card_number);
     }
     if (!data || data.length < PAGE_SIZE) break;
   }
 
-  const newCards = soldCards.filter((c) => !taken.has(c.card_number));
-  const skippedWinners = soldCards.filter((c) =>
-    winners.has(c.card_number),
+  const eligible = soldCards.filter((c) => !winners.has(c.card_number));
+  const skippedWinners = soldCards.length - eligible.length;
+  const alreadyLoaded = eligible.filter((c) =>
+    inThisWheel.has(c.card_number),
   ).length;
+  const newCards = eligible.filter((c) => !inThisWheel.has(c.card_number));
 
   const rows = newCards.map((c) => ({
     wheel_id: cfg.id,
@@ -232,6 +235,7 @@ export async function POST(request: NextRequest) {
     found: soldCards.length,
     skipped: soldCards.length - rows.length,
     skippedWinners,
+    alreadyLoaded,
     loaded: rows.length,
     total: count ?? 0,
   });

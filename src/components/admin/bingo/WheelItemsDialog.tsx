@@ -66,11 +66,14 @@ export default function WheelItemsDialog({
   const [tombolaCards, setTombolaCards] = useState<TombolaCard[] | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [loadingTombola, setLoadingTombola] = useState(false);
-  /** Resumen de la última carga masiva (agregados/omitidos/total). */
+  /**
+   * Resumen de la última carga masiva: agregados, ganadores de otra
+   * ronda omitidos, ya presentes en esta tómbola y total.
+   */
   const [loadSummary, setLoadSummary] = useState<{
     loaded: number;
-    skipped: number;
     skippedWinners: number;
+    alreadyLoaded: number;
     total: number;
   } | null>(null);
   const [urlCopied, setUrlCopied] = useState(false);
@@ -197,16 +200,16 @@ export default function WheelItemsDialog({
       success?: boolean;
       error?: string;
       loaded?: number;
-      skipped?: number;
       skippedWinners?: number;
+      alreadyLoaded?: number;
       total?: number;
     };
     setLoadingTombola(false);
     if (json.success) {
       setLoadSummary({
         loaded: json.loaded ?? 0,
-        skipped: json.skipped ?? 0,
         skippedWinners: json.skippedWinners ?? 0,
+        alreadyLoaded: json.alreadyLoaded ?? 0,
         total: json.total ?? 0,
       });
       await refreshTombolaCards();
@@ -385,12 +388,10 @@ export default function WheelItemsDialog({
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900 dark:bg-emerald-950/40">
                   <Text className="text-xs text-emerald-800 dark:text-emerald-300">
                     {loadSummary.loaded} agregados
-                    {loadSummary.skipped > 0 &&
-                      ` · ${loadSummary.skipped} omitidos (ya registrados en otra tómbola${
-                        loadSummary.skippedWinners > 0
-                          ? `, ${loadSummary.skippedWinners} ganadores`
-                          : ""
-                      })`}
+                    {loadSummary.skippedWinners > 0 &&
+                      ` · ${loadSummary.skippedWinners} ganadores de otra ronda omitidos`}
+                    {loadSummary.alreadyLoaded > 0 &&
+                      ` · ${loadSummary.alreadyLoaded} ya estaban en esta tómbola`}
                     {` · Total en esta tómbola: ${loadSummary.total}`}
                   </Text>
                 </div>
