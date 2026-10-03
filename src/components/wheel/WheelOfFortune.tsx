@@ -660,11 +660,11 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
           </div>
 
           {(loading && segments.length === 0) ? (
-            <div className="flex h-[340px] w-[340px] items-center justify-center md:h-[640px] md:w-[640px]">
+            <div className="flex h-[340px] w-[340px] items-center justify-center md:h-[640px] md:w-[640px] xl:h-[720px] xl:w-[720px]">
               <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-larioja-amarillo" />
             </div>
           ) : segments.length === 0 ? (
-            <div className="flex h-[340px] w-[340px] flex-col items-center justify-center gap-3 md:h-[640px] md:w-[640px]">
+            <div className="flex h-[340px] w-[340px] flex-col items-center justify-center gap-3 md:h-[640px] md:w-[640px] xl:h-[720px] xl:w-[720px]">
               <Dices size={48} className="text-white/30" />
               <p className="max-w-xs text-center text-sm text-white/60">
                 No existen premios para esta Ruleta
@@ -673,7 +673,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
           ) : (
             <svg
               viewBox="0 0 500 500"
-              className={`h-[340px] w-[340px] drop-shadow-2xl md:h-[640px] md:w-[640px] transition-transform duration-1000 ${spinning ? 'scale-105' : 'scale-100'}`}
+              className={`h-[340px] w-[340px] drop-shadow-2xl md:h-[640px] md:w-[640px] xl:h-[720px] xl:w-[720px] transition-transform duration-1000 ${spinning ? 'scale-105' : 'scale-100'}`}
             >
               {spinning && (
                 <defs>

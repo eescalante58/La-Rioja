@@ -651,7 +651,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             >
             {/* Tambor */}
             <div
-              className="tombola-drum relative flex items-center justify-center rounded-full border-[10px] border-larioja-verde shadow-[inset_0_0_60px_rgba(0,0,0,0.6),0_20px_50px_rgba(0,0,0,0.5)] h-[280px] w-[280px] md:h-[400px] md:w-[400px]"
+              className="tombola-drum relative flex items-center justify-center rounded-full border-[10px] border-larioja-verde shadow-[inset_0_0_60px_rgba(0,0,0,0.6),0_20px_50px_rgba(0,0,0,0.5)] h-[280px] w-[280px] md:h-[400px] md:w-[400px] xl:h-[480px] xl:w-[480px]"
               style={{
                 transform: `rotate(${drumAngle}deg)`,
                 background:
@@ -682,8 +682,8 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                         spinning ? "tombola-ball" : "tombola-ball-idle"
                       } ${
                         behind
-                          ? "h-7 w-7 text-[9px] opacity-55 md:h-9 md:w-9 md:text-xs"
-                          : "h-9 w-9 text-[11px] md:h-12 md:w-12 md:text-sm"
+                          ? "h-7 w-7 text-[9px] opacity-55 md:h-9 md:w-9 md:text-xs xl:h-12 xl:w-12 xl:text-base"
+                          : "h-9 w-9 text-[11px] md:h-12 md:w-12 md:text-sm xl:h-16 xl:w-16 xl:text-xl"
                       }`}
                       style={{
                         animationDelay: `${(i * 0.17) % 1}s`,
@@ -702,12 +702,12 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                 <div
                   className={`flex items-center justify-center rounded-full bg-white shadow-2xl transition-all ${
                     currentBall !== null
-                      ? "h-24 w-24 md:h-32 md:w-32 winner-card-in"
-                      : "h-16 w-16 md:h-20 md:w-20 opacity-30"
+                      ? "h-24 w-24 md:h-32 md:w-32 xl:h-40 xl:w-40 winner-card-in"
+                      : "h-16 w-16 md:h-20 md:w-20 xl:h-24 xl:w-24 opacity-30"
                   }`}
                   style={{ transform: `rotate(${-drumAngle}deg)` }}
                 >
-                  <span className="font-montserrat text-xl md:text-3xl font-black text-larioja-azul">
+                  <span className="font-montserrat text-xl md:text-3xl xl:text-4xl font-black text-larioja-azul">
                     {currentBall !== null ? `#${currentBall}` : "?"}
                   </span>
                 </div>
@@ -718,12 +718,12 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                 la tarjeta voladora. Fuera del tambor rotatorio → derecho. */}
             {winnerReveal !== null && (
               <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-                <div className="winner-reveal flex h-56 w-56 items-center justify-center rounded-full border-8 border-larioja-amarillo bg-white md:h-80 md:w-80">
+                <div className="winner-reveal flex h-56 w-56 items-center justify-center rounded-full border-8 border-larioja-amarillo bg-white md:h-80 md:w-80 xl:h-96 xl:w-96">
                   <div className="flex flex-col items-center">
-                    <span className="font-montserrat text-xs font-bold uppercase tracking-[0.3em] text-gray-400 md:text-sm">
+                    <span className="font-montserrat text-xs font-bold uppercase tracking-[0.3em] text-gray-400 md:text-sm xl:text-base">
                       Ganador
                     </span>
-                    <span className="font-montserrat text-6xl font-black leading-none text-larioja-azul md:text-8xl">
+                    <span className="font-montserrat text-6xl font-black leading-none text-larioja-azul md:text-8xl xl:text-9xl">
                       #{winnerReveal}
                     </span>
                   </div>
@@ -764,7 +764,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                 </button>
               </div>
               <div className="rounded-full border border-larioja-amarillo/40 bg-white/10 px-8 py-3 text-center backdrop-blur-md">
-                <p className="font-montserrat text-xs font-bold uppercase tracking-[0.2em] text-larioja-amarillo">
+                <p className="font-montserrat text-xs font-bold uppercase tracking-[0.2em] text-larioja-amarillo xl:text-base">
                   {prizeLimitReached
                     ? "Sorteo finalizado"
                     : spinning
@@ -799,13 +799,13 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
           {/* Último ganador persistente (estilo "sorteo completado") */}
           {lastWinner !== null && (
             <div className="flex flex-col items-center gap-1 rounded-2xl border border-larioja-amarillo/25 bg-white/5 px-10 py-4 backdrop-blur-md">
-              <p className="font-montserrat text-[10px] font-bold uppercase tracking-[0.3em] text-white/50">
+              <p className="font-montserrat text-[10px] font-bold uppercase tracking-[0.3em] text-white/50 xl:text-sm">
                 Último número seleccionado
               </p>
-              <p className="font-montserrat text-5xl font-black text-white drop-shadow-lg md:text-6xl">
+              <p className="font-montserrat text-5xl font-black text-white drop-shadow-lg md:text-6xl xl:text-7xl">
                 #{lastWinner}
               </p>
-              <p className="font-montserrat text-[11px] font-bold uppercase tracking-widest text-larioja-amarillo">
+              <p className="font-montserrat text-[11px] font-bold uppercase tracking-widest text-larioja-amarillo xl:text-sm">
                 {winners.length} ganador{winners.length === 1 ? "" : "es"} en total
               </p>
             </div>
@@ -815,17 +815,17 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-larioja-amarillo" />
           )}
           {!loading && participants.length === 0 && winners.length === 0 && (
-            <p className="max-w-xs text-center text-sm text-white/60">
+            <p className="max-w-xs xl:max-w-md text-center text-sm xl:text-base text-white/60">
               No hay cartones participantes en esta tómbola.
             </p>
           )}
           {!loading && prizeLimitReached && (
-            <p className="max-w-xs text-center text-sm text-larioja-amarillo font-bold uppercase tracking-widest">
+            <p className="max-w-xs xl:max-w-md text-center text-sm xl:text-base text-larioja-amarillo font-bold uppercase tracking-widest">
               Sorteo finalizado — se completaron los {prizesNumber} premios
             </p>
           )}
           {!loading && !prizeLimitReached && participants.length === 0 && winners.length > 0 && (
-            <p className="max-w-xs text-center text-sm text-larioja-amarillo font-bold uppercase tracking-widest">
+            <p className="max-w-xs xl:max-w-md text-center text-sm xl:text-base text-larioja-amarillo font-bold uppercase tracking-widest">
               Sorteo finalizado — todos los cartones fueron sorteados
             </p>
           )}
@@ -836,11 +836,11 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
           <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md p-6 min-h-[300px]">
             <div className="flex items-center gap-3 mb-5">
               <Ticket size={22} className="text-larioja-amarillo" />
-              <h3 className="font-montserrat text-sm font-bold uppercase tracking-[0.25em] text-white/80">
+              <h3 className="font-montserrat text-sm font-bold uppercase tracking-[0.25em] text-white/80 xl:text-base">
                 Cartones Ganadores
               </h3>
               {winners.length > 0 && (
-                <span className="ml-auto rounded-full bg-larioja-amarillo/20 px-3 py-1 font-montserrat text-xs font-bold text-larioja-amarillo">
+                <span className="ml-auto rounded-full bg-larioja-amarillo/20 px-3 py-1 font-montserrat text-xs font-bold text-larioja-amarillo xl:text-base">
                   {winners.length}
                 </span>
               )}
@@ -857,13 +857,13 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
                     key={cardNumber}
                     className="winner-card-in relative flex flex-col items-center"
                   >
-                    <p className="mb-1 font-montserrat text-base font-black uppercase tracking-wider text-larioja-amarillo md:text-lg">
+                    <p className="mb-1 font-montserrat text-base font-black uppercase tracking-wider text-larioja-amarillo md:text-lg xl:text-2xl">
                       #{cardNumber}
                     </p>
                     <div className="relative w-full">
                       {/* Posición en el orden del sorteo (esquina de la
                           tarjeta — no se monta sobre el número en móvil) */}
-                      <span className="absolute left-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-larioja-amarillo font-montserrat text-[10px] font-black text-larioja-azul shadow-lg">
+                      <span className="absolute left-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-larioja-amarillo font-montserrat text-[10px] font-black text-larioja-azul shadow-lg xl:h-8 xl:w-8 xl:text-sm">
                         {winners.length - idx}°
                       </span>
                       <img
@@ -893,8 +893,8 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
             transition: "all 0.65s cubic-bezier(0.25, 0.8, 0.3, 1)",
           }}
         >
-          <div className="w-20 flex flex-col items-center">
-            <p className="mb-1 font-montserrat text-xs font-black uppercase text-larioja-amarillo drop-shadow-lg">
+          <div className="w-20 xl:w-28 flex flex-col items-center">
+            <p className="mb-1 font-montserrat text-xs font-black uppercase text-larioja-amarillo drop-shadow-lg xl:text-base">
               #{flyingCard.cardNumber}
             </p>
             <img
