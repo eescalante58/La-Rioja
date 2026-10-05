@@ -11,7 +11,7 @@ import {
   SelectItem,
   Button,
 } from "@tremor/react";
-import { Smartphone, MessageCircle, DollarSign, CheckCircle, Eye, Hash } from "lucide-react";
+import { Smartphone, MessageCircle, DollarSign, CheckCircle, Eye } from "lucide-react";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 
 interface NewInvoiceDialogProps {
@@ -55,7 +55,6 @@ export default function NewInvoiceDialog({
   const [observation, setObservation] = useState<string>("");
   const [customerName, setCustomerName] = useState<string>("");
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
-  const [autoNumbering, setAutoNumbering] = useState(false);
 
   /**
    * Lista alfabética de países para el selector de código de área. La
@@ -111,28 +110,6 @@ export default function NewInvoiceDialog({
   }, [phoneArea, sortedCountries, isTypingArea]);
 
   /**
-   * Genera y asigna el siguiente número automático "FactAut-NNNNNN"
-   * (correlativo por empresa+evento, calculado en el servidor).
-   */
-  const handleAutoNumber = async () => {
-    if (!currentEvent) return;
-    setAutoNumbering(true);
-    // Route Handler JSON — la Server Action re-renderizaba la página
-    const res = await fetch(
-      `/api/bingo/invoices/next-number?companyId=${currentEvent.companyId}&eventId=${encodeURIComponent(currentEvent.eventId)}`,
-    );
-    const result = await res.json();
-    setAutoNumbering(false);
-    if (result?.data) {
-      setInvoiceNumber(result.data);
-    } else if (!redirectIfSessionExpired(result)) {
-      alert(
-        "Error: " + (result?.error || "No se pudo generar el número automático."),
-      );
-    }
-  };
-
-  /**
    * Secuencia de carga: cada llamada a loadInitialData incrementa el contador.
    * Si una respuesta asíncrona llega tarde (stale), se descarta para no
    * sobrescribir el estado con datos de una consulta anterior.
@@ -172,23 +149,6 @@ export default function NewInvoiceDialog({
       } else {
         setSelectedInvoiceCards([]);
       }
-    } else if (currentEvent) {
-      // Empresas sin evento configurado pasan cardValue undefined —
-      // sin el fallback el render revienta en cardPrice.toString().
-      setCardPrice(currentEvent.cardValue ?? 0);
-      setCardsNumber(1);
-      setPhoneArea("+503");
-      setPhoneIso2("SV");
-      setPhoneNumber("");
-      setWhatsappNumber("");
-      setInvoiceManagerName("");
-      setPaymentMethod("efectivo");
-      setStatus("pagada");
-      setInvoiceDate(todayLocal());
-      setObservation("");
-      setSelectedInvoiceCards([]);
-      setCustomerName("");
-      setInvoiceNumber("");
     }
   }, [invoice, currentEvent]);
 
@@ -317,8 +277,14 @@ export default function NewInvoiceDialog({
     }
   };
 
+  /**
+   * Persiste la factura via PUT /api/bingo/invoices. Este diálogo solo
+   * edita o consulta facturas existentes — la creación vive en
+   * "Nueva Factura Plus" (optimizada para la cola de ventas en vivo).
+   */
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!invoice) return;
     if (selectedCards.length === 0) {
       alert("Debe asociar al menos un cartón a la factura.");
       return;
@@ -332,15 +298,14 @@ export default function NewInvoiceDialog({
     const formData = new FormData(e.currentTarget);
 
     try {
-      // POST crea / PUT actualiza — mismo Route Handler JSON
       const res = await fetch("/api/bingo/invoices", {
-        method: invoice ? "PUT" : "POST",
+        method: "PUT",
         body: formData,
       });
       const result = await res.json();
 
       if (result?.success) {
-        alert(invoice ? "Factura actualizada exitosamente" : "Factura guardada exitosamente");
+        alert("Factura actualizada exitosamente");
         onSuccess();
         onClose();
       } else if (!redirectIfSessionExpired(result)) {
@@ -368,7 +333,7 @@ export default function NewInvoiceDialog({
         <DialogPanel className={`${readOnly ? "max-w-4xl" : "max-w-2xl"} w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]`}>
           <div className={`${readOnly ? "p-4" : "p-6"} border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md`}>
             <Title className="text-larioja-azul dark:text-larioja-amarillo">
-              {readOnly ? "Consulta de Factura" : (invoice ? "Editar Factura" : "Nueva Factura")}
+              {readOnly ? "Consulta de Factura" : "Editar Factura"}
             </Title>
             <div className="text-right text-xs font-bold text-gray-500 space-y-0.5">
               <div>EVENTO: {currentEvent?.eventId}</div>
@@ -400,18 +365,6 @@ export default function NewInvoiceDialog({
                       required
                       disabled={readOnly}
                     />
-                    {!invoice && !readOnly && (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        icon={Hash}
-                        loading={autoNumbering}
-                        onClick={handleAutoNumber}
-                        tooltip="Generar número automático (FactAut-…)"
-                      >
-                        Auto
-                      </Button>
-                    )}
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -768,9 +721,9 @@ export default function NewInvoiceDialog({
               <Button variant="secondary" onClick={onClose} disabled={loading} type="button">
                 {readOnly ? "Cerrar" : "Cancelar"}
               </Button>
-              {!readOnly && (
+              {!readOnly && invoice && (
                 <Button type="submit" loading={loading} className="bg-larioja-azul">
-                  {invoice ? "Actualizar Factura" : "Guardar Factura"}
+                  Actualizar Factura
                 </Button>
               )}
             </div>

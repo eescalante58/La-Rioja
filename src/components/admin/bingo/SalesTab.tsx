@@ -17,7 +17,7 @@ import {
   TableCell,
   Badge,
 } from "@tremor/react";
-import { Plus, TrendingUp, Eye, Edit, Trash2, PlusSquare, Search, Ticket } from "lucide-react";
+import { TrendingUp, Eye, Edit, Trash2, PlusSquare, Search, Ticket } from "lucide-react";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import InvoiceDetailsDialog from "./InvoiceDetailsDialog";
 import InventoryDialogs from "./InventoryDialogs";
@@ -255,16 +255,6 @@ export default function SalesTab({
           </div>
           {currentEventInfo && (
             <div className="flex flex-col gap-2">
-              <Button
-                icon={Plus}
-                onClick={() => {
-                  setSelectedInvoice(null);
-                  setIsNewInvoiceOpen(true);
-                }}
-                className="bg-larioja-azul"
-              >
-                Nueva Factura
-              </Button>
               <Button
                 icon={PlusSquare}
                 onClick={() => {
