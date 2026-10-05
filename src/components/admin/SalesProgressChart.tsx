@@ -139,7 +139,7 @@ export default function SalesProgressChart({
             {formatEventDate(eventDate)}
           </button>
         )}
-        <div className="flex items-center justify-center gap-2 mt-1">
+        <div className="flex items-center justify-center gap-2 mt-3">
           <Text className="text-[10px] dark:text-slate-500 uppercase font-bold">
             Avance de Ventas
           </Text>
