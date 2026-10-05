@@ -40,6 +40,7 @@ import {
   Smartphone,
   ClipboardList,
   FileText,
+  Calendar,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import NewInvoiceDialog from "./bingo/NewInvoiceDialog";
@@ -91,6 +92,9 @@ export default function RealtimeDashboardWrapper({
   const [isDateDetailOpen, setIsDateDetailOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [dateInvoices, setDateInvoices] = useState<any[]>([]);
+  /** Drill-down de la fecha del evento: resumen de ventas de ese día. */
+  const [isEventDateSummaryOpen, setIsEventDateSummaryOpen] = useState(false);
+  const [eventDateSummary, setEventDateSummary] = useState<any[]>([]);
   const [isManagerDetailOpen, setIsManagerDetailOpen] = useState(false);
   const [managerBreakdown, setManagerBreakdown] = useState<any[]>([]);
   const [isLoadingDrillDown, setIsLoadingDrillDown] = useState(false);
@@ -223,6 +227,26 @@ export default function RealtimeDashboardWrapper({
       setIsDateDetailOpen(true);
     } else {
       alert("Error al cargar detalles: " + (res.error || "Sin datos"));
+    }
+    setIsLoadingDrillDown(false);
+  };
+
+  /**
+   * Drill-down al clicar la fecha del evento en "Avance de Ventas":
+   * resumen de ventas de esa fecha agrupado por vendedor/método/precio.
+   */
+  const handleEventDateDrillDown = async () => {
+    if (!data.eventDate) return;
+    setIsLoadingDrillDown(true);
+    const res = await dashApi(
+      "sales-summary-by-date",
+      `&date=${encodeURIComponent(data.eventDate)}`,
+    );
+    if (res.success) {
+      setEventDateSummary(res.data || []);
+      setIsEventDateSummaryOpen(true);
+    } else {
+      alert("Error al cargar resumen: " + (res.error || "Sin datos"));
     }
     setIsLoadingDrillDown(false);
   };
@@ -472,6 +496,22 @@ export default function RealtimeDashboardWrapper({
     }
   };
 
+  /**
+   * Formatea `events.event_date` (columna `date` sin hora) en es-SV;
+   * interpretada en UTC para no desplazar el día por zona horaria.
+   */
+  const formatEventDate = (iso: string) => {
+    const d = new Date(`${iso}T00:00:00Z`);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("es-SV", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "UTC",
+    });
+  };
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -699,6 +739,7 @@ export default function RealtimeDashboardWrapper({
               <SalesProgressChart
                 eventName={data.eventName || ""}
                 eventDate={data.eventDate || null}
+                onDateDrillDown={handleEventDateDrillDown}
                 goal={data.goal || 0}
                 realized={data.realized || 0}
                 percentage={data.percentage || 0}
@@ -1287,6 +1328,142 @@ export default function RealtimeDashboardWrapper({
               </Text>
               <Button
                 onClick={() => setIsDateDetailOpen(false)}
+                className="bg-larioja-azul"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      {/* Modal: Resumen de ventas de la fecha del evento */}
+      <Dialog
+        open={isEventDateSummaryOpen}
+        onClose={() => setIsEventDateSummaryOpen(false)}
+        static={true}
+      >
+        <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
+          <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
+                  <Calendar size={24} />
+                </div>
+                <div>
+                  <Title className="dark:text-white">
+                    Ventas del {data.eventDate ? formatEventDate(data.eventDate) : "día del evento"}
+                  </Title>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Text className="text-xs">
+                      Resumen por vendedor y método de pago
+                    </Text>
+                    <Badge size="xs" color="blue">
+                      {eventDateSummary.reduce((s, r) => s + r.invoices_count, 0)}{" "}
+                      factura(s)
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="light"
+                icon={X}
+                onClick={() => setIsEventDateSummaryOpen(false)}
+              />
+            </div>
+
+            <div className="flex-1 overflow-auto custom-scrollbar">
+              {eventDateSummary.length === 0 ? (
+                <Text className="py-10 text-center text-gray-400 italic">
+                  Sin ventas registradas en esta fecha.
+                </Text>
+              ) : (
+                <div className="min-w-[600px] md:min-w-full">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
+                          Vendedor
+                        </TableHeaderCell>
+                        <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
+                          Método de Pago
+                        </TableHeaderCell>
+                        <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
+                          N° Facturas
+                        </TableHeaderCell>
+                        <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
+                          N° Cartones
+                        </TableHeaderCell>
+                        <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
+                          Precio Cartón
+                        </TableHeaderCell>
+                        <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
+                          Total
+                        </TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {eventDateSummary.map((row, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">
+                            {row.manager_name}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge size="xs" color="slate">
+                              {row.payment_method}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right dark:text-slate-200">
+                            {row.invoices_count}
+                          </TableCell>
+                          <TableCell className="text-right dark:text-slate-200">
+                            {row.cards_number}
+                          </TableCell>
+                          <TableCell className="text-right dark:text-slate-200">
+                            {formatCurrency(row.card_price)}
+                          </TableCell>
+                          <TableCell className="text-right font-bold dark:text-white whitespace-nowrap">
+                            {formatCurrency(row.total_amount)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-gray-50 dark:bg-slate-900">
+                        <TableCell className="font-bold dark:text-white">
+                          TOTAL GENERAL
+                        </TableCell>
+                        <TableCell />
+                        <TableCell className="text-right font-bold dark:text-white">
+                          {eventDateSummary.reduce(
+                            (s, r) => s + r.invoices_count,
+                            0,
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-bold dark:text-white">
+                          {eventDateSummary.reduce(
+                            (s, r) => s + r.cards_number,
+                            0,
+                          )}
+                        </TableCell>
+                        <TableCell />
+                        <TableCell className="text-right font-bold dark:text-white">
+                          {formatCurrency(
+                            eventDateSummary.reduce(
+                              (s, r) => s + r.total_amount,
+                              0,
+                            ),
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-end items-center flex-shrink-0">
+              <Button
+                onClick={() => setIsEventDateSummaryOpen(false)}
                 className="bg-larioja-azul"
               >
                 Cerrar

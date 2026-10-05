@@ -8,6 +8,8 @@ interface SalesProgressChartProps {
   eventName: string;
   /** Fecha del evento (`events.event_date`, formato ISO `YYYY-MM-DD`). */
   eventDate?: string | null;
+  /** Drill-down al clicar la fecha: resumen de ventas de ese día. */
+  onDateDrillDown?: () => void;
   goal: number;
   realized: number;
   percentage: number;
@@ -20,6 +22,7 @@ interface SalesProgressChartProps {
 export default function SalesProgressChart({
   eventName,
   eventDate,
+  onDateDrillDown,
   goal,
   realized,
   percentage,
@@ -127,9 +130,14 @@ export default function SalesProgressChart({
           {eventName}
         </Title>
         {eventDate && (
-          <Text className="text-xs text-gray-500 dark:text-gray-400 capitalize mt-0.5">
+          <button
+            type="button"
+            onClick={onDateDrillDown}
+            title="Ver resumen de ventas de esta fecha"
+            className="mt-1 text-base sm:text-lg font-semibold capitalize text-gray-600 dark:text-gray-300 hover:text-larioja-azul dark:hover:text-blue-400 hover:underline underline-offset-4 transition-colors cursor-pointer"
+          >
             {formatEventDate(eventDate)}
-          </Text>
+          </button>
         )}
         <div className="flex items-center justify-center gap-2 mt-1">
           <Text className="text-[10px] dark:text-slate-500 uppercase font-bold">

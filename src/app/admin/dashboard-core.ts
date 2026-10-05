@@ -350,6 +350,75 @@ export async function getInvoicesByDateCore(date: string) {
 }
 
 /**
+ * Resumen de ventas de una fecha puntual del evento del dashboard
+ * (drill-down de la fecha del evento en la tarjeta "Avance de Ventas").
+ * Agrupa las facturas pagadas de esa fecha por vendedor
+ * (manager_name), método de pago (payment_method) y precio del cartón
+ * (card_price): conteo de facturas, total de cartones y monto acumulado.
+ */
+export async function getSalesSummaryByDateCore(date: string) {
+  const supabase = createAdminClient();
+  const companyId = await getSelectedCompanyId();
+
+  if (!companyId) return { success: false, error: "No company" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  const { data, error } = await supabase
+    .from("invoices")
+    .select(
+      "manager_name, payment_method, cards_number, card_price, total_amount",
+    )
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id)
+    .eq("invoice_date", date)
+    .eq("status", "pagada");
+
+  if (error) return { success: false, error: error.message };
+
+  const grouped = new Map<
+    string,
+    {
+      manager_name: string;
+      payment_method: string;
+      card_price: number;
+      invoices_count: number;
+      cards_number: number;
+      total_amount: number;
+    }
+  >();
+  for (const inv of data || []) {
+    const manager = (inv.manager_name || "").trim() || "Sin asignar";
+    const method = (inv.payment_method || "").trim() || "N/D";
+    const price = Number(inv.card_price || 0);
+    const key = `${manager}|${method}|${price}`;
+    const g = grouped.get(key) ?? {
+      manager_name: manager,
+      payment_method: method,
+      card_price: price,
+      invoices_count: 0,
+      cards_number: 0,
+      total_amount: 0,
+    };
+    g.invoices_count += 1;
+    g.cards_number += Number(inv.cards_number || 0);
+    g.total_amount += Number(inv.total_amount || 0);
+    grouped.set(key, g);
+  }
+
+  const rows = [...grouped.values()].sort(
+    (a, b) => b.total_amount - a.total_amount,
+  );
+  return { success: true, data: rows };
+}
+
+/**
  * Fetches sales breakdown by manager for the current event (Drill down).
  */
 export async function getSalesByManagerCore() {

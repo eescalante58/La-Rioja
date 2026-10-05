@@ -5,6 +5,7 @@ import {
   getDashboardDataCore,
   getRegisteredCardsCore,
   getInvoicesByDateCore,
+  getSalesSummaryByDateCore,
   getSalesByManagerCore,
   getInvoicesByManagerCore,
   getInvoicesByCustomerCore,
@@ -28,7 +29,8 @@ import {
  * `selected_company_id` (mismo modelo implícito que las acciones
  * originales, que no exigían piso de rol).
  *
- * Vistas: data | registered-cards | invoices-by-date | sales-by-manager |
+ * Vistas: data | registered-cards | invoices-by-date | sales-summary-by-date |
+ * sales-by-manager |
  * invoices-by-manager | invoices-by-customer | invoice-cards |
  * card-type-summary | card-price-summary | assignment-by-level |
  * student-cards | countries | customers
@@ -63,6 +65,11 @@ export async function GET(request: NextRequest) {
       const date = params.get("date") || "";
       if (!date) return badParams();
       return NextResponse.json(await getInvoicesByDateCore(date));
+    }
+    case "sales-summary-by-date": {
+      const date = params.get("date") || "";
+      if (!date) return badParams();
+      return NextResponse.json(await getSalesSummaryByDateCore(date));
     }
     case "sales-by-manager":
       return NextResponse.json(await getSalesByManagerCore());
