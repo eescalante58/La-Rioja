@@ -195,8 +195,11 @@ export default function InventoryDetailsDialog({
               <Text>Cargando inventario...</Text>
             </div>
           ) : filteredCards.length > 0 ? (
-            <div className="max-h-[60vh] overflow-auto pr-2 custom-scrollbar">
-              <Table>
+            /* El wrapper overflow-auto de Tremor <Table> es el scroll
+               container: el max-h va aquí para que los th sticky del
+               encabezado se fijen correctamente al scrollear. */
+            <div className="pr-2">
+              <Table className="max-h-[60vh] custom-scrollbar">
                 <TableHead>
                   <TableRow>
                     <TableHeaderCell className={HEADER_CELL_CLASS}>N° Cartón</TableHeaderCell>
