@@ -477,6 +477,7 @@ export default function SalesTab({
         isOpen={isNewInvoicePlusOpen}
         onClose={() => setIsNewInvoicePlusOpen(false)}
         currentEvent={currentEventInfo}
+        eventDetails={inventoryEvent}
         countries={countries}
         onSuccess={() =>
           currentEventInfo &&

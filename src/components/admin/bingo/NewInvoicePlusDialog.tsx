@@ -11,13 +11,20 @@ import {
   SelectItem,
   Button,
 } from "@tremor/react";
-import { Smartphone, DollarSign, Search, Hash } from "lucide-react";
+import { Smartphone, DollarSign, Search, Hash, Ticket } from "lucide-react";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+import InventoryDialogs from "./InventoryDialogs";
 
 interface NewInvoicePlusDialogProps {
   isOpen: boolean;
   onClose: () => void;
   currentEvent: any;
+  /**
+   * Evento completo del selector de Ventas y Facturación: el diálogo de
+   * inventario lo usa para el encabezado (event_name) y la carga de
+   * cartones. Si no viene, se reconstruye desde `currentEvent`.
+   */
+  eventDetails?: any;
   countries: any[];
   onSuccess: () => void;
   onWhatsApp: (invoice: any) => void;
@@ -38,6 +45,7 @@ export default function NewInvoicePlusDialog({
   isOpen,
   onClose,
   currentEvent,
+  eventDetails,
   countries,
   onSuccess,
 }: NewInvoicePlusDialogProps) {
@@ -83,6 +91,8 @@ export default function NewInvoicePlusDialog({
   >(null);
   const [invoiceNumber, setInvoiceNumber] = useState<string>("");
   const [autoNumbering, setAutoNumbering] = useState(false);
+  /** Diálogo "Inventario de Cartones" abierto sobre este formulario. */
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   /** Mensaje breve "guardada" tras cada alta (el diálogo queda abierto). */
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
   /**
@@ -411,8 +421,33 @@ export default function NewInvoicePlusDialog({
     }).format(value);
   };
 
+  /**
+   * Evento para el diálogo de inventario: prioriza el objeto completo
+   * (event_name para el encabezado); si falta, reconstruye lo mínimo
+   * desde `currentEvent`.
+   */
+  const inventoryEvent =
+    eventDetails ??
+    (currentEvent
+      ? {
+          company_id: currentEvent.companyId,
+          event_id: currentEvent.eventId,
+          event_name: currentEvent.eventId,
+        }
+      : null);
+
+  /**
+   * Cierra el formulario y también el inventario si quedó abierto
+   * encima — sin esto el overlay quedaría huérfano.
+   */
+  const handleCloseAll = () => {
+    setIsInventoryOpen(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onClose={onClose} static={true}>
+    <>
+    <Dialog open={isOpen} onClose={handleCloseAll} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <DialogPanel className="dialog-mobile max-w-6xl w-full bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[100dvh] sm:max-h-[98vh]">
@@ -420,6 +455,17 @@ export default function NewInvoicePlusDialog({
             <Title className="text-larioja-azul dark:text-larioja-amarillo whitespace-nowrap">
               Nueva Factura Plus
             </Title>
+            <div className="flex items-center gap-3 min-w-0">
+            <Button
+              type="button"
+              size="xs"
+              variant="secondary"
+              icon={Ticket}
+              tooltip="Ver el inventario de cartones del evento"
+              onClick={() => setIsInventoryOpen(true)}
+            >
+              Inventario
+            </Button>
             <div className="text-right text-[10px] sm:text-xs font-bold text-gray-500 space-y-0.5 min-w-0">
               <div className="truncate">EVENTO: {currentEvent?.eventId}</div>
               {(invoiceNumber || customerName) && (
@@ -428,6 +474,7 @@ export default function NewInvoicePlusDialog({
                   {customerName ? `— ${customerName}` : ""}
                 </div>
               )}
+            </div>
             </div>
           </div>
 
@@ -940,7 +987,7 @@ export default function NewInvoicePlusDialog({
               <Button
                 variant="secondary"
                 color="rose"
-                onClick={onClose}
+                onClick={handleCloseAll}
                 disabled={loading}
                 type="button"
                 className="w-full sm:w-auto"
@@ -970,5 +1017,15 @@ export default function NewInvoicePlusDialog({
         </DialogPanel>
       </div>
     </Dialog>
+
+    {/* Inventario como overlay encima del formulario: al cerrarlo se
+        regresa a "Nueva Factura Plus" conservando los datos capturados. */}
+    <InventoryDialogs
+      isOpen={isInventoryOpen}
+      onClose={() => setIsInventoryOpen(false)}
+      event={inventoryEvent}
+      countries={countries}
+    />
+    </>
   );
 }
