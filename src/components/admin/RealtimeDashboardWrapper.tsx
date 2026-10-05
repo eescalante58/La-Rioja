@@ -95,6 +95,9 @@ export default function RealtimeDashboardWrapper({
   /** Drill-down de la fecha del evento: resumen de ventas de ese día. */
   const [isEventDateSummaryOpen, setIsEventDateSummaryOpen] = useState(false);
   const [eventDateSummary, setEventDateSummary] = useState<any[]>([]);
+  /** Segundo nivel: facturas de la agrupación vendedor+método+precio. */
+  const [eventDateGroup, setEventDateGroup] = useState<any | null>(null);
+  const [eventDateGroupInvoices, setEventDateGroupInvoices] = useState<any[]>([]);
   const [isManagerDetailOpen, setIsManagerDetailOpen] = useState(false);
   const [managerBreakdown, setManagerBreakdown] = useState<any[]>([]);
   const [isLoadingDrillDown, setIsLoadingDrillDown] = useState(false);
@@ -244,9 +247,30 @@ export default function RealtimeDashboardWrapper({
     );
     if (res.success) {
       setEventDateSummary(res.data || []);
+      setEventDateGroup(null);
+      setEventDateGroupInvoices([]);
       setIsEventDateSummaryOpen(true);
     } else {
       alert("Error al cargar resumen: " + (res.error || "Sin datos"));
+    }
+    setIsLoadingDrillDown(false);
+  };
+
+  /**
+   * Segundo nivel del resumen de la fecha del evento: facturas de la
+   * agrupación (vendedor + método de pago + precio) seleccionada.
+   */
+  const handleEventDateGroup = async (group: any) => {
+    setIsLoadingDrillDown(true);
+    const res = await dashApi(
+      "invoices-by-date-group",
+      `&date=${encodeURIComponent(data.eventDate)}&manager=${encodeURIComponent(group.manager_name)}&method=${encodeURIComponent(group.payment_method)}&price=${group.card_price}`,
+    );
+    if (res.success) {
+      setEventDateGroup(group);
+      setEventDateGroupInvoices(res.data || []);
+    } else {
+      alert("Error al cargar facturas: " + (res.error || "Sin datos"));
     }
     setIsLoadingDrillDown(false);
   };
@@ -1340,7 +1364,11 @@ export default function RealtimeDashboardWrapper({
       {/* Modal: Resumen de ventas de la fecha del evento */}
       <Dialog
         open={isEventDateSummaryOpen}
-        onClose={() => setIsEventDateSummaryOpen(false)}
+        onClose={() => {
+          setIsEventDateSummaryOpen(false);
+          setEventDateGroup(null);
+          setEventDateGroupInvoices([]);
+        }}
         static={true}
       >
         <div className="fixed inset-0 bg-black/50 sm:backdrop-blur-sm z-[100]" />
@@ -1348,33 +1376,163 @@ export default function RealtimeDashboardWrapper({
           <DialogPanel className="max-w-4xl w-full bg-white dark:bg-gray-950 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
               <div className="flex items-center gap-3">
+                {eventDateGroup && (
+                  <Button
+                    variant="light"
+                    icon={ArrowLeft}
+                    tooltip="Volver al resumen"
+                    onClick={() => {
+                      setEventDateGroup(null);
+                      setEventDateGroupInvoices([]);
+                    }}
+                  />
+                )}
                 <div className="p-2 bg-blue-50 dark:bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
                   <Calendar size={24} />
                 </div>
                 <div>
                   <Title className="dark:text-white">
-                    Ventas del {data.eventDate ? formatEventDate(data.eventDate) : "día del evento"}
+                    {eventDateGroup
+                      ? `Facturas — ${eventDateGroup.manager_name}`
+                      : `Ventas del ${data.eventDate ? formatEventDate(data.eventDate) : "día del evento"}`}
                   </Title>
                   <div className="flex items-center gap-2 mt-1">
-                    <Text className="text-xs">
-                      Resumen por vendedor y método de pago
-                    </Text>
-                    <Badge size="xs" color="blue">
-                      {eventDateSummary.reduce((s, r) => s + r.invoices_count, 0)}{" "}
-                      factura(s)
-                    </Badge>
+                    {eventDateGroup ? (
+                      <>
+                        <Text className="text-xs">
+                          {eventDateGroup.payment_method} ·{" "}
+                          {formatCurrency(eventDateGroup.card_price)} c/u
+                        </Text>
+                        <Badge size="xs" color="blue">
+                          {eventDateGroupInvoices.length} factura(s)
+                        </Badge>
+                      </>
+                    ) : (
+                      <>
+                        <Text className="text-xs">
+                          Resumen por vendedor y método de pago
+                        </Text>
+                        <Badge size="xs" color="blue">
+                          {eventDateSummary.reduce(
+                            (s, r) => s + r.invoices_count,
+                            0,
+                          )}{" "}
+                          factura(s)
+                        </Badge>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
               <Button
                 variant="light"
                 icon={X}
-                onClick={() => setIsEventDateSummaryOpen(false)}
+                onClick={() => {
+                  setIsEventDateSummaryOpen(false);
+                  setEventDateGroup(null);
+                  setEventDateGroupInvoices([]);
+                }}
               />
             </div>
 
             <div className="flex-1 overflow-auto custom-scrollbar">
-              {eventDateSummary.length === 0 ? (
+              {eventDateGroup ? (
+                eventDateGroupInvoices.length === 0 ? (
+                  <Text className="py-10 text-center text-gray-400 italic">
+                    Sin facturas en esta agrupación.
+                  </Text>
+                ) : (
+                  <div className="min-w-[600px] md:min-w-full">
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
+                            Factura
+                          </TableHeaderCell>
+                          <TableHeaderCell className="dark:text-slate-400 uppercase text-[10px]">
+                            Cliente
+                          </TableHeaderCell>
+                          <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
+                            N° Cartones
+                          </TableHeaderCell>
+                          <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
+                            Precio Cartón
+                          </TableHeaderCell>
+                          <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
+                            Total
+                          </TableHeaderCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {eventDateGroupInvoices.map((inv) => (
+                          <TableRow key={inv.invoice_number}>
+                            <TableCell className="font-medium whitespace-nowrap">
+                              <button
+                                type="button"
+                                className="text-larioja-verde font-bold hover:underline whitespace-nowrap"
+                                onClick={async () => {
+                                  setIsLoadingDrillDown(true);
+                                  const res = await fetchInvoiceByNumber(
+                                    inv.invoice_number,
+                                  );
+                                  if (res.success && res.data) {
+                                    setIsEventDateSummaryOpen(false);
+                                    setEventDateGroup(null);
+                                    setEventDateGroupInvoices([]);
+                                    setConsultingInvoice(res.data);
+                                    setIsConsultInvoiceOpen(true);
+                                  } else {
+                                    alert(
+                                      "Error al cargar detalles de factura: " +
+                                        (res.error || "Sin datos"),
+                                    );
+                                  }
+                                  setIsLoadingDrillDown(false);
+                                }}
+                              >
+                                #{inv.invoice_number}
+                              </button>
+                            </TableCell>
+                            <TableCell className="dark:text-slate-200 truncate max-w-[220px]">
+                              {inv.customer_name}
+                            </TableCell>
+                            <TableCell className="text-right dark:text-slate-200">
+                              {inv.cards_number}
+                            </TableCell>
+                            <TableCell className="text-right dark:text-slate-200">
+                              {formatCurrency(Number(inv.card_price || 0))}
+                            </TableCell>
+                            <TableCell className="text-right font-bold dark:text-white whitespace-nowrap">
+                              {formatCurrency(Number(inv.total_amount || 0))}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="bg-gray-50 dark:bg-slate-900">
+                          <TableCell className="font-bold dark:text-white">
+                            TOTAL
+                          </TableCell>
+                          <TableCell />
+                          <TableCell className="text-right font-bold dark:text-white">
+                            {eventDateGroupInvoices.reduce(
+                              (s, i) => s + Number(i.cards_number || 0),
+                              0,
+                            )}
+                          </TableCell>
+                          <TableCell />
+                          <TableCell className="text-right font-bold dark:text-white">
+                            {formatCurrency(
+                              eventDateGroupInvoices.reduce(
+                                (s, i) => s + Number(i.total_amount || 0),
+                                0,
+                              ),
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                )
+              ) : eventDateSummary.length === 0 ? (
                 <Text className="py-10 text-center text-gray-400 italic">
                   Sin ventas registradas en esta fecha.
                 </Text>
@@ -1406,8 +1564,15 @@ export default function RealtimeDashboardWrapper({
                     <TableBody>
                       {eventDateSummary.map((row, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="font-medium dark:text-slate-200 whitespace-nowrap">
-                            {row.manager_name}
+                          <TableCell className="font-medium whitespace-nowrap">
+                            <button
+                              type="button"
+                              className="text-larioja-verde font-bold hover:underline whitespace-nowrap"
+                              title="Ver facturas de esta agrupación"
+                              onClick={() => void handleEventDateGroup(row)}
+                            >
+                              {row.manager_name}
+                            </button>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             <Badge size="xs" color="slate">

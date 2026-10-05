@@ -419,6 +419,58 @@ export async function getSalesSummaryByDateCore(date: string) {
 }
 
 /**
+ * Detalle de facturas de una agrupación del resumen de ventas por fecha
+ * (drill-down del vendedor en el modal "Ventas del día del evento").
+ * Filtra en JS con la misma normalización usada al agrupar
+ * (manager/method trim con fallback "Sin asignar"/"N/D", precio numérico)
+ * para que la agrupación y su detalle siempre coincidan.
+ */
+export async function getInvoicesByDateGroupCore(
+  date: string,
+  manager: string,
+  method: string,
+  price: number,
+) {
+  const supabase = createAdminClient();
+  const companyId = await getSelectedCompanyId();
+
+  if (!companyId) return { success: false, error: "No company" };
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("def_dash_event_id")
+    .eq("company_id", companyId)
+    .single();
+
+  if (!company?.def_dash_event_id) return { success: false, error: "No event" };
+
+  const { data, error } = await supabase
+    .from("invoices")
+    .select(
+      "invoice_number, invoice_date, customer_name, phone_area, phone_number, manager_name, payment_method, cards_number, card_price, total_amount",
+    )
+    .eq("company_id", companyId)
+    .eq("event_id", company.def_dash_event_id)
+    .eq("invoice_date", date)
+    .eq("status", "pagada")
+    .order("invoice_number", { ascending: true });
+
+  if (error) return { success: false, error: error.message };
+
+  const norm = (v: unknown, fallback: string) =>
+    (String(v ?? "").trim() || fallback);
+  return {
+    success: true,
+    data: (data || []).filter(
+      (inv) =>
+        norm(inv.manager_name, "Sin asignar") === manager &&
+        norm(inv.payment_method, "N/D") === method &&
+        Number(inv.card_price || 0) === price,
+    ),
+  };
+}
+
+/**
  * Fetches sales breakdown by manager for the current event (Drill down).
  */
 export async function getSalesByManagerCore() {

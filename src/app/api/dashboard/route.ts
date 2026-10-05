@@ -6,6 +6,7 @@ import {
   getRegisteredCardsCore,
   getInvoicesByDateCore,
   getSalesSummaryByDateCore,
+  getInvoicesByDateGroupCore,
   getSalesByManagerCore,
   getInvoicesByManagerCore,
   getInvoicesByCustomerCore,
@@ -30,7 +31,7 @@ import {
  * originales, que no exigían piso de rol).
  *
  * Vistas: data | registered-cards | invoices-by-date | sales-summary-by-date |
- * sales-by-manager |
+ * invoices-by-date-group | sales-by-manager |
  * invoices-by-manager | invoices-by-customer | invoice-cards |
  * card-type-summary | card-price-summary | assignment-by-level |
  * student-cards | countries | customers
@@ -70,6 +71,18 @@ export async function GET(request: NextRequest) {
       const date = params.get("date") || "";
       if (!date) return badParams();
       return NextResponse.json(await getSalesSummaryByDateCore(date));
+    }
+    case "invoices-by-date-group": {
+      const date = params.get("date") || "";
+      const manager = params.get("manager") || "";
+      const method = params.get("method") || "";
+      const price = Number(params.get("price") ?? NaN);
+      if (!date || !manager || !method || !Number.isFinite(price)) {
+        return badParams();
+      }
+      return NextResponse.json(
+        await getInvoicesByDateGroupCore(date, manager, method, price),
+      );
     }
     case "sales-by-manager":
       return NextResponse.json(await getSalesByManagerCore());
