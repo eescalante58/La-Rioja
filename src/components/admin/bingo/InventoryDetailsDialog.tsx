@@ -24,8 +24,14 @@ import {
   Edit,
   UserCheck,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import CardStatusReportDialog from "./CardStatusReportDialog";
+
+/** Filas por página de la tabla: renderizar las ~1,200 filas completas
+ *  bloqueaba el hilo principal varios segundos al abrir el diálogo. */
+const PAGE_SIZE = 100;
 
 interface InventoryDetailsDialogProps {
   isOpen: boolean;
@@ -37,6 +43,8 @@ interface InventoryDetailsDialogProps {
   onRangeReassign: () => void;
   onRangePlayerReassign: () => void;
   onEditCard: (card: any) => void;
+  /** Recarga forzada del inventario (descarta el cache del evento). */
+  onRefresh: () => void;
 }
 
 export default function InventoryDetailsDialog({
@@ -49,9 +57,11 @@ export default function InventoryDetailsDialog({
   onRangeReassign,
   onRangePlayerReassign,
   onEditCard,
+  onRefresh,
 }: InventoryDetailsDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [page, setPage] = useState(0);
 
   /**
    * Buscador multi-campo del inventario. Si el query es numérico corto
@@ -86,6 +96,18 @@ export default function InventoryDetailsDialog({
       );
     });
   }, [cards, searchQuery]);
+
+  /**
+   * Paginación cliente: solo se montan PAGE_SIZE filas por render.
+   * `currentPage` se clampa contra pageCount para que una recarga o un
+   * filtro que reduzca el total nunca deje una página vacía.
+   */
+  const pageCount = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageRows = filteredCards.slice(
+    currentPage * PAGE_SIZE,
+    (currentPage + 1) * PAGE_SIZE,
+  );
 
   return (
     <Dialog
@@ -127,6 +149,14 @@ export default function InventoryDetailsDialog({
                 <Badge color="blue" icon={Ticket}>
                   {cards.length} Totales
                 </Badge>
+                <Button
+                  size="xs"
+                  variant="light"
+                  icon={RefreshCw}
+                  onClick={onRefresh}
+                  loading={loading}
+                  tooltip="Recargar inventario"
+                />
               </div>
             </div>
 
@@ -134,7 +164,10 @@ export default function InventoryDetailsDialog({
               placeholder="Buscar por N° Cartón, Factura, Estado, Jugador, Teléfono o Vendedor... (números cortos solo buscan cartón/factura)"
               icon={Search}
               value={searchQuery}
-              onValueChange={setSearchQuery}
+              onValueChange={(v) => {
+                setSearchQuery(v);
+                setPage(0);
+              }}
             />
           </div>
 
@@ -159,8 +192,8 @@ export default function InventoryDetailsDialog({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredCards.map((card, idx) => (
-                    <TableRow key={idx}>
+                  {pageRows.map((card) => (
+                    <TableRow key={card.card_number}>
                       <TableCell className="font-bold text-larioja-azul dark:text-larioja-amarillo">
                         {card.card_number}
                       </TableCell>
@@ -229,7 +262,43 @@ export default function InventoryDetailsDialog({
                 </TableBody>
               </Table>
             </div>
-          ) : (
+          ) : null}
+
+          {!loading && filteredCards.length > 0 && pageCount > 1 && (
+            <div className="flex items-center justify-between mt-3">
+              <Text className="text-xs text-gray-500">
+                Mostrando {currentPage * PAGE_SIZE + 1}–
+                {Math.min(
+                  (currentPage + 1) * PAGE_SIZE,
+                  filteredCards.length,
+                )}{" "}
+                de {filteredCards.length}
+              </Text>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  icon={ChevronLeft}
+                  disabled={currentPage === 0}
+                  onClick={() => setPage(currentPage - 1)}
+                  tooltip="Página anterior"
+                />
+                <Text className="text-xs font-medium px-2 tabular-nums">
+                  {currentPage + 1} / {pageCount}
+                </Text>
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  icon={ChevronRight}
+                  disabled={currentPage >= pageCount - 1}
+                  onClick={() => setPage(currentPage + 1)}
+                  tooltip="Página siguiente"
+                />
+              </div>
+            </div>
+          )}
+
+          {!loading && filteredCards.length === 0 && (
             <div className="py-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl">
               <Ticket size={48} className="text-gray-200" />
               <Text className="text-gray-400 italic">

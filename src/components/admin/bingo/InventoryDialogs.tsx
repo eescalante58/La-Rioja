@@ -32,6 +32,8 @@ export default function InventoryDialogs({
 }: InventoryDialogsProps) {
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  /** Clave del evento cuyo inventario está en memoria (cache por sesión). */
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
   // Sub-dialog states
   const [isReassignOpen, setIsReassignOpen] = useState(false);
@@ -40,12 +42,18 @@ export default function InventoryDialogs({
   const [isRangePlayerOpen, setIsRangePlayerOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  const eventKey = event ? `${event.company_id}:${event.event_id}` : null;
+
   /**
    * Inventario del evento vía /api/bingo/cards (JSON puro; la Server
    * Action equivalente re-renderizaba /admin/bingo completo).
+   * Con force=false reutiliza la carga en memoria si el evento no
+   * cambió; las operaciones que mutan cartones lo llaman con
+   * force=true para descartar el cache.
    */
-  const loadCards = async () => {
-    if (!event) return;
+  const loadCards = async (force = false) => {
+    if (!event || !eventKey) return;
+    if (!force && loadedKey === eventKey) return;
     setLoading(true);
     try {
       const res = await fetch(
@@ -54,6 +62,7 @@ export default function InventoryDialogs({
       const result = await res.json();
       if (typeof result === "object" && "data" in result) {
         setCards(result.data || []);
+        setLoadedKey(eventKey);
       }
     } catch (error) {
       console.error("Error loading cards:", error);
@@ -62,11 +71,12 @@ export default function InventoryDialogs({
     }
   };
 
-  // Carga el inventario cada vez que se abre el diálogo.
+  // Carga el inventario solo la primera vez que se abre para un evento;
+  // las reaperturas del mismo evento reutilizan el cache en memoria.
   useEffect(() => {
     if (isOpen && event) void loadCards();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, event?.event_id]);
+  }, [isOpen, eventKey]);
 
   return (
     <>
@@ -82,6 +92,7 @@ export default function InventoryDialogs({
         }}
         onRangeReassign={() => setIsRangeOpen(true)}
         onRangePlayerReassign={() => setIsRangePlayerOpen(true)}
+        onRefresh={() => void loadCards(true)}
         onEditCard={(card) => {
           setSelectedCard(card);
           setIsEditOpen(true);
@@ -93,14 +104,14 @@ export default function InventoryDialogs({
         onClose={() => setIsReassignOpen(false)}
         card={selectedCard}
         event={event}
-        onSuccess={() => void loadCards()}
+        onSuccess={() => void loadCards(true)}
       />
 
       <RangeReassignDialog
         isOpen={isRangeOpen}
         onClose={() => setIsRangeOpen(false)}
         event={event}
-        onSuccess={() => void loadCards()}
+        onSuccess={() => void loadCards(true)}
       />
 
       <RangePlayerReassignDialog
@@ -109,7 +120,7 @@ export default function InventoryDialogs({
         event={event}
         cards={cards}
         countries={countries}
-        onSuccess={() => void loadCards()}
+        onSuccess={() => void loadCards(true)}
       />
 
       <EditCardDialog
@@ -118,7 +129,7 @@ export default function InventoryDialogs({
         card={selectedCard}
         event={event}
         countries={countries}
-        onSuccess={() => void loadCards()}
+        onSuccess={() => void loadCards(true)}
       />
     </>
   );

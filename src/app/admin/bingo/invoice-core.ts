@@ -381,8 +381,11 @@ export async function getSellersCore(companyId: number, eventId: string) {
 }
 
 /**
- * Obtiene todas las filas de una tabla filtradas por empresa/evento,
- * paginando en bloques de 1000 (límite por consulta de PostgREST).
+ * Obtiene todas las filas de una tabla filtradas por empresa/evento.
+ * PostgREST limita cada consulta a 1000 filas: se trae la primera página
+ * con el conteo exacto y las páginas restantes en paralelo con
+ * Promise.all (ORDER BY + range garantizan el orden global), en lugar de
+ * las rondas secuenciales que multiplicaban la latencia por página.
  */
 async function fetchAllRows(
   supabase: any,
@@ -393,21 +396,47 @@ async function fetchAllRows(
   orderBy: string,
 ) {
   const pageSize = 1000;
-  const all: any[] = [];
-  for (let from = 0; ; from += pageSize) {
-    const { data, error } = await supabase
-      .from(table)
-      .select(columns)
-      .eq("company_id", companyId)
-      .eq("event_id", eventId)
-      .order(orderBy, { ascending: true })
-      .range(from, from + pageSize - 1);
-    if (error) return { data: null, error };
-    all.push(...(data || []));
-    if (!data || data.length < pageSize) break;
+  const firstPage = await supabase
+    .from(table)
+    .select(columns, { count: "exact" })
+    .eq("company_id", companyId)
+    .eq("event_id", eventId)
+    .order(orderBy, { ascending: true })
+    .range(0, pageSize - 1);
+  if (firstPage.error) return { data: null, error: firstPage.error };
+
+  const all: any[] = [...(firstPage.data || [])];
+  const total = firstPage.count ?? all.length;
+  if (total <= pageSize) return { data: all, error: null as any };
+
+  const rest = await Promise.all(
+    Array.from({ length: Math.ceil(total / pageSize) - 1 }, (_, i) =>
+      supabase
+        .from(table)
+        .select(columns)
+        .eq("company_id", companyId)
+        .eq("event_id", eventId)
+        .order(orderBy, { ascending: true })
+        .range((i + 1) * pageSize, (i + 2) * pageSize - 1),
+    ),
+  );
+  for (const res of rest) {
+    if (res.error) return { data: null, error: res.error };
+    all.push(...(res.data || []));
   }
   return { data: all, error: null as any };
 }
+
+/**
+ * Columnas que consumen los clientes del inventario: tabla del diálogo,
+ * sub-diálogos (editar, reasignar tipo/jugador) y el selector de cartones
+ * de la edición de factura. SELECT * arrastraba columnas que ningún
+ * cliente usa — más JSON a serializar, transferir y parsear por cartón.
+ */
+const EVENT_CARD_COLUMNS =
+  "company_id, event_id, card_number, card_type, card_status, card_price, " +
+  "sales_price, invoice_number, player_name, player_phone_number, " +
+  "player_email, sold_by, image_url, created_at, updated_at";
 
 /**
  * Todos los cartones del evento (inventario completo), paginados.
@@ -418,7 +447,7 @@ export async function getEventCardsCore(companyId: number, eventId: string) {
   const { data, error } = await fetchAllRows(
     supabase,
     "cards",
-    "*",
+    EVENT_CARD_COLUMNS,
     companyId,
     eventId,
     "card_number",
