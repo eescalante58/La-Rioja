@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { Card, Title, Text, Button, Badge } from "@tremor/react";
-import { Ticket } from "lucide-react";
-import InventoryDetailsDialog from "./InventoryDetailsDialog";
-import ReassignCardDialog from "./ReassignCardDialog";
-import RangeReassignDialog from "./RangeReassignDialog";
-import RangePlayerReassignDialog from "./RangePlayerReassignDialog";
-import EditCardDialog from "./EditCardDialog";
+import InventoryDialogs from "./InventoryDialogs";
 
 interface Event {
   id: number;
@@ -33,41 +28,10 @@ export default function InventoryTab({
 }: InventoryTabProps) {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [cards, setCards] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Sub-dialog states
-  const [isReassignOpen, setIsReassignOpen] = useState(false);
-  const [selectedCard, setSelectedCard] = useState<any>(null);
-  const [isRangeOpen, setIsRangeOpen] = useState(false);
-  const [isRangePlayerOpen, setIsRangePlayerOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-
-  /**
-   * Inventario del evento vía /api/bingo/cards (JSON puro; la Server
-   * Action equivalente re-renderizaba /admin/bingo completo).
-   */
-  const loadCards = async (event: Event) => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/bingo/cards?companyId=${event.company_id}&eventId=${encodeURIComponent(event.event_id)}`,
-      );
-      const result = await res.json();
-      if (typeof result === "object" && "data" in result) {
-        setCards(result.data || []);
-      }
-    } catch (error) {
-      console.error("Error loading cards:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleViewDetails = (event: Event) => {
     setSelectedEvent(event);
     setIsDetailsOpen(true);
-    loadCards(event);
   };
 
   return (
@@ -116,57 +80,12 @@ export default function InventoryTab({
         </div>
       </Card>
 
-      {/* Main Details Dialog */}
-      <InventoryDetailsDialog
+      {/* Diálogo de inventario + sub-diálogos (compartido con SalesTab) */}
+      <InventoryDialogs
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         event={selectedEvent}
-        cards={cards}
-        loading={loading}
-        onReassignType={(card) => {
-          setSelectedCard(card);
-          setIsReassignOpen(true);
-        }}
-        onRangeReassign={() => setIsRangeOpen(true)}
-        onRangePlayerReassign={() => setIsRangePlayerOpen(true)}
-        onEditCard={(card) => {
-          setSelectedCard(card);
-          setIsEditOpen(true);
-        }}
-      />
-
-      {/* Sub Dialogs */}
-      <ReassignCardDialog
-        isOpen={isReassignOpen}
-        onClose={() => setIsReassignOpen(false)}
-        card={selectedCard}
-        event={selectedEvent}
-        onSuccess={() => selectedEvent && loadCards(selectedEvent)}
-      />
-
-      <RangeReassignDialog
-        isOpen={isRangeOpen}
-        onClose={() => setIsRangeOpen(false)}
-        event={selectedEvent}
-        onSuccess={() => selectedEvent && loadCards(selectedEvent)}
-      />
-
-      <RangePlayerReassignDialog
-        isOpen={isRangePlayerOpen}
-        onClose={() => setIsRangePlayerOpen(false)}
-        event={selectedEvent}
-        cards={cards}
         countries={countries}
-        onSuccess={() => selectedEvent && loadCards(selectedEvent)}
-      />
-
-      <EditCardDialog
-        isOpen={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        card={selectedCard}
-        event={selectedEvent}
-        countries={countries}
-        onSuccess={() => selectedEvent && loadCards(selectedEvent)}
       />
     </>
   );

@@ -17,9 +17,10 @@ import {
   TableCell,
   Badge,
 } from "@tremor/react";
-import { Plus, TrendingUp, Eye, Edit, Trash2, PlusSquare, Search } from "lucide-react";
+import { Plus, TrendingUp, Eye, Edit, Trash2, PlusSquare, Search, Ticket } from "lucide-react";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import InvoiceDetailsDialog from "./InvoiceDetailsDialog";
+import InventoryDialogs from "./InventoryDialogs";
 import NewInvoiceDialog from "./NewInvoiceDialog";
 import NewInvoicePlusDialog from "./NewInvoicePlusDialog";
 import WhatsAppPopup from "./WhatsAppPopup";
@@ -65,6 +66,8 @@ export default function SalesTab({
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
   const [isNewInvoicePlusOpen, setIsNewInvoicePlusOpen] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+  /** Diálogo "Inventario de Cartones" abierto desde esta pestaña. */
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
 
   /**
    * Carga las facturas del evento vía /api/bingo/invoices (JSON puro).
@@ -205,6 +208,19 @@ export default function SalesTab({
     );
   });
 
+  /**
+   * Evento completo seleccionado en "Filtrar por Evento" — el diálogo de
+   * inventario necesita campos que `currentEventInfo` no guarda
+   * (p. ej. event_name para el encabezado).
+   */
+  const inventoryEvent = currentEventInfo
+    ? events.find(
+        (e) =>
+          e.company_id === currentEventInfo.companyId &&
+          e.event_id === currentEventInfo.eventId,
+      ) || null
+    : null;
+
   return (
     <>
       <Card className="mt-4 shadow-sm sm:shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
@@ -258,6 +274,14 @@ export default function SalesTab({
                 className="bg-larioja-azul"
               >
                 Nueva Factura Plus
+              </Button>
+              <Button
+                icon={Ticket}
+                variant="secondary"
+                tooltip="Abrir el inventario de cartones del evento"
+                onClick={() => setIsInventoryOpen(true)}
+              >
+                Inventario
               </Button>
             </div>
           )}
@@ -468,6 +492,15 @@ export default function SalesTab({
         isOpen={isWhatsAppOpen}
         onClose={() => setIsWhatsAppOpen(false)}
         invoice={selectedInvoice}
+      />
+
+      {/* Inventario como overlay: al cerrarlo se regresa a esta pestaña
+          conservando su estado (filtro de evento, búsqueda, facturas). */}
+      <InventoryDialogs
+        isOpen={isInventoryOpen}
+        onClose={() => setIsInventoryOpen(false)}
+        event={inventoryEvent}
+        countries={countries}
       />
     </>
   );
