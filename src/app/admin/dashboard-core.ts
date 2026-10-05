@@ -125,7 +125,7 @@ export async function getDashboardDataCore() {
       await Promise.all([
         supabaseAdmin
           .from("events")
-          .select("event_name, event_goal, card_value, event_id")
+          .select("event_name, event_date, event_goal, card_value, event_id")
           .eq("event_id", eventId)
           .eq("company_id", companyId)
           .single(),
@@ -248,6 +248,7 @@ export async function getDashboardDataCore() {
       hasEvent: true,
       eventId: event.event_id,
       eventName: event.event_name,
+      eventDate: event.event_date,
       cardValue: Number(event.card_value || 10), // Assuming card_value exists or default to 10
       goal,
       realized,

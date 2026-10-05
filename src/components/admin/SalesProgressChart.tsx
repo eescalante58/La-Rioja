@@ -6,6 +6,8 @@ import { Card, Title, Text, Badge } from "@tremor/react";
 
 interface SalesProgressChartProps {
   eventName: string;
+  /** Fecha del evento (`events.event_date`, formato ISO `YYYY-MM-DD`). */
+  eventDate?: string | null;
   goal: number;
   realized: number;
   percentage: number;
@@ -17,6 +19,7 @@ interface SalesProgressChartProps {
  */
 export default function SalesProgressChart({
   eventName,
+  eventDate,
   goal,
   realized,
   percentage,
@@ -27,6 +30,22 @@ export default function SalesProgressChart({
       style: "currency",
       currency: "USD",
     }).format(val);
+  };
+
+  /**
+   * Formatea `events.event_date` (columna `date` sin hora). Se interpreta en
+   * UTC para evitar que la zona horaria local desplace el día un lugar atrás.
+   */
+  const formatEventDate = (iso: string) => {
+    const d = new Date(`${iso}T00:00:00Z`);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("es-SV", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "UTC",
+    });
   };
 
   const option = {
@@ -107,6 +126,11 @@ export default function SalesProgressChart({
         <Title className="text-xl font-bold text-larioja-azul dark:text-white uppercase tracking-[0.2em]">
           {eventName}
         </Title>
+        {eventDate && (
+          <Text className="text-xs text-gray-500 dark:text-gray-400 capitalize mt-0.5">
+            {formatEventDate(eventDate)}
+          </Text>
+        )}
         <div className="flex items-center justify-center gap-2 mt-1">
           <Text className="text-[10px] dark:text-slate-500 uppercase font-bold">
             Avance de Ventas

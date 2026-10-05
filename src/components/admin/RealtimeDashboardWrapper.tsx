@@ -698,6 +698,7 @@ export default function RealtimeDashboardWrapper({
             <>
               <SalesProgressChart
                 eventName={data.eventName || ""}
+                eventDate={data.eventDate || null}
                 goal={data.goal || 0}
                 realized={data.realized || 0}
                 percentage={data.percentage || 0}
