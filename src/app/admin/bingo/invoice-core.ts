@@ -436,7 +436,10 @@ async function fetchAllRows(
 const EVENT_CARD_COLUMNS =
   "company_id, event_id, card_number, card_type, card_status, card_price, " +
   "sales_price, invoice_number, player_name, player_phone_number, " +
-  "player_email, sold_by, image_url, created_at, updated_at";
+  "player_email, sold_by, image_url, created_at, updated_at, " +
+  // Alumno asignado (estado 'Asignado'): mismo embed que usa el
+  // drill-down invoice-cards del dashboard.
+  "students_cards(students(student_name, student_level))";
 
 /**
  * Todos los cartones del evento (inventario completo), paginados.

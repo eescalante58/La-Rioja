@@ -33,6 +33,24 @@ import CardStatusReportDialog from "./CardStatusReportDialog";
  *  bloqueaba el hilo principal varios segundos al abrir el diálogo. */
 const PAGE_SIZE = 100;
 
+/** Encabezado fijo: sticky en cada th (no en thead) para que funcione
+ *  en todos los navegadores dentro del contenedor con scroll. */
+const HEADER_CELL_CLASS = "sticky top-0 z-10 bg-white dark:bg-gray-900";
+
+/**
+ * Alumno ligado al cartón vía students_cards → students (mismo embed
+ * que el drill-down invoice-cards del dashboard). Puede venir como
+ * objeto o array según la cardinalidad.
+ */
+const assignedStudentOf = (
+  card: any,
+): { student_name?: string; student_level?: string } | null => {
+  const rel = card?.students_cards;
+  const entry = Array.isArray(rel) ? rel[0] : rel;
+  const student = entry?.students;
+  return Array.isArray(student) ? (student[0] ?? null) : (student ?? null);
+};
+
 interface InventoryDetailsDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -181,14 +199,14 @@ export default function InventoryDetailsDialog({
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableHeaderCell>N° Cartón</TableHeaderCell>
-                    <TableHeaderCell>Tipo</TableHeaderCell>
-                    <TableHeaderCell>N° Factura</TableHeaderCell>
-                    <TableHeaderCell>Estado</TableHeaderCell>
-                    <TableHeaderCell>Jugador</TableHeaderCell>
-                    <TableHeaderCell>Teléfono</TableHeaderCell>
-                    <TableHeaderCell>Vendido por</TableHeaderCell>
-                    <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
+                    <TableHeaderCell className={HEADER_CELL_CLASS}>N° Cartón</TableHeaderCell>
+                    <TableHeaderCell className={HEADER_CELL_CLASS}>Tipo</TableHeaderCell>
+                    <TableHeaderCell className={HEADER_CELL_CLASS}>N° Factura</TableHeaderCell>
+                    <TableHeaderCell className={HEADER_CELL_CLASS}>Estado</TableHeaderCell>
+                    <TableHeaderCell className={HEADER_CELL_CLASS}>Jugador</TableHeaderCell>
+                    <TableHeaderCell className={HEADER_CELL_CLASS}>Teléfono</TableHeaderCell>
+                    <TableHeaderCell className={HEADER_CELL_CLASS}>Vendido por</TableHeaderCell>
+                    <TableHeaderCell className={`${HEADER_CELL_CLASS} text-right`}>Acciones</TableHeaderCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -229,7 +247,33 @@ export default function InventoryDetailsDialog({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Text className="text-xs">{card.player_name || "—"}</Text>
+                        {(() => {
+                          // 'Asignado' = ligado a un alumno: muestra su nombre
+                          // y nivel en lugar del jugador (que está vacío).
+                          const student =
+                            card.card_status === "Asignado"
+                              ? assignedStudentOf(card)
+                              : null;
+                          if (student?.student_name) {
+                            return (
+                              <div className="flex flex-col">
+                                <Text className="text-xs font-medium">
+                                  {student.student_name}
+                                </Text>
+                                {student.student_level && (
+                                  <Text className="text-[10px] text-gray-400">
+                                    {student.student_level}
+                                  </Text>
+                                )}
+                              </div>
+                            );
+                          }
+                          return (
+                            <Text className="text-xs">
+                              {card.player_name || "—"}
+                            </Text>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <Text className="text-xs">{card.player_phone_number || "—"}</Text>
