@@ -97,6 +97,28 @@ export default function InvoiceDateReportDialog({
     [rows],
   );
 
+  /**
+   * Totales por método de pago (encabezado 4 del reporte), ordenados de
+   * mayor a menor monto. La llave agrupa por el valor crudo — "Efectivo"
+   * y "efectivo" se fusionan normalizando la llave a minúsculas.
+   */
+  const paymentTotals = useMemo(() => {
+    const map = new Map<
+      string,
+      { method: string; invoices: number; cards: number; amount: number }
+    >();
+    for (const r of rows) {
+      const method = (r.payment_method || "N/D").trim() || "N/D";
+      const key = method.toLowerCase();
+      const e = map.get(key) || { method, invoices: 0, cards: 0, amount: 0 };
+      e.invoices += 1;
+      e.cards += Number(r.cards_number) || 0;
+      e.amount += Number(r.total_amount) || 0;
+      map.set(key, e);
+    }
+    return [...map.values()].sort((a, b) => b.amount - a.amount);
+  }, [rows]);
+
   /** Escapa un valor para CSV (comillas dobles duplicadas + envoltura). */
   const csvCell = (v: unknown) =>
     `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -110,19 +132,34 @@ export default function InvoiceDateReportDialog({
     const autoTable = autoTableModule.default;
 
     const doc = new JsPDF({ orientation: "landscape" });
-    doc.setFontSize(14);
-    doc.text(`Facturas del ${formatDate(date)}`, 14, 15);
-    doc.setFontSize(10);
+    // Encabezado jerárquico: cada nivel con fuente decreciente.
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(event?.event_name ?? "", 14, 15);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
     doc.text(`Evento ID: ${event?.event_id ?? ""}`, 14, 22);
-    doc.text(`Evento: ${event?.event_name ?? ""}`, 14, 28);
+    doc.setFontSize(10);
+    doc.text(`Fecha: ${formatDate(date)}`, 14, 28);
+    doc.setFontSize(9);
     doc.text(
-      `Facturas: ${totals.invoices}   |   Cartones: ${totals.cards}   |   Total: ${formatMoney(totals.amount)}`,
+      `Facturas: ${totals.invoices}   |   Cartones: ${totals.cards}   |   Total ventas: ${formatMoney(totals.amount)}`,
       14,
       34,
     );
+    // Totales por método de pago (una línea por método, mayor a menor monto)
+    let y = 39;
+    paymentTotals.forEach((p) => {
+      doc.text(
+        `${p.method}: ${p.invoices} facturas · ${p.cards} cartones · ${formatMoney(p.amount)}`,
+        14,
+        y,
+      );
+      y += 4;
+    });
 
     autoTable(doc, {
-      startY: 38,
+      startY: y + 1,
       head: [HEADERS],
       body: [
         ...rows.map((r) => [
@@ -190,6 +227,12 @@ export default function InvoiceDateReportDialog({
         `Total facturas,${totals.invoices}`,
         `Total cartones,${totals.cards}`,
         `Monto total,${totals.amount.toFixed(2)}`,
+        "",
+        "Totales por metodo de pago",
+        ...paymentTotals.map(
+          (p) =>
+            `${csvCell(p.method)},${p.invoices},${p.cards},${p.amount.toFixed(2)}`,
+        ),
       ].join("\n");
 
     const link = document.createElement("a");
