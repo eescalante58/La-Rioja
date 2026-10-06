@@ -6,8 +6,6 @@ import {
   DialogPanel,
   Title,
   Text,
-  Select,
-  SelectItem,
   Button,
 } from "@tremor/react";
 import { FileText, FileSpreadsheet, Eye } from "lucide-react";
@@ -280,20 +278,22 @@ export default function InvoiceDateReportDialog({
               <Text className="text-xs font-black uppercase text-gray-600 dark:text-gray-300 tracking-wider">
                 Fecha de las facturas
               </Text>
-              <Select
+              {/* <select> nativo: el dropdown de Tremor/Listbox podía
+                  trabar el scroll dentro del Dialog modal; el nativo lo
+                  maneja el navegador y siempre llega al final. */}
+              <select
                 value={date}
-                onValueChange={setDate}
-                enableClear={false}
-                placeholder="Selecciona una fecha..."
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white py-2 px-3 text-sm text-gray-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               >
                 {availableDates.map((d) => (
-                  <SelectItem key={d} value={d}>
+                  <option key={d} value={d}>
                     {formatDate(d)} (
                     {invoices.filter((i) => i.invoice_date === d).length}{" "}
                     facturas)
-                  </SelectItem>
+                  </option>
                 ))}
-              </Select>
+              </select>
             </div>
 
             {date && rows.length > 0 && (
