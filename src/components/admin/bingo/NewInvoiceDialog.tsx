@@ -23,6 +23,10 @@ interface NewInvoiceDialogProps {
   onSuccess: () => void;
   onWhatsApp: (invoice: any) => void;
   readOnly?: boolean;
+  /** Apila el diálogo sobre otros modales (z-110 en vez de z-50):
+   *  usado cuando se abre encima de "Ventas del Día" u otro drill-down
+   *  para que al cerrarlo se regrese al modal que lo invocó. */
+  stacked?: boolean;
 }
 
 export default function NewInvoiceDialog({
@@ -34,6 +38,7 @@ export default function NewInvoiceDialog({
   onSuccess,
   onWhatsApp,
   readOnly = false,
+  stacked = false,
 }: NewInvoiceDialogProps) {
   const [loading, setLoading] = useState(false);
   const [loadingInitial, setLoadingInitial] = useState(false);
@@ -328,8 +333,8 @@ export default function NewInvoiceDialog({
 
   return (
     <Dialog open={isOpen} onClose={onClose} static={true}>
-      <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-50" />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className={`fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm ${stacked ? "z-[110]" : "z-50"}`} />
+      <div className={`fixed inset-0 ${stacked ? "z-[110]" : "z-50"} flex items-center justify-center p-4`}>
         <DialogPanel className={`${readOnly ? "max-w-4xl" : "max-w-2xl"} w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 transition-all duration-300 overflow-hidden flex flex-col max-h-[95vh]`}>
           <div className={`${readOnly ? "p-4" : "p-6"} border-b border-gray-100 dark:border-gray-800 flex items-center justify-between flex-shrink-0 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md`}>
             <Title className="text-larioja-azul dark:text-larioja-amarillo">

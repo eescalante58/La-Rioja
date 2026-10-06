@@ -1310,7 +1310,9 @@ export default function RealtimeDashboardWrapper({
                               setIsLoadingDrillDown(true);
                               const res = await fetchInvoiceByNumber(inv.invoice_number);
                               if (res.success && res.data) {
-                                setIsDateDetailOpen(false);
+                                /* El modal del día queda montado detrás
+                                   (la consulta va apilada, stacked): al
+                                   cerrarla se regresa a este listado. */
                                 setConsultingInvoice(res.data);
                                 setIsConsultInvoiceOpen(true);
                               } else {
@@ -1345,7 +1347,8 @@ export default function RealtimeDashboardWrapper({
 
             <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center flex-shrink-0">
               <Text className="font-bold">
-                Total:{" "}
+                {dateInvoices.length} factura
+                {dateInvoices.length === 1 ? "" : "s"} · Total:{" "}
                 {formatCurrency(
                   dateInvoices.reduce((s, i) => s + Number(i.total_amount), 0),
                 )}
@@ -2534,6 +2537,7 @@ export default function RealtimeDashboardWrapper({
         }}
         countries={countries}
         readOnly={true}
+        stacked={true}
         onSuccess={() => {}}
         onWhatsApp={(inv) => {
           setWhatsAppInvoice(inv);

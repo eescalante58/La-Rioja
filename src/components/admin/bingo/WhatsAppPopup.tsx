@@ -128,8 +128,11 @@ export default function WhatsAppPopup({
 
   return (
     <Dialog open={isOpen} onClose={onClose} static={true}>
-      <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[60]" />
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      {/* z-130: puede abrirse desde "Consulta de Factura" apilada
+          (z-110) sobre los drill-downs del dashboard (z-100) y debe
+          quedar por encima de ambos. */}
+      <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 backdrop-blur-sm z-[130]" />
+      <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
         <DialogPanel className="max-w-xl w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh] overflow-hidden">
           <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-larioja-azul/5">
             <div className="flex items-center gap-3">
