@@ -17,9 +17,10 @@ import {
   TableCell,
   Badge,
 } from "@tremor/react";
-import { TrendingUp, Eye, Edit, Trash2, PlusSquare, Search, Ticket } from "lucide-react";
+import { TrendingUp, Eye, Edit, Trash2, PlusSquare, Search, Ticket, FileText } from "lucide-react";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import InvoiceDetailsDialog from "./InvoiceDetailsDialog";
+import InvoiceDateReportDialog from "./InvoiceDateReportDialog";
 import InventoryDialogs from "./InventoryDialogs";
 import NewInvoiceDialog from "./NewInvoiceDialog";
 import NewInvoicePlusDialog from "./NewInvoicePlusDialog";
@@ -68,6 +69,8 @@ export default function SalesTab({
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   /** Diálogo "Inventario de Cartones" abierto desde esta pestaña. */
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  /** Diálogo "Reporte de Facturas por Fecha" (CSV/PDF + vista previa). */
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   /**
    * Carga las facturas del evento vía /api/bingo/invoices (JSON puro).
@@ -272,6 +275,15 @@ export default function SalesTab({
                 onClick={() => setIsInventoryOpen(true)}
               >
                 Inventario
+              </Button>
+              <Button
+                icon={FileText}
+                variant="secondary"
+                tooltip="Reporte de facturas por fecha (CSV/PDF con vista previa)"
+                onClick={() => setIsReportOpen(true)}
+                disabled={invoices.length === 0}
+              >
+                Informe por Fecha
               </Button>
             </div>
           )}
@@ -483,6 +495,15 @@ export default function SalesTab({
         isOpen={isWhatsAppOpen}
         onClose={() => setIsWhatsAppOpen(false)}
         invoice={selectedInvoice}
+      />
+
+      {/* Reporte por fecha: trabaja sobre las facturas ya cargadas,
+          sin llamadas adicionales al servidor. */}
+      <InvoiceDateReportDialog
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        event={inventoryEvent}
+        invoices={invoices}
       />
 
       {/* Inventario como overlay: al cerrarlo se regresa a esta pestaña
