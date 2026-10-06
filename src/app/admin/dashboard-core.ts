@@ -338,7 +338,7 @@ export async function getInvoicesByDateCore(date: string) {
   const { data, error } = await supabase
     .from("invoices")
     .select(
-      "invoice_number, customer_name, total_amount, manager_name, payment_method",
+      "invoice_number, customer_name, total_amount, manager_name, payment_method, cards_number",
     )
     .eq("company_id", companyId)
     .eq("invoice_date", date)

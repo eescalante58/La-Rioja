@@ -1295,6 +1295,9 @@ export default function RealtimeDashboardWrapper({
                         Pago
                       </TableHeaderCell>
                       <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
+                        Cartones
+                      </TableHeaderCell>
+                      <TableHeaderCell className="text-right dark:text-slate-400 uppercase text-[10px]">
                         Monto
                       </TableHeaderCell>
                     </TableRow>
@@ -1335,6 +1338,9 @@ export default function RealtimeDashboardWrapper({
                             {inv.payment_method}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-right dark:text-slate-200 whitespace-nowrap">
+                          {inv.cards_number ?? "—"}
+                        </TableCell>
                         <TableCell className="text-right font-bold dark:text-white whitespace-nowrap">
                           {formatCurrency(inv.total_amount)}
                         </TableCell>
@@ -1348,7 +1354,12 @@ export default function RealtimeDashboardWrapper({
             <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center flex-shrink-0">
               <Text className="font-bold">
                 {dateInvoices.length} factura
-                {dateInvoices.length === 1 ? "" : "s"} · Total:{" "}
+                {dateInvoices.length === 1 ? "" : "s"} ·{" "}
+                {dateInvoices.reduce(
+                  (s, i) => s + (Number(i.cards_number) || 0),
+                  0,
+                )}{" "}
+                cartones · Total:{" "}
                 {formatCurrency(
                   dateInvoices.reduce((s, i) => s + Number(i.total_amount), 0),
                 )}
