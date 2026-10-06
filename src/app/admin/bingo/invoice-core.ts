@@ -489,7 +489,8 @@ export async function getCardsStatusReportCore(
         player_name,
         player_phone_number,
         sold_by,
-        invoices:invoices ( customer_name )
+        invoices:invoices ( customer_name ),
+        students_cards(students(student_name, student_level))
       `,
       )
       .eq("company_id", companyId)
@@ -509,17 +510,30 @@ export async function getCardsStatusReportCore(
     if (!data || data.length < pageSize) break;
   }
 
-  const rows = all.map((r) => ({
-    card_number: r.card_number,
-    card_type: r.card_type,
-    card_status: r.card_status,
-    invoice_number: r.invoice_number,
-    customer_name:
-      (r.invoices as { customer_name?: string } | null)?.customer_name || "",
-    player_name: r.player_name,
-    player_phone_number: r.player_phone_number,
-    sold_by: r.sold_by,
-  }));
+  const rows = all.map((r) => {
+    // Alumno asignado (estado 'Asignado'): el embed puede venir como
+    // objeto o array según la cardinalidad de la relación.
+    const rel = r.students_cards as
+      | { students?: { student_name?: string; student_level?: string } }
+      | { students?: { student_name?: string; student_level?: string } }[]
+      | null;
+    const entry = Array.isArray(rel) ? rel[0] : rel;
+    const student = entry?.students;
+    const studentObj = Array.isArray(student) ? student[0] : student;
+    return {
+      card_number: r.card_number,
+      card_type: r.card_type,
+      card_status: r.card_status,
+      invoice_number: r.invoice_number,
+      customer_name:
+        (r.invoices as { customer_name?: string } | null)?.customer_name || "",
+      student_name: studentObj?.student_name || "",
+      student_level: studentObj?.student_level || "",
+      player_name: r.player_name,
+      player_phone_number: r.player_phone_number,
+      sold_by: r.sold_by,
+    };
+  });
 
   return { success: true, data: rows };
 }

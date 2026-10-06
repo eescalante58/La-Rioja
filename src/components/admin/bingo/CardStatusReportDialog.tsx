@@ -29,10 +29,22 @@ interface ReportRow {
   card_status: string;
   invoice_number: string | null;
   customer_name: string;
+  /** Alumno ligado al cartón cuando el estado es 'Asignado'. */
+  student_name: string;
+  student_level: string;
   player_name: string | null;
   player_phone_number: string | null;
   sold_by: string | null;
 }
+
+/**
+ * Contenido de la columna Cliente: el comprador de la factura o, para
+ * cartones 'Asignado' sin factura, el nombre y nivel del alumno.
+ */
+const clientCell = (r: ReportRow) =>
+  r.card_status === "Asignado" && r.student_name
+    ? `${r.student_name}${r.student_level ? ` · ${r.student_level}` : ""}`
+    : r.customer_name || "";
 
 /** Estados del enum card_status_enum (más "Todos" para el inventario completo). */
 const CARD_STATUSES = [
@@ -126,7 +138,7 @@ export default function CardStatusReportDialog({
             r.card_number,
             csvCell(r.card_type),
             csvCell(r.invoice_number),
-            csvCell(r.customer_name),
+            csvCell(clientCell(r)),
             csvCell(r.player_name),
             csvCell(r.player_phone_number),
             csvCell(r.sold_by),
@@ -181,7 +193,7 @@ export default function CardStatusReportDialog({
               r.card_number,
               r.card_type || "",
               r.invoice_number || "",
-              r.customer_name || "",
+              clientCell(r),
               r.player_name || "",
               r.player_phone_number || "",
               r.sold_by || "",
