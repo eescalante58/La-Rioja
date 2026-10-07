@@ -169,50 +169,547 @@ LaRioja/
 
 ### 4.2 Tablas
 
-**Dominio multi-tenant / seguridad**
+Columnas y tipos verificados contra `information_schema.columns` (producción, oct-2026). **Las 25 tablas tienen RLS habilitado.**
 
-| Tabla | Descripción | PK / Constraints clave |
-| :---- | :---------- | :--------------------- |
-| `companies` | Empresas organizadoras (tenants): `company_name`, teléfono, `web_site`, `session_timeout_minutes`, `def_dash_event_id` (evento activo del dashboard) | PK `company_id` |
-| `users` | Perfil extendido de `auth.users` (nombre, email, rol principal, avatar, `last_login`) | PK `id` (uuid → auth.users); UNIQUE `email`; trigger `handle_new_user` crea el perfil al registrarse |
-| `roles` | Catálogo de roles con jerarquía `level` | PK `role_id`; UNIQUE `name` |
-| `user_companies` | Membresía usuario↔empresa con rol por empresa (base del filtrado RLS) | PK compuesta (user_id, company_id) |
-| `user_activity_log` | Bitácora de auditoría (action, entity, `entity_id` **text**, metadata jsonb, timestamp) | Inserción propia; lectura propia o admin/reader global |
-| `country_codes` | Prefijos telefónicos por país (iso2, iso3, phone_code, flag_emoji) | UNIQUE iso2/iso3 |
+#### Dominio multi-tenant / seguridad
 
-**Dominio Bingo**
+##### Tabla: `public.companies`
 
-| Tabla | Descripción | PK / Constraints clave |
-| :---- | :---------- | :--------------------- |
-| `events` | Eventos de bingo por empresa: `event_name`, `event_date`, `event_start_promotion_date`, `event_venue`, `event_manager`, `event_description`, `event_cartons_number`, `event_goal`, `card_value`, `Method_of_payment`, `total_amount_solded` (mantenido por trigger), `is_active`, `status` | UNIQUE (company_id, event_id) — referenciado por todas las FK compuestas |
-| `cards` | Inventario de cartones (número, tipo, estado, precios, factura asociada, datos del jugador, `sold_by`, `image_url`, `search_vector` FTS) | UNIQUE (company_id, event_id, card_number); CHECK precio ≥ 0; `Vendido` exige `invoice_number`+`sales_price` |
-| `invoices` | Facturas de venta (cliente, WhatsApp, gestor `manager_name`, método, `cards_number`, `card_price`, `total_amount`, `status`, `search_vector` FTS) | PK compuesta (company_id, invoice_number); CHECK total = cartones × precio |
-| `students` | Alumnos por evento (nombre, `student_level`) | UNIQUE (company_id, event_id, student_id) |
-| `students_cards` | Asignación cartón↔alumno (conduce la columna "Jugador" y el desglose por nivel) | **Dos** UNIQUE: (company_id, event_id, student_id, card_number) y (company_id, event_id, card_number) — un cartón no puede ir a dos alumnos del mismo evento |
-| `customer_phone_number` | Directorio único de teléfonos de clientes por empresa (`customer_name`, `table_data_source` = origen del dato) | UNIQUE (company_id, phone_number); alimentada por `sync_customers_from_cards()` |
-| `whatsapp_promo_logs` | Bitácora de envíos promocionales (`batch_id` uuid por lote, `message_body`, `image_url`, `status`, `error_message`) | — |
+**Descripción:** Empresas/tenants. Contiene la configuración base por empresa.
 
-**Dominio CMS / sitio público**
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `company_id` | `bigint` | Identificador único de la empresa (PK). |
+| `created_at` | `timestamp with time zone` | Fecha y hora de creación del registro. |
+| `company_name` | `text` | Nombre legal o comercial de la empresa. |
+| `phone_code_area` | `text` | Código de área telefónico (ej: 503). |
+| `phone_number` | `text` | Número de teléfono de contacto. |
+| `updated_at` | `timestamp with time zone` | Fecha y hora de la última actualización. |
+| `web_site` | `text` | Sitio web de la empresa (URL). |
+| `session_timeout_minutes` | `integer` | Minutos de inactividad antes de cerrar sesión (default 30). |
+| `def_dash_event_id` | `citext` | Evento mostrado por defecto en el dashboard. |
 
-| Tabla | Descripción | Constraints |
-| :---- | :---------- | :---------- |
-| `site_content` | Secciones administrables por página (`page`, `section_key`, título, imagen, orden, `is_active`, metadata) | UNIQUE (page, section_key, content_order); lectura pública si `is_active`; trigger `tr_log_site_content_activity` audita cambios |
-| `faqs` | Preguntas frecuentes (question, answer, `section_id`→faq_sections, orden, `is_active`) | — |
-| `faq_sections` | Secciones de FAQ (title, description, orden, `is_active`) | — |
-| `contact_submissions` | Mensajes del formulario de contacto (name, email, phone, `type`, message, `target_email`) | — |
-| `event_gallery` | Fotos de la galería pública del evento (`image_url`, `thumbnail_url`, `caption`, `content_order`, `is_active`) | PK uuid |
+**Notas adicionales:**
 
-**Dominio sorteos (ruleta y tómbola)**
+- **Clave Primaria:** `company_id`.
+- **Relaciones:** Referenciada por `events` y `user_companies` mediante llaves foráneas.
+- **Seguridad:** Tiene habilitado Row Level Security (RLS).
 
-| Tabla | Descripción | Constraints |
-| :---- | :---------- | :---------- |
-| `wheel_configs` | Cabecera de cada ruleta/tómbola (mode, `wheel_name`, `published`, `time_rotation`, `is_automatic_rotation`, `automatic_timeout_rotation`, `prizes_number`) | UNIQUE (company_id, event_id, mode, wheel_name); FK→events |
-| `wheel_items` | Segmentos de la ruleta (label, color, `quantity` = stock de premio, `is_prize`, `position`) | FK→wheel_configs CASCADE |
-| `wheel_spins` | Auditoría de giros (`winner_label`, `card_number`, `prize_label`, `spun_by`, `verification_hash`) | FK→wheel_configs CASCADE |
-| `wheel_participating_cards` | Cartones vendidos/donados cargados a una tómbola (modos Cartones/Participantes) con resultado del ganador (`is_winner`, `winner_order`, datos del ganador, `observation`) | UNIQUE (company_id, event_id, wheel_id, card_number); FK compuesta→cards |
-| `wheels_presents_cards` | Cartones auto-registrados por asistentes desde `/registro` (nombre, teléfono, `registered_ip`, resultado del ganador) | UNIQUE (company_id, event_id, card_number); FK→cards |
-| `registration_attempts` | Log de intentos de registro por IP (ventana anti-ráfaga) | Sin políticas RLS: solo accesible vía función |
-| `registration_limits` | Config anti-abuso del registro público — **fila única** `id=1` (modo normal/evento, intentos/minuto, cartones/día por IP, cartones por teléfono) | CHECK `id = 1`; lectura autenticados; escritura solo admin |
+##### Tabla: `public.users`
+
+**Descripción:** Perfil de usuarios (nombre, email, estado, rol y metadata).
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `uuid` | Identificador único del usuario (PK, FK → `auth.users`). |
+| `full_name` | `text` | Nombre completo del usuario. |
+| `first_name` | `text` | Primer nombre. |
+| `first_second_name` | `text` | Segundo nombre. |
+| `last_name` | `text` | Primer apellido. |
+| `last_second_name` | `text` | Segundo apellido. |
+| `email` | `text` | Correo electrónico institucional (UNIQUE). |
+| `phone` | `text` | Número de teléfono de contacto. |
+| `role_id` | `bigint` | ID del rol principal asignado (FK → `roles`). |
+| `status` | `text` | Estado de la cuenta (active, inactive). |
+| `avatar_url` | `text` | URL de la imagen de perfil (bucket `user_avatar`). |
+| `metadata` | `jsonb` | Información adicional en formato JSON. |
+| `created_at` | `timestamp with time zone` | Fecha de registro. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+| `last_login` | `timestamp with time zone` | Fecha del último acceso al sistema. |
+| `secondary_email` | `text` | Correo electrónico alterno. |
+
+**Notas adicionales:**
+
+- **Relaciones:** El trigger `handle_new_user` crea el perfil automáticamente al registrarse en `auth.users`.
+
+##### Tabla: `public.roles`
+
+**Descripción:** Catálogo de roles con nivel/jerarquía y estado.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `role_id` | `bigint` | Identificador único del rol (PK). |
+| `name` | `text` | Nombre descriptivo del rol (admin, ventas, etc). UNIQUE. |
+| `description` | `text` | Descripción de las responsabilidades del rol. |
+| `level` | `integer` | Nivel de jerarquía para control de permisos. |
+| `is_active` | `boolean` | Estado de activación del rol. |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+##### Tabla: `public.user_companies`
+
+**Descripción:** Relación usuario-compañía y rol dentro de la compañía.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `user_id` | `uuid` | ID del usuario (PK/FK → `users`). |
+| `company_id` | `bigint` | ID de la empresa (PK/FK → `companies`). |
+| `role` | `text` | Nombre del rol dentro de esta empresa específica. |
+| `role_id` | `bigint` | ID técnico del rol asignado (FK → `roles`). |
+| `created_at` | `timestamp with time zone` | Fecha de vinculación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+| `default_event_id` | `citext` | Evento por defecto del usuario en esta empresa. |
+
+**Notas adicionales:**
+
+- **Clave Primaria:** Compuesta (`user_id`, `company_id`).
+- **Relaciones:** Permite que un usuario pertenezca a múltiples empresas con roles potencialmente diferentes.
+- **Seguridad:** Es la base para el filtrado por RLS en todo el sistema.
+
+##### Tabla: `public.user_activity_log`
+
+**Descripción:** Bitácora de auditoría de acciones administrativas.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `uuid` | Identificador único del registro (PK). |
+| `user_id` | `uuid` | Usuario que ejecutó la acción. |
+| `action` | `text` | Acción realizada (ej: `insert`, `update`, `delete`). |
+| `entity` | `text` | Tabla o entidad afectada. |
+| `entity_id` | `text` | Identificador del registro afectado (**tipo text**). |
+| `metadata` | `jsonb` | Datos adicionales del cambio (valores previos/nuevos). |
+| `timestamp` | `timestamp with time zone` | Fecha y hora del evento. |
+
+**Notas adicionales:**
+
+- **Seguridad:** Inserción propia del usuario; lectura propia o por admin/reader global.
+
+##### Tabla: `public.country_codes`
+
+**Descripción:** Prefijos telefónicos por país para envíos de WhatsApp.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del registro (PK). |
+| `iso2` | `character` | Código ISO de 2 letras (UNIQUE). |
+| `iso3` | `character` | Código ISO de 3 letras (UNIQUE). |
+| `name` | `text` | Nombre del país. |
+| `phone_code` | `text` | Prefijo telefónico (ej: `503`). |
+| `flag_emoji` | `text` | Emoji de la bandera del país. |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+#### Dominio Bingo
+
+##### Tabla: `public.events`
+
+**Descripción:** Eventos de bingo por empresa (configuración del evento y meta económica).
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador interno del registro (PK). |
+| `company_id` | `bigint` | ID de la empresa organizadora. |
+| `event_id` | `citext` | Identificador de negocio del evento (ej: `BINGO2026`). |
+| `event_name` | `text` | Nombre del evento. |
+| `event_cartons_number` | `integer` | Cantidad de cartones prevista del evento. |
+| `event_date` | `date` | Fecha del evento. |
+| `event_start_promotion_date` | `date` | Fecha de inicio de promoción/venta. |
+| `event_manager` | `text` | Responsable del evento. |
+| `event_description` | `text` | Descripción del evento. |
+| `event_goal` | `numeric` | Meta económica de ventas. |
+| `card_value` | `numeric` | Valor/precio unitario del cartón. |
+| `is_active` | `boolean` | Indica si el evento está activo. |
+| `status` | `text` | Estado del evento. |
+| `total_amount_solded` | `numeric` | Total vendido acumulado (mantenido por trigger `fn_update_event_total_sales`). |
+| `event_venue` | `text` | Lugar/sede del evento. |
+| `Method_of_payment` | `text` | Métodos de pago habilitados del evento. |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Relaciones:** UNIQUE (`company_id`, `event_id`) — referenciado por todas las FK compuestas de cartones, facturas, alumnos y sorteos.
+
+##### Tabla: `public.cards`
+
+**Descripción:** Inventario de cartones de bingo asociados a eventos.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del cartón (PK). |
+| `company_id` | `bigint` | ID de la empresa a la que pertenece el cartón. |
+| `event_id` | `citext` | ID del evento asociado. |
+| `card_number` | `bigint` | Número impreso en el cartón. |
+| `card_type` | `card_type_enum` | Tipo de cartón (Fisico, Virtual). |
+| `card_status` | `card_status_enum` | Estado (Disponible, Asignado, Vendido, etc). Default `Disponible`. |
+| `card_price` | `numeric` | Precio base o costo del cartón. |
+| `sales_price` | `numeric` | Precio de venta final. |
+| `image_url` | `text` | URL del PDF o imagen del cartón (bucket `cards_images`). |
+| `invoice_number` | `citext` | Número de factura relacionada. |
+| `sold_by` | `text` | Nombre de quién realizó la venta. |
+| `player_name` | `text` | Nombre del jugador/comprador. |
+| `player_phone_number` | `text` | Teléfono del jugador. |
+| `player_email` | `text` | Email del jugador. |
+| `prize` | `text` | Descripción del premio si resultó ganador. |
+| `comment` | `text` | Observaciones adicionales. |
+| `search_vector` | `tsvector` | Vector de búsqueda full-text (buscador universal). |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Relaciones:** Vinculada a `events` e `invoices`.
+- **Constraints:** UNIQUE (`company_id`, `event_id`, `card_number`); CHECK precio ≥ 0; estado `Vendido` exige `invoice_number` + `sales_price`.
+
+##### Tabla: `public.invoices`
+
+**Descripción:** Facturas/comprobantes de venta de cartones.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `uuid` | Identificador único de la factura. |
+| `company_id` | `bigint` | ID de la empresa. |
+| `invoice_number` | `citext` | Número correlativo de factura (PK compuesta). |
+| `invoice_date` | `date` | Fecha de emisión. |
+| `customer_name` | `text` | Nombre del cliente. |
+| `phone_area` | `text` | Código de área telefónica. |
+| `phone_number` | `text` | Número de teléfono. |
+| `whatsapp_number` | `text` | Número de WhatsApp. |
+| `customer_email` | `text` | Correo electrónico del cliente. |
+| `cards_number` | `integer` | Cantidad de cartones comprados. |
+| `card_price` | `numeric` | Precio por cartón en esta venta. |
+| `total_amount` | `numeric` | Monto total de la factura. |
+| `event_id` | `citext` | ID del evento asociado. |
+| `payment_method` | `invoice_payment_method_enum` | Método de pago utilizado. |
+| `status` | `invoice_status_enum` | Estado (pagada, pendiente, anulada, Donada). |
+| `manager_name` | `text` | Nombre del gestor/vendedor que la generó. |
+| `url_invoice` | `text` | URL del comprobante adjunto (bucket `invoices_images`). |
+| `send_whatsapp_message` | `text` | Estado/Log del último envío por WhatsApp. |
+| `observation` | `text` | Observaciones de la factura. |
+| `search_vector` | `tsvector` | Vector de búsqueda full-text (buscador universal). |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Clave Primaria:** Compuesta (`company_id`, `invoice_number`).
+- **Constraints:** CHECK `total_amount` = `cards_number` × `card_price`.
+- **Relaciones:** Los triggers `fn_sync_cards_with_invoice` y `fn_update_event_total_sales` mantienen cartones y totales del evento.
+
+##### Tabla: `public.students`
+
+**Descripción:** Alumnos que participan en los eventos de Bingo.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del registro (PK). |
+| `company_id` | `bigint` | Identificador de la empresa. |
+| `event_id` | `citext` | Identificador del evento. |
+| `student_id` | `integer` | Número identificador del alumno. |
+| `student_name` | `text` | Nombre completo del alumno. |
+| `student_level` | `student_level_enum` | Nivel educativo o categoría del alumno. |
+| `created_at` | `timestamp with time zone` | Fecha de creación del registro. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Relaciones:** UNIQUE (`company_id`, `event_id`, `student_id`); vinculada a `events` y `students_cards`.
+
+##### Tabla: `public.students_cards`
+
+**Descripción:** Cartones asignados a los estudiantes para su venta.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del registro (PK). |
+| `company_id` | `bigint` | Identificador de la empresa. |
+| `event_id` | `citext` | Identificador del evento. |
+| `student_id` | `integer` | ID del alumno al que se le asigna el cartón. |
+| `card_number` | `bigint` | Número del cartón asignado. |
+| `created_at` | `timestamp with time zone` | Fecha de asignación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Relaciones:** Vincula alumnos (`students`) con cartones (`cards`) — alimenta la columna "Jugador" del inventario y el desglose por nivel del dashboard.
+- **Constraints:** UNIQUE (`company_id`, `event_id`, `student_id`, `card_number`) y UNIQUE (`company_id`, `event_id`, `card_number`) — un cartón no puede ir a dos alumnos del mismo evento.
+
+##### Tabla: `public.customer_phone_number`
+
+**Descripción:** Directorio único de teléfonos de clientes por empresa (base de la pestaña promocional).
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del registro (PK). |
+| `company_id` | `bigint` | Identificador de la empresa. |
+| `phone_number` | `text` | Número de teléfono del cliente. |
+| `customer_name` | `text` | Nombre del cliente. |
+| `table_data_source` | `text` | Origen del dato (tabla que alimentó el registro). |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Constraints:** UNIQUE (`company_id`, `phone_number`); alimentada por `sync_customers_from_cards()`.
+
+##### Tabla: `public.whatsapp_promo_logs`
+
+**Descripción:** Bitácora de envíos masivos de mensajes promocionales por WhatsApp.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del registro (PK). |
+| `batch_id` | `uuid` | Identificador del lote/campaña de envío. |
+| `company_id` | `bigint` | Identificador de la empresa. |
+| `customer_name` | `text` | Nombre del destinatario. |
+| `phone_number` | `text` | Teléfono del destinatario. |
+| `message_body` | `text` | Cuerpo del mensaje enviado. |
+| `image_url` | `text` | Imagen adjunta al mensaje (opcional). |
+| `status` | `text` | Estado del envío (enviado, error, etc). |
+| `error_message` | `text` | Detalle del error si el envío falló. |
+| `created_at` | `timestamp with time zone` | Fecha y hora del envío. |
+
+#### Dominio CMS / sitio público
+
+##### Tabla: `public.site_content`
+
+**Descripción:** Secciones administrables del sitio público por página.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `uuid` | Identificador único del registro (PK). |
+| `page` | `site_page_type` | Página a la que pertenece la sección. |
+| `section_key` | `text` | Clave de la sección dentro de la página. |
+| `title` | `text` | Título del contenido. |
+| `description` | `text` | Texto/cuerpo del contenido. |
+| `image_url` | `text` | Imagen asociada (bucket `cms_images`). |
+| `content_order` | `integer` | Orden de despliegue dentro de la página. |
+| `is_active` | `boolean` | Indica si el contenido está publicado. |
+| `metadata` | `jsonb` | Datos adicionales específicos de la sección. |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Constraints:** UNIQUE (`page`, `section_key`, `content_order`); lectura pública solo si `is_active`.
+- **Relaciones:** El trigger `tr_log_site_content_activity` audita cambios en `user_activity_log`.
+
+##### Tabla: `public.faq_sections`
+
+**Descripción:** Secciones/categorías de preguntas frecuentes.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `uuid` | Identificador único del registro (PK). |
+| `title` | `text` | Título de la sección. |
+| `description` | `text` | Descripción de la sección. |
+| `content_order` | `integer` | Orden de despliegue. |
+| `is_active` | `boolean` | Indica si la sección está publicada. |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+##### Tabla: `public.faqs`
+
+**Descripción:** Preguntas frecuentes del sitio público.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `uuid` | Identificador único del registro (PK). |
+| `question` | `text` | Pregunta. |
+| `answer` | `text` | Respuesta. |
+| `section_id` | `uuid` | Sección a la que pertenece (FK → `faq_sections`). |
+| `content_order` | `integer` | Orden de despliegue. |
+| `is_active` | `boolean` | Indica si la FAQ está publicada. |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+##### Tabla: `public.contact_submissions`
+
+**Descripción:** Mensajes recibidos desde el formulario de contacto del sitio público.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `uuid` | Identificador único del registro (PK). |
+| `created_at` | `timestamp with time zone` | Fecha de recepción. |
+| `name` | `text` | Nombre del remitente. |
+| `email` | `text` | Correo del remitente. |
+| `phone` | `text` | Teléfono del remitente. |
+| `type` | `text` | Tipo de solicitud. |
+| `message` | `text` | Cuerpo del mensaje. |
+| `target_email` | `text` | Correo destino al que se reenvió la solicitud. |
+
+##### Tabla: `public.event_gallery`
+
+**Descripción:** Fotos de la galería pública del evento.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `uuid` | Identificador único del registro (PK). |
+| `company_id` | `bigint` | Identificador de la empresa. |
+| `event_id` | `citext` | Identificador del evento. |
+| `image_url` | `text` | URL de la imagen (bucket `event_gallery_images`). |
+| `thumbnail_url` | `text` | URL de la miniatura. |
+| `caption` | `text` | Leyenda de la foto. |
+| `content_order` | `integer` | Orden de despliegue. |
+| `is_active` | `boolean` | Indica si la foto está publicada. |
+| `created_at` | `timestamp without time zone` | Fecha de creación (sin zona horaria). |
+| `updated_at` | `timestamp without time zone` | Fecha de última actualización (sin zona horaria). |
+
+#### Dominio sorteos (ruleta y tómbola)
+
+##### Tabla: `public.wheel_configs`
+
+**Descripción:** Cabecera de configuración de cada ruleta/tómbola.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único de la ruleta (PK). |
+| `company_id` | `bigint` | ID de la empresa. |
+| `event_id` | `citext` | ID del evento asociado. |
+| `mode` | `text` | Modo: `Premios`, `Cartones` o `Participantes` (CHECK). |
+| `wheel_name` | `text` | Nombre de la ruleta/tómbola. |
+| `published` | `boolean` | Indica si está publicada y visible al público. |
+| `created_by` | `uuid` | Usuario que creó la ruleta. |
+| `time_rotation` | `integer` | Tiempo de rotación manual (segundos). |
+| `is_automatic_rotation` | `boolean` | Habilita la rotación automática. |
+| `automatic_timeout_rotation` | `integer` | Timeout de la rotación automática. |
+| `prizes_number` | `integer` | Máximo de premios (0 = sin límite). |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Constraints:** UNIQUE (`company_id`, `event_id`, `mode`, `wheel_name`); FK → `events`.
+- **Relaciones:** Padre de `wheel_items`, `wheel_spins`, `wheel_participating_cards` y `wheels_presents_cards` (FK CASCADE).
+
+##### Tabla: `public.wheel_items`
+
+**Descripción:** Segmentos/premios configurados en la ruleta.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del segmento (PK). |
+| `wheel_id` | `bigint` | Ruleta a la que pertenece (FK → `wheel_configs` CASCADE). |
+| `company_id` | `bigint` | ID de la empresa. |
+| `event_id` | `citext` | ID del evento. |
+| `mode` | `text` | Modo heredado de la ruleta. |
+| `wheel_name` | `text` | Nombre de la ruleta (desnormalizado). |
+| `label` | `text` | Texto visible del segmento. |
+| `color` | `text` | Color del segmento en la ruleta. |
+| `quantity` | `integer` | Stock disponible del premio. |
+| `initial_quantity` | `integer` | Stock inicial configurado (referencia de reabastecimiento). |
+| `position` | `smallint` | Posición del segmento en la ruleta. |
+| `is_prize` | `boolean` | Indica si el segmento entrega premio. |
+| `is_active` | `boolean` | Segmento habilitado. |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+##### Tabla: `public.wheel_spins`
+
+**Descripción:** Auditoría de cada giro de la ruleta/tómbola.
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del giro (PK). |
+| `wheel_id` | `bigint` | Ruleta girada (FK → `wheel_configs` CASCADE). |
+| `company_id` | `bigint` | ID de la empresa. |
+| `event_id` | `citext` | ID del evento. |
+| `mode` | `text` | Modo de la ruleta al momento del giro. |
+| `wheel_name` | `text` | Nombre de la ruleta. |
+| `item_id` | `bigint` | Segmento ganador (FK → `wheel_items`). |
+| `winner_label` | `text` | Etiqueta ganadora mostrada. |
+| `card_number` | `bigint` | Número de cartón ganador (modos Cartones/Participantes). |
+| `prize_label` | `text` | Premio asignado al ganador. |
+| `spun_by` | `uuid` | Usuario que ejecutó el giro. |
+| `spun_at` | `timestamp with time zone` | Fecha y hora del giro. |
+| `verification_hash` | `text` | Hash de integridad del resultado (auditoría). |
+
+##### Tabla: `public.wheel_participating_cards`
+
+**Descripción:** Cartones vendidos/donados cargados a una tómbola (modos Cartones y Participantes con cartones del inventario).
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del registro (PK). |
+| `wheel_id` | `bigint` | Tómbola a la que pertenece (FK → `wheel_configs`). |
+| `company_id` | `bigint` | ID de la empresa. |
+| `event_id` | `citext` | ID del evento. |
+| `mode` | `text` | Modo de la tómbola. |
+| `wheel_name` | `text` | Nombre de la tómbola. |
+| `card_number` | `bigint` | Número del cartón participante. |
+| `is_winner` | `boolean` | Indica si el cartón resultó ganador. |
+| `won_at` | `timestamp with time zone` | Fecha y hora en que ganó. |
+| `winner_name` | `text` | Nombre del ganador capturado al confirmar. |
+| `winner_prize` | `text` | Premio asignado. |
+| `document_type` | `text` | Tipo de documento del ganador. |
+| `document_number` | `text` | Número de documento del ganador. |
+| `winner_phone_number` | `text` | Teléfono del ganador. |
+| `winner_registered_at` | `timestamp with time zone` | Fecha de captura de los datos del ganador. |
+| `winner_order` | `integer` | Orden del premio (trigger `set_winner_order`). |
+| `observation` | `text` | Observaciones del resultado. |
+| `created_at` | `timestamp with time zone` | Fecha de carga del cartón. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Constraints:** UNIQUE (`company_id`, `event_id`, `wheel_id`, `card_number`); FK compuesta → `cards`; trigger `prevent_winner_reentry` evita recargar ganadores.
+
+##### Tabla: `public.wheels_presents_cards`
+
+**Descripción:** Cartones auto-registrados por los asistentes desde el formulario público `/registro` (tómbola modo Participantes).
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del registro (PK). |
+| `wheel_id` | `bigint` | Tómbola a la que pertenece (FK → `wheel_configs`). |
+| `company_id` | `bigint` | ID de la empresa. |
+| `event_id` | `citext` | ID del evento. |
+| `mode` | `text` | Modo (solo `Participantes`, CHECK). |
+| `wheel_name` | `text` | Nombre de la tómbola. |
+| `card_number` | `bigint` | Número del cartón registrado. |
+| `player_name` | `text` | Nombre del asistente registrado. |
+| `player_phone_number` | `text` | Teléfono del asistente. |
+| `registered_ip` | `text` | IP del registro (control anti-abuso). |
+| `is_winner` | `boolean` | Indica si el cartón resultó ganador. |
+| `won_at` | `timestamp with time zone` | Fecha y hora en que ganó. |
+| `winner_order` | `integer` | Orden del premio (trigger `set_winner_order_presents`). |
+| `winner_name` | `text` | Nombre del ganador al confirmar. |
+| `winner_prize` | `text` | Premio asignado. |
+| `document_type` | `text` | Tipo de documento del ganador. |
+| `document_number` | `text` | Número de documento del ganador. |
+| `winner_phone_number` | `text` | Teléfono del ganador. |
+| `winner_registered_at` | `timestamp with time zone` | Fecha de captura de los datos del ganador. |
+| `observation` | `text` | Observaciones del resultado. |
+| `created_at` | `timestamp with time zone` | Fecha de registro. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+
+- **Constraints:** UNIQUE (`company_id`, `event_id`, `card_number`); FK → `cards`.
+- **Seguridad:** Las inserciones públicas pasan por la función `register_participant_cards` (validación atómica + anti-abuso).
+
+##### Tabla: `public.registration_attempts`
+
+**Descripción:** Log de intentos de registro público por IP (ventana anti-ráfaga).
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `bigint` | Identificador único del registro (PK). |
+| `client_ip` | `text` | IP del cliente que intentó registrar. |
+| `attempted_at` | `timestamp with time zone` | Fecha y hora del intento. |
+
+**Notas adicionales:**
+
+- **Seguridad:** Sin políticas RLS — solo accesible vía la función `register_participant_cards` (security definer).
+
+##### Tabla: `public.registration_limits`
+
+**Descripción:** Configuración anti-abuso del registro público (**fila única** `id = 1`).
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `smallint` | Identificador fijo (CHECK `id = 1`). |
+| `mode` | `text` | Modo `normal` o `evento` (CHECK). |
+| `max_attempts_minute` | `integer` | Intentos máximos por minuto por IP. |
+| `max_cards_day_ip` | `integer` | Cartones máximos por día por IP. |
+| `max_cards_phone` | `integer` | Cartones máximos por teléfono. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+| `updated_by` | `uuid` | Usuario que modificó la configuración. |
+
+**Notas adicionales:**
+
+- **Valores:** normal = 10/min · 40 día · 30 teléfono; evento = 500/min · 15000 día · 30 teléfono.
+- **Seguridad:** Lectura para autenticados; escritura solo admin global.
 
 ### 4.3 Índices
 
