@@ -98,6 +98,10 @@ export default function RealtimeDashboardWrapper({
   /** Segundo nivel: facturas de la agrupación vendedor+método+precio. */
   const [eventDateGroup, setEventDateGroup] = useState<any | null>(null);
   const [eventDateGroupInvoices, setEventDateGroupInvoices] = useState<any[]>([]);
+  /** Vendedores expandidos en el resumen del día del evento. */
+  const [expandedDateManagers, setExpandedDateManagers] = useState<Set<string>>(
+    new Set(),
+  );
   const [isManagerDetailOpen, setIsManagerDetailOpen] = useState(false);
   const [managerBreakdown, setManagerBreakdown] = useState<any[]>([]);
   const [isLoadingDrillDown, setIsLoadingDrillDown] = useState(false);
@@ -249,6 +253,7 @@ export default function RealtimeDashboardWrapper({
       setEventDateSummary(res.data || []);
       setEventDateGroup(null);
       setEventDateGroupInvoices([]);
+      setExpandedDateManagers(new Set());
       setIsEventDateSummaryOpen(true);
     } else {
       alert("Error al cargar resumen: " + (res.error || "Sin datos"));
@@ -426,6 +431,52 @@ export default function RealtimeDashboardWrapper({
       return next;
     });
   };
+
+  /** Expande/colapsa un vendedor en el resumen del día del evento. */
+  const toggleDateManager = (managerName: string) => {
+    setExpandedDateManagers((prev) => {
+      const next = new Set(prev);
+      if (next.has(managerName)) {
+        next.delete(managerName);
+      } else {
+        next.add(managerName);
+      }
+      return next;
+    });
+  };
+
+  /**
+   * Resumen del día del evento agrupado por vendedor: cada fila padre
+   * totaliza facturas/cartones/monto de sus grupos (método + precio), que
+   * se despliegan como filas hijas al expandir con "+".
+   */
+  const eventDateManagerGroups = (() => {
+    const map = new Map<
+      string,
+      {
+        manager_name: string;
+        rows: any[];
+        invoices_count: number;
+        cards_number: number;
+        total_amount: number;
+      }
+    >();
+    for (const row of eventDateSummary) {
+      const g = map.get(row.manager_name) ?? {
+        manager_name: row.manager_name,
+        rows: [] as any[],
+        invoices_count: 0,
+        cards_number: 0,
+        total_amount: 0,
+      };
+      g.rows.push(row);
+      g.invoices_count += row.invoices_count;
+      g.cards_number += row.cards_number;
+      g.total_amount += row.total_amount;
+      map.set(row.manager_name, g);
+    }
+    return [...map.values()].sort((a, b) => b.total_amount - a.total_amount);
+  })();
 
   /** Reportados filtrados por folio, cartón, asistente o teléfono. */
   const filteredRegistered = registeredCards.filter((card) => {
@@ -1576,36 +1627,89 @@ export default function RealtimeDashboardWrapper({
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {eventDateSummary.map((row, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="font-medium whitespace-nowrap">
-                            <button
-                              type="button"
-                              className="text-larioja-verde font-bold hover:underline whitespace-nowrap"
-                              title="Ver facturas de esta agrupación"
-                              onClick={() => void handleEventDateGroup(row)}
-                            >
-                              {row.manager_name}
-                            </button>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <Badge size="xs" color="slate">
-                              {row.payment_method}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right dark:text-slate-200">
-                            {row.invoices_count}
-                          </TableCell>
-                          <TableCell className="text-right dark:text-slate-200">
-                            {row.cards_number}
-                          </TableCell>
-                          <TableCell className="text-right dark:text-slate-200">
-                            {formatCurrency(row.card_price)}
-                          </TableCell>
-                          <TableCell className="text-right font-bold dark:text-white whitespace-nowrap">
-                            {formatCurrency(row.total_amount)}
-                          </TableCell>
-                        </TableRow>
+                      {eventDateManagerGroups.map((group) => (
+                        <React.Fragment key={group.manager_name}>
+                          <TableRow className="bg-gray-50/50 dark:bg-slate-900/30">
+                            <TableCell className="font-bold whitespace-nowrap">
+                              <Flex justifyContent="start" className="gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    toggleDateManager(group.manager_name)
+                                  }
+                                  className="text-gray-500 hover:text-larioja-azul transition-colors"
+                                  title="Expandir métodos de pago"
+                                >
+                                  {expandedDateManagers.has(
+                                    group.manager_name,
+                                  ) ? (
+                                    <MinusSquare size={18} />
+                                  ) : (
+                                    <PlusSquare size={18} />
+                                  )}
+                                </button>
+                                <span className="text-larioja-azul dark:text-blue-400">
+                                  {group.manager_name}
+                                </span>
+                              </Flex>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <Badge size="xs" color="slate">
+                                {group.rows.length} método(s)
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-bold dark:text-white">
+                              {group.invoices_count}
+                            </TableCell>
+                            <TableCell className="text-right font-bold dark:text-white">
+                              {group.cards_number}
+                            </TableCell>
+                            <TableCell />
+                            <TableCell className="text-right font-bold dark:text-white whitespace-nowrap">
+                              {formatCurrency(group.total_amount)}
+                            </TableCell>
+                          </TableRow>
+                          {expandedDateManagers.has(group.manager_name) &&
+                            group.rows.map((row: any, idx: number) => (
+                              <TableRow
+                                key={idx}
+                                className="hover:bg-gray-50 dark:hover:bg-slate-800/50"
+                              >
+                                <TableCell className="pl-12 text-sm text-gray-400">
+                                  └
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    title="Ver facturas de esta agrupación"
+                                    onClick={() =>
+                                      void handleEventDateGroup(row)
+                                    }
+                                  >
+                                    <Badge
+                                      size="xs"
+                                      color="emerald"
+                                      className="cursor-pointer hover:opacity-80"
+                                    >
+                                      {row.payment_method}
+                                    </Badge>
+                                  </button>
+                                </TableCell>
+                                <TableCell className="text-right text-sm text-gray-500">
+                                  {row.invoices_count}
+                                </TableCell>
+                                <TableCell className="text-right text-sm text-gray-500">
+                                  {row.cards_number}
+                                </TableCell>
+                                <TableCell className="text-right text-sm text-gray-500">
+                                  {formatCurrency(row.card_price)}
+                                </TableCell>
+                                <TableCell className="text-right text-sm font-medium dark:text-slate-200 whitespace-nowrap">
+                                  {formatCurrency(row.total_amount)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </React.Fragment>
                       ))}
                       <TableRow className="bg-gray-50 dark:bg-slate-900">
                         <TableCell className="font-bold dark:text-white">
