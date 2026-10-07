@@ -440,7 +440,7 @@ async function assignCardToStudentInternal(
   const { user } = context;
   const supabase = await createClient();
 
-  // 1. Check if the card exists and is available
+  // 1. Check if the card exists and its status
   const { data: card, error: cardError } = await supabase
     .from("cards")
     .select("card_status")
@@ -453,7 +453,8 @@ async function assignCardToStudentInternal(
     return { error: "El cartón no existe." };
   }
 
-  if (card.card_status !== "Disponible") {
+  // Allow assignment for both 'Disponible' and 'Vendido' cards
+  if (card.card_status !== "Disponible" && card.card_status !== "Vendido") {
     return { error: `El cartón ya está ${card.card_status.toLowerCase()}.` };
   }
 
@@ -467,13 +468,16 @@ async function assignCardToStudentInternal(
 
   if (assignError) return { error: assignError.message };
 
-  // 3. Update card status to 'Asignado'
-  await supabase
-    .from("cards")
-    .update({ card_status: "Asignado", updated_at: new Date().toISOString() })
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .eq("card_number", cardNumber);
+  // 3. Update card status to 'Asignado' only if it was 'Disponible'
+  // 'Vendido' cards keep their status intact
+  if (card.card_status === "Disponible") {
+    await supabase
+      .from("cards")
+      .update({ card_status: "Asignado", updated_at: new Date().toISOString() })
+      .eq("company_id", companyId)
+      .eq("event_id", eventId)
+      .eq("card_number", cardNumber);
+  }
 
   // 4. Log activity
   if (user) {
