@@ -12,6 +12,7 @@ import {
   Gauge,
   Database,
   BookOpen,
+  BookUser,
 } from "lucide-react";
 import { Card, Title, Text, Grid, Icon } from "@tremor/react";
 
@@ -94,6 +95,14 @@ export default function SettingsPage() {
       icon: BookOpen,
       href: "/admin/settings/manual-tecnico",
       color: "sky",
+    },
+    {
+      title: "Manual de Usuario",
+      description:
+        "Guía de uso de la sección Configuración para administradores.",
+      icon: BookUser,
+      href: "/admin/settings/manual-usuario",
+      color: "green",
     },
   ];
 
