@@ -36,6 +36,7 @@ import {
   RotateCcw,
   Volume2,
   Maximize,
+  FileText,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -186,6 +187,19 @@ export default function BingoManualPage() {
                 </tr>
                 <tr>
                   <td className="py-2 pr-4 font-semibold whitespace-nowrap">
+                    <FileText size={14} className="inline mr-1" /> Informe
+                  </td>
+                  <td className="py-2 text-slate-600 dark:text-slate-300">
+                    <strong>Informe de Cartones por Estado</strong>: selecciona
+                    el estado (Disponible, Asignado, Vendido, Reservado,
+                    Donado, Anulado o Todos) y un rango de cartones. Genera
+                    CSV o PDF con vista previa. En cartones{" "}
+                    <strong>Asignados</strong> la columna Cliente muestra el{" "}
+                    <strong>nombre y nivel del alumno</strong>.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-2 pr-4 font-semibold whitespace-nowrap">
                     <UserCheck size={14} className="inline mr-1" /> Reasignar
                     Jugador
                   </td>
@@ -237,8 +251,41 @@ export default function BingoManualPage() {
                     Asignado, Reservado, Donado, Anulado).
                   </td>
                 </tr>
+                <tr>
+                  <td className="py-2 pr-4 font-semibold whitespace-nowrap">
+                    <RefreshCw size={14} className="inline mr-1" /> Recargar
+                  </td>
+                  <td className="py-2 text-slate-600 dark:text-slate-300">
+                    Icono junto al badge de totales: fuerza la recarga del
+                    inventario desde el servidor (el inventario queda en caché
+                    por evento para abrir al instante).
+                  </td>
+                </tr>
               </tbody>
             </table>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border-l-4 border-blue-500 space-y-1">
+            <Text className="text-sm font-bold text-blue-800 dark:text-blue-300">
+              💡 Rendimiento y navegación del inventario:
+            </Text>
+            <ul className="list-disc pl-5 space-y-1 text-sm text-blue-800 dark:text-blue-300">
+              <li>
+                <strong>Paginación</strong>: la tabla muestra{" "}
+                <strong>100 cartones por página</strong> con flechas ←/→ y la
+                leyenda "Mostrando X–Y de N". El buscador filtra sobre el
+                inventario completo y vuelve a la página 1.
+              </li>
+              <li>
+                <strong>Encabezado fijo</strong>: los títulos de columna
+                permanecen visibles al hacer scroll dentro de la tabla.
+              </li>
+              <li>
+                <strong>Columna "Jugador"</strong>: en cartones con estado{" "}
+                <strong>Asignado</strong> muestra el{" "}
+                <strong>nombre y nivel del alumno</strong> (ej. "Sebastian
+                Arrieta · 2.Inicial") en lugar del comprador.
+              </li>
+            </ul>
           </div>
         </Card>
       </section>
@@ -260,6 +307,36 @@ export default function BingoManualPage() {
             preselecciona automáticamente con el{" "}
             <strong>evento por defecto</strong> configurado en la empresa.
           </Text>
+
+          <Title className="text-lg">Botones superiores</Title>
+          <ul className="list-disc pl-5 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <li>
+              <strong>Nueva Factura Plus</strong>: único punto de creación de
+              facturas (el formulario clásico "Nueva Factura" fue retirado; el
+              lápiz ✏️ de la tabla sigue editando facturas existentes).
+            </li>
+            <li>
+              <Ticket size={14} className="inline mx-1" />
+              <strong>Inventario</strong>: abre el{" "}
+              <strong>Inventario de Cartones</strong> del evento seleccionado
+              como ventana superpuesta. Al cerrarlo regresa a esta pestaña con
+              todo intacto.
+            </li>
+            <li>
+              <FileText size={14} className="inline mx-1" />
+              <strong>Informe por Fecha</strong>: reporte de facturas por día.
+              La fecha se elige de una{" "}
+              <strong>lista de fechas con facturas del evento</strong> (cada
+              opción muestra su conteo). Columnas: N° Factura, Fecha, Cliente,
+              WhatsApp, Gestor, Método de Pago, N° Cartones, Valor Cartón,
+              Total y Estado — ordenado por número de factura. Salidas:{" "}
+              <strong>CSV</strong>, <strong>PDF</strong> y{" "}
+              <strong>vista previa</strong> en pestaña nueva. El encabezado
+              del PDF jerarquiza: evento → ID → fecha → totales
+              (facturas/cartones/ventas) <strong>+ desglose por método de
+              pago</strong>.
+            </li>
+          </ul>
 
           <Title className="text-lg">Totales del día</Title>
           <Text className="text-sm text-slate-600 dark:text-slate-300">
@@ -295,6 +372,14 @@ export default function BingoManualPage() {
             <li>
               <strong>Vendido por</strong>: lista de gestores/vendedores del
               evento.
+            </li>
+            <li>
+              <Ticket size={14} className="inline mx-1" />
+              <strong>Inventario</strong> (encabezado del formulario): abre el
+              inventario del evento <strong>sin cerrar la factura</strong>; al
+              volver, los datos capturados siguen intactos. Si presiona{" "}
+              <strong>Salir</strong> con el inventario abierto, ambas ventanas
+              se cierran.
             </li>
             <li>
               <strong>Imagen de Factura</strong>: adjunta el comprobante
