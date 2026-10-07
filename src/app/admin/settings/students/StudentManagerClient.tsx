@@ -1327,10 +1327,7 @@ export default function StudentManagerClient({
                             color="rose"
                             icon={Trash2}
                             tooltip="Desasignar cartón"
-                            disabled={
-                              card.card_status === "Vendido" ||
-                              isProcessingAssignment
-                            }
+                            disabled={isProcessingAssignment}
                             onClick={() =>
                               handleQuickUnassign(card.card_number)
                             }
