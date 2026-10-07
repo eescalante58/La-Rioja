@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Gauge,
   Database,
+  BookOpen,
 } from "lucide-react";
 import { Card, Title, Text, Grid, Icon } from "@tremor/react";
 
@@ -85,6 +86,14 @@ export default function SettingsPage() {
       icon: Database,
       href: "/admin/settings/test-data",
       color: "violet",
+    },
+    {
+      title: "Manual Técnico",
+      description:
+        "Documentación de arquitectura, base de datos y componentes del sistema.",
+      icon: BookOpen,
+      href: "/admin/settings/manual-tecnico",
+      color: "sky",
     },
   ];
 
