@@ -24,8 +24,16 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 ![Progreso](https://img.icons8.com/fluency/48/000000/sales-performance.png)
 
 *   **¿Qué es?**: Una barra de progreso dinámica en **verde La Rioja** que compara lo vendido contra la meta establecida.
-*   **Drill-Down (Detalle)**: Haga clic en la barra para desglosar las ventas por **Vendedor**.
-    *   *Nota*: Dentro del detalle por vendedor, puede hacer clic en el **N° de Factura** para abrir la *Ficha de Consulta* de datos.
+*   **Dos puntos de entrada**:
+    *   **Clic en la barra** → desglosa las ventas por **Vendedor** (nivel 1). De ahí puede bajar a las facturas del vendedor y luego a los cartones de cada factura.
+    *   **Clic en la fecha del evento** (debajo del nombre del evento) → abre **"Ventas del [día del evento]"**, el resumen del día agrupado por vendedor (ver sección 2.1).
+
+### 2.1 Ventas del Día del Evento (resumen por vendedor)
+
+*   **Resumen expandible**: cada fila es un **vendedor** con sus totales del día (N° facturas, N° cartones y monto total). Use los iconos **[+]** / **[-]** para desplegar el detalle por **método de pago** (efectivo, transferencia, etc.) y precio de cartón.
+*   **Drill-down por método**: al expandir, cada chip de método de pago es clicable y abre el listado de **facturas de esa agrupación** (con flecha ← para volver al resumen).
+*   **Consulta de factura**: en cualquier listado de facturas, haga clic en el **N° de factura** (verde) para abrir la *Consulta de Factura* completa encima; al presionar **[Cerrar]** regresa al listado sin recargar.
+*   **Total General**: fila final con los acumulados del día.
 
 ---
 
@@ -34,7 +42,10 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ![Gráficos](https://img.icons8.com/fluency/48/000000/bar-chart.png)
 
-*   **Ventas Diarias**: Evolución diaria de ingresos. Haga clic en una barra para ver el listado de facturas de ese día específico.
+*   **Ventas Diarias**: Evolución diaria de ingresos. Haga clic en una barra para ver el listado de facturas de ese día específico:
+    *   **Columnas**: Factura, Cliente, Vendedor, Método de Pago, **N° Cartones** y Monto.
+    *   **Pie totalizado**: `N facturas · N cartones · Total: $X`.
+    *   **N° de factura clicable** → abre la *Consulta de Factura* encima del listado; **[Cerrar]** regresa a la ventana del día.
 *   **Ventas por Año**: Histórico comparativo de ediciones anteriores del Bingo (2021-2026), permitiendo evaluar el crecimiento de la **CFL**.
 
 ---
@@ -75,7 +86,7 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ---
 
-## 7. � Análisis de Ventas por Día
+## 7. 📆 Análisis de Ventas por Día
 *Detalle ejecutivo de la recaudación del evento.*
 
 *   **Acceso**: Haga clic en la tarjeta **Venta Realizada** de la sección de KPIs.
@@ -89,7 +100,7 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 
 ---
 
-## 8. �🕒 Actividad Reciente y Contactos
+## 8. 🕒 Actividad Reciente y Contactos
 *Bitácora de interacciones en tiempo real.*
 
 ![Actividad](https://img.icons8.com/fluency/48/000000/activity-feed.png)
@@ -100,8 +111,10 @@ Bienvenido al centro de control de **La Rioja Bingo**. Este panel ofrece una vis
 ---
 
 ### 💡 Tips de Navegación:
-1.  **Icono de Flecha (←)**: Utilícelo para retroceder niveles dentro de las ventanas emergentes (ej. de detalle de cartones volver a facturas).
+1.  **Icono de Flecha (←)**: Utilícelo para retroceder niveles dentro de las ventanas emergentes (ej. de detalle de facturas volver al resumen de vendedores).
 2.  **Tiempo Real**: No necesita refrescar la página; el dashboard se actualiza automáticamente cada vez que se registra una venta o cambio.
 3.  **Buscador**: En las ventanas de detalle, utilice el buscador para localizar rápidamente por nombre, número de factura o teléfono.
 4.  **Acceso al Manual**: Desde el encabezado del dashboard, el botón **"Manual de Usuario"** abre esta guía en cualquier momento.
 5.  **Tarjetas Interactivas**: Las tarjetas de KPI con efecto de resaltado al pasar el cursor (*Clientes Registrados*, *Cartones Reportados* y *Venta Realizada*) abren ventanas de detalle al hacer clic.
+6.  **Textos en verde = clicables**: los nombres de factura, vendedor, cliente o alumno en verde abren el siguiente nivel de detalle.
+7.  **Ventanas apiladas**: la *Consulta de Factura* se abre encima del listado que la invocó; **[Cerrar]** la cierra y regresa al listado anterior sin perder el contexto.
