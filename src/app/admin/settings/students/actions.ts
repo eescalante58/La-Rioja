@@ -466,7 +466,24 @@ async function assignCardToStudentInternal(
     card_number: cardNumber,
   });
 
-  if (assignError) return { error: assignError.message };
+  if (assignError) {
+    // Check if it's a duplicate key error (card already assigned to another student)
+    if (assignError.message.includes("duplicate key") || assignError.message.includes("unique constraint")) {
+      // Query to find which student has this card
+      const { data: existingAssignment } = await supabase
+        .from("students_cards")
+        .select("student_id")
+        .eq("company_id", companyId)
+        .eq("event_id", eventId)
+        .eq("card_number", cardNumber)
+        .single();
+
+      if (existingAssignment) {
+        return { error: `Cartón ya asignado al alumno ${existingAssignment.student_id}.` };
+      }
+    }
+    return { error: assignError.message };
+  }
 
   // 3. Update card status to 'Asignado' only if it was 'Disponible'
   // 'Vendido' cards keep their status intact
