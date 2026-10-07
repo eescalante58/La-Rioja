@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 import CMSManagerClient from "./CMSManagerClient";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
-import { List, HelpCircle, Image as ImageIcon } from "lucide-react";
+import { List, HelpCircle, Image as ImageIcon, BookUser } from "lucide-react";
 import FAQManager from "@/components/admin/FAQManager";
 import GalleryManagement from "@/components/admin/cms/GalleryManagement";
 
@@ -50,8 +51,17 @@ export default async function CMSManager() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end pt-2">
+        <Link
+          href="/admin/cms/manual"
+          className="flex items-center gap-2 text-sm font-semibold text-larioja-azul dark:text-larioja-amarillo hover:underline"
+        >
+          <BookUser size={18} />
+          Manual de Usuario
+        </Link>
+      </div>
       <TabGroup defaultValue="1">
-        <TabList className="mt-8">
+        <TabList className="mt-2">
           <Tab value="1" className="text-base sm:text-lg">
             <div className="flex items-center gap-2">
               <List size={20} />
