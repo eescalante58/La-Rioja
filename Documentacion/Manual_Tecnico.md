@@ -148,7 +148,7 @@ LaRioja/
 
 ## 4. Base de Datos (PostgreSQL / Supabase)
 
-**Esquema:** `public`, multi-empresa (tenant por `company_id`). RLS habilitado en todas las tablas sensibles; el acceso público se acota a lecturas de contenido publicado/ruletas publicadas y a la función `register_participant_cards`.
+**Esquema:** `public`, multi-empresa (tenant por `company_id`). **Inventario verificado contra la base de producción** (proyecto `wfkqsifhxnarmxrvbgiu`, PostgreSQL 17.6, oct-2026): 25 tablas — **todas con RLS habilitado** — 6 vistas, 6 enums, ~30 funciones propias, 28 triggers y 5 buckets de Storage. El acceso público se acota a lecturas de contenido publicado/ruletas publicadas y a la función `register_participant_cards`.
 
 ### 4.1 Enums
 
@@ -159,7 +159,7 @@ LaRioja/
 | `invoice_payment_method_enum` | `efectivo`, `tarjeta credito`, `tarjeta debito`, `transferencia` | `invoices.payment_method` |
 | `invoice_status_enum` | `pagada`, `pendiente`, `anulada`, `Donada` | `invoices.status` |
 | `student_level_enum` | `1.Terapeutico`, `2.Inicial`, `3.Medio`, `4.Prelaboral`, `5.Laboral`, `6.Personal La Rioja` | Nivel del alumno |
-| `site_page_type` | `home`, `about`, `contact`, `global`, `social media`, `whatsapp message`, `tombola` | Páginas administrables del CMS |
+| `site_page_type` | `home`, `about`, `contact`, `global`, `social media`, `whatsapp message`, `services`, `programs`, `Bingo`, `bingo`, `tombola` | Páginas administrables del CMS. **Nota:** existen `Bingo` y `bingo` como valores distintos (enum es case-sensitive) — las consultas deben usar el case exacto del contenido |
 
 **CHECK constraints tipo enum (no son TYPE):**
 
@@ -173,33 +173,34 @@ LaRioja/
 
 | Tabla | Descripción | PK / Constraints clave |
 | :---- | :---------- | :--------------------- |
-| `companies` | Empresas organizadoras (tenants); incluye `def_dash_event_id` (evento activo del dashboard) | PK `company_id` |
-| `users` | Perfil extendido de `auth.users` (nombre, email, rol principal, avatar, `last_login`) | PK `id` (uuid → auth.users) |
-| `roles` | Catálogo de roles con jerarquía `level` | PK `role_id` |
+| `companies` | Empresas organizadoras (tenants): `company_name`, teléfono, `web_site`, `session_timeout_minutes`, `def_dash_event_id` (evento activo del dashboard) | PK `company_id` |
+| `users` | Perfil extendido de `auth.users` (nombre, email, rol principal, avatar, `last_login`) | PK `id` (uuid → auth.users); UNIQUE `email`; trigger `handle_new_user` crea el perfil al registrarse |
+| `roles` | Catálogo de roles con jerarquía `level` | PK `role_id`; UNIQUE `name` |
 | `user_companies` | Membresía usuario↔empresa con rol por empresa (base del filtrado RLS) | PK compuesta (user_id, company_id) |
-| `user_activity_log` | Bitácora de auditoría (acción, entidad, metadata jsonb) | Inserción propia; lectura propia o admin/reader global |
+| `user_activity_log` | Bitácora de auditoría (action, entity, `entity_id` **text**, metadata jsonb, timestamp) | Inserción propia; lectura propia o admin/reader global |
 | `country_codes` | Prefijos telefónicos por país (iso2, iso3, phone_code, flag_emoji) | UNIQUE iso2/iso3 |
 
 **Dominio Bingo**
 
 | Tabla | Descripción | PK / Constraints clave |
 | :---- | :---------- | :--------------------- |
-| `events` | Eventos de bingo por empresa (nombre, fecha, meta `event_goal`, `card_price`, `is_active`) | UNIQUE (company_id, event_id) |
-| `cards` | Inventario de cartones (número, tipo, estado, precios, factura asociada, datos del jugador, `sold_by`, `image_url`) | UNIQUE (company_id, event_id, card_number); CHECK precio ≥ 0; `Vendido` exige `invoice_number`+`sales_price` |
-| `invoices` | Facturas de venta (cliente, WhatsApp, gestor `manager_name`, método, `cards_number`, `card_price`, `total_amount`, `status`) | PK compuesta (company_id, invoice_number); CHECK total = cartones × precio |
+| `events` | Eventos de bingo por empresa: `event_name`, `event_date`, `event_start_promotion_date`, `event_venue`, `event_manager`, `event_description`, `event_cartons_number`, `event_goal`, `card_value`, `Method_of_payment`, `total_amount_solded` (mantenido por trigger), `is_active`, `status` | UNIQUE (company_id, event_id) — referenciado por todas las FK compuestas |
+| `cards` | Inventario de cartones (número, tipo, estado, precios, factura asociada, datos del jugador, `sold_by`, `image_url`, `search_vector` FTS) | UNIQUE (company_id, event_id, card_number); CHECK precio ≥ 0; `Vendido` exige `invoice_number`+`sales_price` |
+| `invoices` | Facturas de venta (cliente, WhatsApp, gestor `manager_name`, método, `cards_number`, `card_price`, `total_amount`, `status`, `search_vector` FTS) | PK compuesta (company_id, invoice_number); CHECK total = cartones × precio |
 | `students` | Alumnos por evento (nombre, `student_level`) | UNIQUE (company_id, event_id, student_id) |
-| `students_cards` | Asignación cartón↔alumno (conduce la columna "Jugador" y el desglose por nivel) | UNIQUE por evento; cascadas |
-| `customer_phone_number` | Directorio de teléfonos de clientes (`phone_number`, `table_data_source`) | — |
-| `whatsapp_promo_logs` | Bitácora de envíos promocionales masivos | — |
+| `students_cards` | Asignación cartón↔alumno (conduce la columna "Jugador" y el desglose por nivel) | **Dos** UNIQUE: (company_id, event_id, student_id, card_number) y (company_id, event_id, card_number) — un cartón no puede ir a dos alumnos del mismo evento |
+| `customer_phone_number` | Directorio único de teléfonos de clientes por empresa (`customer_name`, `table_data_source` = origen del dato) | UNIQUE (company_id, phone_number); alimentada por `sync_customers_from_cards()` |
+| `whatsapp_promo_logs` | Bitácora de envíos promocionales (`batch_id` uuid por lote, `message_body`, `image_url`, `status`, `error_message`) | — |
 
 **Dominio CMS / sitio público**
 
 | Tabla | Descripción | Constraints |
 | :---- | :---------- | :---------- |
-| `site_content` | Secciones administrables por página (`page`, `section_key`, título, imagen, orden, `is_active`, metadata) | UNIQUE (page, section_key); lectura pública si `is_active` |
-| `faqs` / `faq_sections` | Preguntas frecuentes agrupadas en secciones | — |
-| `contact_submissions` | Mensajes del formulario de contacto | — |
-| `event_gallery` | Fotos de la galería pública del evento (`image_url`, `content_order`) | — |
+| `site_content` | Secciones administrables por página (`page`, `section_key`, título, imagen, orden, `is_active`, metadata) | UNIQUE (page, section_key, content_order); lectura pública si `is_active`; trigger `tr_log_site_content_activity` audita cambios |
+| `faqs` | Preguntas frecuentes (question, answer, `section_id`→faq_sections, orden, `is_active`) | — |
+| `faq_sections` | Secciones de FAQ (title, description, orden, `is_active`) | — |
+| `contact_submissions` | Mensajes del formulario de contacto (name, email, phone, `type`, message, `target_email`) | — |
+| `event_gallery` | Fotos de la galería pública del evento (`image_url`, `thumbnail_url`, `caption`, `content_order`, `is_active`) | PK uuid |
 
 **Dominio sorteos (ruleta y tómbola)**
 
@@ -215,35 +216,72 @@ LaRioja/
 
 ### 4.3 Índices
 
-**Índices estructurales (baseline):**
+Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan las PK de tablas lookup (`*_pkey` triviales).
 
-- `cards`: UNIQUE `(company_id, event_id, card_number)` — cubre el inventario completo (equality + ORDER BY card_number) y los range checks de "Verificar".
-- `invoices`: PK `(company_id, invoice_number)`.
-- `events`: UNIQUE `(company_id, event_id)` — referenciado por todas las FK compuestas.
+**`cards` — inventario y búsqueda:**
 
-**Índices de rendimiento (migraciones):**
+| Índice | Definición | Propósito |
+| :----- | :--------- | :-------- |
+| `cards_company_event_card_uk` | UNIQUE (company_id, event_id, card_number) | Clave natural del cartón; inventario ordenado, point lookup y range checks |
+| `idx_cards_event_company` | (company_id, event_id) | Filtro por evento sin número |
+| `cards_company_id_event_id_card_status_idx` | (company_id, event_id, card_status) | Filtros por estado (informe por estado, dashboards) |
+| `idx_cards_id_event_invoice_number` | (company_id, event_id, invoice_number) | Cartones de una factura |
+| `idx_cards_invoice_number` | (invoice_number) | Lookup global por factura |
+| `idx_cards_number_text` | ((card_number)::text) | Comparaciones textuales del número |
+| `idx_cards_number_trgm` | GIN ((card_number)::text gin_trgm_ops) | Búsqueda por prefijo/parcial del número (ext. `pg_trgm`) |
+| `idx_cards_search_vector` | GIN (search_vector) | Full-text search del buscador universal |
 
-| Índice | Tabla | Columnas | Propósito |
-| :----- | :---- | :------- | :-------- |
-| `idx_invoices_company_event_date` | invoices | (company_id, event_id, invoice_date DESC) | Lista de facturas del evento por fecha |
-| `idx_invoices_company_event_number` | invoices | (company_id, event_id, invoice_number) | Duplicados y correlativo `FactAut-%` |
-| `idx_invoices_company_event_created_at` | invoices | (company_id, event_id, created_at DESC) | Orden real "más reciente primero" |
-| `idx_wheel_items_wheel` / `idx_wheel_items_event_mode` | wheel_items | wheel_id / (company_id, event_id, mode, wheel_name) | Segmentos por ruleta y por evento |
-| `idx_wheel_spins_wheel` / `idx_wheel_spins_event_mode` | wheel_spins | wheel_id / (company_id, event_id, mode, wheel_name) | Historial de giros |
-| `idx_wheel_part_wheel` / `idx_wheel_part_winners` / `idx_wheel_part_registered` | wheel_participating_cards | wheel_id (parciales `WHERE is_winner`) | Participantes pendientes, galería de ganadores, orden de captura |
-| `idx_wheels_presents_wheel` / `idx_wheels_presents_winners` / `idx_wheels_presents_registered` | wheels_presents_cards | wheel_id (parciales `WHERE is_winner`) | Idem para registro público |
-| `idx_registration_attempts_ip_time` | registration_attempts | (client_ip, attempted_at DESC) | Ventana anti-ráfaga por IP |
-| `uq_wheel_participating` | wheel_participating_cards | (company_id, event_id, wheel_id, card_number) | Un cartón = una vez por tómbola |
-| `uq_wheels_presents` | wheels_presents_cards | (company_id, event_id, card_number) | Un cartón = un registro por evento |
-| `uq_wheel_config` | wheel_configs | (company_id, event_id, mode, wheel_name) | Nombre único de ruleta por evento |
+**`invoices` — ventas y búsqueda:**
+
+| Índice | Definición | Propósito |
+| :----- | :--------- | :-------- |
+| `invoices_pkey` | UNIQUE (company_id, invoice_number) | PK compuesta |
+| `idx_invoices_event_company` | (company_id, event_id) | Filtro base por evento |
+| `invoices_company_status_idx` | (company_id, event_id, status) | Filtros por estado (pagada/pendiente/anulada/Donada) |
+| `invoices_company_date_idx` | (company_id, invoice_date) | Cortes por fecha |
+| `idx_invoices_company_event_date` | (company_id, event_id, invoice_date DESC) | Lista del evento por fecha |
+| `idx_invoices_company_event_number` | (company_id, event_id, invoice_number) | Duplicados y correlativo `FactAut-%` |
+| `idx_invoices_company_event_created_at` | (company_id, event_id, created_at DESC) | Orden real "más reciente primero" |
+| `idx_invoices_number_trgm` | GIN (invoice_number gin_trgm_ops) | Búsqueda parcial de N° factura |
+| `idx_invoices_search_vector` | GIN (search_vector) | Full-text search del buscador universal |
+
+**Sorteos (índices parciales `WHERE is_winner` — pendientes vs ganadores):**
+
+| Índice | Tabla | Definición |
+| :----- | :---- | :--------- |
+| `uq_wheel_config` | wheel_configs | UNIQUE (company_id, event_id, mode, wheel_name) |
+| `idx_wheel_items_wheel` / `idx_wheel_items_event_mode` | wheel_items | (wheel_id) / (company_id, event_id, mode, wheel_name) |
+| `idx_wheel_spins_wheel` / `idx_wheel_spins_event_mode` | wheel_spins | (wheel_id) / (company_id, event_id, mode, wheel_name) |
+| `uq_wheel_participating` | wheel_participating_cards | UNIQUE (company_id, event_id, wheel_id, card_number) |
+| `idx_wheel_part_wheel` | wheel_participating_cards | (wheel_id) WHERE is_winner = false — pool sorteable |
+| `idx_wheel_part_winners` | wheel_participating_cards | (wheel_id) WHERE is_winner = true — galería ganadores |
+| `idx_wheel_part_registered` | wheel_participating_cards | (wheel_id, winner_registered_at) WHERE is_winner — orden de captura |
+| `uq_wheels_presents` | wheels_presents_cards | UNIQUE (company_id, event_id, card_number) — un registro por evento |
+| `idx_wheels_presents_wheel` / `_winners` / `_registered` | wheels_presents_cards | Idem tómbola pública (parciales WHERE is_winner) |
+
+**Resto:**
+
+| Índice | Definición |
+| :----- | :--------- |
+| `events_company_event_uk` / `events_company_id_event_id_key` | UNIQUE (company_id, event_id) — base de todas las FK compuestas |
+| `students_company_event_student_uk` + `idx_students_event_company` | UNIQUE (company_id, event_id, student_id); filtro por evento |
+| `students_cards_company_event_student_card_uk` + `students_cards_unique_card_per_event` | UNIQUE (…student_id, card_number) y UNIQUE (…card_number) |
+| `idx_students_cards_student_id` / `idx_students_cards_card_number` | Joins por alumno y por cartón |
+| `idx_registration_attempts_ip_time` | (client_ip, attempted_at DESC) — ventana anti-ráfaga |
+| `uq_site_content_page_section_order` | UNIQUE (page, section_key, content_order) |
+| `user_companies` | PK (user_id, company_id) + idx (company_id, user_id) + (user_id, company_id, role_id) |
+| `users_email_key`, `roles_name_key`, `country_codes_iso2/iso3_key`, `customer_phone_number_company_id_phone_number_key` | Uniques de catálogos |
 
 ### 4.4 Vistas
 
-| Vista | Propósito |
-| :---- | :-------- |
-| `v_students_with_counts` | Alumnos con conteo de cartones asignados (LEFT JOIN students_cards) — alimenta "Asignación por Nivel" |
-| `v_sold_by` | Agregado de ventas por vendedor — "Ventas por Gestor" |
-| `v_promo_batch_summary` | Resumen de lotes de envíos promocionales WhatsApp |
+| Vista | Definición / Propósito |
+| :---- | :--------------------- |
+| `v_students_with_counts` | `students` LEFT JOIN conteo de `students_cards` por (company_id, event_id, student_id) → `assigned_cards_calc`. Alimenta "Asignación por Nivel" |
+| `v_sold_by` | `DISTINCT company_id, event_id, manager_name AS sold_by` desde invoices — catálogo de vendedores con ventas |
+| `v_promo_batch_summary` | Resumen por `batch_id`+empresa de `whatsapp_promo_logs`: total, success_count, error_count, started_at, finished_at |
+| `v_invoices` | Facturas con encabezados en español ("Numero factura", "Metodo de pago", "Total factura", "Gestor venta", etc.) — reportes/exportación |
+| `v_customer_search` | `customer_phone_number` reducido a (id, company_id, customer_name, phone_number) — búsqueda de clientes |
+| `v_unique_player_phone_number` | `DISTINCT company_id, event_id, player_phone_number, player_name` desde cards — directorio de jugadores compradores |
 
 ### 4.5 Funciones / Stored Procedures
 
@@ -259,9 +297,15 @@ LaRioja/
 
 | Función | Propósito |
 | :------ | :-------- |
-| `set_timestamps()` | Trigger genérico `updated_at = now()` (reutilizado en todas las tablas) |
+| `set_timestamps()` | Trigger genérico `updated_at = now()` (la mayoría de las tablas) |
+| `update_updated_at_column()` | Variante del anterior usada por `faqs` y `faq_sections` |
 | `sync_user_companies_role()` | Mantiene consistente `role`↔`role_id` en user_companies |
-| `log_user_activity(...)` | Inserta en la bitácora `user_activity_log` |
+| `log_user_activity(action, entity, entity_id uuid, metadata jsonb)` | Inserta en la bitácora `user_activity_log` |
+| `handle_new_user()` | SECURITY DEFINER — trigger en `auth.users`: crea el perfil en `public.users` al registrarse |
+| `fn_sync_cards_with_invoice()` | Trigger en `invoices`: sincroniza cartones con la factura (asociación de cartones) |
+| `fn_update_event_total_sales()` | Trigger en `invoices`: mantiene `events.total_amount_solded` acumulado |
+| `fn_log_site_content_activity()` | SECURITY DEFINER — trigger en `site_content`: registra cambios del CMS en la bitácora |
+| `sync_customers_from_cards()` | SECURITY DEFINER — sincroniza `customer_phone_number` desde `cards` (directorio de clientes) |
 
 **Sorteos (tómbola / ruleta):**
 
@@ -281,13 +325,19 @@ LaRioja/
 | `busqueda_universal(p_company_id, p_event_id, p_termino)` | Buscador global del dashboard (facturas, cartones, alumnos, participantes) |
 | `get_table_policies(t_name)` / `get_tables_rls_status()` / `get_views_status()` / `check_security_definer_views()` | Introspección de políticas RLS, estado de RLS por tabla, vistas y vistas SECURITY DEFINER (panel de auditoría de seguridad) |
 
+**Extensión `pg_trgm`** (instalada): funciona `similarity`, `show_trgm`, `gin_trgm_*`, etc. — soporta los índices trigram `idx_cards_number_trgm` / `idx_invoices_number_trgm` y la búsqueda parcial de `busqueda_universal`. Las columnas `search_vector` (cards, invoices) tienen índice GIN para full-text search.
+
 ### 4.6 Triggers
 
 | Trigger | Tabla | Propósito |
 | :------ | :---- | :-------- |
-| `trg_*_set_timestamps` | Todas las tablas de negocio | `updated_at` automático vía `set_timestamps()` |
+| `trg_*_set_timestamps` / `update_*_updated_at` | cards, companies, country_codes, events, invoices, roles, site_content, students, students_cards, user_companies, users, wheel_configs, wheel_items, wheel_participating_cards, wheels_presents_cards, faqs, faq_sections | `updated_at` automático vía `set_timestamps()` / `update_updated_at_column()` |
 | `trg_cards_validate_invoice_event` | cards | Coherencia factura↔evento |
+| `tr_sync_cards_with_invoice` | invoices | `fn_sync_cards_with_invoice` — sincroniza cartones con la factura |
+| `tr_sync_event_sales` | invoices | `fn_update_event_total_sales` — mantiene `events.total_amount_solded` |
+| `tr_log_site_content_activity` | site_content | `fn_log_site_content_activity` — audita cambios del CMS |
 | `trg_user_companies_sync_role` | user_companies | Sincroniza rol textual ↔ role_id |
+| `on_auth_user_created` (`handle_new_user`) | auth.users | Crea el perfil en `public.users` al registrarse (schema auth) |
 | `trg_wheel_spins_prize_limit` | wheel_spins | Límite de premios por ruleta (serializa con FOR UPDATE) |
 | `trg_wheel_participating_prize_limit` / `trg_wheels_presents_prize_limit` | tablas de participantes | Límite de ganadores por tómbola |
 | `trg_wheel_part_winner_order` / `trg_wheels_presents_winner_order` | idem | Consecutivo `winner_order` |
