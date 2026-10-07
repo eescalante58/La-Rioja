@@ -508,10 +508,10 @@ async function unassignCardFromStudentInternal(
   const { user } = context;
   const supabase = await createClient();
 
-  // 1. Get current card status to check if it has an invoice
+  // 1. Get current card status
   const { data: card, error: cardError } = await supabase
     .from("cards")
-    .select("card_status, invoice_number")
+    .select("card_status")
     .eq("company_id", companyId)
     .eq("event_id", eventId)
     .eq("card_number", cardNumber)
@@ -532,30 +532,16 @@ async function unassignCardFromStudentInternal(
 
   if (deleteError) return { error: deleteError.message };
 
-  // 3. If the card was 'Vendido', clear the invoice reference
-  if (card.card_status === "Vendido" && card.invoice_number) {
+  // 3. Restore card status to 'Disponible' only if it was 'Asignado'
+  // 'Vendido' cards keep their status and invoice data intact
+  if (card.card_status === "Asignado") {
     await supabase
       .from("cards")
-      .update({
-        invoice_number: null,
-        player_name: null,
-        player_phone_number: null,
-        player_email: null,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ card_status: "Disponible", updated_at: new Date().toISOString() })
       .eq("company_id", companyId)
       .eq("event_id", eventId)
       .eq("card_number", cardNumber);
   }
-
-  // 4. Restore card status to 'Disponible' for both 'Asignado' and 'Vendido'
-  await supabase
-    .from("cards")
-    .update({ card_status: "Disponible", updated_at: new Date().toISOString() })
-    .eq("company_id", companyId)
-    .eq("event_id", eventId)
-    .eq("card_number", cardNumber)
-    .in("card_status", ["Asignado", "Vendido"]);
 
   // 3. Log activity
   if (user) {
