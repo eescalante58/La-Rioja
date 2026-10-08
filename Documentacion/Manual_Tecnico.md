@@ -81,7 +81,7 @@ Público objetivo: público general, asistentes al evento en vivo, equipo de com
 | :------- | :--- | :---------- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Pública | URL del proyecto Supabase |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Pública (safe) | Llave publishable, sujeta a RLS |
-| `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY` | **Secreta** | Bypass RLS; solo servidor (Route Handlers/core) |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Secreta** | Bypass RLS; solo servidor (Route Handlers/core) |
 | `NEXT_PUBLIC_SITE_URL` | Pública | URL base del sitio (emails, enlaces) |
 | `ULTRAMSG_INSTANCE_ID` / `ULTRAMSG_TOKEN` | Secretas | API UltraMsg para envío de WhatsApp |
 | `RESEND_API_KEY` | Secreta | Envío de correos transaccionales |

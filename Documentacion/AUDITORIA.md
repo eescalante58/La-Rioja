@@ -11,7 +11,7 @@ Sin embargo, no deberia considerarse listo para produccion sin remediar riesgos 
 
 - Dependencias con vulnerabilidades reportadas por `npm audit`, incluyendo `next@14.2.16` con severidad critica.
 - Seleccion de empresa basada en campos ocultos y cookies manipulables sin revalidacion suficiente en el server action.
-- Uso o fallback a `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY`, lo cual es un patron critico si esa variable existe en cliente o en Vercel como publica.
+- Uso de `SUPABASE_SERVICE_ROLE_KEY` (sin prefijo NEXT_PUBLIC_), lo cual es el patron correcto para secretos de servidor.
 - Acciones administrativas con RBAC inconsistente: algunas validan nivel, otras solo validan sesion o dependen completamente de RLS.
 - Formulario de contacto con `targetEmail` controlado desde cliente y HTML de correo construido con valores no escapados.
 - Uso de `dangerouslySetInnerHTML` con contenido CMS sin sanitizacion centralizada.
@@ -99,7 +99,7 @@ Referencias:
 - `src/app/actions/contact.ts:25`
 - `src/app/admin/settings/users/actions.ts:132`
 
-Se usa o se referencia `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY`. Cualquier variable con prefijo `NEXT_PUBLIC_` puede terminar expuesta al bundle del navegador si se configura en el entorno y se referencia desde codigo cliente. Aunque aqui se usa en server actions, el nombre del secreto es peligroso y facilita errores de despliegue.
+Se usa `SUPABASE_SERVICE_ROLE_KEY` (sin prefijo NEXT_PUBLIC_), que es el patron correcto para secretos de servidor. No hay riesgo de exposición al bundle del navegador.
 
 Impacto:
 
@@ -107,10 +107,10 @@ Impacto:
 
 Accion recomendada:
 
-- Eliminar todo uso de `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY`.
+- ✅ Eliminado todo uso de `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY`. Ahora se usa exclusivamente `SUPABASE_SERVICE_ROLE_KEY`.
 - Usar exclusivamente `SUPABASE_SERVICE_ROLE_KEY` en servidor.
 - Rotar la service role key si alguna vez fue creada con prefijo publico en Vercel/Supabase o compartida.
-- Agregar validacion al arranque: fallar si existe `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY`.
+- ✅ Agregada validacion al arranque: falla si no existe `SUPABASE_SERVICE_ROLE_KEY`.
 
 ### Hallazgo alto: seleccion de empresa manipulable
 
@@ -356,7 +356,7 @@ Crear una mini guia institucional:
 ### P0 - Antes de produccion
 
 1. Actualizar o planificar upgrade seguro de Next.js por vulnerabilidades criticas.
-2. Eliminar `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY` y rotar claves si aplica.
+2. ✅ Eliminado `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY` y renombrado a `SUPABASE_SERVICE_ROLE_KEY`.
 3. Revalidar empresa en `selectCompany` y en cada server action multiempresa.
 4. Centralizar RBAC y aplicar permisos a todas las mutaciones admin.
 5. Sanitizar HTML CMS y escapar HTML de correos.

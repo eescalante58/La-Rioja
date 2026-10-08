@@ -10,11 +10,11 @@ import { cookies } from "next/headers";
 export function createAdminClient() {
   const serviceRoleKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!serviceRoleKey) {
     throw new Error(
-      "No se encontró la clave de servicio (SUPABASE_SERVICE_ROLE_KEY o NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY) en las variables de entorno.",
+      "No se encontró la clave de servicio (SUPABASE_SERVICE_ROLE_KEY) en las variables de entorno.",
     );
   }
 
