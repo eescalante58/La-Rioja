@@ -93,7 +93,7 @@ Público objetivo: público general, asistentes al evento en vivo, equipo de com
 
 ```bash
 git clone https://github.com/eescalante58/La-Rioja.git
-cd LaRioja
+cd La-Rioja
 npm install
 npm run dev          # http://localhost:3000
 
@@ -110,7 +110,7 @@ Las migraciones SQL viven en `supabase/migrations/*.sql` y se aplican manualment
 ## 3. Estructura del Proyecto
 
 ```
-LaRioja/
+La-Rioja/
 ├── supabase/migrations/        # Migraciones SQL versionadas (baseline en BD)
 ├── loadtest/                   # Scripts de prueba de carga (seed, combined-test)
 ├── src/
