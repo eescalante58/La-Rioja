@@ -1,0 +1,59 @@
+#!/bin/sh
+# Hook pre-push compartido (Claude Code, Devin y personas).
+#
+# Protege `main`, que despliega a producción en Vercel en cada push:
+#   1. Rechaza el borrado de `main` y cualquier push no fast-forward (force-push).
+#   2. Avisa si quedan cambios sin commit en el working tree.
+#   3. Corre `npx tsc --noEmit`; si falla, aborta el push.
+#   4. Con PREPUSH_BUILD=1 corre además `npm run build`.
+#
+# Activación (una vez por clon): git config core.hooksPath .githooks
+# Ver Documentacion/Plan_Flujo_Main.md
+
+ZERO="0000000000000000000000000000000000000000"
+check_needed=0
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    if [ "$local_sha" = "$ZERO" ]; then
+      echo "✖ pre-push: está prohibido borrar la rama main." >&2
+      exit 1
+    fi
+    if [ "$remote_sha" != "$ZERO" ]; then
+      if ! git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+        echo "✖ pre-push: origin/main tiene commits que no tienes localmente." >&2
+        echo "  Ejecuta 'git pull --ff-only origin main' y vuelve a intentar." >&2
+        exit 1
+      fi
+      if ! git merge-base --is-ancestor "$remote_sha" "$local_sha"; then
+        echo "✖ pre-push: push no fast-forward a main (force-push) rechazado." >&2
+        echo "  No reescribas historia publicada: corrige con un commit nuevo." >&2
+        exit 1
+      fi
+    fi
+  fi
+  [ "$local_sha" != "$ZERO" ] && check_needed=1
+done
+
+[ "$check_needed" -eq 0 ] && exit 0
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "⚠ pre-push: hay cambios sin commit; no se incluyen en este push." >&2
+fi
+
+echo "▶ pre-push: verificando tipos (npx tsc --noEmit)..." >&2
+if ! npx tsc --noEmit; then
+  echo "✖ pre-push: errores de TypeScript. Corrígelos antes de subir a main." >&2
+  exit 1
+fi
+
+if [ "$PREPUSH_BUILD" = "1" ]; then
+  echo "▶ pre-push: compilando (npm run build)..." >&2
+  if ! npm run build; then
+    echo "✖ pre-push: falló el build. Corrígelo antes de subir a main." >&2
+    exit 1
+  fi
+fi
+
+echo "✔ pre-push: verificación OK." >&2
+exit 0
