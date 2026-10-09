@@ -115,6 +115,14 @@ import {
   updateGalleryImagesOrder,
 } from "@/app/admin/cms/gallery-actions";
 
+import {
+  listProducts,
+  createProduct,
+  updateProduct,
+  setProductFlag,
+  deleteProduct,
+} from "@/app/admin/productos/actions";
+
 import { submitContactForm } from "@/app/actions/contact";
 
 /**
@@ -230,6 +238,13 @@ const REGISTRY: Record<string, ActionFn> = {
   "cms.bulkUploadGalleryImages": bulkUploadGalleryImages,
   "cms.deleteGalleryImage": deleteGalleryImage,
   "cms.updateGalleryImagesOrder": updateGalleryImagesOrder,
+
+  // Catálogo de productos
+  "productos.listProducts": listProducts,
+  "productos.createProduct": createProduct,
+  "productos.updateProduct": updateProduct,
+  "productos.setProductFlag": setProductFlag,
+  "productos.deleteProduct": deleteProduct,
 
   // Formulario de contacto público
   "contact.submitContactForm": submitContactForm,

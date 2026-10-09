@@ -24,6 +24,7 @@ const CMS_PAGES = [
   { value: "bingo", label: "Bingo" },
   { value: "tombola", label: "Tombola" },
   { value: "programs", label: "Programs" },
+  { value: "productos", label: "Productos (La Rioja Shop)" },
   { value: "services", label: "Services (Cards)" },
   { value: "contact", label: "Contact" },
   { value: "global", label: "Global" },
@@ -35,18 +36,12 @@ interface CMSManagerClientProps {
   initialContent: any[];
 }
 
-export default function CMSManagerClient({
-  initialContent,
-}: CMSManagerClientProps) {
+export default function CMSManagerClient({ initialContent }: CMSManagerClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [pageFilter, setPageFilter] = useState<string>(
-    searchParams.get("page") || "all",
-  );
-  const [searchFilter, setSearchFilter] = useState(
-    searchParams.get("search") || "",
-  );
+  const [pageFilter, setPageFilter] = useState<string>(searchParams.get("page") || "all");
+  const [searchFilter, setSearchFilter] = useState(searchParams.get("search") || "");
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
@@ -114,8 +109,7 @@ export default function CMSManagerClient({
             Gestión de Contenido (CMS)
           </Title>
           <Text className="text-xs sm:text-sm mt-1 text-gray-500 dark:text-gray-400">
-            Administra el contenido dinámico de la landing page y secciones
-            informativas.
+            Administra el contenido dinámico de la landing page y secciones informativas.
           </Text>
         </div>
         <button
@@ -139,17 +133,19 @@ export default function CMSManagerClient({
 
       <CMSTable
         content={sortedContent}
-        onView={(item) => { setSelectedItem(item); setIsViewOpen(true); }}
-        onDelete={(item) => { setSelectedItem(item); setIsDeleteOpen(true); }}
+        onView={(item) => {
+          setSelectedItem(item);
+          setIsViewOpen(true);
+        }}
+        onDelete={(item) => {
+          setSelectedItem(item);
+          setIsDeleteOpen(true);
+        }}
         pageFilter={pageFilter}
         searchFilter={searchFilter}
       />
 
-      <CMSViewDialog
-        isOpen={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
-        item={selectedItem}
-      />
+      <CMSViewDialog isOpen={isViewOpen} onClose={() => setIsViewOpen(false)} item={selectedItem} />
 
       <CMSCreateDialog
         isOpen={isCreateOpen}

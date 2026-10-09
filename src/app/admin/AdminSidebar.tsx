@@ -15,6 +15,7 @@ import {
   Building2,
   BookOpen,
   Image as ImageIcon,
+  ShoppingBag,
 } from "lucide-react";
 import { useUser } from "@/providers/UserProvider";
 import { signOut } from "../auth/actions";
@@ -52,6 +53,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/bingo", label: "Galería", icon: ImageIcon, external: true },
     { href: "/admin/cms", label: "Gestión CMS", icon: FileText },
+    { href: "/admin/productos", label: "Productos", icon: ShoppingBag },
     { href: "/admin/settings", label: "Configuración", icon: Settings },
     { href: "/admin/bingo", label: "Gestión Bingo", icon: Ticket },
   ];
