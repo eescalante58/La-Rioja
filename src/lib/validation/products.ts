@@ -1,14 +1,11 @@
 import { z } from "zod";
 
-/** Categorías sugeridas en el formulario del admin (el campo admite texto libre). */
-export const PRODUCT_CATEGORIES = [
-  "Panadería",
-  "Repostería",
-  "Artesanías",
-  "Manualidades",
-  "Bisutería",
-  "Otros",
-] as const;
+/**
+ * Categorías del formulario del admin: una por catálogo de los talleres
+ * (catálogos 2025). Las categorías ya guardadas en productos también se
+ * listan en el selector aunque no estén aquí.
+ */
+export const PRODUCT_CATEGORIES = ["Arte y Costura", "Panadería"] as const;
 
 /**
  * Datos editables de un producto (formulario de /admin/productos).

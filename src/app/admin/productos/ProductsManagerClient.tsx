@@ -468,19 +468,18 @@ export default function ProductsManagerClient({
                 <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Categoría *
                 </span>
-                <input
+                <select
                   required
-                  list="product-categories"
-                  maxLength={60}
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
                   className={inputClass}
-                />
-                <datalist id="product-categories">
+                >
                   {categoryOptions.map((c) => (
-                    <option key={c} value={c} />
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
