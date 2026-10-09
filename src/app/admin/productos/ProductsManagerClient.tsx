@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { Dialog, DialogPanel, Select, SelectItem } from "@tremor/react";
 import {
   AlertCircle,
   ExternalLink,
@@ -369,16 +370,11 @@ export default function ProductsManagerClient({
         </div>
       )}
 
-      {modalOpen && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4"
-          onClick={closeModal}
-        >
-          <form
-            onSubmit={handleSubmit}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-2xl"
-          >
+      {/* Dialog de Tremor (como los diálogos de Bingo): gestiona el apilado de
+          portales, así el desplegable del Select queda por encima del modal. */}
+      <Dialog open={modalOpen} onClose={closeModal} static={true}>
+        <DialogPanel className="max-w-lg w-full p-0 overflow-hidden rounded-2xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-2xl">
+          <form onSubmit={handleSubmit} className="max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-5 py-4">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                 {editing ? "Editar producto" : "Nuevo producto"}
@@ -468,18 +464,17 @@ export default function ProductsManagerClient({
                 <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Categoría *
                 </span>
-                <select
-                  required
+                <Select
                   value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className={inputClass}
+                  onValueChange={(category) => setForm({ ...form, category })}
+                  enableClear={false}
                 >
                   {categoryOptions.map((c) => (
-                    <option key={c} value={c}>
+                    <SelectItem key={c} value={c}>
                       {c}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
+                </Select>
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -572,8 +567,8 @@ export default function ProductsManagerClient({
               </button>
             </div>
           </form>
-        </div>
-      )}
+        </DialogPanel>
+      </Dialog>
     </div>
   );
 }
