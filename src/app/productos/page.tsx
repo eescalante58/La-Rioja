@@ -49,7 +49,7 @@ export default async function ProductosPage() {
       <Navbar brandHeader />
 
       {/* Hero */}
-      <section className="relative pt-40 pb-20 md:pt-52 md:pb-28 bg-larioja-azul text-white overflow-hidden">
+      <section className="relative pt-40 pb-10 md:pt-52 md:pb-14 bg-larioja-azul text-white overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-larioja-azul via-larioja-azul to-blue-900 opacity-50 z-0" />
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-larioja-verde/10 rounded-full blur-2xl z-0" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-larioja-amarillo/5 rounded-full blur-2xl z-0" />
@@ -60,10 +60,10 @@ export default async function ProductosPage() {
               <span className="inline-block py-1 px-3 rounded-full bg-larioja-amarillo text-larioja-azul text-xs font-bold uppercase tracking-widest mb-4 shadow-sm">
                 {hero?.metadata?.badge || "Hecho por nuestros estudiantes"}
               </span>
-              <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold mb-8 tracking-tight break-words [overflow-wrap:anywhere]">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-5 tracking-tight break-words [overflow-wrap:anywhere]">
                 {hero?.title || "Nuestros Productos"}
               </h1>
-              <p className="text-xl md:text-2xl text-white/80 leading-relaxed font-light">
+              <p className="text-lg md:text-xl text-white/80 leading-relaxed font-light">
                 {hero?.description ||
                   "Productos elaborados con dedicación en nuestros talleres de formación laboral. Haz tu pedido por WhatsApp."}
               </p>
@@ -73,7 +73,7 @@ export default async function ProductosPage() {
       </section>
 
       {/* Catálogo */}
-      <section className="py-20 bg-gray-50 dark:bg-slate-900/50">
+      <section className="py-16 md:py-24 min-h-[60vh] bg-gray-50 dark:bg-slate-900/50">
         <div className="container mx-auto px-6 max-w-6xl">
           <ProductCatalog products={products} whatsappDigits={whatsappDigits} />
         </div>

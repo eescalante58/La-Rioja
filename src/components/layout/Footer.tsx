@@ -44,8 +44,7 @@ export async function Footer() {
     getPageContent("social media"),
   ]);
 
-  const contactCard =
-    results[0].status === "fulfilled" ? results[0].value : null;
+  const contactCard = results[0].status === "fulfilled" ? results[0].value : null;
   const socialLinks = results[1].status === "fulfilled" ? results[1].value : [];
 
   const getSocialLink = (key: string) => {
@@ -59,12 +58,8 @@ export async function Footer() {
       <div className="container mx-auto px-6">
         <ScrollReveal className="flex flex-col md:flex-row justify-between items-center gap-12 mb-12">
           <div className="text-center md:text-left">
-            <h3 className="text-2xl font-bold mb-2 font-montserrat">
-              La Rioja
-            </h3>
-            <p className="opacity-70 mb-4">
-              Formando futuros, integrando vidas.
-            </p>
+            <h3 className="text-2xl font-bold mb-2 font-montserrat">La Rioja</h3>
+            <p className="opacity-70 mb-4">Formando futuros, integrando vidas.</p>
             <div className="flex flex-col gap-2 mb-6 font-montserrat">
               <Link
                 href="/"
@@ -102,13 +97,17 @@ export async function Footer() {
               >
                 Bingo
               </Link>
+              <Link
+                href="/productos"
+                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
+              >
+                La Rioja Shop
+              </Link>
             </div>
 
             {contactCard && contactCard.is_active && (
               <div className="mb-8 p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 max-w-sm mx-auto md:mx-0">
-                <h4 className="text-larioja-amarillo font-bold mb-2">
-                  {contactCard.title}
-                </h4>
+                <h4 className="text-larioja-amarillo font-bold mb-2">{contactCard.title}</h4>
                 <ContactDescription description={contactCard.description} />
                 {contactCard.image_url && (
                   <div className="relative h-32 w-full rounded-xl overflow-hidden mb-4">

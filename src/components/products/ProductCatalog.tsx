@@ -31,9 +31,11 @@ export function ProductCatalog({ products, whatsappDigits }: ProductCatalogProps
 
   if (products.length === 0) {
     return (
-      <div className="py-20 text-center text-gray-500 dark:text-white/60">
-        <Package size={48} className="mx-auto mb-4 opacity-40" />
-        <p className="italic">Pronto publicaremos los productos de nuestros talleres.</p>
+      <div className="py-24 md:py-32 text-center text-gray-500 dark:text-white/60">
+        <Package size={64} className="mx-auto mb-6 opacity-40" />
+        <p className="italic text-lg md:text-xl">
+          Pronto publicaremos los productos de nuestros talleres.
+        </p>
       </div>
     );
   }
