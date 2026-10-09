@@ -6,8 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 /**
  * Hook to manage automatic session logout after inactivity.
  * @param {number} timeoutMinutes - Number of minutes of inactivity before logout.
+ * @param {boolean} enabled - Si es false no se arma el temporizador (p. ej. sin sesión).
  */
-export function useAutoLogout(timeoutMinutes: number = 30) {
+export function useAutoLogout(timeoutMinutes: number = 30, enabled: boolean = true) {
   const supabase = createClient();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -55,6 +56,8 @@ export function useAutoLogout(timeoutMinutes: number = 30) {
   }, [timeoutMinutes, logout]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     const events = [
       "mousedown",
       "mousemove",
@@ -80,7 +83,7 @@ export function useAutoLogout(timeoutMinutes: number = 30) {
         window.removeEventListener(event, handleActivity);
       });
     };
-  }, [resetTimer]);
+  }, [resetTimer, enabled]);
 
   return {};
 }
