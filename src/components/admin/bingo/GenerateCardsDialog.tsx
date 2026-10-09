@@ -27,7 +27,7 @@ export interface GenerateConfig {
   start: number;
   end: number;
   price: number;
-  cardType: "Virtual" | "Fisico";
+  cardType: "Virtual" | "Fisico" | "Ticket ruleta";
   deleteExisting: boolean;
 }
 
@@ -90,7 +90,7 @@ export default function GenerateCardsDialog({
     const start = parsedStart;
     const end = parsedEnd;
     const price = parseFloat(cardPrice) || 0;
-    const type = cardType as "Virtual" | "Fisico";
+    const type = cardType as "Virtual" | "Fisico" | "Ticket ruleta";
 
     if (end - start + 1 > 5000) {
       alert("Por seguridad, no puedes generar más de 5,000 cartones por lote.");
@@ -154,7 +154,7 @@ export default function GenerateCardsDialog({
       start: parsedStart,
       end: parsedEnd,
       price: parseFloat(cardPrice) || 0,
-      cardType: (cardType === "Fisico" || cardType === "Físico") ? "Fisico" : "Virtual",
+      cardType: cardType === "Fisico" || cardType === "Físico" ? "Fisico" : cardType === "Ticket ruleta" ? "Ticket ruleta" : "Virtual",
       deleteExisting,
     });
   };
@@ -238,6 +238,7 @@ export default function GenerateCardsDialog({
                 <Select value={cardType} onValueChange={setCardType} enableClear={false}>
                   <SelectItem value="Virtual">Virtual</SelectItem>
                   <SelectItem value="Fisico">Físico</SelectItem>
+                  <SelectItem value="Ticket ruleta">Ticket ruleta</SelectItem>
                 </Select>
               </div>
             </div>

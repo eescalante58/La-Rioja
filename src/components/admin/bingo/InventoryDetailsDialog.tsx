@@ -220,7 +220,16 @@ export default function InventoryDetailsDialog({
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Badge size="xs" color={card.card_type === "Virtual" ? "blue" : "purple"}>
+                          <Badge
+                            size="xs"
+                            color={
+                              card.card_type === "Virtual"
+                                ? "blue"
+                                : card.card_type === "Fisico"
+                                  ? "purple"
+                                  : "amber"
+                            }
+                          >
                             {card.card_type}
                           </Badge>
                           <Button
@@ -228,7 +237,7 @@ export default function InventoryDetailsDialog({
                             icon={RefreshCw}
                             size="xs"
                             onClick={() => onReassignType(card)}
-                            tooltip={`Cambiar a ${card.card_type === "Virtual" ? "Fisico" : "Virtual"}`}
+                            tooltip="Cambiar tipo de cartón"
                           />
                         </div>
                       </TableCell>

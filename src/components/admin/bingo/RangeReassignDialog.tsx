@@ -101,6 +101,7 @@ export default function RangeReassignDialog({
               <Select value={rangeNewType} onValueChange={setRangeNewType} enableClear={false}>
                 <SelectItem value="Virtual">Virtual</SelectItem>
                 <SelectItem value="Fisico">Físico</SelectItem>
+                <SelectItem value="Ticket ruleta">Ticket ruleta</SelectItem>
               </Select>
             </div>
 

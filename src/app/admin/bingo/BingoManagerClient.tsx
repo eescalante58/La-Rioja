@@ -148,7 +148,7 @@ export default function BingoManagerClient({
     start: number;
     end: number;
     price: number;
-    cardType: "Virtual" | "Fisico";
+    cardType: "Virtual" | "Fisico" | "Ticket ruleta";
     deleteExisting: boolean;
   } | null>(null);
 

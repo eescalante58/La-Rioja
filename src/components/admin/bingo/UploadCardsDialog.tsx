@@ -41,7 +41,7 @@ export interface UploadConfig {
   start?: number;
   end?: number;
   price?: number;
-  cardType?: "Virtual" | "Fisico";
+  cardType?: "Virtual" | "Fisico" | "Ticket ruleta";
   deleteExisting?: boolean;
 }
 
@@ -72,7 +72,7 @@ export default function UploadCardsDialog({
   const [cardPrice, setCardPrice] = useState<string>(
     initialConfig?.price?.toString() ?? (event?.card_value?.toString() ?? "10")
   );
-  const [cardType, setCardType] = useState<"Virtual" | "Fisico">(initialConfig?.cardType ?? "Virtual");
+  const [cardType, setCardType] = useState<"Virtual" | "Fisico" | "Ticket ruleta">(initialConfig?.cardType ?? "Virtual");
   const [deleteExisting, setDeleteExisting] = useState<boolean>(initialConfig?.deleteExisting ?? false);
 
   useEffect(() => {
@@ -676,11 +676,12 @@ export default function UploadCardsDialog({
                     <Text className="text-xs font-bold uppercase text-gray-500">Tipo de Cartón</Text>
                     <Select
                       value={cardType}
-                      onValueChange={(val) => setCardType(val as "Virtual" | "Fisico")}
+                      onValueChange={(val) => setCardType(val as "Virtual" | "Fisico" | "Ticket ruleta")}
                       enableClear={false}
                     >
                       <SelectItem value="Virtual">Virtual</SelectItem>
                       <SelectItem value="Fisico">Físico</SelectItem>
+                      <SelectItem value="Ticket ruleta">Ticket ruleta</SelectItem>
                     </Select>
                   </div>
                 </div>

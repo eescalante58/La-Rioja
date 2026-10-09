@@ -155,7 +155,7 @@ La-Rioja/
 | Enum | Valores | Uso |
 | :--- | :------ | :-- |
 | `card_status_enum` | `Disponible`, `Asignado`, `Vendido`, `Cancelado`, `Donado`, `Reservado`, `Anulado` | Estado del cartón (`cards.card_status`) |
-| `card_type_enum` | `Fisico`, `Virtual` | Tipo de cartón (`cards.card_type`) |
+| `card_type_enum` | `Fisico`, `Virtual`, `Ticket ruleta` | Tipo de cartón (`cards.card_type`) |
 | `invoice_payment_method_enum` | `efectivo`, `tarjeta credito`, `tarjeta debito`, `transferencia` | `invoices.payment_method` |
 | `invoice_status_enum` | `pagada`, `pendiente`, `anulada`, `Donada` | `invoices.status` |
 | `student_level_enum` | `1.Terapeutico`, `2.Inicial`, `3.Medio`, `4.Prelaboral`, `5.Laboral`, `6.Personal La Rioja` | Nivel del alumno |
