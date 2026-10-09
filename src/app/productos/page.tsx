@@ -3,12 +3,12 @@ import { HeartHandshake } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
-import { ProductCatalog } from "@/components/products/ProductCatalog";
-import { getPublicProducts } from "@/app/admin/productos/actions";
+import { ShopCatalog } from "@/components/products/ShopCatalog";
+import { getPublicShop } from "@/app/admin/productos/actions";
 import { getPageContent } from "@/services/cms";
 
 export const metadata: Metadata = {
-  title: "Productos | La Rioja",
+  title: "La Rioja Shop | La Rioja",
   description:
     "Conoce los productos elaborados por los estudiantes de los talleres de La Rioja. Cada compra apoya su formación laboral.",
 };
@@ -24,14 +24,15 @@ interface CmsSection {
 }
 
 /**
- * Página pública del catálogo de productos hechos por los estudiantes.
+ * La Rioja Shop: catálogos de los talleres (Arte y Costura, Panadería) con
+ * canasta que registra el pedido y lo envía por WhatsApp.
  * Los textos del encabezado se editan en el CMS (página `productos`,
  * claves `productos_hero` y `productos_mensaje`); el WhatsApp proviene de
  * `social media / whatsapp`.
  */
 export default async function ProductosPage() {
-  const [products, content, socialMedia] = await Promise.all([
-    getPublicProducts(),
+  const [catalogs, content, socialMedia] = await Promise.all([
+    getPublicShop(),
     getPageContent("productos") as Promise<CmsSection[]>,
     getPageContent("social media") as Promise<CmsSection[]>,
   ]);
@@ -39,13 +40,15 @@ export default async function ProductosPage() {
   const hero = content.find((s) => s.section_key === "productos_hero");
   const mensaje = content.find((s) => s.section_key === "productos_mensaje");
 
-  // Número normalizado a solo dígitos para wa.me (igual que en /bingo).
-  const whatsappDigits =
-    socialMedia.find((l) => l.section_key === "whatsapp")?.description?.replace(/\D/g, "") ||
-    undefined;
+  // WhatsApp de pedidos de la tienda (CMS: social media → «whatsapp tienda»);
+  // si no existe, el WhatsApp institucional. Solo dígitos para wa.me.
+  const whatsappSource =
+    socialMedia.find((l) => l.section_key === "whatsapp tienda")?.description ||
+    socialMedia.find((l) => l.section_key === "whatsapp")?.description;
+  const whatsappDigits = whatsappSource?.replace(/\D/g, "") || undefined;
 
   return (
-    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden">
+    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-x-clip">
       <Navbar brandHeader />
 
       {/* Hero */}
@@ -65,7 +68,7 @@ export default async function ProductosPage() {
               </h1>
               <p className="text-lg md:text-xl text-white/80 leading-relaxed font-light">
                 {hero?.description ||
-                  "Productos elaborados con dedicación en nuestros talleres de formación laboral. Haz tu pedido por WhatsApp."}
+                  "Productos elaborados con dedicación en nuestros talleres de formación laboral. Arma tu canasta y envíanos tu pedido por WhatsApp."}
               </p>
             </div>
           </ScrollReveal>
@@ -75,7 +78,7 @@ export default async function ProductosPage() {
       {/* Catálogo */}
       <section className="py-16 md:py-24 min-h-[60vh] bg-gray-50 dark:bg-slate-900/50">
         <div className="container mx-auto px-6 max-w-6xl">
-          <ProductCatalog products={products} whatsappDigits={whatsappDigits} />
+          <ShopCatalog catalogs={catalogs} whatsappDigits={whatsappDigits} />
         </div>
       </section>
 

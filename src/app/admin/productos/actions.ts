@@ -5,12 +5,27 @@ import type { User } from "@supabase/supabase-js";
 import { createAdminClient, createStaticClient } from "@/lib/supabase/server";
 import { withRole } from "@/lib/auth/guards";
 import { requireCompanyAccess } from "@/lib/auth/authorization";
-import { productSchema, type Product } from "@/lib/validation/products";
+import {
+  catalogSchema,
+  lineSchema,
+  normalizeProduct,
+  productSchema,
+  type CatalogInput,
+  type LineInput,
+  type Product,
+  type ProductCatalog,
+  type ProductLine,
+  type PublicCatalog,
+  type ShopAdminData,
+  type VariantInput,
+} from "@/lib/validation/products";
+import { ORDER_STATUSES, type OrderStatus, type ShopOrder } from "@/lib/validation/shop-orders";
 
-/** Nivel mínimo para gestionar productos (Editor). */
+/** Nivel mínimo para gestionar la tienda (Editor). */
 const MIN_LEVEL = 6;
 const BUCKET = "product_images";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const PRODUCT_SELECT = "*, variants:product_variants(*)";
 
 interface RoleContext {
   user: User;
@@ -19,48 +34,78 @@ interface RoleContext {
 
 type ActionResult<T = undefined> = { success: true; data?: T } | { success: false; error: string };
 
+const byOrder = <T extends { content_order: number; name: string }>(a: T, b: T) =>
+  a.content_order - b.content_order || a.name.localeCompare(b.name);
+
 /**
- * Productos publicados para la página pública /productos.
- * Usa el cliente estático (sin cookies) para permitir ISR; la política RLS
- * solo expone filas con `is_active = true`.
+ * Catálogos publicados con sus líneas y productos para /productos.
+ * Usa el cliente estático (sin cookies) para permitir ISR; RLS solo expone
+ * catálogos, líneas y productos activos (y variantes de productos activos).
  */
-export async function getPublicProducts(): Promise<Product[]> {
+export async function getPublicShop(): Promise<PublicCatalog[]> {
   const supabase = createStaticClient();
   const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("is_active", true)
-    .order("category", { ascending: true })
-    .order("content_order", { ascending: true })
-    .order("name", { ascending: true });
+    .from("product_catalogs")
+    .select(`*, lines:product_lines(*, products(${PRODUCT_SELECT}))`)
+    .eq("is_active", true);
 
   if (error) {
-    console.error("Error fetching public products:", error);
+    console.error("Error fetching public shop:", error);
     return [];
   }
-  return (data ?? []) as Product[];
+
+  type Row = ProductCatalog & {
+    lines: (ProductLine & { products: Parameters<typeof normalizeProduct>[0][] })[];
+  };
+  return ((data ?? []) as Row[])
+    .map((c) => ({
+      ...c,
+      lines: c.lines
+        .filter((l) => l.is_active)
+        .map((l) => ({
+          ...l,
+          products: l.products
+            .filter((p) => p.is_active)
+            .map(normalizeProduct)
+            .filter((p) => p.variants.length > 0)
+            .sort(byOrder),
+        }))
+        .filter((l) => l.products.length > 0)
+        .sort(byOrder),
+    }))
+    .filter((c) => c.lines.length > 0)
+    .sort(byOrder);
 }
 
 /**
- * Lista todos los productos (publicados y ocultos) de una empresa.
+ * Catálogos, líneas y productos (publicados y ocultos) de una empresa.
  */
-async function listProductsInternal(companyId: number): Promise<ActionResult<Product[]>> {
+async function listShopInternal(companyId: number): Promise<ActionResult<ShopAdminData>> {
   const access = await requireCompanyAccess(companyId);
   if (!access.authorized) {
     return { success: false, error: access.error ?? "Acceso denegado a la empresa" };
   }
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("company_id", companyId)
-    .order("category", { ascending: true })
-    .order("content_order", { ascending: true })
-    .order("name", { ascending: true });
+  const [catalogs, products] = await Promise.all([
+    supabase
+      .from("product_catalogs")
+      .select("*, lines:product_lines(*)")
+      .eq("company_id", companyId),
+    supabase.from("products").select(PRODUCT_SELECT).eq("company_id", companyId),
+  ]);
+  if (catalogs.error) return { success: false, error: catalogs.error.message };
+  if (products.error) return { success: false, error: products.error.message };
 
-  if (error) return { success: false, error: error.message };
-  return { success: true, data: (data ?? []) as Product[] };
+  const catalogRows = (catalogs.data ?? []) as (ProductCatalog & { lines: ProductLine[] })[];
+  return {
+    success: true,
+    data: {
+      catalogs: catalogRows.map(({ lines: _lines, ...c }) => c).sort(byOrder),
+      lines: catalogRows.flatMap((c) => c.lines).sort(byOrder),
+      products: (products.data ?? []).map(normalizeProduct).sort(byOrder),
+    },
+  };
 }
 
 /**
@@ -71,18 +116,22 @@ function parseProductForm(formData: FormData) {
     const v = formData.get(key);
     return typeof v === "string" && v.trim() !== "" ? v.trim() : null;
   };
-  const priceRaw = text("price");
+
+  let variants: unknown = [];
+  try {
+    variants = JSON.parse(String(formData.get("variants") ?? "[]"));
+  } catch {
+    variants = null;
+  }
 
   return productSchema.safeParse({
     company_id: Number(formData.get("company_id")),
+    line_id: Number(formData.get("line_id")),
     name: text("name") ?? "",
     description: text("description"),
-    category: text("category") ?? "",
-    price: priceRaw === null ? null : Number(priceRaw.replace(",", ".")),
-    unit: text("unit"),
-    is_available: formData.get("is_available") === "true",
     is_active: formData.get("is_active") === "true",
     content_order: Number(formData.get("content_order") ?? 0) || 0,
+    variants,
   });
 }
 
@@ -124,13 +173,18 @@ async function removeProductImage(imageUrl: string | null) {
 }
 
 /** Registra la operación en la bitácora de actividad. */
-async function logActivity(user: User, action: string, metadata: Record<string, unknown>) {
+async function logActivity(
+  user: User,
+  action: string,
+  metadata: Record<string, unknown>,
+  entity = "products",
+) {
   await createAdminClient()
     .from("user_activity_log")
     .insert({
       user_id: user.id,
       action,
-      entity: "products",
+      entity,
       metadata: { ...metadata, timestamp: new Date().toISOString() },
     });
 }
@@ -151,13 +205,87 @@ async function authorizeProduct(
   return { product: data };
 }
 
-function revalidateProducts() {
+/** Empresa dueña de un catálogo, validando el acceso del usuario. */
+async function authorizeCatalog(
+  catalogId: number,
+): Promise<{ companyId?: number; error?: string }> {
+  const { data, error } = await createAdminClient()
+    .from("product_catalogs")
+    .select("company_id")
+    .eq("id", catalogId)
+    .single();
+  if (error || !data) return { error: "Catálogo no encontrado." };
+  const access = await requireCompanyAccess(data.company_id);
+  if (!access.authorized) return { error: access.error ?? "Acceso denegado a la empresa" };
+  return { companyId: data.company_id };
+}
+
+/** Empresa dueña de una línea, validando el acceso del usuario. */
+async function authorizeLine(lineId: number): Promise<{ companyId?: number; error?: string }> {
+  const { data, error } = await createAdminClient()
+    .from("product_lines")
+    .select("catalog_id")
+    .eq("id", lineId)
+    .single();
+  if (error || !data) return { error: "Línea no encontrada." };
+  return authorizeCatalog(data.catalog_id);
+}
+
+/** Producto con variantes recién leído (respuesta de las mutaciones). */
+async function fetchProduct(id: string): Promise<Product | null> {
+  const { data } = await createAdminClient()
+    .from("products")
+    .select(PRODUCT_SELECT)
+    .eq("id", id)
+    .single();
+  return data ? normalizeProduct(data) : null;
+}
+
+/**
+ * Sincroniza las variantes de un producto: actualiza las existentes, inserta
+ * las nuevas y elimina las que ya no vienen (los pedidos conservan su copia).
+ */
+async function syncVariants(productId: string, variants: VariantInput[]): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data: current, error } = await supabase
+    .from("product_variants")
+    .select("id")
+    .eq("product_id", productId);
+  if (error) return error.message;
+
+  const currentIds = new Set((current ?? []).map((v) => v.id as number));
+  const keepIds = new Set(variants.flatMap((v) => (v.id && currentIds.has(v.id) ? [v.id] : [])));
+
+  const toDelete = [...currentIds].filter((id) => !keepIds.has(id));
+  if (toDelete.length > 0) {
+    const del = await supabase.from("product_variants").delete().in("id", toDelete);
+    if (del.error) return del.error.message;
+  }
+
+  for (const [index, v] of variants.entries()) {
+    const row = {
+      label: v.label || null,
+      price: v.price,
+      unit: v.unit || null,
+      is_available: v.is_available,
+      content_order: index,
+    };
+    const res =
+      v.id && keepIds.has(v.id)
+        ? await supabase.from("product_variants").update(row).eq("id", v.id)
+        : await supabase.from("product_variants").insert({ ...row, product_id: productId });
+    if (res.error) return res.error.message;
+  }
+  return null;
+}
+
+function revalidateShop() {
   revalidatePath("/productos");
   revalidatePath("/admin/productos");
 }
 
 /**
- * Crea un producto (campos del formulario + archivo opcional `image`).
+ * Crea un producto (campos del formulario, `variants` en JSON y archivo opcional `image`).
  */
 async function createProductInternal(
   formData: FormData,
@@ -165,24 +293,29 @@ async function createProductInternal(
 ): Promise<ActionResult<Product>> {
   const parsed = parseProductForm(formData);
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  const { variants, ...fields } = parsed.data;
 
-  const access = await requireCompanyAccess(parsed.data.company_id);
+  const access = await requireCompanyAccess(fields.company_id);
   if (!access.authorized) {
     return { success: false, error: access.error ?? "Acceso denegado a la empresa" };
+  }
+  const line = await authorizeLine(fields.line_id);
+  if (line.companyId !== fields.company_id) {
+    return { success: false, error: line.error ?? "La línea pertenece a otra empresa." };
   }
 
   let image_url: string | null = null;
   const image = formData.get("image");
   if (image instanceof File && image.size > 0) {
-    const uploaded = await uploadProductImage(parsed.data.company_id, image);
+    const uploaded = await uploadProductImage(fields.company_id, image);
     if (uploaded.error) return { success: false, error: uploaded.error };
     image_url = uploaded.url ?? null;
   }
 
   const { data, error } = await createAdminClient()
     .from("products")
-    .insert({ ...parsed.data, image_url })
-    .select()
+    .insert({ ...fields, image_url })
+    .select("id, name")
     .single();
 
   if (error) {
@@ -190,9 +323,19 @@ async function createProductInternal(
     return { success: false, error: error.message };
   }
 
+  const variantError = await syncVariants(data.id, variants);
+  if (variantError) {
+    await createAdminClient().from("products").delete().eq("id", data.id);
+    await removeProductImage(image_url);
+    return { success: false, error: `No se pudieron guardar los precios: ${variantError}` };
+  }
+
   await logActivity(user, "CREATE_PRODUCT", { id: data.id, name: data.name });
-  revalidateProducts();
-  return { success: true, data: data as Product };
+  revalidateShop();
+  const product = await fetchProduct(data.id);
+  return product
+    ? { success: true, data: product }
+    : { success: false, error: "Producto no encontrado." };
 }
 
 /**
@@ -209,26 +352,29 @@ async function updateProductInternal(
 
   const parsed = parseProductForm(formData);
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
-  if (parsed.data.company_id !== auth.product.company_id) {
+  const { variants, ...fields } = parsed.data;
+  if (fields.company_id !== auth.product.company_id) {
     return { success: false, error: "El producto pertenece a otra empresa." };
+  }
+  const line = await authorizeLine(fields.line_id);
+  if (line.companyId !== fields.company_id) {
+    return { success: false, error: line.error ?? "La línea pertenece a otra empresa." };
   }
 
   let image_url = auth.product.image_url;
   const image = formData.get("image");
   if (image instanceof File && image.size > 0) {
-    const uploaded = await uploadProductImage(parsed.data.company_id, image);
+    const uploaded = await uploadProductImage(fields.company_id, image);
     if (uploaded.error) return { success: false, error: uploaded.error };
     image_url = uploaded.url ?? null;
   } else if (formData.get("remove_image") === "true") {
     image_url = null;
   }
 
-  const { data, error } = await createAdminClient()
+  const { error } = await createAdminClient()
     .from("products")
-    .update({ ...parsed.data, image_url })
-    .eq("id", id)
-    .select()
-    .single();
+    .update({ ...fields, image_url })
+    .eq("id", id);
 
   if (error) {
     if (image_url !== auth.product.image_url) await removeProductImage(image_url);
@@ -236,41 +382,78 @@ async function updateProductInternal(
   }
   if (image_url !== auth.product.image_url) await removeProductImage(auth.product.image_url);
 
-  await logActivity(user, "UPDATE_PRODUCT", { id, name: data.name });
-  revalidateProducts();
-  return { success: true, data: data as Product };
+  const variantError = await syncVariants(id, variants);
+  if (variantError) {
+    return { success: false, error: `No se pudieron guardar los precios: ${variantError}` };
+  }
+
+  await logActivity(user, "UPDATE_PRODUCT", { id, name: fields.name });
+  revalidateShop();
+  const product = await fetchProduct(id);
+  return product
+    ? { success: true, data: product }
+    : { success: false, error: "Producto no encontrado." };
 }
 
 /**
- * Cambia un indicador booleano (`is_available` o `is_active`) de un producto.
+ * Publica u oculta un producto en el sitio.
  */
-async function setProductFlagInternal(
+async function setProductActiveInternal(
   id: string,
-  flag: "is_available" | "is_active",
   value: boolean,
   { user }: RoleContext,
 ): Promise<ActionResult<Product>> {
-  if (flag !== "is_available" && flag !== "is_active") {
-    return { success: false, error: "Campo inválido." };
-  }
   const auth = await authorizeProduct(id);
   if (!auth.product) return { success: false, error: auth.error ?? "Producto no encontrado." };
 
-  const { data, error } = await createAdminClient()
+  const { error } = await createAdminClient()
     .from("products")
-    .update({ [flag]: value === true })
-    .eq("id", id)
-    .select()
-    .single();
+    .update({ is_active: value === true })
+    .eq("id", id);
   if (error) return { success: false, error: error.message };
 
-  await logActivity(user, "UPDATE_PRODUCT_FLAG", { id, flag, value });
-  revalidateProducts();
-  return { success: true, data: data as Product };
+  await logActivity(user, "UPDATE_PRODUCT_FLAG", { id, flag: "is_active", value });
+  revalidateShop();
+  const product = await fetchProduct(id);
+  return product
+    ? { success: true, data: product }
+    : { success: false, error: "Producto no encontrado." };
 }
 
 /**
- * Elimina un producto y su foto del bucket.
+ * Marca una presentación como disponible o agotada.
+ */
+async function setVariantAvailabilityInternal(
+  variantId: number,
+  value: boolean,
+  { user }: RoleContext,
+): Promise<ActionResult<Product>> {
+  const { data: variant } = await createAdminClient()
+    .from("product_variants")
+    .select("product_id")
+    .eq("id", variantId)
+    .single();
+  if (!variant) return { success: false, error: "Presentación no encontrada." };
+
+  const auth = await authorizeProduct(variant.product_id);
+  if (!auth.product) return { success: false, error: auth.error ?? "Producto no encontrado." };
+
+  const { error } = await createAdminClient()
+    .from("product_variants")
+    .update({ is_available: value === true })
+    .eq("id", variantId);
+  if (error) return { success: false, error: error.message };
+
+  await logActivity(user, "UPDATE_VARIANT_AVAILABILITY", { variantId, value });
+  revalidateShop();
+  const product = await fetchProduct(variant.product_id);
+  return product
+    ? { success: true, data: product }
+    : { success: false, error: "Producto no encontrado." };
+}
+
+/**
+ * Elimina un producto, sus variantes (cascada) y su foto del bucket.
  */
 async function deleteProductInternal(id: string, { user }: RoleContext): Promise<ActionResult> {
   const auth = await authorizeProduct(id);
@@ -281,12 +464,227 @@ async function deleteProductInternal(id: string, { user }: RoleContext): Promise
 
   await removeProductImage(auth.product.image_url);
   await logActivity(user, "DELETE_PRODUCT", { id, name: auth.product.name });
-  revalidateProducts();
+  revalidateShop();
   return { success: true };
 }
 
-export const listProducts = withRole(MIN_LEVEL, listProductsInternal);
+/**
+ * Crea o actualiza un catálogo (taller).
+ */
+async function saveCatalogInternal(
+  input: CatalogInput,
+  { user }: RoleContext,
+): Promise<ActionResult<ProductCatalog>> {
+  const parsed = catalogSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  const { id, ...fields } = parsed.data;
+
+  const access = await requireCompanyAccess(fields.company_id);
+  if (!access.authorized) return { success: false, error: access.error ?? "Acceso denegado" };
+  if (id) {
+    const auth = await authorizeCatalog(id);
+    if (auth.companyId !== fields.company_id) {
+      return { success: false, error: auth.error ?? "El catálogo pertenece a otra empresa." };
+    }
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = id
+    ? await supabase.from("product_catalogs").update(fields).eq("id", id).select().single()
+    : await supabase.from("product_catalogs").insert(fields).select().single();
+  if (error) {
+    return {
+      success: false,
+      error:
+        error.code === "23505" ? "Ya existe un catálogo con ese identificador." : error.message,
+    };
+  }
+
+  await logActivity(
+    user,
+    id ? "UPDATE_CATALOG" : "CREATE_CATALOG",
+    { id: data.id, name: data.name },
+    "product_catalogs",
+  );
+  revalidateShop();
+  return { success: true, data: data as ProductCatalog };
+}
+
+/**
+ * Elimina un catálogo y sus líneas. Falla si alguna línea tiene productos.
+ */
+async function deleteCatalogInternal(id: number, { user }: RoleContext): Promise<ActionResult> {
+  const auth = await authorizeCatalog(id);
+  if (!auth.companyId) return { success: false, error: auth.error ?? "Catálogo no encontrado." };
+
+  const { error } = await createAdminClient().from("product_catalogs").delete().eq("id", id);
+  if (error) {
+    return {
+      success: false,
+      error:
+        error.code === "23503"
+          ? "No se puede eliminar: el catálogo tiene productos. Muévelos o elimínalos primero."
+          : error.message,
+    };
+  }
+  await logActivity(user, "DELETE_CATALOG", { id }, "product_catalogs");
+  revalidateShop();
+  return { success: true };
+}
+
+/**
+ * Crea o actualiza una línea de productos.
+ */
+async function saveLineInternal(
+  input: LineInput,
+  { user }: RoleContext,
+): Promise<ActionResult<ProductLine>> {
+  const parsed = lineSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  const { id, ...fields } = parsed.data;
+
+  const target = await authorizeCatalog(fields.catalog_id);
+  if (!target.companyId)
+    return { success: false, error: target.error ?? "Catálogo no encontrado." };
+  if (id) {
+    const current = await authorizeLine(id);
+    if (current.companyId !== target.companyId) {
+      return { success: false, error: current.error ?? "La línea pertenece a otra empresa." };
+    }
+  }
+
+  const supabase = createAdminClient();
+  const { data, error } = id
+    ? await supabase.from("product_lines").update(fields).eq("id", id).select().single()
+    : await supabase.from("product_lines").insert(fields).select().single();
+  if (error) {
+    return {
+      success: false,
+      error:
+        error.code === "23505"
+          ? "Ya existe una línea con ese nombre en el catálogo."
+          : error.message,
+    };
+  }
+
+  await logActivity(
+    user,
+    id ? "UPDATE_LINE" : "CREATE_LINE",
+    { id: data.id, name: data.name },
+    "product_lines",
+  );
+  revalidateShop();
+  return { success: true, data: data as ProductLine };
+}
+
+/**
+ * Elimina una línea. Falla si tiene productos.
+ */
+async function deleteLineInternal(id: number, { user }: RoleContext): Promise<ActionResult> {
+  const auth = await authorizeLine(id);
+  if (!auth.companyId) return { success: false, error: auth.error ?? "Línea no encontrada." };
+
+  const { error } = await createAdminClient().from("product_lines").delete().eq("id", id);
+  if (error) {
+    return {
+      success: false,
+      error:
+        error.code === "23503"
+          ? "No se puede eliminar: la línea tiene productos. Muévelos o elimínalos primero."
+          : error.message,
+    };
+  }
+  await logActivity(user, "DELETE_LINE", { id }, "product_lines");
+  revalidateShop();
+  return { success: true };
+}
+
+/**
+ * Pedidos de la empresa (más recientes primero), opcionalmente por estado.
+ */
+async function listOrdersInternal(
+  companyId: number,
+  status: OrderStatus | null,
+): Promise<ActionResult<ShopOrder[]>> {
+  const access = await requireCompanyAccess(companyId);
+  if (!access.authorized) {
+    return { success: false, error: access.error ?? "Acceso denegado a la empresa" };
+  }
+
+  let query = createAdminClient()
+    .from("shop_orders")
+    .select(
+      "id, order_number, company_id, customer_name, customer_phone, customer_email, notes, total, status, created_at, updated_at, items:shop_order_items(id, variant_id, product_name, variant_label, unit, unit_price, quantity, subtotal)",
+    )
+    .eq("company_id", companyId)
+    .order("created_at", { ascending: false })
+    .limit(300);
+  if (status && ORDER_STATUSES.includes(status)) query = query.eq("status", status);
+
+  const { data, error } = await query;
+  if (error) return { success: false, error: error.message };
+
+  type Row = Omit<ShopOrder, "total" | "items"> & {
+    total: number | string;
+    items: (Omit<ShopOrder["items"][number], "unit_price" | "subtotal"> & {
+      unit_price: number | string;
+      subtotal: number | string;
+    })[];
+  };
+  return {
+    success: true,
+    data: ((data ?? []) as Row[]).map((o) => ({
+      ...o,
+      total: Number(o.total),
+      items: o.items
+        .map((i) => ({ ...i, unit_price: Number(i.unit_price), subtotal: Number(i.subtotal) }))
+        .sort((a, b) => (a.id ?? 0) - (b.id ?? 0)),
+    })),
+  };
+}
+
+/**
+ * Cambia el estado de un pedido.
+ */
+async function updateOrderStatusInternal(
+  orderId: string,
+  status: OrderStatus,
+  { user }: RoleContext,
+): Promise<ActionResult> {
+  if (!ORDER_STATUSES.includes(status)) return { success: false, error: "Estado inválido." };
+
+  const supabase = createAdminClient();
+  const { data: order } = await supabase
+    .from("shop_orders")
+    .select("company_id, order_number")
+    .eq("id", orderId)
+    .single();
+  if (!order) return { success: false, error: "Pedido no encontrado." };
+
+  const access = await requireCompanyAccess(order.company_id);
+  if (!access.authorized) return { success: false, error: access.error ?? "Acceso denegado" };
+
+  const { error } = await supabase.from("shop_orders").update({ status }).eq("id", orderId);
+  if (error) return { success: false, error: error.message };
+
+  await logActivity(
+    user,
+    "UPDATE_ORDER_STATUS",
+    { orderId, order_number: order.order_number, status },
+    "shop_orders",
+  );
+  return { success: true };
+}
+
+export const listShop = withRole(MIN_LEVEL, listShopInternal);
 export const createProduct = withRole(MIN_LEVEL, createProductInternal);
 export const updateProduct = withRole(MIN_LEVEL, updateProductInternal);
-export const setProductFlag = withRole(MIN_LEVEL, setProductFlagInternal);
+export const setProductActive = withRole(MIN_LEVEL, setProductActiveInternal);
+export const setVariantAvailability = withRole(MIN_LEVEL, setVariantAvailabilityInternal);
 export const deleteProduct = withRole(MIN_LEVEL, deleteProductInternal);
+export const saveCatalog = withRole(MIN_LEVEL, saveCatalogInternal);
+export const deleteCatalog = withRole(MIN_LEVEL, deleteCatalogInternal);
+export const saveLine = withRole(MIN_LEVEL, saveLineInternal);
+export const deleteLine = withRole(MIN_LEVEL, deleteLineInternal);
+export const listOrders = withRole(MIN_LEVEL, listOrdersInternal);
+export const updateOrderStatus = withRole(MIN_LEVEL, updateOrderStatusInternal);

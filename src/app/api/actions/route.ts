@@ -109,11 +109,18 @@ import {
 } from "@/app/admin/cms/gallery-actions";
 
 import {
-  listProducts,
+  listShop,
   createProduct,
   updateProduct,
-  setProductFlag,
+  setProductActive,
+  setVariantAvailability,
   deleteProduct,
+  saveCatalog,
+  deleteCatalog,
+  saveLine,
+  deleteLine,
+  listOrders,
+  updateOrderStatus,
 } from "@/app/admin/productos/actions";
 
 import { submitContactForm } from "@/app/actions/contact";
@@ -233,11 +240,20 @@ const REGISTRY: Record<string, ActionFn> = {
   "cms.updateGalleryImagesOrder": updateGalleryImagesOrder,
 
   // Catálogo de productos
-  "productos.listProducts": listProducts,
+  "productos.listShop": listShop,
   "productos.createProduct": createProduct,
   "productos.updateProduct": updateProduct,
-  "productos.setProductFlag": setProductFlag,
+  "productos.setProductActive": setProductActive,
+  "productos.setVariantAvailability": setVariantAvailability,
   "productos.deleteProduct": deleteProduct,
+  "productos.saveCatalog": saveCatalog,
+  "productos.deleteCatalog": deleteCatalog,
+  "productos.saveLine": saveLine,
+  "productos.deleteLine": deleteLine,
+
+  // Pedidos de La Rioja Shop
+  "pedidos.listOrders": listOrders,
+  "pedidos.updateOrderStatus": updateOrderStatus,
 
   // Formulario de contacto público
   "contact.submitContactForm": submitContactForm,
