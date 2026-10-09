@@ -208,7 +208,7 @@ export function Navbar({
                       : "text-white hover:text-larioja-amarillo"
                   }`}
                 >
-                  Panel de Control
+                  Inicio de sesión
                 </Link>
 
                 <ContactTrigger>
@@ -325,7 +325,7 @@ export function Navbar({
                 onClick={() => setIsOpen(false)}
                 className="text-xl sm:text-2xl font-medium text-larioja-amarillo hover:text-larioja-amarillo/80 transition-all py-3 sm:py-4 border-b border-white/5"
               >
-                Panel de Control
+                Inicio de sesión
               </Link>
 
               <ContactTrigger>
