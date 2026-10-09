@@ -76,7 +76,9 @@ async function uploadCardsBatchInternal(
   const normalizedCardType =
     cardType === "Fisico" || cardType === "Físico" || formData.get("card_type") === "Fisico" || formData.get("card_type") === "Físico"
       ? "Fisico"
-      : "Virtual";
+      : cardType === "Ticket ruleta"
+        ? "Ticket ruleta"
+        : "Virtual";
 
   const files = (formData.getAll("files") as File[]).sort((a, b) => {
     const matchA = a.name.match(/_Carton_(\d+)\.pdf$/i);
@@ -208,7 +210,11 @@ async function uploadSingleCardImageInternal(
   const { user } = context;
   const supabase = await createClient();
   const normalizedCardType =
-    cardType === "Fisico" || cardType === "Físico" ? "Fisico" : "Virtual";
+    cardType === "Fisico" || cardType === "Físico"
+      ? "Fisico"
+      : cardType === "Ticket ruleta"
+        ? "Ticket ruleta"
+        : "Virtual";
 
   try {
     // 1. Extract info from filename
@@ -673,7 +679,7 @@ async function generateCardsInternal(
   start: number,
   end: number,
   price: number,
-  cardType: "Virtual" | "Fisico",
+  cardType: "Virtual" | "Fisico" | "Ticket ruleta",
   deleteExisting: boolean = false,
   context: { user: any }
 ) {

@@ -72,7 +72,7 @@ export const generateCardsSchema = z.object({
   start: z.number().int().min(1),
   end: z.number().int().min(1),
   price: z.number().min(0),
-  card_type: z.enum(["Virtual", "Fisico"]),
+  card_type: z.enum(["Virtual", "Fisico", "Ticket ruleta"]),
   deleteExisting: z.boolean().default(false),
 });
 
@@ -80,7 +80,7 @@ export const updateCardTypeSchema = z.object({
   company_id: z.number().int().positive(),
   event_id: z.string().min(1),
   card_number: z.number().int().min(1),
-  new_type: z.enum(["Virtual", "Fisico"]),
+  new_type: z.enum(["Virtual", "Fisico", "Ticket ruleta"]),
   official_name: z.string().min(1),
 });
 
@@ -89,7 +89,7 @@ export const updateCardRangeTypeSchema = z.object({
   event_id: z.string().min(1),
   start: z.number().int().min(1),
   end: z.number().int().min(1),
-  new_type: z.enum(["Virtual", "Fisico"]),
+  new_type: z.enum(["Virtual", "Fisico", "Ticket ruleta"]),
   official_name: z.string().min(1),
 });
 
@@ -104,7 +104,7 @@ export const updateCardRangePlayerSchema = z.object({
 });
 
 export const singleCardSchema = z.object({
-  card_type: z.enum(["Virtual", "Fisico"]),
+  card_type: z.enum(["Virtual", "Fisico", "Ticket ruleta"]),
   card_status: z.enum(["Disponible", "Vendido", "Asignado", "Reservado", "Anulado", "Donado"]),
   card_price: z.number().min(0),
   sales_price: z.number().min(0).nullable().optional(),
