@@ -16,14 +16,18 @@ const ENDPOINT = "/api/actions";
 const FORMDATA_TOKEN = "$formData";
 
 /**
+ * Claves reservadas del multipart. Llevan prefijo `$` para no chocar con
+ * campos del formulario (p. ej. el `name` de un producto o evento).
+ */
+const ACTION_KEY = "$action";
+const ARGS_KEY = "$args";
+
+/**
  * Invoca una acción registrada con argumentos JSON serializables.
  * @param name Nombre del registro, p. ej. `"bingo.getWheels"`.
  * @param args Argumentos posicionales de la acción.
  */
-export async function callAction<T = unknown>(
-  name: string,
-  args: unknown[] = [],
-): Promise<T> {
+export async function callAction<T = unknown>(name: string, args: unknown[] = []): Promise<T> {
   const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -45,8 +49,8 @@ export async function callActionForm<T = unknown>(
   formData: FormData,
   leadingArgs: unknown[] = [],
 ): Promise<T> {
-  formData.append("name", name);
-  formData.append("args", JSON.stringify([...leadingArgs, FORMDATA_TOKEN]));
+  formData.set(ACTION_KEY, name);
+  formData.set(ARGS_KEY, JSON.stringify([...leadingArgs, FORMDATA_TOKEN]));
 
   const res = await fetch(ENDPOINT, { method: "POST", body: formData });
   return (await res.json()) as T;

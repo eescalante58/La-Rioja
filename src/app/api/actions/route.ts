@@ -72,11 +72,7 @@ import { getTablePolicies } from "@/app/admin/settings/security/actions";
 
 import { setRegistrationMode } from "@/app/admin/settings/registration-limits/actions";
 
-import {
-  validateCopy,
-  copyTable,
-  deleteCopy,
-} from "@/app/admin/settings/test-data/actions";
+import { validateCopy, copyTable, deleteCopy } from "@/app/admin/settings/test-data/actions";
 
 import {
   createNewUser,
@@ -92,10 +88,7 @@ import {
   getUserCompanies,
 } from "@/app/admin/settings/users/actions";
 
-import {
-  updateMyProfile,
-  updateMyPassword,
-} from "@/app/admin/profile/actions";
+import { updateMyProfile, updateMyPassword } from "@/app/admin/profile/actions";
 
 import {
   createCMSContent,
@@ -253,6 +246,10 @@ const REGISTRY: Record<string, ActionFn> = {
 /** Token que el cliente inserta en `args` donde debe ir el FormData recibido. */
 const FORMDATA_TOKEN = "$formData";
 
+/** Claves reservadas del multipart (ver `src/lib/action-client.ts`). */
+const ACTION_KEY = "$action";
+const ARGS_KEY = "$args";
+
 /**
  * Ejecuta la acción registrada y devuelve su resultado tal cual en JSON
  * (las acciones ya responden con la forma `{ success, data, error }`).
@@ -261,7 +258,10 @@ async function dispatch(name: string, args: unknown[]): Promise<NextResponse> {
   const fn = REGISTRY[name];
   if (!fn) {
     return NextResponse.json(
-      { success: false, error: `Operación desconocida: ${name}` },
+      {
+        success: false,
+        error: `No se pudo procesar la solicitud: la operación «${name || "(vacía)"}» no está registrada en el servidor. Recarga la página e inténtalo de nuevo; si persiste, reporta este mensaje al soporte técnico.`,
+      },
       { status: 400 },
     );
   }
@@ -285,9 +285,9 @@ async function dispatch(name: string, args: unknown[]): Promise<NextResponse> {
  * POST /api/actions — dispatcher JSON/multipart.
  *
  * JSON: `{ "name": "dominio.accion", "args": [...] }`
- * Multipart: campos `name` y `args` (JSON). Cada token "$formData" en `args`
- * se sustituye por el FormData de la petición (los campos `name`/`args`
- * internos se eliminan antes de entregarlo a la acción).
+ * Multipart: campos `$action` y `$args` (JSON). Cada token "$formData" en
+ * `$args` se sustituye por el FormData de la petición (las claves reservadas
+ * se eliminan antes de entregarlo a la acción).
  */
 export async function POST(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
@@ -297,25 +297,26 @@ export async function POST(request: NextRequest) {
     try {
       formData = await request.formData();
     } catch {
-      return NextResponse.json(
-        { success: false, error: "FormData inválido" },
-        { status: 400 },
-      );
+      return NextResponse.json({ success: false, error: "FormData inválido" }, { status: 400 });
     }
 
-    const name = String(formData.get("name") ?? "");
+    // Formato actual: claves reservadas `$action`/`$args`. Formato legado
+    // (`name`/`args`, bundles anteriores en caché) solo si no viene `$action`:
+    // chocaba con formularios que tienen un campo `name`.
+    const legacy = !formData.has(ACTION_KEY);
+    const actionKey = legacy ? "name" : ACTION_KEY;
+    const argsKey = legacy ? "args" : ARGS_KEY;
+
+    const name = String(formData.get(actionKey) ?? "");
     let args: unknown[] = [];
     try {
-      args = JSON.parse(String(formData.get("args") ?? "[]"));
+      args = JSON.parse(String(formData.get(argsKey) ?? "[]"));
     } catch {
-      return NextResponse.json(
-        { success: false, error: "args JSON inválido" },
-        { status: 400 },
-      );
+      return NextResponse.json({ success: false, error: "args JSON inválido" }, { status: 400 });
     }
 
-    formData.delete("name");
-    formData.delete("args");
+    formData.delete(actionKey);
+    formData.delete(argsKey);
     const resolvedArgs = args.map((a) => (a === FORMDATA_TOKEN ? formData : a));
     return dispatch(name, resolvedArgs);
   }
@@ -324,10 +325,7 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { success: false, error: "JSON inválido" },
-      { status: 400 },
-    );
+    return NextResponse.json({ success: false, error: "JSON inválido" }, { status: 400 });
   }
 
   return dispatch(String(body.name ?? ""), Array.isArray(body.args) ? body.args : []);
