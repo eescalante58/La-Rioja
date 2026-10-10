@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Package } from "lucide-react";
-import type { Product, ProductVariant, PublicCatalog } from "@/lib/validation/products";
+import { ChevronDown, Download, Package } from "lucide-react";
+import {
+  formatBytes,
+  type Product,
+  type ProductVariant,
+  type PublicCatalog,
+} from "@/lib/validation/products";
 import { CartProvider } from "./CartProvider";
 import { CartButton, CartDrawer } from "./CartDrawer";
 import { ProductCard } from "./ProductCard";
@@ -109,6 +114,21 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
                 {active.description}
               </p>
             </details>
+          )}
+          {active.pdf_url && (
+            <a
+              href={`${active.pdf_url}?download=${encodeURIComponent(`Catálogo ${active.name}.pdf`)}`}
+              className="mt-5 inline-flex items-center gap-2 rounded-full border-2 border-larioja-azul dark:border-white px-5 py-2 text-sm font-bold text-larioja-azul dark:text-white hover:bg-larioja-azul hover:text-white dark:hover:bg-white dark:hover:text-larioja-azul transition-colors"
+            >
+              <Download size={16} />
+              Descargar catálogo
+              {active.pdf_size_bytes ? (
+                <span className="font-normal opacity-80">
+                  {" "}
+                  (PDF · {formatBytes(active.pdf_size_bytes)})
+                </span>
+              ) : null}
+            </a>
           )}
         </header>
 

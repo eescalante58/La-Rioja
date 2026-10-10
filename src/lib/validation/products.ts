@@ -15,8 +15,22 @@ export interface ProductCatalog {
   tagline: string | null;
   description: string | null;
   cover_image_url: string | null;
+  /** Catálogo descargable en PDF (bucket `product_catalog_pdfs`); null = sin PDF. */
+  pdf_url: string | null;
+  pdf_size_bytes: number | null;
+  pdf_updated_at: string | null;
   content_order: number;
   is_active: boolean;
+}
+
+/** Tamaño máximo del PDF de un catálogo (igual al límite del bucket). */
+export const CATALOG_PDF_MAX_BYTES = 50 * 1024 * 1024;
+
+/** Tamaño legible: «6.1 MB», «850 KB». */
+export function formatBytes(bytes: number | null | undefined): string {
+  if (!bytes || bytes <= 0) return "";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /** Línea de productos dentro de un catálogo (Tote Bags, Toallas…). */

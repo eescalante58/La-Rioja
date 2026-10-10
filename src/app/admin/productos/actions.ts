@@ -6,6 +6,7 @@ import { createAdminClient, createStaticClient } from "@/lib/supabase/server";
 import { withRole } from "@/lib/auth/guards";
 import { requireCompanyAccess } from "@/lib/auth/authorization";
 import {
+  CATALOG_PDF_MAX_BYTES,
   catalogSchema,
   lineSchema,
   normalizeProduct,
@@ -24,6 +25,7 @@ import { ORDER_STATUSES, type OrderStatus, type ShopOrder } from "@/lib/validati
 /** Nivel mínimo para gestionar la tienda (Editor). */
 const MIN_LEVEL = 6;
 const BUCKET = "product_images";
+const PDF_BUCKET = "product_catalog_pdfs";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const PRODUCT_SELECT = "*, variants:product_variants(*)";
 
@@ -570,6 +572,11 @@ async function deleteCatalogInternal(id: number, { user }: RoleContext): Promise
   const auth = await authorizeCatalog(id);
   if (!auth.companyId) return { success: false, error: auth.error ?? "Catálogo no encontrado." };
 
+  const { data: current } = await createAdminClient()
+    .from("product_catalogs")
+    .select("pdf_url")
+    .eq("id", id)
+    .single();
   const { error } = await createAdminClient().from("product_catalogs").delete().eq("id", id);
   if (error) {
     return {
@@ -580,9 +587,174 @@ async function deleteCatalogInternal(id: number, { user }: RoleContext): Promise
           : error.message,
     };
   }
+  await removeCatalogPdfFile(current?.pdf_url ?? null);
   await logActivity(user, "DELETE_CATALOG", { id }, "product_catalogs");
   revalidateShop();
   return { success: true };
+}
+
+/** Ruta dentro del bucket de PDF a partir de su URL pública (o null). */
+function pdfPathFromUrl(url: string | null): string | null {
+  if (!url) return null;
+  const parts = url.split(`/${PDF_BUCKET}/`);
+  return parts.length < 2 ? null : decodeURIComponent(parts[1].split("?")[0]);
+}
+
+/** Borra del bucket el PDF de una URL pública (errores solo se registran). */
+async function removeCatalogPdfFile(url: string | null) {
+  const path = pdfPathFromUrl(url);
+  if (!path) return;
+  const { error } = await createAdminClient().storage.from(PDF_BUCKET).remove([path]);
+  if (error) console.error("Error al borrar PDF de catálogo:", error);
+}
+
+/**
+ * Prepara la subida directa del PDF de un catálogo a Storage: devuelve una
+ * URL de subida firmada (el archivo no pasa por Vercel, que limita las
+ * peticiones a ~4.5 MB). El navegador sube con `uploadToSignedUrl` y luego
+ * confirma con `setCatalogPdf`.
+ */
+async function createCatalogPdfUploadInternal(
+  catalogId: number,
+  fileName: string,
+  sizeBytes: number,
+): Promise<ActionResult<{ path: string; token: string }>> {
+  if (typeof fileName !== "string" || !fileName.toLowerCase().endsWith(".pdf")) {
+    return { success: false, error: "El archivo debe ser un PDF." };
+  }
+  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0 || sizeBytes > CATALOG_PDF_MAX_BYTES) {
+    return { success: false, error: "El PDF debe pesar como máximo 50 MB." };
+  }
+  const auth = await authorizeCatalog(catalogId);
+  if (!auth.companyId) return { success: false, error: auth.error ?? "Catálogo no encontrado." };
+
+  const { data: catalog } = await createAdminClient()
+    .from("product_catalogs")
+    .select("slug")
+    .eq("id", catalogId)
+    .single();
+  const path = `${auth.companyId}/${catalog?.slug ?? "catalogo"}-${crypto.randomUUID()}.pdf`;
+
+  const { data, error } = await createAdminClient()
+    .storage.from(PDF_BUCKET)
+    .createSignedUploadUrl(path);
+  if (error || !data) {
+    return { success: false, error: `No se pudo preparar la subida: ${error?.message ?? ""}` };
+  }
+  return { success: true, data: { path: data.path, token: data.token } };
+}
+
+/**
+ * Confirma el PDF subido: verifica que exista en el bucket y pertenezca a la
+ * empresa del catálogo, guarda URL/tamaño/fecha y borra el PDF anterior.
+ */
+async function setCatalogPdfInternal(
+  catalogId: number,
+  path: string,
+  { user }: RoleContext,
+): Promise<ActionResult<ProductCatalog>> {
+  const auth = await authorizeCatalog(catalogId);
+  if (!auth.companyId) return { success: false, error: auth.error ?? "Catálogo no encontrado." };
+  if (
+    typeof path !== "string" ||
+    !path.startsWith(`${auth.companyId}/`) ||
+    !path.endsWith(".pdf")
+  ) {
+    return { success: false, error: "Ruta de archivo inválida." };
+  }
+
+  const supabase = createAdminClient();
+  const storage = supabase.storage.from(PDF_BUCKET);
+  const { data: info, error: infoError } = await storage.info(path);
+  if (infoError || !info) {
+    return { success: false, error: "No se encontró el PDF subido. Intenta de nuevo." };
+  }
+
+  const { data: current } = await supabase
+    .from("product_catalogs")
+    .select("pdf_url")
+    .eq("id", catalogId)
+    .single();
+
+  const pdf_url = storage.getPublicUrl(path).data.publicUrl;
+  const { data, error } = await supabase
+    .from("product_catalogs")
+    .update({
+      pdf_url,
+      pdf_size_bytes: info.size ?? null,
+      pdf_updated_at: new Date().toISOString(),
+    })
+    .eq("id", catalogId)
+    .select()
+    .single();
+  if (error) {
+    await storage.remove([path]);
+    return { success: false, error: error.message };
+  }
+
+  if (current?.pdf_url && current.pdf_url !== pdf_url) await removeCatalogPdfFile(current.pdf_url);
+  await logActivity(
+    user,
+    "SET_CATALOG_PDF",
+    { id: catalogId, path, size: info.size ?? null },
+    "product_catalogs",
+  );
+  revalidateShop();
+  return { success: true, data: data as ProductCatalog };
+}
+
+/**
+ * Descarta un PDF subido que no se llegó a confirmar (p. ej. si falló
+ * `setCatalogPdf`). Solo borra rutas de la empresa del catálogo que no sean
+ * el PDF vigente.
+ */
+async function discardCatalogPdfUploadInternal(
+  catalogId: number,
+  path: string,
+): Promise<ActionResult> {
+  const auth = await authorizeCatalog(catalogId);
+  if (!auth.companyId) return { success: false, error: auth.error ?? "Catálogo no encontrado." };
+  if (typeof path !== "string" || !path.startsWith(`${auth.companyId}/`)) {
+    return { success: false, error: "Ruta de archivo inválida." };
+  }
+  const { data: current } = await createAdminClient()
+    .from("product_catalogs")
+    .select("pdf_url")
+    .eq("id", catalogId)
+    .single();
+  if (pdfPathFromUrl(current?.pdf_url ?? null) === path) return { success: true };
+  await createAdminClient().storage.from(PDF_BUCKET).remove([path]);
+  return { success: true };
+}
+
+/**
+ * Quita el PDF de un catálogo (borra el archivo del bucket).
+ */
+async function removeCatalogPdfInternal(
+  catalogId: number,
+  { user }: RoleContext,
+): Promise<ActionResult<ProductCatalog>> {
+  const auth = await authorizeCatalog(catalogId);
+  if (!auth.companyId) return { success: false, error: auth.error ?? "Catálogo no encontrado." };
+
+  const supabase = createAdminClient();
+  const { data: current } = await supabase
+    .from("product_catalogs")
+    .select("pdf_url")
+    .eq("id", catalogId)
+    .single();
+  const { data, error } = await supabase
+    .from("product_catalogs")
+    .update({ pdf_url: null, pdf_size_bytes: null, pdf_updated_at: null })
+    .eq("id", catalogId)
+    .select()
+    .single();
+  if (error) return { success: false, error: error.message };
+
+  await removeCatalogPdfFile(current?.pdf_url ?? null);
+  await logActivity(user, "REMOVE_CATALOG_PDF", { id: catalogId }, "product_catalogs");
+  revalidateShop();
+  return { success: true, data: data as ProductCatalog };
 }
 
 /**
@@ -738,6 +910,10 @@ export const deleteProduct = withRole(MIN_LEVEL, deleteProductInternal);
 export const reorderProducts = withRole(MIN_LEVEL, reorderProductsInternal);
 export const saveCatalog = withRole(MIN_LEVEL, saveCatalogInternal);
 export const deleteCatalog = withRole(MIN_LEVEL, deleteCatalogInternal);
+export const createCatalogPdfUpload = withRole(MIN_LEVEL, createCatalogPdfUploadInternal);
+export const setCatalogPdf = withRole(MIN_LEVEL, setCatalogPdfInternal);
+export const discardCatalogPdfUpload = withRole(MIN_LEVEL, discardCatalogPdfUploadInternal);
+export const removeCatalogPdf = withRole(MIN_LEVEL, removeCatalogPdfInternal);
 export const saveLine = withRole(MIN_LEVEL, saveLineInternal);
 export const deleteLine = withRole(MIN_LEVEL, deleteLineInternal);
 export const listOrders = withRole(MIN_LEVEL, listOrdersInternal);

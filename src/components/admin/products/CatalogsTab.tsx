@@ -18,6 +18,7 @@ import {
   type Result,
   type ShopTabProps,
 } from "./shared";
+import { CatalogPdfRow } from "./CatalogPdfRow";
 
 /** Diálogo abierto: catálogo o línea, nuevo (id indefinido) o en edición. */
 type Editing = { kind: "catalog"; value: CatalogInput } | { kind: "line"; value: LineInput } | null;
@@ -297,6 +298,16 @@ export default function CatalogsTab({ companyId, data, setData }: ShopTabProps) 
                 </button>
               </div>
             </header>
+
+            <CatalogPdfRow
+              catalog={c}
+              onUpdated={(saved) =>
+                setData((prev) => ({
+                  ...prev,
+                  catalogs: prev.catalogs.map((x) => (x.id === saved.id ? saved : x)),
+                }))
+              }
+            />
 
             <ul className="divide-y divide-gray-100 dark:divide-gray-800">
               {lines.map((l) => {
