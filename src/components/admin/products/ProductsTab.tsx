@@ -4,8 +4,26 @@ import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogPanel, Select, SelectItem } from "@tremor/react";
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   Eye,
   EyeOff,
+  GripVertical,
   ImageIcon,
   Loader2,
   Package,
@@ -117,17 +135,86 @@ export default function ProductsTab({ companyId, data, setData }: ShopTabProps) 
       .filter((l) => catalogFilter === ALL || String(l.catalog_id) === catalogFilter)
       .map((line) => ({
         key: String(line.id),
+        lineId: line.id as number | null,
         title: lineLabel(line),
         inactive: !line.is_active,
         products: data.products.filter((p) => p.line_id === line.id && matches(p)),
       }));
     const orphans = data.products.filter((p) => p.line_id === null && matches(p));
     if (orphans.length > 0 && catalogFilter === ALL) {
-      result.push({ key: "none", title: "Sin línea asignada", inactive: false, products: orphans });
+      result.push({
+        key: "none",
+        lineId: null,
+        title: "Sin línea asignada",
+        inactive: false,
+        products: orphans,
+      });
     }
     return result.filter((g) => g.products.length > 0 || (!q && catalogFilter !== ALL));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderedLines, data.products, catalogFilter, search, catalogName]);
+
+  /**
+   * Sensores de dnd-kit (mismo esquema que la galería del CMS): PointerSensor
+   * cubre mouse, touch y stylus; KeyboardSensor permite reordenar con teclado
+   * desde el asa. `distance` evita que un click inicie un arrastre.
+   */
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const [reorderingLine, setReorderingLine] = useState<number | null>(null);
+
+  /**
+   * Fin del arrastre dentro de una línea: reordena con `arrayMove`, renumera
+   * `content_order` (1, 2, 3…), actualiza en local y persiste. Si el servidor
+   * falla, restaura el orden anterior.
+   */
+  const handleDragEnd = async (lineId: number, event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const lineProducts = data.products.filter((p) => p.line_id === lineId);
+    const oldIndex = lineProducts.findIndex((p) => p.id === active.id);
+    const newIndex = lineProducts.findIndex((p) => p.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(lineProducts, oldIndex, newIndex).map((p, i) => ({
+      ...p,
+      content_order: i + 1,
+    }));
+    const previous = data.products;
+    setData((prev) => ({
+      ...prev,
+      products: [...prev.products.filter((p) => p.line_id !== lineId), ...reordered].sort(
+        (a, b) => a.content_order - b.content_order || a.name.localeCompare(b.name),
+      ),
+    }));
+
+    setReorderingLine(lineId);
+    setError(null);
+    const revert = (message: string) => {
+      setData((prev) => ({ ...prev, products: previous }));
+      setError(message);
+    };
+    try {
+      const res = await callAction<Result<undefined>>("productos.reorderProducts", [
+        lineId,
+        reordered.map((p) => p.id),
+      ]);
+      if (!res.success) revert(`No se guardó el nuevo orden: ${res.error}`);
+    } catch {
+      revert("No se guardó el nuevo orden: error de conexión. Intenta de nuevo.");
+    } finally {
+      setReorderingLine(null);
+    }
+  };
+
+  /** Orden para un producto nuevo o movido de línea: al final de la línea destino. */
+  const nextOrderIn = (lineId: string) =>
+    data.products
+      .filter((p) => String(p.line_id) === lineId)
+      .reduce((max, p) => Math.max(max, p.content_order), 0) + 1;
 
   /** Reemplaza (o agrega) un producto en el estado compartido. */
   const upsertLocal = (product: Product) =>
@@ -233,7 +320,12 @@ export default function ProductsTab({ companyId, data, setData }: ShopTabProps) 
     fd.append("line_id", form.line_id);
     fd.append("name", form.name);
     fd.append("description", form.description);
-    fd.append("content_order", form.content_order);
+    // El orden se cambia arrastrando; aquí solo se conserva o se va al final de la línea.
+    const keepsPlace = editing && String(editing.line_id) === form.line_id;
+    fd.append(
+      "content_order",
+      String(keepsPlace ? editing.content_order : nextOrderIn(form.line_id)),
+    );
     fd.append("is_active", String(form.is_active));
     fd.append("variants", JSON.stringify(variants));
     if (imageFile) fd.append("image", imageFile);
@@ -358,23 +450,54 @@ export default function ProductsTab({ companyId, data, setData }: ShopTabProps) 
             {group.products.length === 0 ? (
               <p className="text-sm text-gray-400 italic">Sin productos en esta línea.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                {group.products.map((p) => (
-                  <ProductAdminCard
-                    key={p.id}
-                    product={p}
-                    busy={busyId === p.id}
-                    onEdit={() => openEdit(p)}
-                    onDelete={() => handleDelete(p)}
-                    onToggleActive={() =>
-                      runOnProduct(p, "productos.setProductActive", [p.id, !p.is_active])
-                    }
-                    onToggleVariant={(variantId, value) =>
-                      runOnProduct(p, "productos.setVariantAvailability", [variantId, value])
-                    }
-                  />
-                ))}
-              </div>
+              (() => {
+                const lineId = group.lineId;
+                // Solo se reordena la línea completa: no con búsqueda activa ni sin línea.
+                const sortable = lineId !== null && !search.trim() && group.products.length > 1;
+                const grid = (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                    {group.products.map((p) => (
+                      <SortableProductCard
+                        key={p.id}
+                        product={p}
+                        sortable={sortable && reorderingLine !== lineId}
+                        busy={busyId === p.id}
+                        onEdit={() => openEdit(p)}
+                        onDelete={() => handleDelete(p)}
+                        onToggleActive={() =>
+                          runOnProduct(p, "productos.setProductActive", [p.id, !p.is_active])
+                        }
+                        onToggleVariant={(variantId, value) =>
+                          runOnProduct(p, "productos.setVariantAvailability", [variantId, value])
+                        }
+                      />
+                    ))}
+                  </div>
+                );
+                if (!sortable || lineId === null) return grid;
+                return (
+                  <>
+                    {reorderingLine === lineId && (
+                      <p className="flex items-center gap-2 text-xs text-gray-500">
+                        <Loader2 size={14} className="animate-spin" />
+                        Guardando nuevo orden...
+                      </p>
+                    )}
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(event) => handleDragEnd(lineId, event)}
+                    >
+                      <SortableContext
+                        items={group.products.map((p) => p.id)}
+                        strategy={rectSortingStrategy}
+                      >
+                        {grid}
+                      </SortableContext>
+                    </DndContext>
+                  </>
+                );
+              })()
             )}
           </section>
         ))
@@ -463,7 +586,7 @@ export default function ProductsTab({ companyId, data, setData }: ShopTabProps) 
                 />
               </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr_7rem] gap-3">
+              <div>
                 <div>
                   <FieldLabel>Catálogo y línea *</FieldLabel>
                   <Select
@@ -479,17 +602,10 @@ export default function ProductsTab({ companyId, data, setData }: ShopTabProps) 
                     ))}
                   </Select>
                 </div>
-                <label className="block">
-                  <FieldLabel>Orden</FieldLabel>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={form.content_order}
-                    onChange={(e) => setForm({ ...form, content_order: e.target.value })}
-                    className={inputClass}
-                  />
-                </label>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Para cambiar el orden en la tienda, arrastra la tarjeta desde el asa ⋮⋮ en el
+                  listado.
+                </p>
               </div>
 
               {/* Presentaciones y precios */}
@@ -611,6 +727,8 @@ export default function ProductsTab({ companyId, data, setData }: ShopTabProps) 
 
 interface ProductAdminCardProps {
   product: Product;
+  /** Muestra el asa ⋮⋮ y permite arrastrar (dentro de un `SortableContext`). */
+  sortable: boolean;
   busy: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -618,26 +736,51 @@ interface ProductAdminCardProps {
   onToggleVariant: (variantId: number, value: boolean) => void;
 }
 
-/** Tarjeta de producto en el admin: foto, precios por presentación y acciones. */
-function ProductAdminCard({
+/**
+ * Tarjeta de producto en el admin con soporte de reordenamiento mediante
+ * dnd-kit: el asa ⋮⋮ recibe los listeners y atributos de accesibilidad de
+ * `useSortable`, de modo que los botones de la tarjeta siguen funcionando.
+ */
+function SortableProductCard({
   product: p,
+  sortable,
   busy,
   onEdit,
   onDelete,
   onToggleActive,
   onToggleVariant,
 }: ProductAdminCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: p.id,
+    disabled: !sortable,
+  });
   const soldOut = p.variants.length > 0 && p.variants.every((v) => !v.is_available);
 
   return (
     <div
-      className={`flex flex-col rounded-xl border bg-white dark:bg-gray-950 overflow-hidden ${
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`relative flex flex-col rounded-xl border bg-white dark:bg-gray-950 overflow-hidden ${
+        isDragging ? "z-20 opacity-40 border-larioja-azul" : ""
+      } ${
         p.is_active
           ? "border-gray-200 dark:border-gray-800"
           : "border-dashed border-gray-300 dark:border-gray-700 opacity-70"
       }`}
     >
       <div className="flex gap-3 p-3">
+        {sortable && (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            className="-ml-1 self-start rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 cursor-grab active:cursor-grabbing touch-none"
+            aria-label={`Arrastrar para reordenar ${p.name}`}
+            title="Arrastrar para reordenar"
+          >
+            <GripVertical size={16} />
+          </button>
+        )}
         <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-[#f3efe7] dark:bg-gray-900">
           {p.image_url ? (
             <Image

@@ -453,6 +453,59 @@ async function setVariantAvailabilityInternal(
 }
 
 /**
+ * Reordena los productos de una línea (arrastrar y soltar en el admin).
+ * `orderedIds` debe contener exactamente los productos de la línea, en el
+ * nuevo orden; `content_order` queda 1, 2, 3…
+ */
+async function reorderProductsInternal(
+  lineId: number,
+  orderedIds: string[],
+  { user }: RoleContext,
+): Promise<ActionResult> {
+  if (!Number.isInteger(lineId) || !Array.isArray(orderedIds) || orderedIds.length === 0) {
+    return { success: false, error: "Datos de orden inválidos." };
+  }
+  const line = await authorizeLine(lineId);
+  if (!line.companyId) return { success: false, error: line.error ?? "Línea no encontrada." };
+
+  const supabase = createAdminClient();
+  const { data: current, error } = await supabase
+    .from("products")
+    .select("id")
+    .eq("line_id", lineId);
+  if (error) return { success: false, error: error.message };
+
+  // Mismo conjunto: ni productos ajenos a la línea ni faltantes/duplicados.
+  const currentIds = new Set((current ?? []).map((p) => p.id as string));
+  const requested = new Set(orderedIds);
+  if (
+    requested.size !== orderedIds.length ||
+    requested.size !== currentIds.size ||
+    orderedIds.some((id) => !currentIds.has(id))
+  ) {
+    return {
+      success: false,
+      error: "La lista de productos cambió. Recarga la página e inténtalo de nuevo.",
+    };
+  }
+
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("products")
+        .update({ content_order: index + 1 })
+        .eq("id", id),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) return { success: false, error: failed.error.message };
+
+  await logActivity(user, "REORDER_PRODUCTS", { lineId, count: orderedIds.length });
+  revalidateShop();
+  return { success: true };
+}
+
+/**
  * Elimina un producto, sus variantes (cascada) y su foto del bucket.
  */
 async function deleteProductInternal(id: string, { user }: RoleContext): Promise<ActionResult> {
@@ -682,6 +735,7 @@ export const updateProduct = withRole(MIN_LEVEL, updateProductInternal);
 export const setProductActive = withRole(MIN_LEVEL, setProductActiveInternal);
 export const setVariantAvailability = withRole(MIN_LEVEL, setVariantAvailabilityInternal);
 export const deleteProduct = withRole(MIN_LEVEL, deleteProductInternal);
+export const reorderProducts = withRole(MIN_LEVEL, reorderProductsInternal);
 export const saveCatalog = withRole(MIN_LEVEL, saveCatalogInternal);
 export const deleteCatalog = withRole(MIN_LEVEL, deleteCatalogInternal);
 export const saveLine = withRole(MIN_LEVEL, saveLineInternal);
