@@ -167,6 +167,10 @@
     font-family: var(--font-montserrat), system-ui, sans-serif;
     font-weight: 400;
     text-align: left;
+    /* El panel completo hace scroll: en pantallas bajas (barra del navegador,
+       zoom de texto) los enlaces no quedan tapados por la zona de acciones. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
     transform: translateX(100%);
     visibility: hidden;
     /* Cierre: 220 ms; visibility se oculta al terminar el desplazamiento. */
@@ -188,8 +192,12 @@
     align-items: center;
     gap: 12px;
     flex-shrink: 0;
-    height: 76px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    min-height: 76px;
     padding: 0 16px 0 24px;
+    background: var(--lr-navy);
     border-bottom: 1px solid var(--lr-line);
   }
   .menu-logo {
@@ -230,9 +238,7 @@
 
   /* Zona 2: navegación */
   .menu-nav {
-    flex: 1;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    flex: 1 0 auto;
     padding-bottom: 8px;
   }
   .menu-label {
@@ -297,8 +303,6 @@
 
   /* Zona 3: acciones */
   .menu-actions {
-    position: sticky;
-    bottom: 0;
     flex-shrink: 0;
     background: var(--lr-navy);
     border-top: 1px solid var(--lr-line);
@@ -367,9 +371,43 @@
   }
   .menu-staff {
     gap: 6px;
+    white-space: nowrap;
     padding: 0 8px;
     font-size: 13px;
     color: var(--lr-text-3);
+  }
+
+  /* Pantallas bajas (iPhone con barra del navegador o zoom de texto):
+     medidas compactas, manteniendo áreas táctiles de 44 px. */
+  @media (max-height: 720px) {
+    .menu-header {
+      min-height: 64px;
+    }
+    .menu-label {
+      padding: 12px 28px 4px;
+    }
+    .menu-item {
+      height: 48px;
+    }
+    .menu-icon {
+      width: 32px;
+      height: 32px;
+    }
+    .menu-actions {
+      padding-top: 12px;
+    }
+    .menu-cta {
+      height: 48px;
+    }
+    .menu-row {
+      margin-top: 8px;
+    }
+    .menu-btn {
+      height: 44px;
+    }
+    .menu-footer {
+      padding: 4px 12px 8px;
+    }
   }
 
   /* Estados */
