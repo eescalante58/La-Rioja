@@ -21,11 +21,16 @@ import {
   type VariantInput,
 } from "@/lib/validation/products";
 import { ORDER_STATUSES, type OrderStatus, type ShopOrder } from "@/lib/validation/shop-orders";
+import {
+  CATALOG_PDF_BUCKET,
+  catalogPdfPathFromUrl,
+  sweepOrphanCatalogPdfs,
+} from "@/lib/storage/catalog-pdf-cleanup";
 
 /** Nivel mínimo para gestionar la tienda (Editor). */
 const MIN_LEVEL = 6;
 const BUCKET = "product_images";
-const PDF_BUCKET = "product_catalog_pdfs";
+const PDF_BUCKET = CATALOG_PDF_BUCKET;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const PRODUCT_SELECT = "*, variants:product_variants(*)";
 
@@ -588,17 +593,13 @@ async function deleteCatalogInternal(id: number, { user }: RoleContext): Promise
     };
   }
   await removeCatalogPdfFile(current?.pdf_url ?? null);
+  await sweepOrphanCatalogPdfs(createAdminClient(), auth.companyId);
   await logActivity(user, "DELETE_CATALOG", { id }, "product_catalogs");
   revalidateShop();
   return { success: true };
 }
 
-/** Ruta dentro del bucket de PDF a partir de su URL pública (o null). */
-function pdfPathFromUrl(url: string | null): string | null {
-  if (!url) return null;
-  const parts = url.split(`/${PDF_BUCKET}/`);
-  return parts.length < 2 ? null : decodeURIComponent(parts[1].split("?")[0]);
-}
+const pdfPathFromUrl = catalogPdfPathFromUrl;
 
 /** Borra del bucket el PDF de una URL pública (errores solo se registran). */
 async function removeCatalogPdfFile(url: string | null) {
@@ -693,6 +694,8 @@ async function setCatalogPdfInternal(
   }
 
   if (current?.pdf_url && current.pdf_url !== pdf_url) await removeCatalogPdfFile(current.pdf_url);
+  // Limpieza de huérfanos (subidas no confirmadas o borrados fallidos).
+  await sweepOrphanCatalogPdfs(supabase, auth.companyId);
   await logActivity(
     user,
     "SET_CATALOG_PDF",
@@ -752,6 +755,7 @@ async function removeCatalogPdfInternal(
   if (error) return { success: false, error: error.message };
 
   await removeCatalogPdfFile(current?.pdf_url ?? null);
+  await sweepOrphanCatalogPdfs(supabase, auth.companyId);
   await logActivity(user, "REMOVE_CATALOG_PDF", { id: catalogId }, "product_catalogs");
   revalidateShop();
   return { success: true, data: data as ProductCatalog };
