@@ -3,7 +3,26 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+
+/**
+ * Origen (protocolo + dominio) desde el que el usuario hizo la petición.
+ * Los flujos PKCE (OAuth y recuperación de contraseña) guardan la cookie
+ * `code-verifier` en el dominio actual; si la URL de retorno apunta a otro
+ * dominio (p. ej. lariojacflsv.site → la-rioja.vercel.app) la cookie no
+ * viaja y el intercambio del código falla. Por eso el retorno debe volver
+ * al mismo dominio. Next valida que Origin coincida con Host en las Server
+ * Actions, y Supabase solo acepta URLs de su lista de redirección.
+ * @returns Origen, o NEXT_PUBLIC_SITE_URL como respaldo.
+ */
+async function getRequestOrigin(): Promise<string> {
+  const h = await headers();
+  const origin = h.get("origin");
+  if (origin) return origin;
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (host) return `${h.get("x-forwarded-proto") ?? "https"}://${host}`;
+  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+}
 
 /**
  * Handles email and password login.
@@ -80,7 +99,7 @@ export async function signOut() {
  */
 export async function signInWithOAuth(provider: "google") {
   const supabase = await createClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = await getRequestOrigin();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
@@ -104,7 +123,7 @@ export async function signInWithOAuth(provider: "google") {
 export async function resetPasswordForEmail(email: string) {
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password`,
+    redirectTo: `${await getRequestOrigin()}/auth/reset-password`,
   });
 
   if (error) {
