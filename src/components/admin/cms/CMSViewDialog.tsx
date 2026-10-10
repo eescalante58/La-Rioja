@@ -9,11 +9,12 @@ import {
   Button,
 } from "@tremor/react";
 import { X as XIcon } from "lucide-react";
+import type { SiteContent } from "@/types/cms";
 
 interface CMSViewDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  item: any;
+  item: SiteContent | null;
 }
 
 export default function CMSViewDialog({ isOpen, onClose, item }: CMSViewDialogProps) {
@@ -46,7 +47,7 @@ export default function CMSViewDialog({ isOpen, onClose, item }: CMSViewDialogPr
                 <div>
                   <Text className="text-[10px] uppercase font-bold text-gray-500 mb-1">Imagen</Text>
                   <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800">
-                    <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                    <img src={item.image_url ?? undefined} alt={item.title ?? ""} className="w-full h-full object-cover" />
                   </div>
                 </div>
               )}

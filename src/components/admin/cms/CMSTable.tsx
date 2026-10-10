@@ -14,11 +14,12 @@ import {
   Button,
 } from "@tremor/react";
 import { Eye, Edit2, Trash2 } from "lucide-react";
+import type { SiteContent } from "@/types/cms";
 
 interface CMSTableProps {
-  content: any[];
-  onView: (item: any) => void;
-  onDelete: (item: any) => void;
+  content: SiteContent[];
+  onView: (item: SiteContent) => void;
+  onDelete: (item: SiteContent) => void;
   pageFilter: string;
   searchFilter: string;
 }

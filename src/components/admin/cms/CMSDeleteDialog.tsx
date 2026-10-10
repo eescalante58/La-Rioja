@@ -8,13 +8,14 @@ import {
   Button,
 } from "@tremor/react";
 import { AlertCircle } from "lucide-react";
+import type { SiteContent } from "@/types/cms";
 
 interface CMSDeleteDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   loading: boolean;
-  item: any;
+  item: SiteContent | null;
 }
 
 export default function CMSDeleteDialog({

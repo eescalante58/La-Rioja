@@ -24,14 +24,15 @@ import Link from "next/link";
 import { callActionForm } from "@/lib/action-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getErrorMessage } from "@/lib/utils";
+import type { SiteContent } from "@/types/cms";
 
 /**
  * Edit form for CMS content sections.
  * @param {Object} props - Component props.
- * @param {any} props.item - The content item to edit.
+ * @param {SiteContent} props.item - The content item to edit.
  * @returns {JSX.Element} The edit form.
  */
-export default function CMSEditForm({ item }: { item: any }) {
+export default function CMSEditForm({ item }: { item: SiteContent }) {
   const [formData, setFormData] = useState({
     title: item.title || "",
     description: item.description || "",
@@ -394,7 +395,7 @@ export default function CMSEditForm({ item }: { item: any }) {
               </label>
               <Flex justifyContent="start" className="gap-3">
                 <Switch
-                  checked={formData.is_active}
+                  checked={formData.is_active ?? false}
                   onChange={(checked) =>
                     setFormData({ ...formData, is_active: checked })
                   }

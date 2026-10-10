@@ -20,9 +20,10 @@ import { Footer } from "@/components/layout/Footer";
 import DynamicYear from "@/components/layout/DynamicYear";
 import { ParallaxHero } from "@/components/layout/ParallaxHero";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
+import type { CmsCard, CmsIconMap } from "@/types/cms";
 
 // Mapping of icon names to components
-const IconMap: Record<string, any> = {
+const IconMap: CmsIconMap = {
   Briefcase: Briefcase,
   Users: Users,
   Ticket: Ticket,
@@ -41,10 +42,11 @@ function DynamicIcon({
   name,
   className = "w-8 h-8",
 }: {
-  name: string;
+  /** Nombre del icono en el CMS; puede faltar en la sección. */
+  name?: string;
   className?: string;
 }) {
-  const IconComponent = IconMap[name] || Briefcase; // Fallback to Briefcase
+  const IconComponent = (name && IconMap[name]) || Briefcase; // Fallback to Briefcase
   return <IconComponent className={className} />;
 }
 
@@ -120,7 +122,7 @@ export default async function Home() {
           </ScrollReveal>
 
           <div className="flex flex-wrap justify-center gap-8 items-stretch">
-            {displayServices.map((service: any, i: number) => {
+            {displayServices.map((service: CmsCard, i: number) => {
               const isFlip = service.metadata?.variant === "flip";
 
               if (isFlip) {
@@ -137,7 +139,7 @@ export default async function Home() {
                           <div className="relative h-48 w-full">
                             <Image
                               src={service.image_url}
-                              alt={service.title}
+                              alt={service.title ?? ""}
                               fill
                               className="object-contain bg-gray-50 dark:bg-gray-900/50"
                             />
@@ -193,7 +195,7 @@ export default async function Home() {
                       <div className="relative h-52 w-full overflow-hidden bg-gray-50 dark:bg-gray-900/50">
                         <Image
                           src={service.image_url}
-                          alt={service.title}
+                          alt={service.title ?? ""}
                           fill
                           className="object-contain transition-transform duration-700 group-hover:scale-105"
                         />

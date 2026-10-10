@@ -6,6 +6,7 @@ import { Title, Text, Button } from "@tremor/react";
 import { Plus } from "lucide-react";
 import { callAction } from "@/lib/action-client";
 import dynamic from "next/dynamic";
+import type { SiteContent } from "@/types/cms";
 
 // Dynamic imports for sub-components to improve performance
 const CMSFilters = dynamic(() => import("@/components/admin/cms/CMSFilters"), {
@@ -33,7 +34,7 @@ const CMS_PAGES = [
 ] as const;
 
 interface CMSManagerClientProps {
-  initialContent: any[];
+  initialContent: SiteContent[];
 }
 
 export default function CMSManagerClient({ initialContent }: CMSManagerClientProps) {
@@ -75,7 +76,7 @@ export default function CMSManagerClient({ initialContent }: CMSManagerClientPro
     });
 
   const [isViewOpen, setIsViewOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<SiteContent | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);

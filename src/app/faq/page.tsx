@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Phone, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import type { Faq } from "@/types/cms";
 
 export const metadata = {
   title: "Preguntas Frecuentes | La Rioja",
@@ -73,9 +74,9 @@ export default async function FAQPage() {
                   className="w-full space-y-4"
                 >
                   {section.faqs
-                    ?.filter((faq: any) => faq.is_active)
-                    .sort((a: any, b: any) => a.content_order - b.content_order)
-                    .map((faq: any) => (
+                    ?.filter((faq: Faq) => faq.is_active)
+                    .sort((a: Faq, b: Faq) => (a.content_order ?? 0) - (b.content_order ?? 0))
+                    .map((faq: Faq) => (
                       <AccordionItem
                         key={faq.id}
                         value={faq.id}

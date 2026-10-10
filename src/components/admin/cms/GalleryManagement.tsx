@@ -32,6 +32,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { callAction, callActionForm } from "@/lib/action-client";
 import { compressImage } from "@/lib/compress-image";
 import Image from "next/image";
+import type { InventoryEventRef } from "@/types/bingo";
 
 interface GalleryImage {
   id: string;
@@ -43,7 +44,7 @@ interface GalleryImage {
 }
 
 interface GalleryManagementProps {
-  events: any[];
+  events: InventoryEventRef[];
   initialImages: GalleryImage[];
 }
 
@@ -215,7 +216,7 @@ export default function GalleryManagement({ events, initialImages }: GalleryMana
         success?: boolean;
         error?: string;
         count?: number;
-        data?: any;
+        data?: GalleryImage | GalleryImage[];
       }>("cms.bulkUploadGalleryImages", formData);
       if (result.success) {
         setMessage({ text: `Se subieron ${result.count} imágenes con éxito.`, type: 'success' });

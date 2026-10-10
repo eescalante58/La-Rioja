@@ -5,6 +5,7 @@ import GalleryHeader from "@/components/gallery/GalleryHeader";
 import EventInfoBanner from "@/components/gallery/EventInfoBanner";
 import { getGalleryImages, getGalleryEvent } from "@/app/admin/cms/gallery-actions";
 import { getPageContent } from "@/services/cms";
+import type { SiteContent } from "@/types/cms";
 
 export const metadata: Metadata = {
   title: "Galería La Rioja 2026",
@@ -18,7 +19,7 @@ export default async function BingoPage() {
 
   // Link de WhatsApp normalizado a wa.me/<solo dígitos> para evitar el error
   // "número no existe" si el CMS guarda "+", espacios u otro formato.
-  const whatsappRaw = socialMedia.find((l: any) => l.section_key === "whatsapp")?.description;
+  const whatsappRaw = socialMedia.find((l: SiteContent) => l.section_key === "whatsapp")?.description;
   const whatsappDigits = whatsappRaw?.replace(/\D/g, "");
   const whatsappLink = whatsappDigits ? `https://wa.me/${whatsappDigits}` : undefined;
 
@@ -34,7 +35,7 @@ export default async function BingoPage() {
   // Link al video promocional desde el CMS (Key: Anuncio).
   // Se busca prioritariamente en el campo image_url (donde se subió el video)
   // y como fallback en description.
-  const anuncioSection = bingoCMS.find((l: any) => l.section_key === "Anuncio");
+  const anuncioSection = bingoCMS.find((l: SiteContent) => l.section_key === "Anuncio");
   const videoLink = anuncioSection?.image_url || anuncioSection?.description || "https://www.facebook.com/reels/1DGYgNZRQ6/";
 
   return (

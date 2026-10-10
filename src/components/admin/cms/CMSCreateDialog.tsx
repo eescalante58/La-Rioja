@@ -27,7 +27,8 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
   const [isCreating, setIsCreating] = useState(false);
   const [createStatus, setCreateStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [newFormData, setNewFormData] = useState({
-    page: "home" as any,
+    // Texto: el Select devuelve string; el servidor valida la página.
+    page: "home" as string,
     section_key: "",
     title: "",
     description: "",

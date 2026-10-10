@@ -31,9 +31,10 @@ import Image from "next/image";
 import Link from "next/link";
 import DynamicYear from "@/components/layout/DynamicYear";
 import { SafeText } from "@/components/layout/SafeContent";
+import type { CmsIconMap, CmsItem } from "@/types/cms";
 
 // Mapping of icon names to components for CMS
-const IconMap: Record<string, any> = {
+const IconMap: CmsIconMap = {
   Target,
   Eye,
   Heart,
@@ -65,11 +66,12 @@ function DynamicIcon({
   className = "w-8 h-8",
   size = 28,
 }: {
-  name: string;
+  /** Nombre del icono en el CMS; puede faltar en el ítem. */
+  name?: string;
   className?: string;
   size?: number;
 }) {
-  const IconComponent = IconMap[name] || Star; // Fallback to Star
+  const IconComponent = (name && IconMap[name]) || Star; // Fallback to Star
   return <IconComponent className={className} size={size} />;
 }
 
@@ -124,11 +126,11 @@ export default async function AboutPage() {
   const cta = getSection("about_cta");
 
   // Helper to extract style from array metadata
-  const getStyleFromMetadata = (metadata: any) => {
+  const getStyleFromMetadata = (metadata: CmsItem | CmsItem[] | null | undefined): CmsItem => {
     if (!Array.isArray(metadata)) return metadata || {};
     return (
       metadata.find(
-        (item: any) =>
+        (item: CmsItem) =>
           item.desc_font_size ||
           item.title_font_size ||
           item.desc_font_color ||
@@ -139,7 +141,7 @@ export default async function AboutPage() {
 
   const valuesStyle = getStyleFromMetadata(values?.metadata);
   const valuesItems = Array.isArray(values?.metadata)
-    ? values.metadata.filter((item: any) => item.title)
+    ? values.metadata.filter((item: CmsItem) => item.title)
     : [];
 
   return (
@@ -272,7 +274,7 @@ export default async function AboutPage() {
           </ScrollReveal>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {valuesItems.map((value: any, idx: number) => (
+            {valuesItems.map((value: CmsItem, idx: number) => (
               <ScrollReveal key={value.title} delay={idx * 100}>
                 <div className="bg-gray-50 dark:bg-slate-900/30 p-8 rounded-2xl border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all duration-300 group h-full hover:bg-white dark:hover:bg-slate-900 hover:shadow-md">
                   <div
@@ -407,7 +409,7 @@ export default async function AboutPage() {
                     {(Array.isArray(timeline.metadata?.items)
                       ? timeline.metadata.items
                       : []
-                    ).map((item: any, idx: number) => (
+                    ).map((item: CmsItem, idx: number) => (
                       <div key={idx} className="relative pl-10 group">
                         <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-white dark:bg-larioja-azul border-4 border-larioja-azul dark:border-larioja-amarillo group-hover:scale-125 transition-transform duration-300 z-10" />
                         <span className="text-xs font-bold text-larioja-verde mb-1 block uppercase tracking-wider">
@@ -461,7 +463,7 @@ export default async function AboutPage() {
           <div className="container mx-auto px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8 max-w-7xl mx-auto">
               {(Array.isArray(stats.metadata) ? stats.metadata : []).map(
-                (stat: any, idx: number) => (
+                (stat: CmsItem, idx: number) => (
                   <ScrollReveal key={stat.label} delay={idx * 50}>
                     <div className="text-center group">
                       <div
@@ -505,7 +507,7 @@ export default async function AboutPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
               {(Array.isArray(team.metadata) ? team.metadata : []).map(
-                (member: any, idx: number) => (
+                (member: CmsItem, idx: number) => (
                   <ScrollReveal key={member.role} delay={idx * 100}>
                     <div className="bg-white dark:bg-larioja-azul p-8 rounded-2xl border border-gray-100 dark:border-white/5 shadow-lg hover:-translate-y-1 transition-all duration-300 group text-center">
                       <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center text-gray-400 overflow-hidden relative border-4 border-gray-50 dark:border-slate-800">
@@ -554,7 +556,7 @@ export default async function AboutPage() {
               {(Array.isArray(maintenance.metadata)
                 ? maintenance.metadata
                 : []
-              ).map((card: any, idx: number) => (
+              ).map((card: CmsItem, idx: number) => (
                 <ScrollReveal key={idx} delay={(idx + 1) * 100}>
                   <div
                     className={`bg-gray-50 dark:bg-slate-900/30 p-8 rounded-2xl border border-transparent transition-all duration-300 group h-full ${card.border || "hover:border-gray-200"} hover:shadow-md hover:bg-white dark:hover:bg-slate-900`}

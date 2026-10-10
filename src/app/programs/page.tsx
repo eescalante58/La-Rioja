@@ -38,9 +38,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ProgramCTA } from "@/components/programs/ProgramCTA";
 import { getPageContent } from "@/services/cms";
+import type { CmsIconMap, CmsItem, SiteContent } from "@/types/cms";
 
 // Mapping of icon names to components for CMS
-const IconMap: Record<string, any> = {
+const IconMap: CmsIconMap = {
   Briefcase,
   Home,
   Users,
@@ -79,13 +80,14 @@ function DynamicIcon({
   className = "w-8 h-8",
   size = 28,
 }: {
-  name: string;
+  /** Nombre del icono en el CMS; puede faltar en el ítem. */
+  name?: string;
   className?: string;
   size?: number;
 }) {
   // Búsqueda insensible a mayúsculas/minúsculas
   const iconKey = Object.keys(IconMap).find(
-    (key) => key.toLowerCase() === name.toLowerCase(),
+    (key) => key.toLowerCase() === name?.toLowerCase(),
   );
   const IconComponent = (iconKey ? IconMap[iconKey] : null) || Star;
   return <IconComponent className={className} size={size} />;
@@ -134,11 +136,11 @@ export default async function ProgramsPage() {
   ]);
 
   const getSection = (key: string) =>
-    content.find((s: any) => s.section_key === key);
+    content.find((s: SiteContent) => s.section_key === key);
 
   const getSocialLink = (key: string) => {
     if (!Array.isArray(socialMedia)) return "#";
-    const link = socialMedia.find((l: any) => l.section_key === key);
+    const link = socialMedia.find((l: SiteContent) => l.section_key === key);
     return link?.description ?? "#";
   };
 
@@ -311,7 +313,7 @@ export default async function ProgramsPage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 max-w-7xl mx-auto">
-            {programs.map((program: any, idx: number) => (
+            {programs.map((program: CmsItem, idx: number) => (
               <ScrollReveal
                 key={program.id || idx}
                 delay={idx * 100}
@@ -372,7 +374,7 @@ export default async function ProgramsPage() {
           </ScrollReveal>
 
           <div className="max-w-5xl mx-auto space-y-8">
-            {academicItems.map((item: any, idx: number) => (
+            {academicItems.map((item: CmsItem, idx: number) => (
               <ScrollReveal
                 key={idx}
                 delay={idx * 100}
@@ -418,7 +420,7 @@ export default async function ProgramsPage() {
           </ScrollReveal>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto items-stretch">
-            {workshopItems.map((workshop: any, idx: number) => (
+            {workshopItems.map((workshop: CmsItem, idx: number) => (
               <ScrollReveal
                 key={workshop.id || idx}
                 delay={idx * 150}
@@ -429,8 +431,8 @@ export default async function ProgramsPage() {
                   {/* Front Side: Image with Badge */}
                   <div className="absolute inset-0 h-full w-full rounded-3xl [backface-visibility:hidden] overflow-hidden">
                     <Image
-                      src={workshop.image_url}
-                      alt={workshop.title}
+                      src={workshop.image_url ?? ""}
+                      alt={workshop.title ?? ""}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
                     />
@@ -497,7 +499,7 @@ export default async function ProgramsPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16 max-w-4xl mx-auto">
-              {valueProps.map((item: any, idx: number) => (
+              {valueProps.map((item: CmsItem, idx: number) => (
                 <div key={idx} className="space-y-4">
                   <div
                     className={`w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto ${item.color}`}
@@ -530,7 +532,7 @@ export default async function ProgramsPage() {
           </ScrollReveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {supplementaryItems.map((item: any, idx: number) => (
+            {supplementaryItems.map((item: CmsItem, idx: number) => (
               <ScrollReveal
                 key={idx}
                 delay={idx * 100}

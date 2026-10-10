@@ -5,9 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ContactTrigger } from "./ContactTrigger";
 import { Mail } from "lucide-react";
+import type { HeroContent } from "@/types/cms";
 
 interface ParallaxHeroProps {
-  heroContent: any;
+  heroContent: HeroContent | null;
 }
 
 /**

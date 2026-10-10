@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole, type RoleContext } from "@/lib/auth/guards";
 import { getErrorMessage } from "@/lib/utils";
+import type { Tables } from "@/types/database";
 
 /**
  * Obtiene las imágenes de la galería para un evento.
@@ -72,7 +73,7 @@ async function bulkUploadGalleryImagesInternal(
   }
 
   const supabase = createAdminClient();
-  const results: any[] = [];
+  const results: Tables<"event_gallery">[] = [];
   const errors: string[] = [];
 
   // 1. Obtener el orden máximo actual para este evento

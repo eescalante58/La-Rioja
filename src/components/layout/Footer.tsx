@@ -7,6 +7,7 @@ import { getSectionContent, getPageContent } from "@/services/cms";
 import { ScrollReveal } from "./ScrollReveal";
 import { ContactDescription } from "./ContactDescription";
 import DynamicYear from "./DynamicYear";
+import type { SiteContent } from "@/types/cms";
 
 /**
  * Reusable Social Icon Link Component
@@ -49,7 +50,7 @@ export async function Footer() {
 
   const getSocialLink = (key: string) => {
     if (!Array.isArray(socialLinks)) return "#";
-    const link = socialLinks.find((l: any) => l.section_key === key);
+    const link = socialLinks.find((l: SiteContent) => l.section_key === key);
     return link?.description ?? "#";
   };
 
