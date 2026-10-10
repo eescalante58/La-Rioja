@@ -40,9 +40,9 @@ export async function GET(request: NextRequest) {
   }
 
   const result = await getInvoicesCore(companyId, eventId);
-  if ((result as any).error) {
+  if ("error" in result && result.error) {
     return NextResponse.json(
-      { success: false, error: (result as any).error },
+      { success: false, error: result.error },
       { status: 500 },
     );
   }
@@ -77,9 +77,9 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await saveInvoiceCore(formData, auth.user!.id);
-  if ((result as any)?.error) {
+  if ("error" in result && result.error) {
     return NextResponse.json(
-      { success: false, error: (result as any).error },
+      { success: false, error: result.error },
       { status: 400 },
     );
   }
@@ -114,9 +114,9 @@ export async function PUT(request: NextRequest) {
   }
 
   const result = await updateInvoiceCore(formData, auth.user!.id);
-  if ((result as any)?.error) {
+  if ("error" in result && result.error) {
     return NextResponse.json(
-      { success: false, error: (result as any).error },
+      { success: false, error: result.error },
       { status: 400 },
     );
   }
@@ -143,9 +143,9 @@ export async function DELETE(request: NextRequest) {
   }
 
   const result = await deleteInvoiceCore(id, auth.user?.id);
-  if ((result as any)?.error) {
+  if ("error" in result && result.error) {
     return NextResponse.json(
-      { success: false, error: (result as any).error },
+      { success: false, error: result.error },
       { status: 400 },
     );
   }

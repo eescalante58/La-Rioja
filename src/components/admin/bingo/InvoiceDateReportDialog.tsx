@@ -9,6 +9,7 @@ import {
   Button,
 } from "@tremor/react";
 import { FileText, FileSpreadsheet, Eye } from "lucide-react";
+import type { Invoice } from "@/types/bingo";
 
 interface InvoiceDateReportDialogProps {
   isOpen: boolean;
@@ -16,7 +17,7 @@ interface InvoiceDateReportDialogProps {
   /** Evento seleccionado en "Filtrar por Evento" (para el encabezado). */
   event: { event_id: string; event_name: string } | null;
   /** Facturas ya cargadas del evento (SELECT * de /api/bingo/invoices). */
-  invoices: any[];
+  invoices: Invoice[];
 }
 
 /** Formatea "YYYY-MM-DD" como fecha local (el string puro se lee como UTC). */
@@ -30,7 +31,10 @@ const formatDate = (iso: string) =>
 const formatMoney = (v: unknown) => `$${Number(v || 0).toFixed(2)}`;
 
 /** Orden natural por N° de factura: numérico puro y "FactAut-000123". */
-const byInvoiceNumber = (a: any, b: any) =>
+const byInvoiceNumber = (
+  a: Pick<Invoice, "invoice_number">,
+  b: Pick<Invoice, "invoice_number">,
+) =>
   String(a.invoice_number || "").localeCompare(
     String(b.invoice_number || ""),
     undefined,

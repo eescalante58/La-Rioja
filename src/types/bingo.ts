@@ -27,6 +27,35 @@ export type CountryCode = Pick<
  */
 export type InvoiceWithCards = Invoice & { associated_cards?: number[] };
 
+/** Alumno asignado embebido en `students_cards(students(...))`. */
+export type AssignedStudent = Pick<Tables<"students">, "student_name" | "student_level">;
+
+/**
+ * Cartón del inventario de un evento (`getEventCardsCore`, columnas de
+ * `EVENT_CARD_COLUMNS`). `students` es many-to-one: llega como objeto,
+ * pero se acepta también arreglo (leerlo con `singleRelation`).
+ */
+export type InventoryCard = Pick<
+  Card,
+  | "company_id"
+  | "event_id"
+  | "card_number"
+  | "card_type"
+  | "card_status"
+  | "card_price"
+  | "sales_price"
+  | "invoice_number"
+  | "player_name"
+  | "player_phone_number"
+  | "player_email"
+  | "sold_by"
+  | "image_url"
+  | "created_at"
+  | "updated_at"
+> & {
+  students_cards?: { students: AssignedStudent | AssignedStudent[] | null }[] | null;
+};
+
 /** Evento en el que operan los diálogos de factura. */
 export interface InvoiceEventContext {
   /** Empresa del evento (número, o texto cuando viene de la cookie). */
@@ -56,3 +85,16 @@ export interface SearchResult {
   /** Cartón enriquecido si `type === "card"`; si no, la fila de la RPC. */
   raw: SearchCardDetail | UniversalSearchRow;
 }
+
+/** Vendedor del evento (`GET /api/bingo/sellers`, vista `v_sold_by`). */
+export interface Seller {
+  sold_by: string | null;
+}
+
+/**
+ * Evento mínimo que necesitan los diálogos de inventario (empresa, id y
+ * nombre para el encabezado). Un `BingoEvent` completo también sirve.
+ */
+export type InventoryEventRef = Pick<BingoEvent, "company_id" | "event_id"> & {
+  event_name?: string | null;
+};

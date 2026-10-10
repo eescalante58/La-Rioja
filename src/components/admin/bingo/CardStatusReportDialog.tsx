@@ -12,15 +12,12 @@ import {
   Button,
 } from "@tremor/react";
 import { FileText, FileSpreadsheet } from "lucide-react";
+import type { InventoryEventRef } from "@/types/bingo";
 
 interface CardStatusReportDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  event: {
-    company_id: number;
-    event_id: string;
-    event_name: string;
-  } | null;
+  event: InventoryEventRef | null;
 }
 
 interface ReportRow {
@@ -172,7 +169,7 @@ export default function CardStatusReportDialog({
         doc.text(`Cartones con estado: ${status}`, 14, 15);
         doc.setFontSize(10);
         doc.text(`Evento ID: ${event.event_id}`, 14, 22);
-        doc.text(`Evento: ${event.event_name}`, 14, 28);
+        doc.text(`Evento: ${event.event_name ?? ""}`, 14, 28);
         doc.text(`Rango: ${start} - ${end}   |   Cartones: ${rows.length}`, 14, 34);
 
         autoTable(doc, {

@@ -25,6 +25,10 @@ import InventoryDialogs from "./InventoryDialogs";
 import NewInvoiceDialog from "./NewInvoiceDialog";
 import NewInvoicePlusDialog from "./NewInvoicePlusDialog";
 import WhatsAppPopup from "./WhatsAppPopup";
+import type { CountryCode, Invoice, InvoiceEventContext } from "@/types/bingo";
+
+/** Evento seleccionado en Ventas (empresa numérica, tomada de `events`). */
+type SalesEventInfo = InvoiceEventContext & { companyId: number };
 
 interface Event {
   id: number;
@@ -36,7 +40,7 @@ interface Event {
 
 interface SalesTabProps {
   events: Event[];
-  countries: any[];
+  countries: CountryCode[];
   /** Evento por defecto de la empresa (companies.def_dash_event_id). */
   defaultEvent?: Event | null;
 }
@@ -46,9 +50,9 @@ export default function SalesTab({
   countries,
   defaultEvent,
 }: SalesTabProps) {
-  const [currentEventInfo, setCurrentEventInfo] = useState<any>(null);
+  const [currentEventInfo, setCurrentEventInfo] = useState<SalesEventInfo | null>(null);
   const [eventSelectValue, setEventSelectValue] = useState<string>("");
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [invoiceSearch, setInvoiceSearch] = useState("");
   /**
@@ -62,7 +66,7 @@ export default function SalesTab({
   } | null>(null);
 
   // Dialog states
-  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isNewInvoiceOpen, setIsNewInvoiceOpen] = useState(false);
   const [isNewInvoicePlusOpen, setIsNewInvoicePlusOpen] = useState(false);
@@ -167,7 +171,7 @@ export default function SalesTab({
    * @param value Valor a normalizar.
    * @returns Cadena normalizada.
    */
-  const normalize = (value: any) =>
+  const normalize = (value: unknown) =>
     String(value ?? "")
       .toLowerCase()
       .normalize("NFD")

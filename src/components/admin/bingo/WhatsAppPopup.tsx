@@ -17,10 +17,12 @@ import {
   FileText,
   Ticket,
 } from "lucide-react";
+import type { Card, InvoiceWithCards } from "@/types/bingo";
+import type { Tables } from "@/types/database";
 interface WhatsAppPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  invoice: any;
+  invoice: InvoiceWithCards | null;
 }
 
 export default function WhatsAppPopup({
@@ -30,7 +32,7 @@ export default function WhatsAppPopup({
 }: WhatsAppPopupProps) {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [template, setTemplate] = useState<any>(null);
+  const [template, setTemplate] = useState<Tables<"site_content"> | null>(null);
   const [message, setMessage] = useState("");
   const [image, setImage] = useState("");
   const [number, setNumber] = useState("");
@@ -48,13 +50,14 @@ export default function WhatsAppPopup({
   }, [invoice, isOpen]);
 
   const loadData = async () => {
+    if (!invoice) return;
     setLoading(true);
     try {
       // Route Handlers JSON (sin re-render RSC de /admin/bingo)
       const [tplRes, cardsRes] = await Promise.all([
         fetch(`/api/bingo/whatsapp?view=template&companyId=${invoice.company_id}`).then((r) => r.json()),
         fetch(
-          `/api/bingo/cards?companyId=${invoice.company_id}&eventId=${encodeURIComponent(invoice.event_id)}&invoice=${encodeURIComponent(invoice.invoice_number)}`,
+          `/api/bingo/cards?companyId=${invoice.company_id}&eventId=${encodeURIComponent(invoice.event_id ?? "")}&invoice=${encodeURIComponent(invoice.invoice_number)}`,
         ).then((r) => r.json()),
       ]);
 
@@ -71,7 +74,9 @@ export default function WhatsAppPopup({
       }
 
       if (cardsRes.success && cardsRes.data) {
-        const urls = cardsRes.data.map((c: any) => c.image_url).filter(Boolean);
+        const urls = (cardsRes.data as Pick<Card, "image_url">[])
+          .map((c) => c.image_url)
+          .filter((url): url is string => Boolean(url));
         setCardUrls(urls);
       }
       setInvoiceUrl(invoice.url_invoice || null);
@@ -83,11 +88,11 @@ export default function WhatsAppPopup({
   };
 
   /** POST JSON a /api/bingo/whatsapp (send o status). */
-  const postWhatsApp = (body: Record<string, any>) =>
+  const postWhatsApp = (body: Record<string, unknown>) =>
     fetch("/api/bingo/whatsapp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ companyId: invoice.company_id, ...body }),
+      body: JSON.stringify({ companyId: invoice?.company_id, ...body }),
     }).then((r) => r.json());
 
   const handleSend = async () => {
@@ -105,7 +110,7 @@ export default function WhatsAppPopup({
 
       if (res.success) {
         const status = `Enviado Automáticamente vía Ultramsg el ${new Date().toLocaleString()}. Incluyó factura y ${cardUrls.length} cartones.`;
-        await postWhatsApp({ action: "status", invoiceId: invoice.id, status });
+        await postWhatsApp({ action: "status", invoiceId: invoice?.id, status });
         alert("¡Envío automático completado!");
         onClose();
       } else {
@@ -116,7 +121,7 @@ export default function WhatsAppPopup({
           "_blank",
         );
         const status = `Enviado exitosamente (Manual) el ${new Date().toLocaleString()}. Incluyó factura y ${cardUrls.length} cartones.`;
-        await postWhatsApp({ action: "status", invoiceId: invoice.id, status });
+        await postWhatsApp({ action: "status", invoiceId: invoice?.id, status });
         onClose();
       }
     } catch (error) {

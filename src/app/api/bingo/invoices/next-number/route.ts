@@ -28,11 +28,11 @@ export async function GET(request: NextRequest) {
   }
 
   const result = await getNextAutoInvoiceNumberCore(companyId, eventId);
-  if ((result as any).error) {
+  if ("error" in result && result.error) {
     return NextResponse.json(
-      { success: false, error: (result as any).error },
+      { success: false, error: result.error },
       { status: 500 },
     );
   }
-  return NextResponse.json({ success: true, data: (result as any).data });
+  return NextResponse.json({ success: true, data: result.data });
 }

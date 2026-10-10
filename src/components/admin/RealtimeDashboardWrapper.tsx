@@ -2687,8 +2687,8 @@ export default function RealtimeDashboardWrapper({
         }}
         invoice={consultingInvoice}
         currentEvent={{
-          companyId: data.companyId,
-          eventId: data.eventId,
+          companyId: data.companyId ?? "",
+          eventId: data.eventId ?? "",
           cardValue: data.cardValue,
         }}
         countries={countries}

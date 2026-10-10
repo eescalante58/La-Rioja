@@ -11,19 +11,15 @@ import {
 } from "@tremor/react";
 import { callActionForm } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+import type { CountryCode, InventoryCard, InventoryEventRef } from "@/types/bingo";
 
-interface Country {
-  name: string;
-  iso2: string;
-  phone_code: string;
-  flag_emoji: string;
-}
+type Country = CountryCode;
 
 interface EditCardDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  card: any;
-  event: any;
+  card: InventoryCard | null;
+  event: InventoryEventRef | null;
   countries: Country[];
   onSuccess: () => void;
 }
@@ -149,7 +145,7 @@ export default function EditCardDialog({
           <form onSubmit={handleUpdateSingleCard} className="space-y-4">
             <div className="space-y-1">
               <label className="text-xs font-bold uppercase text-gray-500">Nombre del Jugador</label>
-              <TextInput name="player_name" defaultValue={card?.player_name} />
+              <TextInput name="player_name" defaultValue={card?.player_name ?? undefined} />
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -234,7 +230,7 @@ export default function EditCardDialog({
 
             <div className="space-y-1">
               <label className="text-xs font-bold uppercase text-gray-500">Correo Electrónico</label>
-              <TextInput name="player_email" type="email" defaultValue={card?.player_email} />
+              <TextInput name="player_email" type="email" defaultValue={card?.player_email ?? undefined} />
             </div>
 
             <div className="space-y-1">

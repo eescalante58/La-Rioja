@@ -28,6 +28,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import CardStatusReportDialog from "./CardStatusReportDialog";
+import { singleRelation } from "@/lib/utils";
+import type { AssignedStudent, InventoryCard, InventoryEventRef } from "@/types/bingo";
 
 /** Filas por página de la tabla: renderizar las ~1,200 filas completas
  *  bloqueaba el hilo principal varios segundos al abrir el diálogo. */
@@ -42,25 +44,22 @@ const HEADER_CELL_CLASS = "sticky top-0 z-10 bg-white dark:bg-gray-900";
  * que el drill-down invoice-cards del dashboard). Puede venir como
  * objeto o array según la cardinalidad.
  */
-const assignedStudentOf = (
-  card: any,
-): { student_name?: string; student_level?: string } | null => {
+const assignedStudentOf = (card: InventoryCard | null): AssignedStudent | null => {
   const rel = card?.students_cards;
   const entry = Array.isArray(rel) ? rel[0] : rel;
-  const student = entry?.students;
-  return Array.isArray(student) ? (student[0] ?? null) : (student ?? null);
+  return singleRelation(entry?.students);
 };
 
 interface InventoryDetailsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  event: any;
-  cards: any[];
+  event: InventoryEventRef | null;
+  cards: InventoryCard[];
   loading: boolean;
-  onReassignType: (card: any) => void;
+  onReassignType: (card: InventoryCard) => void;
   onRangeReassign: () => void;
   onRangePlayerReassign: () => void;
-  onEditCard: (card: any) => void;
+  onEditCard: (card: InventoryCard) => void;
   /** Recarga forzada del inventario (descarta el cache del evento). */
   onRefresh: () => void;
 }
@@ -300,7 +299,7 @@ export default function InventoryDetailsDialog({
                               variant="light"
                               icon={Eye}
                               size="xs"
-                              onClick={() => window.open(card.image_url, "_blank")}
+                              onClick={() => window.open(card.image_url ?? undefined, "_blank")}
                               tooltip="Ver PDF"
                             />
                           )}

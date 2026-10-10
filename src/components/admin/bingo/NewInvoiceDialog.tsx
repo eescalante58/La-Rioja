@@ -14,15 +14,23 @@ import {
 import { Smartphone, MessageCircle, DollarSign, CheckCircle, Eye } from "lucide-react";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import { getErrorMessage } from "@/lib/utils";
+import type {
+  CountryCode,
+  InventoryCard,
+  InvoiceEventContext,
+  InvoiceWithCards,
+  Seller,
+} from "@/types/bingo";
 
 interface NewInvoiceDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  invoice: any; // null if new
-  currentEvent: any;
-  countries: any[];
+  /** Factura a consultar/editar; null si es nueva. */
+  invoice: InvoiceWithCards | null;
+  currentEvent: InvoiceEventContext | null;
+  countries: CountryCode[];
   onSuccess: () => void;
-  onWhatsApp: (invoice: any) => void;
+  onWhatsApp: (invoice: InvoiceWithCards) => void;
   readOnly?: boolean;
   /** Apila el diálogo sobre otros modales (z-110 en vez de z-50):
    *  usado cuando se abre encima de "Ventas del Día" u otro drill-down
@@ -54,7 +62,9 @@ export default function NewInvoiceDialog({
   const [managerName, setInvoiceManagerName] = useState("");
   const [sellers, setSellers] = useState<string[]>([]);
   const [selectedCards, setSelectedInvoiceCards] = useState<number[]>([]);
-  const [availableCards, setAvailableCardsForInvoice] = useState<any[]>([]);
+  const [availableCards, setAvailableCardsForInvoice] = useState<
+    Pick<InventoryCard, "card_number" | "card_status" | "invoice_number">[]
+  >([]);
   const [paymentMethod, setPaymentMethod] = useState<string>("efectivo");
   const [status, setStatus] = useState<string>("pagada");
   const [invoiceDate, setInvoiceDate] = useState<string>("");
@@ -234,13 +244,13 @@ export default function NewInvoiceDialog({
 
       if (sellersRes.success && sellersRes.data) {
         const uniqueSellers = Array.from(
-          new Set(sellersRes.data.map((s: any) => s.sold_by).filter(Boolean)),
+          new Set((sellersRes.data as Seller[]).map((s) => s.sold_by).filter(Boolean)),
         ) as string[];
         setSellers(uniqueSellers.sort());
       }
 
       if (typeof cardsRes === "object" && "data" in cardsRes) {
-        const allCards = ((cardsRes.data || []) as any[]).map(c => ({
+        const allCards = ((cardsRes.data || []) as InventoryCard[]).map((c) => ({
           ...c,
           card_number: Number(c.card_number)
         }));
@@ -424,7 +434,7 @@ export default function NewInvoiceDialog({
                     name="customer_email"
                     type="email"
                     placeholder="juan@ejemplo.com"
-                    defaultValue={invoice?.customer_email}
+                    defaultValue={invoice?.customer_email ?? undefined}
                     disabled={readOnly}
                   />
                 </div>
@@ -534,7 +544,7 @@ export default function NewInvoiceDialog({
                       variant="light"
                       icon={MessageCircle}
                       className="text-green-500"
-                      onClick={() => onWhatsApp(invoice)}
+                      onClick={() => invoice && onWhatsApp(invoice)}
                     />
                   </div>
                 </div>

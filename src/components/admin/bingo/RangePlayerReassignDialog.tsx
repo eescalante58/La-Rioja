@@ -13,19 +13,15 @@ import {
 import { UserCheck } from "lucide-react";
 import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+import type { CountryCode, InventoryCard, InventoryEventRef } from "@/types/bingo";
 
-interface Country {
-  name: string;
-  iso2: string;
-  phone_code: string;
-  flag_emoji: string;
-}
+type Country = CountryCode;
 
 interface RangePlayerReassignDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  event: any;
-  cards: any[];
+  event: InventoryEventRef | null;
+  cards: InventoryCard[];
   countries: Country[];
   onSuccess: () => void;
 }

@@ -5,12 +5,13 @@ import { Dialog, DialogPanel, Title, Text, TextInput, Button } from "@tremor/rea
 import { RefreshCw } from "lucide-react";
 import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+import type { InventoryCard, InventoryEventRef } from "@/types/bingo";
 
 interface ReassignCardDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  card: any;
-  event: any;
+  card: InventoryCard | null;
+  event: InventoryEventRef | null;
   onSuccess: () => void;
 }
 

@@ -1,6 +1,23 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { invoiceSchema, invoiceUpdateSchema } from "@/lib/validation/bingo";
 import { getErrorMessage } from "@/lib/utils";
+import type { PostgrestError } from "@supabase/supabase-js";
+import type { Card, InventoryCard } from "@/types/bingo";
+
+/** Cliente administrativo de Supabase que reciben los helpers internos. */
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+/** Campos de venta de un cartón, guardados para restaurarlos si falla la re-vinculación. */
+type CardSaleSnapshot = Pick<
+  Card,
+  | "card_number"
+  | "card_status"
+  | "sales_price"
+  | "sold_by"
+  | "player_name"
+  | "player_phone_number"
+  | "player_email"
+>;
 
 /**
  * Lógica de facturación compartida entre las Server Actions de
@@ -66,7 +83,7 @@ export async function getNextAutoInvoiceNumberCore(
 
   if (error) return { error: error.message };
 
-  const max = (data || []).reduce((m: number, r: any) => {
+  const max = (data || []).reduce((m: number, r: Pick<Card, "invoice_number">) => {
     const n = parseInt(String(r.invoice_number).replace(/\D/g, ""), 10);
     return Number.isFinite(n) && n > m ? n : m;
   }, 0);
@@ -252,7 +269,9 @@ export async function saveInvoiceCore(formData: FormData, userId: string) {
       if (cardsError) {
         return { error: `Error al actualizar cartones: ${cardsError.message}` };
       }
-      const claimedSet = new Set((claimed || []).map((c: any) => Number(c.card_number)));
+      const claimedSet = new Set(
+        (claimed || []).map((c: Pick<Card, "card_number">) => Number(c.card_number)),
+      );
       const conflicted = data.associated_cards.filter(
         (n: number) => !claimedSet.has(Number(n)),
       );
@@ -388,14 +407,14 @@ export async function getSellersCore(companyId: number, eventId: string) {
  * Promise.all (ORDER BY + range garantizan el orden global), en lugar de
  * las rondas secuenciales que multiplicaban la latencia por página.
  */
-async function fetchAllRows(
-  supabase: any,
+async function fetchAllRows<T>(
+  supabase: AdminClient,
   table: string,
   columns: string,
   companyId: number,
   eventId: string,
   orderBy: string,
-) {
+): Promise<{ data: T[] | null; error: PostgrestError | null }> {
   const pageSize = 1000;
   const firstPage = await supabase
     .from(table)
@@ -406,9 +425,9 @@ async function fetchAllRows(
     .range(0, pageSize - 1);
   if (firstPage.error) return { data: null, error: firstPage.error };
 
-  const all: any[] = [...(firstPage.data || [])];
+  const all: T[] = [...((firstPage.data as T[] | null) || [])];
   const total = firstPage.count ?? all.length;
-  if (total <= pageSize) return { data: all, error: null as any };
+  if (total <= pageSize) return { data: all, error: null };
 
   const rest = await Promise.all(
     Array.from({ length: Math.ceil(total / pageSize) - 1 }, (_, i) =>
@@ -423,9 +442,9 @@ async function fetchAllRows(
   );
   for (const res of rest) {
     if (res.error) return { data: null, error: res.error };
-    all.push(...(res.data || []));
+    all.push(...((res.data as T[] | null) || []));
   }
-  return { data: all, error: null as any };
+  return { data: all, error: null };
 }
 
 /**
@@ -448,7 +467,7 @@ const EVENT_CARD_COLUMNS =
  */
 export async function getEventCardsCore(companyId: number, eventId: string) {
   const supabase = createAdminClient();
-  const { data, error } = await fetchAllRows(
+  const { data, error } = await fetchAllRows<InventoryCard>(
     supabase,
     "cards",
     EVENT_CARD_COLUMNS,
@@ -563,7 +582,7 @@ export async function getCardsForInvoiceCore(
  * students_cards; en caso contrario queda "Disponible".
  */
 async function releaseCardNumbers(
-  supabase: any,
+  supabase: AdminClient,
   companyId: number,
   eventId: string,
   numbers: number[],
@@ -579,7 +598,7 @@ async function releaseCardNumbers(
     .in("card_number", numbers);
 
   const assignedSet = new Set(
-    (assigned || []).map((r: any) => r.card_number),
+    (assigned || []).map((r: Pick<Card, "card_number">) => r.card_number),
   );
 
   const releaseFields = {
@@ -620,7 +639,7 @@ async function releaseCardNumbers(
  * invoice_number y luego aplica la liberación por número.
  */
 async function releaseInvoiceCards(
-  supabase: any,
+  supabase: AdminClient,
   companyId: number,
   eventId: string,
   invoiceNumber: string,
@@ -632,7 +651,9 @@ async function releaseInvoiceCards(
     .eq("event_id", eventId)
     .eq("invoice_number", invoiceNumber);
 
-  const numbers = (linkedCards || []).map((c: any) => Number(c.card_number));
+  const numbers = (linkedCards || []).map((c: Pick<Card, "card_number">) =>
+    Number(c.card_number),
+  );
   await releaseCardNumbers(supabase, companyId, eventId, numbers);
 }
 
@@ -766,7 +787,8 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
 
   const { associated_cards, ...invoiceFields } = data;
 
-  const invoiceData: Record<string, any> = {
+  // status/payment_method llegan como texto validado por zod (no como enum).
+  const invoiceData: Record<string, string | number | null> = {
     updated_at: new Date().toISOString(),
   };
   if (invoiceFields.company_id !== undefined) invoiceData.company_id = invoiceFields.company_id;
@@ -798,7 +820,7 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
 
   // Cartones actualmente ligados a la factura (con sus campos de venta
   // para restaurarlos si la nueva vinculación falla).
-  let previousCards: any[] = [];
+  let previousCards: CardSaleSnapshot[] = [];
   if (currentInvoice?.invoice_number) {
     const { data: oldCards } = await supabase
       .from("cards")
@@ -812,7 +834,7 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
   }
 
   const previousNumbers = new Set(
-    previousCards.map((c: any) => Number(c.card_number)),
+    previousCards.map((c) => Number(c.card_number)),
   );
   const newSelection: number[] = (data.associated_cards || []).map(Number);
 
@@ -831,7 +853,7 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
     };
 
     const claimedNums = new Set<number>();
-    let cardsError: any = null;
+    let cardsError: PostgrestError | null = null;
 
     // A) Cartones ya vinculados a esta factura: re-afirmar datos de venta.
     //    El guard por invoice_number detecta si otra operación los liberó.
@@ -845,7 +867,9 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
         .eq("invoice_number", currentInvoice?.invoice_number || "")
         .in("card_number", alreadyLinked)
         .select("card_number");
-      (relinked || []).forEach((c: any) => claimedNums.add(Number(c.card_number)));
+      (relinked || []).forEach((c: Pick<Card, "card_number">) =>
+        claimedNums.add(Number(c.card_number)),
+      );
       cardsError = error;
     }
 
@@ -861,7 +885,9 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
         .in("card_number", toClaim)
         .in("card_status", ["Disponible", "Asignado"])
         .select("card_number");
-      (claimed || []).forEach((c: any) => claimedNums.add(Number(c.card_number)));
+      (claimed || []).forEach((c: Pick<Card, "card_number">) =>
+        claimedNums.add(Number(c.card_number)),
+      );
       cardsError = error;
     }
 
@@ -904,7 +930,7 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
   // Liberar solo los cartones que quedaron fuera de la nueva selección
   // (después de un reclamo exitoso, para no desvincular en caso de error).
   const freed = previousCards
-    .map((c: any) => Number(c.card_number))
+    .map((c) => Number(c.card_number))
     .filter((n: number) => !newSelection.includes(n));
   await releaseCardNumbers(
     supabase,

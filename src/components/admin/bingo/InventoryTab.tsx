@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, Title, Text, Button, Badge } from "@tremor/react";
 import InventoryDialogs from "./InventoryDialogs";
+import type { CountryCode } from "@/types/bingo";
 
 interface Event {
   id: number;
@@ -17,7 +18,7 @@ interface Event {
 
 interface InventoryTabProps {
   events: Event[];
-  countries: any[];
+  countries: CountryCode[];
   onGenerateCards: (event: Event) => void;
 }
 

@@ -5,11 +5,12 @@ import { Dialog, DialogPanel, Title, Text, TextInput, Button, Select, SelectItem
 import { RefreshCw } from "lucide-react";
 import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+import type { InventoryEventRef } from "@/types/bingo";
 
 interface RangeReassignDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  event: any;
+  event: InventoryEventRef | null;
   onSuccess: () => void;
 }
 

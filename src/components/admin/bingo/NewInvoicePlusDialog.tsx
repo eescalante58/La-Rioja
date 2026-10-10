@@ -15,20 +15,28 @@ import { Smartphone, DollarSign, Search, Hash, Ticket } from "lucide-react";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import InventoryDialogs from "./InventoryDialogs";
 import { getErrorMessage } from "@/lib/utils";
+import type {
+  CountryCode,
+  Invoice,
+  InventoryEventRef,
+  InvoiceEventContext,
+  InvoiceWithCards,
+  Seller,
+} from "@/types/bingo";
 
 interface NewInvoicePlusDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  currentEvent: any;
+  currentEvent: InvoiceEventContext | null;
   /**
    * Evento completo del selector de Ventas y Facturación: el diálogo de
    * inventario lo usa para el encabezado (event_name) y la carga de
    * cartones. Si no viene, se reconstruye desde `currentEvent`.
    */
-  eventDetails?: any;
-  countries: any[];
+  eventDetails?: InventoryEventRef | null;
+  countries: CountryCode[];
   onSuccess: () => void;
-  onWhatsApp: (invoice: any) => void;
+  onWhatsApp: (invoice: InvoiceWithCards) => void;
 }
 
 /**
@@ -237,7 +245,7 @@ export default function NewInvoicePlusDialog({
       const sellersRes = await res.json();
       if (sellersRes.success && sellersRes.data) {
         const uniqueSellers = Array.from(
-          new Set(sellersRes.data.map((s: any) => s.sold_by).filter(Boolean)),
+          new Set((sellersRes.data as Seller[]).map((s) => s.sold_by).filter(Boolean)),
         ) as string[];
         setSellers(uniqueSellers.sort());
       }
@@ -256,7 +264,7 @@ export default function NewInvoicePlusDialog({
       if (result?.success && Array.isArray(result.data)) {
         const byName = new Map<string, CustomerHint>();
         const extraSellers = new Set<string>();
-        for (const inv of result.data as any[]) {
+        for (const inv of result.data as Invoice[]) {
           if (inv.manager_name) extraSellers.add(inv.manager_name);
           if (!inv.customer_name || byName.has(inv.customer_name)) continue;
           byName.set(inv.customer_name, {
@@ -341,15 +349,17 @@ export default function NewInvoicePlusDialog({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          companyId: currentEvent.companyId,
-          eventId: currentEvent.eventId,
+          companyId: currentEvent?.companyId,
+          eventId: currentEvent?.eventId,
           start,
           end,
         }),
       });
       const result = await res.json();
       if (result?.success) {
-        const newNums = (result.data || []).map((c: any) => c.card_number);
+        const newNums = ((result.data || []) as { card_number: number }[]).map(
+          (c) => c.card_number,
+        );
         const combined = Array.from(
           new Set([...selectedCards, ...newNums]),
         ).sort((a, b) => a - b);
@@ -431,7 +441,7 @@ export default function NewInvoicePlusDialog({
     eventDetails ??
     (currentEvent
       ? {
-          company_id: currentEvent.companyId,
+          company_id: Number(currentEvent.companyId),
           event_id: currentEvent.eventId,
           event_name: currentEvent.eventId,
         }

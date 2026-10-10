@@ -6,14 +6,15 @@ import ReassignCardDialog from "./ReassignCardDialog";
 import RangeReassignDialog from "./RangeReassignDialog";
 import RangePlayerReassignDialog from "./RangePlayerReassignDialog";
 import EditCardDialog from "./EditCardDialog";
+import type { CountryCode, InventoryCard, InventoryEventRef } from "@/types/bingo";
 
 interface InventoryDialogsProps {
   /** Controla la visibilidad del diálogo principal de inventario. */
   isOpen: boolean;
   onClose: () => void;
   /** Evento cuyo inventario se muestra (company_id, event_id, event_name…). */
-  event: any;
-  countries: any[];
+  event: InventoryEventRef | null;
+  countries: CountryCode[];
 }
 
 /**
@@ -30,14 +31,14 @@ export default function InventoryDialogs({
   event,
   countries,
 }: InventoryDialogsProps) {
-  const [cards, setCards] = useState<any[]>([]);
+  const [cards, setCards] = useState<InventoryCard[]>([]);
   const [loading, setLoading] = useState(false);
   /** Clave del evento cuyo inventario está en memoria (cache por sesión). */
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
   // Sub-dialog states
   const [isReassignOpen, setIsReassignOpen] = useState(false);
-  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [selectedCard, setSelectedCard] = useState<InventoryCard | null>(null);
   const [isRangeOpen, setIsRangeOpen] = useState(false);
   const [isRangePlayerOpen, setIsRangePlayerOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);

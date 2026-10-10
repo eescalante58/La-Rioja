@@ -15,14 +15,15 @@ import {
   TableCell,
 } from "@tremor/react";
 import { X, Edit, Trash2, Smartphone, MessageCircle } from "lucide-react";
+import type { Invoice } from "@/types/bingo";
 
 interface InvoiceDetailsDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  invoice: any;
-  onEdit: (invoice: any) => void;
+  invoice: Invoice | null;
+  onEdit: (invoice: Invoice) => void;
   onDelete: (id: string) => void;
-  onWhatsApp: (invoice: any) => void;
+  onWhatsApp: (invoice: Invoice) => void;
 }
 
 export default function InvoiceDetailsDialog({
@@ -78,7 +79,7 @@ export default function InvoiceDetailsDialog({
               <div>
                 <Text className="text-[10px] font-bold uppercase text-gray-500">Estado</Text>
                 <Badge color={invoice.status === "pagada" ? "emerald" : "amber"} size="xs">
-                  {invoice.status.toUpperCase()}
+                  {(invoice.status ?? "").toUpperCase()}
                 </Badge>
               </div>
               <div>

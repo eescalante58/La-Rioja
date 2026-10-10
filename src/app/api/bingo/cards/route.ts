@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
     ? await getCardsForInvoiceCore(companyId, eventId, invoice)
     : await getEventCardsCore(companyId, eventId);
 
-  if ((result as any).error) {
+  if ("error" in result && result.error) {
     return NextResponse.json(
-      { success: false, error: (result as any).error },
+      { success: false, error: result.error },
       { status: 500 },
     );
   }
