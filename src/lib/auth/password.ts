@@ -1,6 +1,6 @@
 /**
- * Reglas de fortaleza de contraseña (idénticas a las mostradas en el
- * login y en PasswordRequirements): mínimo 8 caracteres, una mayúscula,
+ * Reglas de fortaleza de contraseña (idénticas a las mostradas en
+ * PasswordRequirements al crear o cambiar contraseña): mínimo 8 caracteres, una mayúscula,
  * un dígito y un carácter especial.
  *
  * Devuelve el mensaje de error del primer requisito incumplido, o null

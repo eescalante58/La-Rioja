@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { login, signInWithOAuth } from "@/app/auth/actions";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { GoogleLoginButton } from "./GoogleLoginButton";
 import { SystemBadge } from "./BrandPanel";
 
@@ -53,7 +52,7 @@ function FieldError({ id, children }: { id: string; children: string }) {
 
 /**
  * Formulario de acceso al Sistema de gestión de Productos y Bingo: correo y contraseña
- * (con validación de formato y de complejidad), login con Google y enlace
+ * (con validación de formato del correo), login con Google y enlace
  * para pedir acceso al administrador.
  */
 export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
@@ -63,9 +62,7 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
     errorCode ? (QUERY_ERRORS[errorCode] ?? null) : null,
   );
   const [showPassword, setShowPassword] = useState(false);
-  const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   /** Valida el formato del correo (vacío lo cubre `required`). */
   const validateEmail = (email: string) => {
@@ -82,40 +79,14 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
     return true;
   };
 
-  /** Valida la complejidad de la contraseña (vacía la cubre `required`). */
-  const validatePassword = (value: string) => {
-    if (!value) {
-      setPasswordError(null);
-      return true;
-    }
-    if (value.length < 8) {
-      setPasswordError("La contraseña debe tener al menos 8 caracteres.");
-      return false;
-    }
-    if (!/[A-Z]/.test(value)) {
-      setPasswordError("Debe incluir al menos una letra mayúscula.");
-      return false;
-    }
-    if (!/[0-9]/.test(value)) {
-      setPasswordError("Debe incluir al menos un dígito (0-9).");
-      return false;
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
-      setPasswordError("Debe incluir al menos un carácter especial.");
-      return false;
-    }
-    setPasswordError(null);
-    return true;
-  };
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const isEmailValid = validateEmail(String(formData.get("email") ?? ""));
-    const isPasswordValid = validatePassword(String(formData.get("password") ?? ""));
-    if (!isEmailValid || !isPasswordValid) return;
+    // Los requisitos de complejidad solo aplican al crear o cambiar la
+    // contraseña (perfil y restablecimiento); aquí solo se verifican credenciales.
+    if (!validateEmail(String(formData.get("email") ?? ""))) return;
 
     setLoading(true);
     // Si es correcto, la Server Action redirige a /auth/select-company.
@@ -221,15 +192,7 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
               autoComplete="current-password"
               placeholder="••••••••"
               required
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                if (passwordError) validatePassword(e.target.value);
-              }}
-              onBlur={(e) => validatePassword(e.target.value)}
-              aria-invalid={!!passwordError}
-              aria-describedby={passwordError ? "password-error" : undefined}
-              className={`${inputClass} pr-12 ${passwordError ? "border-[#C62828]" : "border-[#C9D2E0] dark:border-gray-600"}`}
+              className={`${inputClass} pr-12 border-[#C9D2E0] dark:border-gray-600`}
             />
             <button
               type="button"
@@ -244,8 +207,6 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
               )}
             </button>
           </div>
-          {passwordError && <FieldError id="password-error">{passwordError}</FieldError>}
-          <PasswordRequirements password={password} />
         </div>
 
         <button
