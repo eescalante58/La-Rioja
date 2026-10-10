@@ -4,6 +4,13 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { ShopCatalog } from "@/components/products/ShopCatalog";
+import { ShopHero } from "@/components/products/ShopHero";
+import { GiftsBanner, HowToBuy } from "@/components/products/ShopExtras";
+import {
+  heroPhotos,
+  sectionsWithPrefix,
+  type CmsSection,
+} from "@/components/products/shop-content";
 import { getPublicShop } from "@/app/admin/productos/actions";
 import { getPageContent } from "@/services/cms";
 
@@ -15,20 +22,15 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-/** Sección del CMS (`site_content`) usada por esta página. */
-interface CmsSection {
-  section_key: string;
-  title?: string | null;
-  description?: string | null;
-  metadata?: { badge?: string } | null;
-}
-
 /**
  * La Rioja Shop: catálogos de los talleres (Arte y Costura, Panadería) con
  * canasta que registra el pedido y lo envía por WhatsApp.
- * Los textos del encabezado se editan en el CMS (página `productos`,
- * claves `productos_hero` y `productos_mensaje`); el WhatsApp proviene de
- * `social media / whatsapp`.
+ * Textos e imágenes se editan en el CMS (página `productos`): hero
+ * (`productos_hero`, `productos_hero_foto_N`), mensaje (`productos_mensaje`),
+ * regalos empresariales (`productos_regalos`) y «Cómo comprar»
+ * (`productos_como_comprar`, `productos_paso_N`). Regalos y «Cómo comprar»
+ * solo se muestran si su fila existe y está activa. El WhatsApp proviene de
+ * `social media / whatsapp tienda` (o `whatsapp`).
  */
 export default async function ProductosPage() {
   const [catalogs, content, socialMedia] = await Promise.all([
@@ -39,6 +41,9 @@ export default async function ProductosPage() {
 
   const hero = content.find((s) => s.section_key === "productos_hero");
   const mensaje = content.find((s) => s.section_key === "productos_mensaje");
+  const regalos = content.find((s) => s.section_key === "productos_regalos");
+  const comoComprar = content.find((s) => s.section_key === "productos_como_comprar");
+  const pasos = sectionsWithPrefix(content, "productos_paso_");
 
   // WhatsApp de pedidos de la tienda (CMS: social media → «whatsapp tienda»);
   // si no existe, el WhatsApp institucional. Solo dígitos para wa.me.
@@ -51,32 +56,13 @@ export default async function ProductosPage() {
     <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-x-clip">
       <Navbar brandHeader />
 
-      {/* Hero */}
-      <section className="relative pt-40 pb-10 md:pt-52 md:pb-14 bg-larioja-azul text-white overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-larioja-azul via-larioja-azul to-blue-900 opacity-50 z-0" />
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-larioja-verde/10 rounded-full blur-2xl z-0" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-larioja-amarillo/5 rounded-full blur-2xl z-0" />
-
-        <div className="container mx-auto px-6 relative z-10">
-          <ScrollReveal>
-            <div className="max-w-4xl mx-auto text-center">
-              <span className="inline-block py-1 px-3 rounded-full bg-larioja-amarillo text-larioja-azul text-xs font-bold uppercase tracking-widest mb-4 shadow-sm">
-                {hero?.metadata?.badge || "Hecho por nuestros estudiantes"}
-              </span>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-5 tracking-tight break-words [overflow-wrap:anywhere]">
-                {hero?.title || "Nuestros Productos"}
-              </h1>
-              <p className="text-lg md:text-xl text-white/80 leading-relaxed font-light">
-                {hero?.description ||
-                  "Productos elaborados con dedicación en nuestros talleres de formación laboral. Arma tu canasta y envíanos tu pedido por WhatsApp."}
-              </p>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+      <ShopHero hero={hero} photos={heroPhotos(content, catalogs)} />
 
       {/* Catálogo */}
-      <section className="py-16 md:py-24 min-h-[60vh] bg-gray-50 dark:bg-slate-900/50">
+      <section
+        id="catalogo"
+        className="py-16 md:py-24 min-h-[60vh] bg-gray-50 dark:bg-slate-900/50 scroll-mt-[98px] md:scroll-mt-[132px] lg:scroll-mt-[140px]"
+      >
         <div className="container mx-auto px-6 max-w-6xl">
           <ShopCatalog catalogs={catalogs} whatsappDigits={whatsappDigits} />
         </div>
@@ -101,6 +87,10 @@ export default async function ProductosPage() {
           </ScrollReveal>
         </div>
       </section>
+
+      {/* Regalos empresariales y Cómo comprar (CMS; se ocultan desactivándolos) */}
+      {regalos && <GiftsBanner section={regalos} whatsappDigits={whatsappDigits} />}
+      {comoComprar && <HowToBuy section={comoComprar} steps={pasos} />}
 
       <Footer />
     </main>
