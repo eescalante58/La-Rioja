@@ -117,3 +117,364 @@
     font-size: 16px;
   }
 }
+
+/**
+ * Menú hamburguesa móvil (src/components/layout/MobileMenu.tsx).
+ * Especificación: Documentacion/La Rioja — Menú hamburguesa móvil diseño y especificaciones.md
+ * Código de color: azul = navegación, verde = tienda, amarillo = apoyar/participar.
+ * Navy, verde y amarillo usan los hex de marca (tailwind `larioja.*`).
+ * En @layer components para que utilidades como `xl:hidden` prevalezcan.
+ */
+:root {
+  --lr-navy: #012060;
+  --lr-blue: #0056b3;
+  --lr-blue-light: #4da3ff;
+  --lr-green: #1e9922;
+  --lr-yellow: #ffff00;
+  --lr-whatsapp: #25d366;
+  --lr-text: #ffffff;
+  --lr-text-2: rgba(255, 255, 255, 0.7);
+  --lr-text-3: rgba(255, 255, 255, 0.6);
+  --lr-line: rgba(255, 255, 255, 0.1);
+  --lr-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer components {
+  .menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease-out;
+  }
+  .menu-overlay[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .menu-panel {
+    position: fixed;
+    inset: 0 0 0 auto;
+    z-index: 140;
+    width: min(100%, 420px);
+    height: 100dvh;
+    background: var(--lr-navy);
+    color: var(--lr-text);
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-montserrat), system-ui, sans-serif;
+    font-weight: 400;
+    text-align: left;
+    transform: translateX(100%);
+    visibility: hidden;
+    /* Cierre: 220 ms; visibility se oculta al terminar el desplazamiento. */
+    transition:
+      transform 220ms var(--lr-ease),
+      visibility 0s linear 220ms;
+  }
+  .menu-panel[data-open="true"] {
+    transform: translateX(0);
+    visibility: visible;
+    transition:
+      transform 280ms var(--lr-ease),
+      visibility 0s;
+  }
+
+  /* Zona 1: encabezado */
+  .menu-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    height: 76px;
+    padding: 0 16px 0 24px;
+    border-bottom: 1px solid var(--lr-line);
+  }
+  .menu-logo {
+    display: flex;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    padding: 4px;
+    border-radius: 9999px;
+    background: #fff;
+    overflow: hidden;
+  }
+  .menu-brand {
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .menu-brand-sub {
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--lr-text-2);
+  }
+  .menu-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--lr-text);
+    transition:
+      background 120ms ease-out,
+      transform 120ms ease-out;
+  }
+
+  /* Zona 2: navegación */
+  .menu-nav {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 8px;
+  }
+  .menu-label {
+    padding: 16px 28px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--lr-text-3);
+  }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding: 0 16px;
+    margin: 0 12px 4px;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--lr-text);
+    border: 1px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      background 120ms ease-out,
+      transform 120ms ease-out;
+  }
+  .menu-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .menu-chevron {
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.45);
+  }
+  .menu-badge {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background: var(--lr-yellow);
+    color: var(--lr-navy);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .menu-item[aria-current="page"] {
+    background: rgba(0, 86, 179, 0.45);
+    box-shadow: inset 3px 0 0 var(--lr-blue-light);
+  }
+  .menu-item[data-featured] {
+    background: rgba(30, 153, 34, 0.18);
+    border-color: rgba(30, 153, 34, 0.55);
+  }
+  .menu-item[data-featured] .menu-icon {
+    background: var(--lr-green);
+  }
+
+  /* Zona 3: acciones */
+  .menu-actions {
+    position: sticky;
+    bottom: 0;
+    flex-shrink: 0;
+    background: var(--lr-navy);
+    border-top: 1px solid var(--lr-line);
+    padding: 16px 12px env(safe-area-inset-bottom);
+  }
+  .menu-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 52px;
+    border-radius: 14px;
+    background: var(--lr-yellow);
+    color: var(--lr-navy);
+    font-size: 17px;
+    font-weight: 500;
+    transition:
+      filter 120ms ease-out,
+      transform 120ms ease-out;
+  }
+  .menu-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .menu-btn {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 500;
+    transition:
+      background 120ms ease-out,
+      filter 120ms ease-out,
+      transform 120ms ease-out;
+  }
+  .menu-btn-whatsapp {
+    background: var(--lr-whatsapp);
+    color: #063b1c;
+  }
+  .menu-btn-outline {
+    border: 1px solid #fff;
+    color: var(--lr-text);
+  }
+  .menu-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 12px 16px;
+  }
+  .menu-social,
+  .menu-staff {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+    color: var(--lr-text-2);
+  }
+  .menu-staff {
+    gap: 6px;
+    padding: 0 8px;
+    font-size: 13px;
+    color: var(--lr-text-3);
+  }
+
+  /* Estados */
+  .menu-item:active,
+  .menu-btn:active,
+  .menu-cta:active,
+  .menu-close:active {
+    transform: scale(0.98);
+  }
+  .menu-item:active,
+  .menu-btn-outline:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  @media (hover: hover) {
+    .menu-item:hover,
+    .menu-btn-outline:hover,
+    .menu-social:hover,
+    .menu-staff:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .menu-close:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+    .menu-cta:hover,
+    .menu-btn-whatsapp:hover {
+      filter: brightness(1.05);
+    }
+  }
+  .menu-panel :focus-visible {
+    outline: 2px solid var(--lr-yellow);
+    outline-offset: 2px;
+  }
+
+  /* Entrada escalonada de ítems (solo al abrir) */
+  .menu-panel[data-open="true"] .menu-stagger {
+    animation: menu-item-in 220ms ease-out both;
+    animation-delay: calc(var(--i, 0) * 30ms + 80ms);
+  }
+
+  /* Botón hamburguesa a X (Navbar) */
+  .burger-line {
+    display: block;
+    width: 22px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition:
+      transform 200ms ease-in-out,
+      opacity 200ms ease-in-out;
+  }
+  .burger[aria-expanded="true"] .burger-line:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+  .burger[aria-expanded="true"] .burger-line:nth-child(2) {
+    opacity: 0;
+  }
+  .burger[aria-expanded="true"] .burger-line:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu-panel,
+    .menu-panel[data-open="true"] {
+      transform: none;
+    }
+    .menu-panel {
+      opacity: 0;
+      transition:
+        opacity 150ms,
+        visibility 0s linear 150ms;
+    }
+    .menu-panel[data-open="true"] {
+      opacity: 1;
+      transition:
+        opacity 150ms,
+        visibility 0s;
+    }
+    .menu-overlay {
+      transition-duration: 150ms;
+    }
+    .menu-panel[data-open="true"] .menu-stagger {
+      animation: none;
+    }
+    .menu-item,
+    .menu-btn,
+    .menu-cta,
+    .menu-close,
+    .burger-line {
+      transition: none;
+    }
+    .menu-item:active,
+    .menu-btn:active,
+    .menu-cta:active,
+    .menu-close:active {
+      transform: none;
+    }
+  }
+}
+
+@keyframes menu-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

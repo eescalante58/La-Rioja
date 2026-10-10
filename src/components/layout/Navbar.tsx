@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Mail, MessageCircle } from "lucide-react";
+import { Mail } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { ContactTrigger } from "./ContactTrigger";
 import { WhatsAppIcon } from "./WhatsAppIcon";
+import { MobileMenu, type MobileMenuSocialLinks } from "./MobileMenu";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * Mobile navigation component with hamburger menu.
+ * Barra de navegación del sitio público: enlaces en escritorio (xl+) y
+ * botón hamburguesa que abre `MobileMenu` en móvil/tablet.
  */
 export function Navbar({
   solid = false,
@@ -25,32 +27,56 @@ export function Navbar({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [whatsappLink, setWhatsappLink] = useState<string>("#");
+  const [social, setSocial] = useState<MobileMenuSocialLinks>({});
+  const [bingoActive, setBingoActive] = useState(false);
+  const burgerRef = useRef<HTMLButtonElement>(null);
+
+  const whatsappLink = social.whatsapp ?? "#";
+  const closeMenu = useCallback(() => setIsOpen(false), []);
 
   const navSolid = isScrolled || solid;
   const isFixed = fixed;
 
-  // Fetch WhatsApp link from CMS
+  // Enlaces de WhatsApp y redes desde el CMS (página "social media").
   useEffect(() => {
-    const fetchWhatsApp = async () => {
+    const fetchSocial = async () => {
       const supabase = createClient();
       const { data } = await supabase
         .from("site_content")
-        .select("description")
+        .select("section_key, description")
         .eq("page", "social media")
-        .eq("section_key", "whatsapp")
-        .eq("is_active", true)
-        .single();
+        .in("section_key", ["whatsapp", "instagram", "facebook", "x"])
+        .eq("is_active", true);
 
-      if (data?.description) {
-        // Normaliza a https://wa.me/<solo dígitos>: un "+" o espacios en el
-        // valor del CMS hacen que WhatsApp reporte "el número no existe".
-        const digits = data.description.match(/(\d{6,15})/);
-        setWhatsappLink(digits ? `https://wa.me/${digits[1]}` : data.description);
+      if (!data) return;
+      const links: MobileMenuSocialLinks = {};
+      for (const row of data as { section_key: string; description: string | null }[]) {
+        const value = row.description?.trim();
+        if (!value) continue;
+        if (row.section_key === "whatsapp") {
+          // Normaliza a https://wa.me/<solo dígitos>: un "+" o espacios en el
+          // valor del CMS hacen que WhatsApp reporte "el número no existe".
+          const digits = value.match(/(\d{6,15})/);
+          links.whatsapp = digits ? `https://wa.me/${digits[1]}` : value;
+        } else {
+          links[row.section_key as keyof MobileMenuSocialLinks] = value;
+        }
       }
+      setSocial(links);
     };
-    fetchWhatsApp();
+    fetchSocial();
   }, []);
+
+  // ¿Hay Bingo en curso? Controla la insignia "Juega" del menú móvil.
+  useEffect(() => {
+    if (simple) return;
+    fetch("/api/public/bingo-status")
+      .then((r) => r.json())
+      .then((json: { success: boolean; data?: { active: boolean } }) => {
+        if (json.success && json.data) setBingoActive(json.data.active);
+      })
+      .catch(() => {});
+  }, [simple]);
 
   // Handle scroll for sticky effect
   useEffect(() => {
@@ -60,18 +86,6 @@ export function Navbar({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Block scroll when menu is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -262,15 +276,21 @@ export function Navbar({
                     <ThemeToggle />
                   </div>
                   <button
+                    ref={burgerRef}
+                    type="button"
                     onClick={toggleMenu}
-                    className={`p-2 rounded-lg transition-all border ${
+                    className={`burger flex h-11 w-11 flex-col items-center justify-center gap-1 rounded-lg transition-all border ${
                       navSolid
                         ? "bg-larioja-azul text-white border-larioja-azul shadow-md"
                         : "bg-white/10 backdrop-blur-md border-white/30 text-white"
                     }`}
-                    aria-label="Menu"
+                    aria-expanded={isOpen}
+                    aria-controls="mobile-menu"
+                    aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
                   >
-                    {isOpen ? <X size={24} /> : <Menu size={24} />}
+                    <span className="burger-line" aria-hidden="true" />
+                    <span className="burger-line" aria-hidden="true" />
+                    <span className="burger-line" aria-hidden="true" />
                   </button>
                 </div>
               </>
@@ -279,102 +299,17 @@ export function Navbar({
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay — fuera de <nav> para que el backdrop-blur no lo
+      {/* Menú móvil — fuera de <nav> para que el backdrop-blur no lo
           confine (backdrop-filter crea un containing block para fixed). */}
-      <div
-        className={`xl:hidden fixed inset-0 bg-larioja-azul/98 backdrop-blur-2xl transition-all duration-500 z-[115] ${
-          isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
-        }`}
-      >
-        <div className="flex flex-col h-full overflow-y-auto p-6 sm:p-8 pt-20 sm:pt-24">
-          <button
-            onClick={toggleMenu}
-            className="absolute top-6 right-6 p-2 text-white/70 hover:text-white transition-colors"
-          >
-            <X size={32} />
-          </button>
-
-          <div className="flex flex-col gap-2 sm:gap-4 text-center font-montserrat">
-            <Link
-              href="/about"
-              onClick={() => setIsOpen(false)}
-              className="text-xl sm:text-2xl font-medium text-white/90 hover:text-white transition-all py-3 sm:py-4 border-b border-white/5"
-            >
-              Nosotros
-            </Link>
-            <Link
-              href="/contact"
-              onClick={() => setIsOpen(false)}
-              className="text-xl sm:text-2xl font-medium text-white/90 hover:text-white transition-all py-3 sm:py-4 border-b border-white/5"
-            >
-              Apóyanos
-            </Link>
-            <Link
-              href="/programs"
-              onClick={() => setIsOpen(false)}
-              className="text-xl sm:text-2xl font-medium text-white/90 hover:text-white transition-all py-3 sm:py-4 border-b border-white/5"
-            >
-              Programas
-            </Link>
-            <Link
-              href="/faq"
-              onClick={() => setIsOpen(false)}
-              className="text-xl sm:text-2xl font-medium text-white/90 hover:text-white transition-all py-3 sm:py-4 border-b border-white/5"
-            >
-              Preguntas
-            </Link>
-            <Link
-              href="/bingo"
-              onClick={() => setIsOpen(false)}
-              className="text-xl sm:text-2xl font-medium text-larioja-verde hover:text-larioja-verde/80 transition-all py-3 sm:py-4 border-b border-white/5"
-            >
-              Bingo
-            </Link>
-            <Link
-              href="/productos"
-              onClick={() => setIsOpen(false)}
-              className="text-xl sm:text-2xl font-medium text-white/90 hover:text-white transition-all py-3 sm:py-4 border-b border-white/5"
-            >
-              La Rioja Shop
-            </Link>
-            <Link
-              href="/admin"
-              onClick={() => setIsOpen(false)}
-              className="text-xl sm:text-2xl font-medium text-larioja-amarillo hover:text-larioja-amarillo/80 transition-all py-3 sm:py-4 border-b border-white/5"
-            >
-              Inicio de sesión
-            </Link>
-
-            <ContactTrigger>
-              {(openModal) => (
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    openModal();
-                  }}
-                  className="text-xl sm:text-2xl font-medium text-larioja-verde hover:text-white transition-all py-3 sm:py-4 flex items-center justify-center gap-3"
-                >
-                  <Mail size={24} />
-                  Contacto
-                </button>
-              )}
-            </ContactTrigger>
-
-            <a
-              href={whatsappLink}
-              onClick={() => setIsOpen(false)}
-              className="text-xl sm:text-2xl font-medium text-white hover:text-larioja-verde transition-all py-3 sm:py-4 flex items-center justify-center gap-3 border-t border-white/10"
-            >
-              <WhatsAppIcon className="w-6 h-6 text-larioja-verde" />
-              WhatsApp
-            </a>
-          </div>
-
-          <div className="mt-auto pt-8 pb-8 sm:pb-12 text-center text-white/40 text-sm italic">
-            Formando futuros, integrando vidas.
-          </div>
-        </div>
-      </div>
+      {!simple && (
+        <MobileMenu
+          open={isOpen}
+          onClose={closeMenu}
+          returnFocusRef={burgerRef}
+          social={social}
+          bingoActive={bingoActive}
+        />
+      )}
     </>
   );
 }
