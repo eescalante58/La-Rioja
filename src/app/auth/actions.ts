@@ -74,12 +74,11 @@ export async function signOut() {
 }
 
 /**
- * Handles OAuth login (Google, Facebook, X).
- * @param {string} provider - The provider name.
+ * Inicia el login OAuth. Solo Google: es la única cuenta social que usa el
+ * personal. La autorización (empresa asignada) se valida en /auth/callback.
+ * @param provider - Proveedor OAuth.
  */
-export async function signInWithOAuth(
-  provider: "google" | "facebook" | "twitter",
-) {
+export async function signInWithOAuth(provider: "google") {
   const supabase = await createClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const { data, error } = await supabase.auth.signInWithOAuth({
