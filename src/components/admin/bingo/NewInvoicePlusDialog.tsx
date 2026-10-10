@@ -14,6 +14,7 @@ import {
 import { Smartphone, DollarSign, Search, Hash, Ticket } from "lucide-react";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import InventoryDialogs from "./InventoryDialogs";
+import { getErrorMessage } from "@/lib/utils";
 
 interface NewInvoicePlusDialogProps {
   isOpen: boolean;
@@ -364,8 +365,8 @@ export default function NewInvoicePlusDialog({
       } else if (!redirectIfSessionExpired(result)) {
         alert("Error: " + (result?.error || "No se pudo verificar el rango."));
       }
-    } catch (error: any) {
-      alert("Error al verificar rango: " + error.message);
+    } catch (error) {
+      alert("Error al verificar rango: " + getErrorMessage(error));
     } finally {
       setCheckingRange(false);
     }
@@ -403,11 +404,11 @@ export default function NewInvoicePlusDialog({
       } else if (!redirectIfSessionExpired(result)) {
         alert("Error: " + (result?.error || "No se pudo guardar la factura."));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving invoice:", error);
       alert(
         "Error inesperado: " +
-          (error.message || "Consulte la consola para más detalles"),
+          (getErrorMessage(error) || "Consulte la consola para más detalles"),
       );
     } finally {
       setLoading(false);

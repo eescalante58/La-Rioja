@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import { callAction } from "@/lib/action-client";
+import { getErrorMessage } from "@/lib/utils";
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -62,10 +63,10 @@ export function ContactModal({
       } else {
         setError(result.error || "El servidor rechazó el envío del mensaje.");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("DEBUG: Error capturado en el modal:", err);
       setError(
-        `[CLIENTE] Fallo al conectar con el servidor: ${err.message || "Error desconocido"}`,
+        `[CLIENTE] Fallo al conectar con el servidor: ${getErrorMessage(err) || "Error desconocido"}`,
       );
     } finally {
       setIsSubmitting(false);

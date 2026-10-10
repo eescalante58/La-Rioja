@@ -102,7 +102,7 @@ async function createNewUserInternal(rawInput: UserInput) {
   let supabaseAdmin;
   try {
     supabaseAdmin = createAdminClient();
-  } catch (clientErr: any) {
+  } catch (clientErr) {
     console.error("Error creating supabase admin client:", clientErr);
     return {
       error:

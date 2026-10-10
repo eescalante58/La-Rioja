@@ -13,6 +13,7 @@ import {
 } from "@tremor/react";
 import { Smartphone, MessageCircle, DollarSign, CheckCircle, Eye } from "lucide-react";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
+import { getErrorMessage } from "@/lib/utils";
 
 interface NewInvoiceDialogProps {
   isOpen: boolean;
@@ -316,9 +317,9 @@ export default function NewInvoiceDialog({
       } else if (!redirectIfSessionExpired(result)) {
         alert("Error: " + (result?.error || "No se pudo guardar la factura."));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving invoice:", error);
-      alert("Error inesperado: " + (error.message || "Consulte la consola para más detalles"));
+      alert("Error inesperado: " + (getErrorMessage(error) || "Consulte la consola para más detalles"));
     } finally {
       setLoading(false);
     }

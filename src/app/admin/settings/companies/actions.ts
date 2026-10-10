@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole } from "@/lib/auth/guards";
+import { roleLevelOf } from "@/lib/auth/authorization";
 
 /**
  * Helper to log user activity.
@@ -48,7 +49,7 @@ async function checkMinLevel(minLevel: number) {
     .eq("id", user.id)
     .single();
 
-  const level = (userData?.roles as any)?.level || 0;
+  const level = roleLevelOf(userData);
   return level >= minLevel;
 }
 

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 import { revalidatePath } from "next/cache";
 import { withRole } from "@/lib/auth/guards";
+import { getErrorMessage } from "@/lib/utils";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -114,8 +115,8 @@ async function resendContactEmailInternal(id: string) {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err) {
+    return { success: false, error: getErrorMessage(err) };
   }
 }
 

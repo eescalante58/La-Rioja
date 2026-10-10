@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getErrorMessage } from "@/lib/utils";
 
 /**
  * Lógica de WhatsApp compartida entre las Server Actions de
@@ -137,8 +138,8 @@ export async function checkWhatsAppInstanceStatusCore() {
     }
 
     return { success: true, status: accountStatus };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -237,7 +238,7 @@ export async function sendWhatsAppAutomationCore(payload: {
     }
 
     return { success: true, results };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) };
   }
 }

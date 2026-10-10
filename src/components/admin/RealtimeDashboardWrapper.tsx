@@ -46,6 +46,33 @@ import dynamic from "next/dynamic";
 import NewInvoiceDialog from "./bingo/NewInvoiceDialog";
 import WhatsAppPopup from "./bingo/WhatsAppPopup";
 import UnsoldCardsReportDialog from "./UnsoldCardsReportDialog";
+import { singleRelation } from "@/lib/utils";
+import type {
+  CardPriceSummary,
+  CardTypeSummary,
+  Customer,
+  CustomerInvoice,
+  DashboardData,
+  DateInvoice,
+  GroupInvoice,
+  InvoiceCard,
+  LevelAssignment,
+  LevelStudent,
+  ManagerBreakdown,
+  RecentContact,
+  RecentInvoice,
+  RegisteredCard,
+  SalesSummaryGroup,
+  StudentCard,
+  DailySale,
+  TopCustomer,
+} from "@/app/admin/dashboard-core";
+import type {
+  CountryCode,
+  InvoiceWithCards,
+  SearchCardDetail,
+  SearchResult,
+} from "@/types/bingo";
 
 // Dynamic imports for charts
 const SalesProgressChart = dynamic(
@@ -79,7 +106,7 @@ const YearlySalesChart = dynamic(
 );
 
 interface RealtimeDashboardWrapperProps {
-  initialData: any;
+  initialData: DashboardData;
 }
 
 /**
@@ -88,68 +115,68 @@ interface RealtimeDashboardWrapperProps {
 export default function RealtimeDashboardWrapper({
   initialData,
 }: RealtimeDashboardWrapperProps) {
-  const [data, setData] = useState(initialData);
+  const [data, setData] = useState<DashboardData>(initialData);
   const [isDateDetailOpen, setIsDateDetailOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
-  const [dateInvoices, setDateInvoices] = useState<any[]>([]);
+  const [dateInvoices, setDateInvoices] = useState<DateInvoice[]>([]);
   /** Drill-down de la fecha del evento: resumen de ventas de ese día. */
   const [isEventDateSummaryOpen, setIsEventDateSummaryOpen] = useState(false);
-  const [eventDateSummary, setEventDateSummary] = useState<any[]>([]);
+  const [eventDateSummary, setEventDateSummary] = useState<SalesSummaryGroup[]>([]);
   /** Segundo nivel: facturas de la agrupación vendedor+método+precio. */
-  const [eventDateGroup, setEventDateGroup] = useState<any | null>(null);
-  const [eventDateGroupInvoices, setEventDateGroupInvoices] = useState<any[]>([]);
+  const [eventDateGroup, setEventDateGroup] = useState<SalesSummaryGroup | null>(null);
+  const [eventDateGroupInvoices, setEventDateGroupInvoices] = useState<GroupInvoice[]>([]);
   /** Vendedores expandidos en el resumen del día del evento. */
   const [expandedDateManagers, setExpandedDateManagers] = useState<Set<string>>(
     new Set(),
   );
   const [isManagerDetailOpen, setIsManagerDetailOpen] = useState(false);
-  const [managerBreakdown, setManagerBreakdown] = useState<any[]>([]);
+  const [managerBreakdown, setManagerBreakdown] = useState<ManagerBreakdown[]>([]);
   const [isLoadingDrillDown, setIsLoadingDrillDown] = useState(false);
   const [selectedManager, setSelectedManager] = useState<string | null>(null);
-  const [managerInvoices, setManagerInvoices] = useState<any[]>([]);
+  const [managerInvoices, setManagerInvoices] = useState<CustomerInvoice[]>([]);
   /** Drill-down "Clientes con más Cartones": cliente → facturas → cartones. */
   const [isCustomerDetailOpen, setIsCustomerDetailOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
-  const [customerInvoices, setCustomerInvoices] = useState<any[]>([]);
+  const [customerInvoices, setCustomerInvoices] = useState<CustomerInvoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
-  const [invoiceCards, setInvoiceCards] = useState<any[]>([]);
-  const [cardTypeSummary, setCardTypeSummary] = useState<any[]>([]);
+  const [invoiceCards, setInvoiceCards] = useState<InvoiceCard[]>([]);
+  const [cardTypeSummary, setCardTypeSummary] = useState<CardTypeSummary[]>([]);
   /** Resumen por precio de venta (sales_price) de cartones Vendido/Donado. */
-  const [cardPriceSummary, setCardPriceSummary] = useState<any[]>([]);
+  const [cardPriceSummary, setCardPriceSummary] = useState<CardPriceSummary[]>([]);
   const [expandedCardPrices, setExpandedCardPrices] = useState<Set<string>>(
     new Set(),
   );
-  const [assignmentByLevel, setAssignmentByLevel] = useState<any[]>([]);
+  const [assignmentByLevel, setAssignmentByLevel] = useState<LevelAssignment[]>([]);
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
   const [expandedCardTypes, setExpandedCardTypes] = useState<Set<string>>(
     new Set(),
   );
   const [isStudentDetailOpen, setIsStudentDetailOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<any>(null);
-  const [studentCards, setStudentCards] = useState<any[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<LevelStudent | null>(null);
+  const [studentCards, setStudentCards] = useState<StudentCard[]>([]);
   const [isUnsoldReportOpen, setIsUnsoldReportOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   const [isQuickCardDetailOpen, setIsQuickCardDetailOpen] = useState(false);
-  const [quickCardDetail, setQuickCardDetail] = useState<any>(null);
+  const [quickCardDetail, setQuickCardDetail] = useState<SearchCardDetail | null>(null);
 
-  const [countries, setCountries] = useState<any[]>([]);
+  const [countries, setCountries] = useState<CountryCode[]>([]);
   const [isConsultInvoiceOpen, setIsConsultInvoiceOpen] = useState(false);
-  const [consultingInvoice, setConsultingInvoice] = useState<any>(null);
+  const [consultingInvoice, setConsultingInvoice] = useState<InvoiceWithCards | null>(null);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
-  const [whatsAppInvoice, setWhatsAppInvoice] = useState<any>(null);
+  const [whatsAppInvoice, setWhatsAppInvoice] = useState<InvoiceWithCards | null>(null);
 
   const [isCustomerListOpen, setIsCustomerListOpen] = useState(false);
-  const [customerList, setCustomerList] = useState<any[]>([]);
+  const [customerList, setCustomerList] = useState<Customer[]>([]);
 
   const [isRealizedOpen, setIsRealizedOpen] = useState(false);
 
   const [isRegisteredOpen, setIsRegisteredOpen] = useState(false);
-  const [registeredCards, setRegisteredCards] = useState<any[]>([]);
+  const [registeredCards, setRegisteredCards] = useState<RegisteredCard[]>([]);
   /** Filtro del modal de reportados: folio, cartón, asistente o teléfono. */
   const [registeredSearch, setRegisteredSearch] = useState("");
   /** Registros que llegaron por Realtime desde la última carga: se suman
@@ -265,11 +292,11 @@ export default function RealtimeDashboardWrapper({
    * Segundo nivel del resumen de la fecha del evento: facturas de la
    * agrupación (vendedor + método de pago + precio) seleccionada.
    */
-  const handleEventDateGroup = async (group: any) => {
+  const handleEventDateGroup = async (group: SalesSummaryGroup) => {
     setIsLoadingDrillDown(true);
     const res = await dashApi(
       "invoices-by-date-group",
-      `&date=${encodeURIComponent(data.eventDate)}&manager=${encodeURIComponent(group.manager_name)}&method=${encodeURIComponent(group.payment_method)}&price=${group.card_price}`,
+      `&date=${encodeURIComponent(data.eventDate ?? "")}&manager=${encodeURIComponent(group.manager_name)}&method=${encodeURIComponent(group.payment_method)}&price=${group.card_price}`,
     );
     if (res.success) {
       setEventDateGroup(group);
@@ -357,7 +384,7 @@ export default function RealtimeDashboardWrapper({
     setIsLoadingDrillDown(false);
   };
 
-  const handleStudentDrillDown = async (student: any) => {
+  const handleStudentDrillDown = async (student: LevelStudent) => {
     setIsLoadingDrillDown(true);
     const res = await dashApi("student-cards", `&studentId=${student.id}`);
     if (res.success && res.data) {
@@ -455,7 +482,7 @@ export default function RealtimeDashboardWrapper({
       string,
       {
         manager_name: string;
-        rows: any[];
+        rows: SalesSummaryGroup[];
         invoices_count: number;
         cards_number: number;
         total_amount: number;
@@ -464,7 +491,7 @@ export default function RealtimeDashboardWrapper({
     for (const row of eventDateSummary) {
       const g = map.get(row.manager_name) ?? {
         manager_name: row.manager_name,
-        rows: [] as any[],
+        rows: [] as SalesSummaryGroup[],
         invoices_count: 0,
         cards_number: 0,
         total_amount: 0,
@@ -551,7 +578,7 @@ export default function RealtimeDashboardWrapper({
     return res.json();
   };
 
-  const handleSearchResultClick = async (result: any) => {
+  const handleSearchResultClick = async (result: SearchResult) => {
     setShowSearchResults(false);
     setSearchQuery("");
 
@@ -566,7 +593,19 @@ export default function RealtimeDashboardWrapper({
       }
       setIsLoadingDrillDown(false);
     } else if (result.type === "card") {
-      setQuickCardDetail(result.raw);
+      // Si el cartón no se pudo enriquecer, `raw` es la fila de la RPC:
+      // se muestra el detalle con solo el número de cartón.
+      setQuickCardDetail(
+        "card_number" in result.raw
+          ? result.raw
+          : {
+              card_number: Number(result.id),
+              player_name: null,
+              card_status: null,
+              card_type: null,
+              invoice_number: null,
+            },
+      );
       setIsQuickCardDetailOpen(true);
     }
   };
@@ -691,7 +730,7 @@ export default function RealtimeDashboardWrapper({
       metric: data.stats?.customersCount?.toString() || "0",
       icon: Users,
       color: "emerald",
-      onClick: data.userLevel >= 4 ? handleCustomerDrillDown : undefined,
+      onClick: (data.userLevel ?? 0) >= 4 ? handleCustomerDrillDown : undefined,
     },
     {
       // Cartones auto-registrados por asistentes en /registro.
@@ -702,7 +741,7 @@ export default function RealtimeDashboardWrapper({
       ).toString(),
       icon: ClipboardList,
       color: "violet",
-      onClick: data.userLevel >= 4 ? handleRegisteredDrillDown : undefined,
+      onClick: (data.userLevel ?? 0) >= 4 ? handleRegisteredDrillDown : undefined,
     },
     {
       title: "Venta Realizada",
@@ -712,7 +751,7 @@ export default function RealtimeDashboardWrapper({
       }).format(data.realized || 0),
       icon: Ticket,
       color: "amber",
-      onClick: data.userLevel >= 4 ? handleRealizedDrillDown : undefined,
+      onClick: (data.userLevel ?? 0) >= 4 ? handleRealizedDrillDown : undefined,
     },
     {
       title: "Cumplimiento Meta",
@@ -871,7 +910,7 @@ export default function RealtimeDashboardWrapper({
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {data.topCustomers.map((c: any, idx: number) => (
+                    {(data.topCustomers ?? []).map((c: TopCustomer, idx: number) => (
                       <TableRow key={c.customer_name}>
                         <TableCell className="text-gray-500">{idx + 1}</TableCell>
                         <TableCell>
@@ -983,7 +1022,7 @@ export default function RealtimeDashboardWrapper({
                             </TableCell>
                           </TableRow>
                           {expandedLevels.has(lvl.level) &&
-                            lvl.students.map((student: any, idx: number) => {
+                            lvl.students.map((student: LevelStudent, idx: number) => {
                               const studentPercentage = student.assigned > 0 
                                 ? (student.sold / student.assigned) * 100 
                                 : 0;
@@ -1079,7 +1118,7 @@ export default function RealtimeDashboardWrapper({
                 </TableHead>
                 <TableBody>
                   {(() => {
-                    const byType = new Map<string, any[]>();
+                    const byType = new Map<string, CardTypeSummary[]>();
                     for (const row of cardTypeSummary) {
                       const list = byType.get(row.card_type) || [];
                       list.push(row);
@@ -1198,7 +1237,7 @@ export default function RealtimeDashboardWrapper({
                 </TableHead>
                 <TableBody>
                   {(() => {
-                    const byPrice = new Map<number, any[]>();
+                    const byPrice = new Map<number, CardPriceSummary[]>();
                     for (const row of cardPriceSummary) {
                       const list = byPrice.get(row.sales_price) || [];
                       list.push(row);
@@ -1670,7 +1709,7 @@ export default function RealtimeDashboardWrapper({
                             </TableCell>
                           </TableRow>
                           {expandedDateManagers.has(group.manager_name) &&
-                            group.rows.map((row: any, idx: number) => (
+                            group.rows.map((row: SalesSummaryGroup, idx: number) => (
                               <TableRow
                                 key={idx}
                                 className="hover:bg-gray-50 dark:hover:bg-slate-800/50"
@@ -1835,7 +1874,7 @@ export default function RealtimeDashboardWrapper({
                     <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-larioja-azul dark:bg-blue-600 rounded-full"
-                        style={{ width: `${(m.value / data.realized) * 100}%` }}
+                        style={{ width: `${(m.value / (data.realized ?? 0)) * 100}%` }}
                       />
                     </div>
                   </div>
@@ -1930,7 +1969,7 @@ export default function RealtimeDashboardWrapper({
                         const sc = Array.isArray(card.students_cards)
                           ? card.students_cards[0]
                           : card.students_cards;
-                        const student = sc?.students;
+                        const student = singleRelation(sc?.students);
                         return (
                           <TableRow key={idx}>
                             <TableCell className="font-bold">
@@ -2107,7 +2146,7 @@ export default function RealtimeDashboardWrapper({
                         const sc = Array.isArray(card.students_cards)
                           ? card.students_cards[0]
                           : card.students_cards;
-                        const student = sc?.students;
+                        const student = singleRelation(sc?.students);
                         return (
                           <TableRow key={idx}>
                             <TableCell className="font-bold">
@@ -2204,7 +2243,7 @@ export default function RealtimeDashboardWrapper({
                         className="flex items-center gap-2 text-larioja-verde font-black hover:underline"
                         onClick={async () => {
                           setIsLoadingDrillDown(true);
-                          const res = await fetchInvoiceByNumber(quickCardDetail.invoice_number);
+                          const res = await fetchInvoiceByNumber(quickCardDetail.invoice_number ?? "");
                           if (res.success && res.data) {
                             setIsQuickCardDetailOpen(false);
                             setConsultingInvoice(res.data);
@@ -2354,19 +2393,19 @@ export default function RealtimeDashboardWrapper({
                       <div className="text-right">
                         <Text className="text-[10px] font-bold uppercase text-slate-400">Total Facturas</Text>
                         <Text className="text-sm font-black text-larioja-azul dark:text-larioja-amarillo">
-                          {(data.dailySales || []).reduce((acc: number, d: any) => acc + (d.count || 0), 0)}
+                          {(data.dailySales || []).reduce((acc: number, d: DailySale) => acc + (d.count || 0), 0)}
                         </Text>
                       </div>
                       <div className="text-right border-l border-gray-100 dark:border-gray-800 pl-4">
                         <Text className="text-[10px] font-bold uppercase text-slate-400">Total Cartones</Text>
                         <Text className="text-sm font-black text-larioja-azul dark:text-larioja-amarillo">
-                          {(data.dailySales || []).reduce((acc: number, d: any) => acc + (d.cards || 0), 0)}
+                          {(data.dailySales || []).reduce((acc: number, d: DailySale) => acc + (d.cards || 0), 0)}
                         </Text>
                       </div>
                       <div className="text-right border-l border-gray-100 dark:border-gray-800 pl-4">
                         <Text className="text-[10px] font-bold uppercase text-slate-400">Total Ventas</Text>
                         <Text className="text-sm font-black text-larioja-verde">
-                          {formatCurrency((data.dailySales || []).reduce((acc: number, d: any) => acc + d.total, 0))}
+                          {formatCurrency((data.dailySales || []).reduce((acc: number, d: DailySale) => acc + d.total, 0))}
                         </Text>
                       </div>
                     </div>
@@ -2441,7 +2480,7 @@ export default function RealtimeDashboardWrapper({
                         <div className="text-right">
                           <Text className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">Total Facturas</Text>
                           <Metric className="text-xl font-black text-blue-900 dark:text-white">
-                            {(data.dailySales || []).reduce((acc: number, d: any) => acc + d.count, 0)}
+                            {(data.dailySales || []).reduce((acc: number, d: DailySale) => acc + d.count, 0)}
                           </Metric>
                         </div>
                     </Flex>
@@ -2516,7 +2555,7 @@ export default function RealtimeDashboardWrapper({
             <div className="mt-6 space-y-3 max-h-[380px] overflow-y-auto pr-1">
               {(() => {
                 const recentActivities = [
-                  ...(data.recentInvoices || []).map((inv: any) => ({
+                  ...(data.recentInvoices || []).map((inv: RecentInvoice) => ({
                     type: "invoice" as const,
                     id: inv.id || inv.invoice_number,
                     invoice_number: inv.invoice_number,
@@ -2526,13 +2565,15 @@ export default function RealtimeDashboardWrapper({
                     status: inv.status,
                     date: inv.created_at || inv.invoice_date,
                   })),
-                  ...(data.recentContacts || []).map((contact: any) => ({
+                  ...(data.recentContacts || []).map((contact: RecentContact) => ({
                     type: "contact" as const,
                     id: contact.id,
                     name: contact.name,
                     date: contact.created_at,
                   })),
-                ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                ].sort(
+                  (a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime(),
+                );
 
                 if (recentActivities.length === 0) {
                   return (
@@ -2544,7 +2585,7 @@ export default function RealtimeDashboardWrapper({
                   );
                 }
 
-                return recentActivities.map((activity: any) => {
+                return recentActivities.map((activity) => {
                   if (activity.type === "invoice") {
                     return (
                       <Flex
@@ -2862,8 +2903,8 @@ export default function RealtimeDashboardWrapper({
           onClose={() => setIsUnsoldReportOpen(false)}
           events={[
             {
-              company_id: data.companyId,
-              event_id: data.eventId,
+              company_id: Number(data.companyId),
+              event_id: data.eventId ?? "",
               event_name: data.eventName || "",
             },
           ]}

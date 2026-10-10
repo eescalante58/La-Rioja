@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireCompanyAccess } from "@/lib/auth/authorization";
+import type { SearchCardDetail, SearchResult, UniversalSearchRow } from "@/types/bingo";
 
 /**
  * GET /api/search?q=<termino>
@@ -23,10 +24,7 @@ export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selected_company_id")?.value;
   if (!companyId) {
-    return NextResponse.json(
-      { success: false, error: "No company selected" },
-      { status: 400 },
-    );
+    return NextResponse.json({ success: false, error: "No company selected" }, { status: 400 });
   }
 
   // Auth: only authenticated users with membership in the selected company
@@ -60,7 +58,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: error.message });
   }
 
-  const rows = (data || []) as any[];
+  const rows: UniversalSearchRow[] = data || [];
 
   // Enrich card hits with the fields used by the quick detail modal
   const cardRefs = rows
@@ -68,7 +66,7 @@ export async function GET(request: NextRequest) {
     .map((r) => Number(r.ref))
     .filter((n) => !isNaN(n));
 
-  let cardMap = new Map<number, any>();
+  let cardMap = new Map<number, SearchCardDetail>();
   if (cardRefs.length > 0) {
     const { data: cardsData } = await supabase
       .from("cards")
@@ -76,10 +74,11 @@ export async function GET(request: NextRequest) {
       .eq("company_id", companyId)
       .eq("event_id", company.def_dash_event_id)
       .in("card_number", cardRefs);
-    cardMap = new Map((cardsData || []).map((c: any) => [c.card_number, c]));
+    const cards: SearchCardDetail[] = cardsData || [];
+    cardMap = new Map(cards.map((c) => [c.card_number, c]));
   }
 
-  const results = rows.map((r) => ({
+  const results: SearchResult[] = rows.map((r) => ({
     type: r.origen,
     id: r.ref,
     title: r.titulo,

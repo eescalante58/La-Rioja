@@ -35,6 +35,7 @@ import {
   sendWhatsAppAutomationCore,
 } from "./whatsapp-core";
 import { getCustomersCore } from "../dashboard-core";
+import { getErrorMessage } from "@/lib/utils";
 
 /**
  * Sanitizes string input for Bingo operations.
@@ -270,8 +271,8 @@ async function uploadSingleCardImageInternal(
     }
 
     return { success: true, cardNumber };
-  } catch (err: any) {
-    return { error: `Archivo ${fileName}: Error inesperado (${err.message}).` };
+  } catch (err) {
+    return { error: `Archivo ${fileName}: Error inesperado (${getErrorMessage(err)}).` };
   }
 }
 
@@ -1642,9 +1643,9 @@ async function uploadPromoImageInternal(formData: FormData) {
     } = supabase.storage.from("cms_images").getPublicUrl(storagePath);
 
     return { success: true, url: publicUrl };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error uploading promo image:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 

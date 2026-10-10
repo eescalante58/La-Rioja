@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { callActionForm } from "@/lib/action-client";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getErrorMessage } from "@/lib/utils";
 
 /**
  * Edit form for CMS content sections.
@@ -124,11 +125,11 @@ export default function CMSEditForm({ item }: { item: any }) {
         });
         setLoading(false);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Submit error:", error);
       setStatus({
         type: "error",
-        message: error.message || "Error de red o de servidor. Intente nuevamente.",
+        message: getErrorMessage(error) || "Error de red o de servidor. Intente nuevamente.",
       });
       setLoading(false);
     }
@@ -145,8 +146,8 @@ export default function CMSEditForm({ item }: { item: any }) {
       const parsed = JSON.parse(val);
       setFormData({ ...formData, metadata: parsed });
       setJsonError(null);
-    } catch (e: any) {
-      setJsonError(e.message);
+    } catch (e) {
+      setJsonError(getErrorMessage(e));
     }
   };
 

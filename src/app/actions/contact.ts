@@ -2,7 +2,7 @@
 
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
-import { escapeHTML } from "@/lib/utils";
+import { escapeHTML, getErrorMessage } from "@/lib/utils";
 
 import { contactSchema, type ContactInput } from "@/lib/validation/contact";
 
@@ -113,15 +113,15 @@ export async function submitContactForm(rawInput: ContactInput) {
     }
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Submission Error Details:", {
-      message: error.message,
-      stack: error.stack,
+      message: getErrorMessage(error),
+      stack: error instanceof Error ? error.stack : undefined,
       data: rawInput,
     });
     return {
       success: false,
-      error: `Error al procesar el envío: ${error.message || "Ocurrió un error inesperado."}`,
+      error: `Error al procesar el envío: ${getErrorMessage(error) || "Ocurrió un error inesperado."}`,
     };
   }
 }

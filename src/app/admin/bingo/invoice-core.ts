@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { invoiceSchema, invoiceUpdateSchema } from "@/lib/validation/bingo";
+import { getErrorMessage } from "@/lib/utils";
 
 /**
  * Lógica de facturación compartida entre las Server Actions de
@@ -170,9 +171,9 @@ export async function saveInvoiceCore(formData: FormData, userId: string) {
         data: { publicUrl },
       } = supabase.storage.from("invoices_images").getPublicUrl(storagePath);
       url_invoice = publicUrl;
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error processing invoice file:", err);
-      return { error: `Error procesando archivo de factura: ${err.message}` };
+      return { error: `Error procesando archivo de factura: ${getErrorMessage(err)}` };
     }
   }
 
@@ -757,9 +758,9 @@ export async function updateInvoiceCore(formData: FormData, userId?: string) {
       }
 
       url_invoice = publicUrl;
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error processing invoice file update:", err);
-      return { error: `Error procesando archivo de factura: ${err.message}` };
+      return { error: `Error procesando archivo de factura: ${getErrorMessage(err)}` };
     }
   }
 
@@ -954,9 +955,9 @@ export async function deleteInvoiceCore(id: string, userId?: string) {
       invoice.event_id,
       invoice.invoice_number,
     );
-  } catch (cardsError: any) {
+  } catch (cardsError) {
     return {
-      error: `Error al liberar cartones asociados: ${cardsError.message}`,
+      error: `Error al liberar cartones asociados: ${getErrorMessage(cardsError)}`,
     };
   }
 

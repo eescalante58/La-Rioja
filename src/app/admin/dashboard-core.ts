@@ -1,5 +1,235 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+import { getErrorMessage, singleRelation } from "@/lib/utils";
+import type { Tables } from "@/types/database";
+import { roleLevelOf } from "@/lib/auth/authorization";
+
+type Invoice = Tables<"invoices">;
+type Card = Tables<"cards">;
+
+/** Contacto reciente mostrado en "Actividad reciente". */
+export type RecentContact = Pick<Tables<"contact_submissions">, "id" | "name" | "created_at">;
+
+/** Factura reciente mostrada en "Actividad reciente". */
+export type RecentInvoice = Pick<
+  Invoice,
+  | "id"
+  | "invoice_number"
+  | "customer_name"
+  | "cards_number"
+  | "total_amount"
+  | "created_at"
+  | "status"
+  | "invoice_date"
+>;
+
+/** Ventas pagadas agregadas por fecha de factura. */
+export interface DailySale {
+  date: string;
+  total: number;
+  count: number;
+  cards: number;
+}
+
+/** Ventas acumuladas por año (eventos activos o cerrados). */
+export interface YearlySale {
+  year: string;
+  total: number;
+}
+
+/** Cliente del ranking "Clientes con más Cartones". */
+export interface TopCustomer {
+  customer_name: string;
+  cards: number;
+  amount: number;
+}
+
+/** Datos de la vista principal del dashboard (`getDashboardDataCore`). */
+export interface DashboardData {
+  success: boolean;
+  error?: string;
+  companyId?: string;
+  companyName?: string | null;
+  hasEvent?: boolean;
+  eventId?: string;
+  eventName?: string | null;
+  eventDate?: string | null;
+  cardValue?: number;
+  goal?: number;
+  realized?: number;
+  percentage?: number;
+  dailySales?: DailySale[];
+  yearlySales?: YearlySale[];
+  topCustomers?: TopCustomer[];
+  stats?: {
+    cmsCount: number;
+    customersCount: number;
+    reportedCardsCount?: number;
+  };
+  recentContacts?: RecentContact[];
+  recentInvoices?: RecentInvoice[];
+  userLevel?: number;
+}
+
+/** Cartón auto-registrado en /registro (drill-down "Cartones Reportados"). */
+export type RegisteredCard = Pick<
+  Tables<"wheels_presents_cards">,
+  | "id"
+  | "card_number"
+  | "player_name"
+  | "player_phone_number"
+  | "wheel_name"
+  | "is_winner"
+  | "created_at"
+>;
+
+/** Factura del drill-down "Ventas del día" (`getInvoicesByDateCore`). */
+export type DateInvoice = Pick<
+  Invoice,
+  | "invoice_number"
+  | "customer_name"
+  | "total_amount"
+  | "manager_name"
+  | "payment_method"
+  | "cards_number"
+>;
+
+/** Agrupación vendedor/método/precio de `getSalesSummaryByDateCore`. */
+export interface SalesSummaryGroup {
+  manager_name: string;
+  payment_method: string;
+  card_price: number;
+  invoices_count: number;
+  cards_number: number;
+  total_amount: number;
+}
+
+/** Factura del detalle de una agrupación (`getInvoicesByDateGroupCore`). */
+export type GroupInvoice = Pick<
+  Invoice,
+  | "invoice_number"
+  | "invoice_date"
+  | "customer_name"
+  | "phone_area"
+  | "phone_number"
+  | "manager_name"
+  | "payment_method"
+  | "cards_number"
+  | "card_price"
+  | "total_amount"
+>;
+
+/** Total vendido por gestor (`getSalesByManagerCore`). */
+export interface ManagerBreakdown {
+  name: string;
+  value: number;
+}
+
+/** Factura de un gestor o de un cliente (drill-downs del dashboard). */
+export type CustomerInvoice = Pick<
+  Invoice,
+  | "invoice_number"
+  | "invoice_date"
+  | "customer_name"
+  | "phone_area"
+  | "phone_number"
+  | "whatsapp_number"
+  | "cards_number"
+  | "card_price"
+  | "total_amount"
+>;
+
+/** Alumno embebido en `students_cards(students(...))`. */
+export type InvoiceCardStudent = Pick<Tables<"students">, "student_name" | "student_level">;
+
+/**
+ * Cartón de una factura con el alumno asignado (`getInvoiceCardsCore`).
+ * `students` es many-to-one: llega como objeto, pero el cliente sin tipos
+ * de esquema lo infiere como arreglo; leerlo con `singleRelation`.
+ */
+export type InvoiceCard = Pick<
+  Card,
+  "card_number" | "card_type" | "card_status" | "player_name" | "player_phone_number"
+> & {
+  students_cards: { students: InvoiceCardStudent | InvoiceCardStudent[] | null }[] | null;
+};
+
+/** Conteo y total por tipo/estado de cartón (`getCardTypeSummaryCore`). */
+export interface CardTypeSummary {
+  card_type: string;
+  card_status: string;
+  count: number;
+  total: number;
+}
+
+/** Conteo y total por precio de venta/estado (`getCardPriceSummaryCore`). */
+export interface CardPriceSummary {
+  sales_price: number;
+  card_status: string;
+  count: number;
+  total: number;
+}
+
+/** Alumno con sus totales dentro de un nivel (`getAssignmentByLevelCore`). */
+export interface LevelStudent {
+  id: number;
+  name: string;
+  level: string | null;
+  assigned: number;
+  sold: number;
+  card_count: number;
+}
+
+/** Nivel de alumnos con subtotales de asignación y venta. */
+export interface LevelAssignment {
+  level: string;
+  subtotal_assigned: number;
+  subtotal_sold: number;
+  subtotal_cards: number;
+  students: LevelStudent[];
+}
+
+/** Cartón asignado a un alumno (`getStudentCardsCore`). */
+export type StudentCard = Pick<
+  Card,
+  | "card_number"
+  | "card_type"
+  | "card_status"
+  | "player_name"
+  | "player_phone_number"
+  | "invoice_number"
+>;
+
+/** País para los selectores de teléfono (`getBingoCountriesCore`). */
+export type BingoCountry = Pick<
+  Tables<"country_codes">,
+  "name" | "phone_code" | "flag_emoji" | "iso2"
+>;
+
+/** Cliente del directorio de teléfonos (`getCustomersCore`). */
+export type Customer = Tables<"customer_phone_number">;
+
+/** Respuesta estándar de las funciones core: `data` solo cuando `success`. */
+export interface CoreResult<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+type AssignmentCard = Pick<Card, "card_price" | "sales_price" | "card_status">;
+
+/** Cartón embebido en `students_cards(cards(...))` (many-to-one: ver `singleRelation`). */
+interface AssignmentCardRow {
+  cards: AssignmentCard | AssignmentCard[] | null;
+}
+
+/** Alumno con sus asignaciones (`getAssignmentByLevelCore`). */
+type StudentAssignmentRow = Pick<
+  Tables<"students">,
+  "student_id" | "student_name" | "student_level"
+> & {
+  students_cards: AssignmentCardRow | AssignmentCardRow[] | null;
+};
 
 /**
  * Lógica del dashboard /admin compartida entre las Server Actions de
@@ -18,9 +248,9 @@ async function getSelectedCompanyId() {
 
 /**
  * Fetches dashboard data for the selected company and its default event.
- * @returns {Promise<any>} Dashboard statistics and event data.
+ * @returns {Promise<DashboardData>} Dashboard statistics and event data.
  */
-export async function getDashboardDataCore() {
+export async function getDashboardDataCore(): Promise<DashboardData> {
   const supabaseAdmin = createAdminClient(); // For data
   const supabase = await createClient(); // For user session
   const companyId = await getSelectedCompanyId();
@@ -41,7 +271,7 @@ export async function getDashboardDataCore() {
       .select("roles:role_id (level)")
       .eq("id", user.id)
       .single();
-    userLevel = (userData?.roles as any)?.level || 0;
+    userLevel = roleLevelOf(userData);
   }
 
   try {
@@ -53,9 +283,7 @@ export async function getDashboardDataCore() {
           .select("def_dash_event_id, company_name")
           .eq("company_id", companyId)
           .single(),
-        supabaseAdmin
-          .from("site_content")
-          .select("*", { count: "exact", head: true }),
+        supabaseAdmin.from("site_content").select("*", { count: "exact", head: true }),
         supabaseAdmin
           .from("customer_phone_number")
           .select("*", { count: "exact", head: true })
@@ -67,13 +295,13 @@ export async function getDashboardDataCore() {
           .limit(5),
         supabaseAdmin
           .from("events")
-          .select(
-            "event_date, total_amount_solded, event_id, is_active, status",
-          )
+          .select("event_date, total_amount_solded, event_id, is_active, status")
           .eq("company_id", companyId),
         supabaseAdmin
           .from("invoices")
-          .select("id, invoice_number, customer_name, cards_number, total_amount, created_at, status, invoice_date")
+          .select(
+            "id, invoice_number, customer_name, cards_number, total_amount, created_at, status, invoice_date",
+          )
           .eq("company_id", companyId)
           .order("created_at", { ascending: false, nullsFirst: false })
           .limit(10),
@@ -121,35 +349,34 @@ export async function getDashboardDataCore() {
     }
 
     // 2. Fetch event-specific data in parallel
-    const [eventRes, invoicesRes, dailySalesRes, reportedCardsRes] =
-      await Promise.all([
-        supabaseAdmin
-          .from("events")
-          .select("event_name, event_date, event_goal, card_value, event_id")
-          .eq("event_id", eventId)
-          .eq("company_id", companyId)
-          .single(),
-        supabaseAdmin
-          .from("invoices")
-          .select("total_amount")
-          .eq("event_id", eventId)
-          .eq("company_id", companyId)
-          .eq("status", "pagada"),
-        supabaseAdmin
-          .from("invoices")
-          .select("invoice_date, total_amount, cards_number, customer_name")
-          .eq("event_id", eventId)
-          .eq("company_id", companyId)
-          .eq("status", "pagada")
-          .order("invoice_date", { ascending: true }),
-        // Cartones auto-registrados por asistentes en /registro
-        // (tómbolas modo Participantes del evento del dashboard)
-        supabaseAdmin
-          .from("wheels_presents_cards")
-          .select("id", { count: "exact", head: true })
-          .eq("company_id", companyId)
-          .eq("event_id", eventId),
-      ]);
+    const [eventRes, invoicesRes, dailySalesRes, reportedCardsRes] = await Promise.all([
+      supabaseAdmin
+        .from("events")
+        .select("event_name, event_date, event_goal, card_value, event_id")
+        .eq("event_id", eventId)
+        .eq("company_id", companyId)
+        .single(),
+      supabaseAdmin
+        .from("invoices")
+        .select("total_amount")
+        .eq("event_id", eventId)
+        .eq("company_id", companyId)
+        .eq("status", "pagada"),
+      supabaseAdmin
+        .from("invoices")
+        .select("invoice_date, total_amount, cards_number, customer_name")
+        .eq("event_id", eventId)
+        .eq("company_id", companyId)
+        .eq("status", "pagada")
+        .order("invoice_date", { ascending: true }),
+      // Cartones auto-registrados por asistentes en /registro
+      // (tómbolas modo Participantes del evento del dashboard)
+      supabaseAdmin
+        .from("wheels_presents_cards")
+        .select("id", { count: "exact", head: true })
+        .eq("company_id", companyId)
+        .eq("event_id", eventId),
+    ]);
 
     const { data: event, error: eventError } = eventRes;
     const { data: invoices, error: invoicesError } = invoicesRes;
@@ -171,31 +398,41 @@ export async function getDashboardDataCore() {
     }
 
     // Process results
-    const realized =
-      invoices?.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) ||
-      0;
+    const realized = invoices?.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
     const goal = Number(event.event_goal || 0);
     const percentage = goal > 0 ? (realized / goal) * 100 : 0;
 
-    const dailySalesMap = dailySales?.reduce((acc: any, inv) => {
-      const date = inv.invoice_date;
-      if (!acc[date]) {
-        acc[date] = { total: 0, count: 0, cards: 0 };
-      }
-      acc[date].total += Number(inv.total_amount || 0);
-      acc[date].count += 1;
-      acc[date].cards += Number(inv.cards_number || 0);
-      return acc;
-    }, {});
+    const paidInvoices: Pick<
+      Invoice,
+      "invoice_date" | "total_amount" | "cards_number" | "customer_name"
+    >[] = dailySales ?? [];
+    const eventsForYears: Pick<
+      Tables<"events">,
+      "event_date" | "total_amount_solded" | "event_id" | "is_active" | "status"
+    >[] = allEvents ?? [];
 
-    const dailySalesData = Object.keys(dailySalesMap || {}).map((date) => ({
+    const dailySalesMap = paidInvoices.reduce<Record<string, Omit<DailySale, "date">>>(
+      (acc, inv) => {
+        const date = inv.invoice_date;
+        if (!acc[date]) {
+          acc[date] = { total: 0, count: 0, cards: 0 };
+        }
+        acc[date].total += Number(inv.total_amount || 0);
+        acc[date].count += 1;
+        acc[date].cards += Number(inv.cards_number || 0);
+        return acc;
+      },
+      {},
+    );
+
+    const dailySalesData: DailySale[] = Object.keys(dailySalesMap).map((date) => ({
       date,
       total: dailySalesMap[date].total,
       count: dailySalesMap[date].count,
       cards: dailySalesMap[date].cards,
     }));
 
-    const yearlySalesMap = allEvents?.reduce((acc: any, ev) => {
+    const yearlySalesMap = eventsForYears.reduce<Record<string, number>>((acc, ev) => {
       let year = "";
       if (ev.event_date) {
         year = new Date(ev.event_date).getUTCFullYear().toString();
@@ -220,7 +457,7 @@ export async function getDashboardDataCore() {
     // Ranking de clientes por cartones comprados (facturas pagadas del
     // evento): nombre, total de cartones y valor acumulado. Ordenado
     // descendente por cantidad de cartones.
-    const customersMap = dailySales?.reduce((acc: any, inv: any) => {
+    const customersMap = paidInvoices.reduce<Record<string, TopCustomer>>((acc, inv) => {
       const name = (inv.customer_name || "").trim();
       if (!name) return acc;
       if (!acc[name]) {
@@ -230,11 +467,11 @@ export async function getDashboardDataCore() {
       acc[name].amount += Number(inv.total_amount || 0);
       return acc;
     }, {});
-    const topCustomers = Object.values(customersMap || {})
-      .sort((a: any, b: any) => b.cards - a.cards || b.amount - a.amount)
+    const topCustomers = Object.values(customersMap)
+      .sort((a, b) => b.cards - a.cards || b.amount - a.amount)
       .slice(0, 10);
 
-    const yearlySalesData = Object.keys(yearlySalesMap || {})
+    const yearlySalesData: YearlySale[] = Object.keys(yearlySalesMap)
       .map((year) => ({
         year,
         total: yearlySalesMap[year],
@@ -265,9 +502,9 @@ export async function getDashboardDataCore() {
       recentInvoices: recentInvoices || [],
       userLevel,
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Unexpected error in getDashboardData:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -298,7 +535,7 @@ export async function getSessionTimeoutCore() {
  * tarjeta "Cartones Reportados"). El id de la fila es el folio que el
  * asistente recibe como código de registro.
  */
-export async function getRegisteredCardsCore() {
+export async function getRegisteredCardsCore(): Promise<CoreResult<RegisteredCard[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -315,9 +552,7 @@ export async function getRegisteredCardsCore() {
 
   const { data, error } = await supabase
     .from("wheels_presents_cards")
-    .select(
-      "id, card_number, player_name, player_phone_number, wheel_name, is_winner, created_at",
-    )
+    .select("id, card_number, player_name, player_phone_number, wheel_name, is_winner, created_at")
     .eq("company_id", companyId)
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
@@ -329,7 +564,7 @@ export async function getRegisteredCardsCore() {
 /**
  * Fetches invoice details for a specific date (Drill down).
  */
-export async function getInvoicesByDateCore(date: string) {
+export async function getInvoicesByDateCore(date: string): Promise<CoreResult<DateInvoice[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -356,7 +591,9 @@ export async function getInvoicesByDateCore(date: string) {
  * (manager_name), método de pago (payment_method) y precio del cartón
  * (card_price): conteo de facturas, total de cartones y monto acumulado.
  */
-export async function getSalesSummaryByDateCore(date: string) {
+export async function getSalesSummaryByDateCore(
+  date: string,
+): Promise<CoreResult<SalesSummaryGroup[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -372,9 +609,7 @@ export async function getSalesSummaryByDateCore(date: string) {
 
   const { data, error } = await supabase
     .from("invoices")
-    .select(
-      "manager_name, payment_method, cards_number, card_price, total_amount",
-    )
+    .select("manager_name, payment_method, cards_number, card_price, total_amount")
     .eq("company_id", companyId)
     .eq("event_id", company.def_dash_event_id)
     .eq("invoice_date", date)
@@ -412,9 +647,7 @@ export async function getSalesSummaryByDateCore(date: string) {
     grouped.set(key, g);
   }
 
-  const rows = [...grouped.values()].sort(
-    (a, b) => b.total_amount - a.total_amount,
-  );
+  const rows = [...grouped.values()].sort((a, b) => b.total_amount - a.total_amount);
   return { success: true, data: rows };
 }
 
@@ -430,7 +663,7 @@ export async function getInvoicesByDateGroupCore(
   manager: string,
   method: string,
   price: number,
-) {
+): Promise<CoreResult<GroupInvoice[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -457,8 +690,7 @@ export async function getInvoicesByDateGroupCore(
 
   if (error) return { success: false, error: error.message };
 
-  const norm = (v: unknown, fallback: string) =>
-    (String(v ?? "").trim() || fallback);
+  const norm = (v: unknown, fallback: string) => String(v ?? "").trim() || fallback;
   return {
     success: true,
     data: (data || []).filter(
@@ -473,7 +705,7 @@ export async function getInvoicesByDateGroupCore(
 /**
  * Fetches sales breakdown by manager for the current event (Drill down).
  */
-export async function getSalesByManagerCore() {
+export async function getSalesByManagerCore(): Promise<CoreResult<ManagerBreakdown[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -497,13 +729,14 @@ export async function getSalesByManagerCore() {
   if (error) return { success: false, error: error.message };
 
   // Group by manager
-  const breakdownMap = data?.reduce((acc: any, inv) => {
+  const managerInvoices: Pick<Invoice, "manager_name" | "total_amount">[] = data ?? [];
+  const breakdownMap = managerInvoices.reduce<Record<string, number>>((acc, inv) => {
     const name = inv.manager_name || "Sin asignar";
     acc[name] = (acc[name] || 0) + Number(inv.total_amount || 0);
     return acc;
   }, {});
 
-  const breakdownData = Object.keys(breakdownMap)
+  const breakdownData: ManagerBreakdown[] = Object.keys(breakdownMap)
     .map((name) => ({
       name,
       value: breakdownMap[name],
@@ -517,7 +750,9 @@ export async function getSalesByManagerCore() {
  * Fetches invoice details for a specific manager in the current event
  * (Drill down from "Ventas por Vendedor").
  */
-export async function getInvoicesByManagerCore(managerName: string) {
+export async function getInvoicesByManagerCore(
+  managerName: string,
+): Promise<CoreResult<CustomerInvoice[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -559,7 +794,9 @@ export async function getInvoicesByManagerCore(managerName: string) {
  * normalizado desde la agregación del ranking; se compara en JS por
  * trim+lowercase para no depender de espacios/mayúsculas del registro.
  */
-export async function getInvoicesByCustomerCore(customerName: string) {
+export async function getInvoicesByCustomerCore(
+  customerName: string,
+): Promise<CoreResult<CustomerInvoice[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -588,10 +825,7 @@ export async function getInvoicesByCustomerCore(customerName: string) {
   const target = customerName.trim().toLowerCase();
   return {
     success: true,
-    data: (data || []).filter(
-      (inv) =>
-        (inv.customer_name || "").trim().toLowerCase() === target,
-    ),
+    data: (data || []).filter((inv) => (inv.customer_name || "").trim().toLowerCase() === target),
   };
 }
 
@@ -599,7 +833,9 @@ export async function getInvoicesByCustomerCore(customerName: string) {
  * Fetches the cards linked to an invoice, including the assigned student
  * (if any) via students_cards -> students.
  */
-export async function getInvoiceCardsCore(invoiceNumber: string) {
+export async function getInvoiceCardsCore(
+  invoiceNumber: string,
+): Promise<CoreResult<InvoiceCard[]>> {
   const supabase = await createClient();
   const companyId = await getSelectedCompanyId();
 
@@ -631,7 +867,7 @@ export async function getInvoiceCardsCore(invoiceNumber: string) {
  * Resumen de cartones por tipo y estado para el evento por defecto:
  * conteo y suma de sales_price por cada combinación tipo/estado.
  */
-export async function getCardTypeSummaryCore() {
+export async function getCardTypeSummaryCore(): Promise<CoreResult<CardTypeSummary[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -647,7 +883,7 @@ export async function getCardTypeSummaryCore() {
 
   // Paginar: el evento puede superar el límite de 1000 filas por consulta
   const pageSize = 1000;
-  const rows: any[] = [];
+  const rows: Pick<Card, "card_type" | "card_status" | "sales_price">[] = [];
   for (let from = 0; ; from += pageSize) {
     const { data: page, error } = await supabase
       .from("cards")
@@ -677,8 +913,7 @@ export async function getCardTypeSummaryCore() {
     })
     .sort(
       (a, b) =>
-        a.card_type.localeCompare(b.card_type) ||
-        a.card_status.localeCompare(b.card_status),
+        a.card_type.localeCompare(b.card_type) || a.card_status.localeCompare(b.card_status),
     );
 
   return { success: true, data };
@@ -690,7 +925,7 @@ export async function getCardTypeSummaryCore() {
  * precio/estado. Sirve para ver cuántos cartones se vendieron a cada
  * precio (descuentos, precios especiales, donados).
  */
-export async function getCardPriceSummaryCore() {
+export async function getCardPriceSummaryCore(): Promise<CoreResult<CardPriceSummary[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -706,7 +941,7 @@ export async function getCardPriceSummaryCore() {
 
   // Paginar: el evento puede superar el límite de 1000 filas por consulta
   const pageSize = 1000;
-  const rows: any[] = [];
+  const rows: Pick<Card, "card_status" | "sales_price">[] = [];
   for (let from = 0; ; from += pageSize) {
     const { data: page, error } = await supabase
       .from("cards")
@@ -740,11 +975,7 @@ export async function getCardPriceSummaryCore() {
         total: g.total,
       };
     })
-    .sort(
-      (a, b) =>
-        b.sales_price - a.sales_price ||
-        a.card_status.localeCompare(b.card_status),
-    );
+    .sort((a, b) => b.sales_price - a.sales_price || a.card_status.localeCompare(b.card_status));
 
   return { success: true, data };
 }
@@ -752,7 +983,7 @@ export async function getCardPriceSummaryCore() {
 /**
  * Fetches card assignments by level and student for the current event.
  */
-export async function getAssignmentByLevelCore() {
+export async function getAssignmentByLevelCore(): Promise<CoreResult<LevelAssignment[]>> {
   const supabase = createAdminClient(); // Faster admin query
   const companyId = await getSelectedCompanyId();
 
@@ -789,11 +1020,12 @@ export async function getAssignmentByLevelCore() {
   if (error) return { success: false, error: error.message };
 
   // Group by level
-  const levelsMap = new Map<string, any>();
+  const levelsMap = new Map<string, LevelAssignment>();
+  const students: StudentAssignmentRow[] = data ?? [];
 
-  for (const student of data || []) {
+  for (const student of students) {
     const levelName = student.student_level || "Sin nivel";
-    const levelData = levelsMap.get(levelName) || {
+    const levelData: LevelAssignment = levelsMap.get(levelName) || {
       level: levelName,
       subtotal_assigned: 0,
       subtotal_sold: 0,
@@ -805,12 +1037,14 @@ export async function getAssignmentByLevelCore() {
     let studentSold = 0;
     let studentCards = 0;
 
-    const assignments = Array.isArray(student.students_cards)
+    const assignments: AssignmentCardRow[] = Array.isArray(student.students_cards)
       ? student.students_cards
-      : [student.students_cards].filter(Boolean);
+      : student.students_cards
+        ? [student.students_cards]
+        : [];
 
-    for (const sc of assignments as any[]) {
-      const card = sc.cards;
+    for (const sc of assignments) {
+      const card = singleRelation(sc.cards);
       if (card) {
         studentCards++;
         studentAssigned += Number(card.card_price || 0);
@@ -841,9 +1075,7 @@ export async function getAssignmentByLevelCore() {
     .sort((a, b) => a.level.localeCompare(b.level))
     .map((level) => ({
       ...level,
-      students: level.students.sort((a: any, b: any) =>
-        a.name.localeCompare(b.name),
-      ),
+      students: level.students.sort((a, b) => a.name.localeCompare(b.name)),
     }));
 
   return { success: true, data: result };
@@ -852,7 +1084,7 @@ export async function getAssignmentByLevelCore() {
 /**
  * Fetches the cards assigned to a specific student in the current event.
  */
-export async function getStudentCardsCore(studentId: number) {
+export async function getStudentCardsCore(studentId: number): Promise<CoreResult<StudentCard[]>> {
   const supabase = createAdminClient();
   const companyId = await getSelectedCompanyId();
 
@@ -875,17 +1107,16 @@ export async function getStudentCardsCore(studentId: number) {
     .eq("student_id", studentId);
 
   if (scError) return { success: false, error: scError.message };
-  if (!assignments || assignments.length === 0)
-    return { success: true, data: [] };
+  if (!assignments || assignments.length === 0) return { success: true, data: [] };
 
-  const cardNumbers = assignments.map((a: any) => a.card_number);
+  const cardNumbers = (assignments as Pick<Tables<"students_cards">, "card_number">[]).map(
+    (a) => a.card_number,
+  );
 
   // Then get the full card details
   const { data: cards, error: cardsError } = await supabase
     .from("cards")
-    .select(
-      "card_number, card_type, card_status, player_name, player_phone_number, invoice_number",
-    )
+    .select("card_number, card_type, card_status, player_name, player_phone_number, invoice_number")
     .eq("company_id", companyId)
     .eq("event_id", company.def_dash_event_id)
     .in("card_number", cardNumbers)
@@ -898,7 +1129,7 @@ export async function getStudentCardsCore(studentId: number) {
 /**
  * Fetches country codes for phone selects.
  */
-export async function getBingoCountriesCore() {
+export async function getBingoCountriesCore(): Promise<CoreResult<BingoCountry[]>> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("country_codes")
@@ -910,7 +1141,7 @@ export async function getBingoCountriesCore() {
 }
 
 /** Clientes de la empresa (directorio de teléfonos). */
-export async function getCustomersCore(companyId: number) {
+export async function getCustomersCore(companyId: number): Promise<CoreResult<Customer[]>> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("customer_phone_number")

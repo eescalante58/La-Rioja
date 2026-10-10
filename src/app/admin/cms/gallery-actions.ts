@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole } from "@/lib/auth/guards";
+import { getErrorMessage } from "@/lib/utils";
 
 /**
  * Obtiene las imágenes de la galería para un evento.
@@ -130,9 +131,9 @@ async function bulkUploadGalleryImagesInternal(
       if (inserted) {
         results.push(inserted);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(`Error uploading file ${file.name}:`, err);
-      errors.push(`${file.name}: ${err.message}`);
+      errors.push(`${file.name}: ${getErrorMessage(err)}`);
     }
   }
 

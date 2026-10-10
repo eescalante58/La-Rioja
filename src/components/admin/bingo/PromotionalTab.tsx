@@ -38,6 +38,7 @@ import {
   Download,
 } from "lucide-react";
 import { callAction, callActionForm } from "@/lib/action-client";
+import { getErrorMessage } from "@/lib/utils";
 
 interface Customer {
   id: number;
@@ -162,11 +163,11 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
       } else {
         alert("Error al guardar cliente: " + (result.error || "desconocido"));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving customer:", error);
       alert(
         "Error inesperado: " +
-          (error.message || "Consulte la consola para más detalles"),
+          (getErrorMessage(error) || "Consulte la consola para más detalles"),
       );
     } finally {
       setLoadingCustomers(false);

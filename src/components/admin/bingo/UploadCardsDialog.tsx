@@ -27,6 +27,7 @@ import {
   Minus,
 } from "lucide-react";
 import { callAction, callActionForm } from "@/lib/action-client";
+import { getErrorMessage } from "@/lib/utils";
 
 interface Event {
   id: number;
@@ -387,9 +388,9 @@ export default function UploadCardsDialog({
         errorList: errors,
       });
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error uploading cards:", error);
-      alert("Se produjo un error inesperado durante la carga: " + (error.message || "Error desconocido"));
+      alert("Se produjo un error inesperado durante la carga: " + (getErrorMessage(error) || "Error desconocido"));
     } finally {
       setLoading(false);
       setCurrentCardNumber(null);

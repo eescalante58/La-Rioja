@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
 import { withRole } from "@/lib/auth/guards";
 import { faqSchema, faqSectionSchema, cmsContentSchema } from "@/lib/validation/cms";
+import { getErrorMessage } from "@/lib/utils";
 
 /**
  * Sanitizes string input to prevent basic HTML injection.
@@ -125,9 +126,9 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
       } = supabase.storage.from("cms_images").getPublicUrl(storagePath);
 
       image_url = publicUrl;
-    } catch (uploadErr: any) {
+    } catch (uploadErr) {
       console.error("Upload error:", uploadErr);
-      return { success: false, error: uploadErr.message };
+      return { success: false, error: getErrorMessage(uploadErr) };
     }
   }
 
@@ -610,9 +611,9 @@ async function createCMSContentInternal(formData: FormData, context: { user: any
         data: { publicUrl },
       } = supabase.storage.from("cms_images").getPublicUrl(storagePath);
       image_url = publicUrl;
-    } catch (uploadErr: any) {
+    } catch (uploadErr) {
       console.error("Upload error:", uploadErr);
-      return { success: false, error: uploadErr.message };
+      return { success: false, error: getErrorMessage(uploadErr) };
     }
   }
 

@@ -1,9 +1,31 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { singleRelation } from "@/lib/utils";
+import type { Tables } from "@/types/database";
+
+type RoleLevel = Pick<Tables<"roles">, "level">;
+
+/**
+ * Fila de `users` con la relación `roles:role_id (level)`. En ejecución
+ * la relación many-to-one llega como objeto; el cliente sin tipos de
+ * esquema la infiere como arreglo, por eso se aceptan ambas formas.
+ */
+export interface UserRoleLevelRow {
+  roles: RoleLevel | RoleLevel[] | null;
+}
+
+/**
+ * Nivel de rol de una fila `users` consultada con `roles:role_id (level)`.
+ * @param row Fila consultada (o null si no existe).
+ * @returns Nivel del rol, o 0 si no tiene.
+ */
+export function roleLevelOf(row: UserRoleLevelRow | null | undefined): number {
+  return singleRelation(row?.roles)?.level || 0;
+}
 
 /**
  * Checks if a user is authenticated and has a minimum role level.
  * @param minLevel Minimum level required (SuperAdmin: 10, Admin: 8, Editor: 6, Operator: 4)
- * @returns {Promise<{user: any, level: number, error?: string}>}
+ * @returns {Promise<{user: User | null, level: number, error?: string}>}
  */
 export async function requireRoleLevel(minLevel: number) {
   const supabase = await createClient();
@@ -23,10 +45,14 @@ export async function requireRoleLevel(minLevel: number) {
     .eq("id", user.id)
     .single();
 
-  const level = (userData?.roles as any)?.level || 0;
+  const level = roleLevelOf(userData);
 
   if (level < minLevel) {
-    return { user, level, error: `Permisos insuficientes (Nivel: ${level}, Requerido: ${minLevel})` };
+    return {
+      user,
+      level,
+      error: `Permisos insuficientes (Nivel: ${level}, Requerido: ${minLevel})`,
+    };
   }
 
   return { user, level };

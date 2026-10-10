@@ -15,6 +15,7 @@ import {
 } from "@tremor/react";
 import { X as XIcon, Save, ImageIcon, AlertCircle, CheckCircle } from "lucide-react";
 import { callActionForm } from "@/lib/action-client";
+import { getErrorMessage } from "@/lib/utils";
 
 interface CMSCreateDialogProps {
   isOpen: boolean;
@@ -69,8 +70,8 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
       const parsed = JSON.parse(val);
       setNewFormData({ ...newFormData, metadata: parsed });
       setNewJsonError(null);
-    } catch (e: any) {
-      setNewJsonError(e.message);
+    } catch (e) {
+      setNewJsonError(getErrorMessage(e));
     }
   };
 
@@ -127,11 +128,11 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
       } else {
         setCreateStatus({ type: "error", message: result.error || "Error al crear." });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating CMS content:", error);
       setCreateStatus({ 
         type: "error", 
-        message: error.message || "Error inesperado al crear." 
+        message: getErrorMessage(error) || "Error inesperado al crear." 
       });
     } finally {
       setIsCreating(false);
