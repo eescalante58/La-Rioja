@@ -38,41 +38,57 @@ export default function ProductsManagerClient({
   const [data, setData] = useState<ShopAdminData>(initialData);
   const [tab, setTab] = useState(0);
 
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">La Rioja Shop</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Productos de los talleres, catálogos y pedidos recibidos en la tienda.
-          </p>
-        </div>
-        <a
-          href="/productos"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-        >
-          <ExternalLink size={16} />
-          Ver tienda
-        </a>
-      </div>
+  // Hueco dentro del encabezado fijo donde cada pestaña puede montar (vía
+  // portal) su barra de herramientas, para que quede fija junto al título.
+  const [toolbarSlot, setToolbarSlot] = useState<HTMLDivElement | null>(null);
 
+  return (
+    <div>
       <TabGroup index={tab} onIndexChange={setTab}>
-        <TabList className="mt-4 overflow-x-auto whitespace-nowrap">
-          <Tab icon={Package} className="text-sm sm:text-base whitespace-nowrap">
-            Productos ({data.products.length})
-          </Tab>
-          <Tab icon={Layers} className="text-sm sm:text-base whitespace-nowrap">
-            Catálogos y líneas
-          </Tab>
-          <Tab icon={ClipboardList} className="text-sm sm:text-base whitespace-nowrap">
-            Pedidos
-          </Tab>
-        </TabList>
+        {/* Encabezado fijo (desde md) dentro del <main> desplazable del admin: sube
+            sobre el padding del <main> (-top/-mt) y lo compensa con padding-top. */}
+        <div className="md:sticky -top-4 md:-top-6 -mt-4 md:-mt-6 z-40 -mx-4 md:-mx-6 px-4 md:px-6 pt-4 md:pt-6 bg-gray-50 dark:bg-black">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">La Rioja Shop</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Productos de los talleres, catálogos y pedidos recibidos en la tienda.
+              </p>
+            </div>
+            <a
+              href="/productos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <ExternalLink size={16} />
+              Ver tienda
+            </a>
+          </div>
+
+          <TabList className="mt-4 overflow-x-auto overflow-y-hidden whitespace-nowrap">
+            <Tab icon={Package} className="text-sm sm:text-base whitespace-nowrap">
+              Productos ({data.products.length})
+            </Tab>
+            <Tab icon={Layers} className="text-sm sm:text-base whitespace-nowrap">
+              Catálogos y líneas
+            </Tab>
+            <Tab icon={ClipboardList} className="text-sm sm:text-base whitespace-nowrap">
+              Pedidos
+            </Tab>
+          </TabList>
+          <div ref={setToolbarSlot} />
+        </div>
         <TabPanels>
           <TabPanel>
-            {tab === 0 && <ProductsTab companyId={companyId} data={data} setData={setData} />}
+            {tab === 0 && (
+              <ProductsTab
+                companyId={companyId}
+                data={data}
+                setData={setData}
+                toolbarSlot={toolbarSlot}
+              />
+            )}
           </TabPanel>
           <TabPanel>
             {tab === 1 && <CatalogsTab companyId={companyId} data={data} setData={setData} />}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Dialog, DialogPanel, Select, SelectItem } from "@tremor/react";
 import {
@@ -94,7 +95,12 @@ function priceRange(p: Product): string {
  * diálogo con foto y presentaciones (precio por variante), disponibilidad por
  * presentación, publicar/ocultar y eliminación.
  */
-export default function ProductsTab({ companyId, data, setData }: ShopTabProps) {
+interface ProductsTabProps extends ShopTabProps {
+  /** Hueco del encabezado fijo donde montar la barra de filtros (si existe). */
+  toolbarSlot?: HTMLElement | null;
+}
+
+export default function ProductsTab({ companyId, data, setData, toolbarSlot }: ProductsTabProps) {
   const [catalogFilter, setCatalogFilter] = useState<string>(ALL);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
@@ -386,42 +392,48 @@ export default function ProductsTab({ companyId, data, setData }: ShopTabProps) 
 
   const noLines = data.lines.length === 0;
 
-  return (
-    <div className="space-y-6 pt-6">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-full sm:w-64">
-          <Select value={catalogFilter} onValueChange={setCatalogFilter} enableClear={false}>
-            <SelectItem value={ALL}>Todos los catálogos</SelectItem>
-            {data.catalogs.map((c) => (
-              <SelectItem key={c.id} value={String(c.id)}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </Select>
-        </div>
-        <div className="relative w-full sm:w-64">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-          />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar producto…"
-            className={`${inputClass} pl-9`}
-          />
-        </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          disabled={noLines}
-          title={noLines ? "Primero crea una línea en «Catálogos y líneas»" : undefined}
-          className="sm:ml-auto inline-flex items-center gap-2 rounded-lg bg-larioja-azul px-4 py-2 text-sm font-semibold text-white hover:bg-larioja-azul/90 disabled:opacity-50"
-        >
-          <Plus size={16} />
-          Nuevo producto
-        </button>
+  // Filtros y «Nuevo producto»: se montan en el encabezado fijo de la página
+  // (portal al hueco que provee ProductsManagerClient) para no desplazarse.
+  const toolbar = (
+    <div className="pt-6 pb-3 flex flex-wrap items-end gap-3 border-b border-gray-200/70 dark:border-gray-800">
+      <div className="w-full sm:w-64">
+        <Select value={catalogFilter} onValueChange={setCatalogFilter} enableClear={false}>
+          <SelectItem value={ALL}>Todos los catálogos</SelectItem>
+          {data.catalogs.map((c) => (
+            <SelectItem key={c.id} value={String(c.id)}>
+              {c.name}
+            </SelectItem>
+          ))}
+        </Select>
       </div>
+      <div className="relative w-full sm:w-64">
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+        />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar producto…"
+          className={`${inputClass} pl-9`}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={openCreate}
+        disabled={noLines}
+        title={noLines ? "Primero crea una línea en «Catálogos y líneas»" : undefined}
+        className="sm:ml-auto inline-flex items-center gap-2 rounded-lg bg-larioja-azul px-4 py-2 text-sm font-semibold text-white hover:bg-larioja-azul/90 disabled:opacity-50"
+      >
+        <Plus size={16} />
+        Nuevo producto
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {toolbarSlot ? createPortal(toolbar, toolbarSlot) : toolbar}
 
       <ErrorBox message={!modalOpen ? error : null} />
 
