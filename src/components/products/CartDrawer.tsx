@@ -16,7 +16,41 @@ interface CartDrawerProps {
 }
 
 /**
- * Botón flotante de la canasta y panel lateral con tres pasos:
+ * Botón de la canasta para la barra fija de la tienda (junto a los catálogos):
+ * muestra cantidad y total y abre el panel lateral.
+ */
+export function CartButton() {
+  const cart = useCart();
+  const empty = cart.count === 0;
+  return (
+    <button
+      type="button"
+      onClick={cart.open}
+      className={`relative inline-flex shrink-0 items-center gap-2 rounded-full py-2.5 px-3 sm:pl-3.5 sm:pr-4 text-sm font-bold shadow-sm border transition-colors ${
+        empty
+          ? "bg-white text-larioja-azul border-gray-200 hover:border-larioja-azul dark:bg-slate-800 dark:text-white dark:border-white/10"
+          : "bg-larioja-azul text-white border-larioja-azul hover:bg-larioja-azul/90 dark:bg-larioja-amarillo dark:text-larioja-azul dark:border-larioja-amarillo"
+      }`}
+      aria-label={
+        empty ? "Canasta vacía" : `Ver canasta: ${cart.count} productos, ${usd.format(cart.total)}`
+      }
+    >
+      <span className="relative">
+        <ShoppingBasket size={20} />
+        {!empty && (
+          <span className="absolute -top-2 -right-2.5 min-w-[1.25rem] rounded-full bg-larioja-verde px-1 text-center text-[11px] font-bold leading-5 text-white">
+            {cart.count}
+          </span>
+        )}
+      </span>
+      {/* En móvil solo el ícono con el contador (deja espacio a los catálogos). */}
+      <span className="hidden sm:inline">{empty ? "Canasta" : usd.format(cart.total)}</span>
+    </button>
+  );
+}
+
+/**
+ * Panel lateral de la canasta con tres pasos:
  * canasta → datos del cliente → pedido registrado (enviar por WhatsApp).
  */
 export function CartDrawer({ whatsappDigits }: CartDrawerProps) {
@@ -64,26 +98,6 @@ export function CartDrawer({ whatsappDigits }: CartDrawerProps) {
 
   return (
     <>
-      {cart.count > 0 && !cart.isOpen && (
-        <button
-          type="button"
-          onClick={() => {
-            setStep("cart");
-            cart.open();
-          }}
-          className="fixed bottom-5 right-5 z-[100] inline-flex items-center gap-3 rounded-full bg-larioja-azul py-3 pl-4 pr-5 text-white shadow-2xl hover:scale-105 transition-transform dark:bg-larioja-amarillo dark:text-larioja-azul"
-          aria-label={`Ver canasta: ${cart.count} productos, ${usd.format(cart.total)}`}
-        >
-          <span className="relative">
-            <ShoppingBasket size={22} />
-            <span className="absolute -top-2 -right-2 min-w-[1.25rem] rounded-full bg-larioja-verde px-1 text-center text-[11px] font-bold leading-5 text-white">
-              {cart.count}
-            </span>
-          </span>
-          <span className="text-sm font-bold">{usd.format(cart.total)}</span>
-        </button>
-      )}
-
       {cart.isOpen && (
         <div className="fixed inset-0 z-[130]" role="dialog" aria-modal="true" aria-label={title}>
           <button

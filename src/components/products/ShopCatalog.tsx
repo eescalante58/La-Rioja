@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Package } from "lucide-react";
 import type { Product, ProductVariant, PublicCatalog } from "@/lib/validation/products";
 import { CartProvider } from "./CartProvider";
-import { CartDrawer } from "./CartDrawer";
+import { CartButton, CartDrawer } from "./CartDrawer";
 import { ProductCard } from "./ProductCard";
 
 interface ShopCatalogProps {
@@ -60,32 +60,36 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
 
   return (
     <CartProvider available={available}>
-      {catalogs.length > 1 && (
-        <div className="sticky top-[98px] md:top-[132px] lg:top-[140px] z-30 -mx-6 mb-10 px-6 py-3 bg-gray-50/90 dark:bg-slate-900/90 backdrop-blur-md">
-          <div
-            className="mx-auto flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-white dark:bg-slate-800 p-1 shadow-sm border border-gray-200 dark:border-white/10"
-            role="tablist"
-            aria-label="Catálogos"
-          >
-            {catalogs.map((c) => (
-              <button
-                key={c.slug}
-                type="button"
-                role="tab"
-                aria-selected={c.slug === active.slug}
-                onClick={() => selectCatalog(c.slug)}
-                className={`whitespace-nowrap rounded-full px-5 py-2 text-sm font-bold transition-all ${
-                  c.slug === active.slug
-                    ? "bg-larioja-azul text-white dark:bg-larioja-amarillo dark:text-larioja-azul"
-                    : "text-larioja-azul hover:bg-gray-100 dark:text-white dark:hover:bg-white/10"
-                }`}
-              >
-                {c.name}
-              </button>
-            ))}
-          </div>
+      {/* Barra fija: canasta a la izquierda y selector de catálogo. */}
+      <div className="sticky top-[98px] md:top-[132px] lg:top-[140px] z-30 -mx-6 mb-10 px-6 py-3 bg-gray-50/90 dark:bg-slate-900/90 backdrop-blur-md">
+        <div className="mx-auto flex w-fit max-w-full items-center gap-2 sm:gap-3">
+          <CartButton />
+          {catalogs.length > 1 && (
+            <div
+              className="flex min-w-0 gap-1 overflow-x-auto rounded-full bg-white dark:bg-slate-800 p-1 shadow-sm border border-gray-200 dark:border-white/10"
+              role="tablist"
+              aria-label="Catálogos"
+            >
+              {catalogs.map((c) => (
+                <button
+                  key={c.slug}
+                  type="button"
+                  role="tab"
+                  aria-selected={c.slug === active.slug}
+                  onClick={() => selectCatalog(c.slug)}
+                  className={`whitespace-nowrap rounded-full px-3 sm:px-5 py-2 text-xs sm:text-sm font-bold transition-all ${
+                    c.slug === active.slug
+                      ? "bg-larioja-azul text-white dark:bg-larioja-amarillo dark:text-larioja-azul"
+                      : "text-larioja-azul hover:bg-gray-100 dark:text-white dark:hover:bg-white/10"
+                  }`}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       <div role="tabpanel" aria-label={active.name}>
         <header className="mb-10 text-center max-w-3xl mx-auto">
@@ -133,7 +137,11 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
           {active.lines.map((line) => {
             const compact = line.products.length >= COMPACT_FROM;
             return (
-              <section key={line.id} id={`linea-${line.id}`} className="scroll-mt-[170px] md:scroll-mt-[204px] lg:scroll-mt-[212px]">
+              <section
+                key={line.id}
+                id={`linea-${line.id}`}
+                className="scroll-mt-[170px] md:scroll-mt-[204px] lg:scroll-mt-[212px]"
+              >
                 <div className="mb-6 max-w-3xl">
                   <h3 className="text-2xl font-bold text-larioja-azul dark:text-white">
                     {line.name}
