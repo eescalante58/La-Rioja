@@ -51,11 +51,11 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
 
   const navLinks = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/bingo", label: "Galería", icon: ImageIcon, external: true },
     { href: "/admin/cms", label: "Gestión CMS", icon: FileText },
-    { href: "/admin/productos", label: "Productos", icon: ShoppingBag },
-    { href: "/admin/settings", label: "Configuración", icon: Settings },
+    { href: "/admin/productos", label: "Gestión Productos", icon: ShoppingBag },
     { href: "/admin/bingo", label: "Gestión Bingo", icon: Ticket },
+    { href: "/admin/settings", label: "Configuración", icon: Settings },
+    { href: "/bingo", label: "Galería", icon: ImageIcon, external: true },
   ];
 
   const initials = userProfile?.full_name
@@ -136,9 +136,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
         }`}
       >
         <div className="p-6 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
-          <span className="text-xl font-bold text-larioja-azul dark:text-white">
-            Menú Admin
-          </span>
+          <span className="text-xl font-bold text-larioja-azul dark:text-white">Menú Admin</span>
           <button
             onClick={() => setIsOpen(false)}
             className="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white"
