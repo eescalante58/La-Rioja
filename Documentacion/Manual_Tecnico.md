@@ -1,9 +1,9 @@
 # Manual Técnico de la Aplicación
 
 **Nombre del Proyecto:** La Rioja — Sitio Institucional + Gestión de Bingo (Bingo La Rioja 2026)
-**Versión del Documento:** 1.0.0
-**Fecha de última actualización:** Octubre 2026
-**Autores / Equipo de Ingeniería:** Equipo de desarrollo La Rioja (Devin/Cognition)
+**Versión del Documento:** 1.1.0
+**Fecha de última actualización:** 10 de octubre de 2026 (v1.1: La Rioja Shop, login rediseñado, menú móvil)
+**Autores / Equipo de Ingeniería:** Equipo de desarrollo La Rioja (Devin/Cognition, Claude Code)
 
 ---
 
@@ -11,12 +11,13 @@
 
 ### 1.1 Propósito y Alcance
 
-Aplicación web para **La Rioja — Centro de Formación Laboral** que integra dos dominios:
+Aplicación web para **La Rioja — Centro de Formación Laboral** que integra tres dominios:
 
 1. **Sitio institucional público** (CMS administrable): home, about, programas, contacto, FAQ, galería del evento.
 2. **Módulo de Bingo** (backoffice + operación en vivo): gestión de eventos, inventario de cartones, ventas y facturación, asignación de cartones a alumnos, mensajes promocionales por WhatsApp, sorteos con ruleta y tómbola (incluye **registro público de cartones** para hasta ~1,200 asistentes), monitor de ganadores y dashboard ejecutivo en tiempo real.
+3. **La Rioja Shop** (`/productos` + `/admin/productos`): catálogos de los talleres con productos y presentaciones, canasta pública que registra pedidos y los envía por WhatsApp, catálogos descargables en PDF y gestión de pedidos.
 
-Público objetivo: público general, asistentes al evento en vivo, equipo de comunicación (CMS), vendedores/caja y administradores del bingo.
+Público objetivo: público general, asistentes al evento en vivo, equipo de comunicación (CMS), vendedores/caja, administradores del bingo y encargados de la tienda.
 
 ### 1.2 Stack Tecnológico
 
@@ -24,12 +25,12 @@ Público objetivo: público general, asistentes al evento en vivo, equipo de com
 - **Frontend:** Server Components + Client Components; Tailwind CSS 3.4; Tremor React 3.18 (dashboards/tablas); Radix UI; lucide-react (iconos); next-themes (dark mode); ECharts (gráficas); @dnd-kit (drag & drop CMS)
 - **Backend:** Route Handlers (`src/app/api/**`) + Server Actions (`"use server"`) + dispatcher `POST /api/actions`; funciones compartidas en `*-core.ts`; Supabase JS SDK (`@supabase/ssr` + `supabase-js`)
 - **Base de datos:** PostgreSQL 17 sobre Supabase — RLS, triggers, funciones SECURITY DEFINER, vistas, enums
-- **Auth:** Supabase Auth (email/password + OAuth Google) con selección de empresa por sesión
-- **Storage:** Supabase Storage (5 buckets públicos)
+- **Auth:** Supabase Auth (email/password + OAuth Google con PKCE) con validación de empresa en el callback y selección de empresa por sesión
+- **Storage:** Supabase Storage (7 buckets públicos)
 - **Reportes:** jsPDF + jspdf-autotable (PDF/CSV en cliente)
 - **Integraciones:** UltraMsg (envío WhatsApp), Resend (emails), wa.me links
 - **Testing:** Playwright (`test:responsiveness`)
-- **Despliegue:** Vercel (`lariojacflsv.site`), despliegue automático desde `main`
+- **Despliegue:** Vercel, despliegue automático desde `main`. El sitio responde en **dos dominios**: `lariojacflsv.site` y `la-rioja.vercel.app` (ver §5.1 sobre cookies PKCE)
 
 ### 1.3 Diagrama de Arquitectura
 
@@ -51,7 +52,7 @@ Público objetivo: público general, asistentes al evento en vivo, equipo de com
 +------------------------------------------------------------------+
 |                        Supabase PaaS                             |
 |  +----------------+  +-----------------+  +--------------------+ |
-|  | Supabase Auth  |  | Storage (5      |  | PostgreSQL +       | |
+|  | Supabase Auth  |  | Storage (7      |  | PostgreSQL +       | |
 |  | (JWT, OAuth)   |  | buckets públicos)|  | PostgREST/Realtime | |
 |  +----------------+  +-----------------+  | - RLS por empresa  | |
 |                                           | - Triggers/enums   | |
@@ -82,7 +83,8 @@ Público objetivo: público general, asistentes al evento en vivo, equipo de com
 | `NEXT_PUBLIC_SUPABASE_URL` | Pública | URL del proyecto Supabase |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Pública (safe) | Llave publishable, sujeta a RLS |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secreta** | Bypass RLS; solo servidor (Route Handlers/core) |
-| `NEXT_PUBLIC_SITE_URL` | Pública | URL base del sitio (emails, enlaces) |
+| `NEXT_PUBLIC_SITE_URL` | Pública | URL base de respaldo. Los retornos de OAuth y de recuperación de contraseña usan el **origen de la petición** (`getRequestOrigin()` en `src/app/auth/actions.ts`) y solo recurren a esta variable si no hay cabeceras |
+| `WHEEL_SALT` | Secreta | Sal del hash de auditoría de giros de ruleta y tómbola (`/api/wheel/spin`, `/api/tombola/spin`) |
 | `ULTRAMSG_INSTANCE_ID` / `ULTRAMSG_TOKEN` | Secretas | API UltraMsg para envío de WhatsApp |
 | `RESEND_API_KEY` | Secreta | Envío de correos transaccionales |
 | `VERCEL_OIDC_TOKEN` | Interna | Autenticación de Vercel |
@@ -117,29 +119,35 @@ La-Rioja/
 │   ├── app/
 │   │   ├── page.tsx            # Home pública         ├── about, programs, contact, faq
 │   │   ├── bingo/              # Galería pública del evento
+│   │   ├── productos/          # La Rioja Shop pública (catálogos, canasta, pedidos)
 │   │   ├── registro/           # Registro público de cartones (asistentes)
 │   │   ├── ruleta/             # Ruleta pública proyectable
 │   │   ├── tombola/ + tombola/monitor/  # Tómbola pública + monitor staff
-│   │   ├── login/, auth/       # Login, callback OAuth, select-company, reset
+│   │   ├── login/, auth/       # Login (rediseñado), callback OAuth seguro, select-company, reset
 │   │   ├── admin/              # Backoffice (ver §7)
 │   │   │   ├── page.tsx        #   Dashboard ejecutivo (Realtime)
 │   │   │   ├── bingo/          #   Gestión Bingo (5 pestañas)
 │   │   │   ├── cms/            #   Gestor CMS + editor por página
+│   │   │   ├── productos/      #   Gestión Productos (3 pestañas) + actions.ts + manual/
 │   │   │   ├── settings/       #   9 opciones de configuración
 │   │   │   ├── dashboard-core.ts  #   Lógica de datos del dashboard
 │   │   │   └── bingo/*-core.ts    #   Lógica de facturas/WhatsApp compartida
-│   │   └── api/                #   Route Handlers JSON (ver §7.8)
+│   │   └── api/                #   Route Handlers JSON (ver §7.8); api/public/ sin auth
 │   ├── components/
 │   │   ├── admin/              # Dashboard: charts, reportes, drill-downs
 │   │   ├── admin/bingo/        # 20 diálogos/pestañas del módulo bingo
 │   │   ├── admin/cms/, admin/faq/, admin/users/
+│   │   ├── admin/products/     # Pestañas del admin de la tienda + CatalogPdfRow
+│   │   ├── products/           # Tienda pública: catálogo, tarjeta, canasta, checkout
+│   │   ├── auth/               # BrandPanel, LoginForm, GoogleLoginButton, PasswordRequirements
 │   │   ├── registration/       # Formulario público de registro
 │   │   ├── tombola/, wheel/    # Tómbola y rueda de la fortuna (canvas)
-│   │   ├── gallery/, layout/, ui/
+│   │   ├── gallery/, layout/, ui/   # layout/: Navbar + MobileMenu (menú hamburguesa)
 │   └── lib/
 │       ├── supabase/           # client.ts (browser) / server.ts (service role)
 │       ├── auth/               # authorization.ts, guards.ts (withRole)
 │       ├── action-client.ts    # callAction/callActionForm → /api/actions
+│       ├── storage/            # catalog-pdf-cleanup.ts (barrido de PDF huérfanos)
 │       └── validation/         # Esquemas zod por dominio
 └── .devin/rules/               # Reglas del repo (JSDoc, no-rerender)
 ```
@@ -148,7 +156,7 @@ La-Rioja/
 
 ## 4. Base de Datos (PostgreSQL / Supabase)
 
-**Esquema:** `public`, multi-empresa (tenant por `company_id`). **Inventario verificado contra la base de producción** (proyecto `wfkqsifhxnarmxrvbgiu`, PostgreSQL 17.6, oct-2026): 25 tablas — **todas con RLS habilitado** — 6 vistas, 6 enums, ~30 funciones propias, 28 triggers y 5 buckets de Storage. El acceso público se acota a lecturas de contenido publicado/ruletas publicadas y a la función `register_participant_cards`.
+**Esquema:** `public`, multi-empresa (tenant por `company_id`). **Inventario verificado contra la base de producción** (proyecto `wfkqsifhxnarmxrvbgiu`, PostgreSQL 17.6, oct-2026): 32 tablas — **todas con RLS habilitado** — 6 vistas, 6 enums, ~31 funciones propias, 33 triggers en `public` y 7 buckets de Storage. El acceso público se acota a lecturas de contenido publicado (CMS, ruletas publicadas, catálogo de la tienda) y a las funciones `register_participant_cards` y `create_shop_order`.
 
 ### 4.1 Enums
 
@@ -159,7 +167,7 @@ La-Rioja/
 | `invoice_payment_method_enum` | `efectivo`, `tarjeta credito`, `tarjeta debito`, `transferencia` | `invoices.payment_method` |
 | `invoice_status_enum` | `pagada`, `pendiente`, `anulada`, `Donada` | `invoices.status` |
 | `student_level_enum` | `1.Terapeutico`, `2.Inicial`, `3.Medio`, `4.Prelaboral`, `5.Laboral`, `6.Personal La Rioja` | Nivel del alumno |
-| `site_page_type` | `home`, `about`, `contact`, `global`, `social media`, `whatsapp message`, `services`, `programs`, `Bingo`, `bingo`, `tombola` | Páginas administrables del CMS. **Nota:** existen `Bingo` y `bingo` como valores distintos (enum es case-sensitive) — las consultas deben usar el case exacto del contenido |
+| `site_page_type` | `home`, `about`, `contact`, `global`, `social media`, `whatsapp message`, `services`, `programs`, `Bingo`, `bingo`, `tombola`, `productos` | Páginas administrables del CMS (`productos` = La Rioja Shop). **Nota:** existen `Bingo` y `bingo` como valores distintos (enum es case-sensitive) — las consultas deben usar el case exacto del contenido |
 
 **CHECK constraints tipo enum (no son TYPE):**
 
@@ -169,7 +177,7 @@ La-Rioja/
 
 ### 4.2 Tablas
 
-Columnas y tipos verificados contra `information_schema.columns` (producción, oct-2026). **Las 25 tablas tienen RLS habilitado.**
+Columnas y tipos verificados contra `information_schema.columns` (producción, oct-2026). **Las 32 tablas tienen RLS habilitado.**
 
 #### Dominio multi-tenant / seguridad
 
@@ -711,6 +719,122 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 - **Valores:** normal = 10/min · 40 día · 30 teléfono; evento = 500/min · 15000 día · 30 teléfono.
 - **Seguridad:** Lectura para autenticados; escritura solo admin global.
 
+#### Dominio La Rioja Shop (catálogo y pedidos)
+
+Estructura: `product_catalogs` (taller) → `product_lines` → `products` → `product_variants` (precio/presentación). Migraciones `20261016000000_products.sql` a `20261019000000_catalog_pdf.sql` (expandir/contraer: `20261017000003_shop_drop_legacy.sql` ya eliminó `products.category/price/unit/is_available`).
+
+##### Tabla: `public.product_catalogs`
+
+**Descripción:** Catálogos de la tienda, uno por taller (Arte y Costura, Panadería La Rioja).
+
+| Columna                     | Tipo de Datos | Comentario                                                                            |
+| :-------------------------- | :------------ | :------------------------------------------------------------------------------------ |
+| `id`                        | `bigint`      | Identificador (PK, identity).                                                         |
+| `company_id`                | `bigint`      | Empresa (FK `companies`).                                                             |
+| `slug`                      | `text`        | Identificador en la URL; CHECK `^[a-z0-9]+(-[a-z0-9]+)*$`; UNIQUE (company_id, slug). |
+| `name`                      | `text`        | Nombre del catálogo.                                                                  |
+| `tagline`                   | `text`        | Lema.                                                                                 |
+| `description`               | `text`        | Texto «Quiénes somos».                                                                |
+| `cover_image_url`           | `text`        | Portada (reservado).                                                                  |
+| `content_order`             | `integer`     | Orden de presentación.                                                                |
+| `is_active`                 | `boolean`     | Publicado en la tienda.                                                               |
+| `pdf_url`                   | `text`        | URL pública del catálogo en PDF (bucket `product_catalog_pdfs`); NULL = sin PDF.      |
+| `pdf_size_bytes`            | `bigint`      | Tamaño del PDF (se muestra en el botón de descarga).                                  |
+| `pdf_updated_at`            | `timestamptz` | Fecha de subida del PDF.                                                              |
+| `created_at` / `updated_at` | `timestamptz` | Auditoría (trigger `products_set_updated_at`).                                        |
+
+##### Tabla: `public.product_lines`
+
+**Descripción:** Líneas de producto dentro de un catálogo (Tote Bags, Toallas de mano, Paneras…).
+
+| Columna                     | Tipo de Datos | Comentario                                                    |
+| :-------------------------- | :------------ | :------------------------------------------------------------ |
+| `id`                        | `bigint`      | Identificador (PK, identity).                                 |
+| `catalog_id`                | `bigint`      | Catálogo (FK `ON DELETE CASCADE`); UNIQUE (catalog_id, name). |
+| `name`                      | `text`        | Nombre de la línea.                                           |
+| `description`               | `text`        | Descripción.                                                  |
+| `slogan`                    | `text`        | Eslogan destacado.                                            |
+| `content_order`             | `integer`     | Orden dentro del catálogo.                                    |
+| `is_active`                 | `boolean`     | Publicada en la tienda.                                       |
+| `created_at` / `updated_at` | `timestamptz` | Auditoría.                                                    |
+
+##### Tabla: `public.products`
+
+**Descripción:** Productos elaborados por los estudiantes.
+
+| Columna                     | Tipo de Datos | Comentario                                                                             |
+| :-------------------------- | :------------ | :------------------------------------------------------------------------------------- |
+| `id`                        | `uuid`        | Identificador (PK).                                                                    |
+| `company_id`                | `bigint`      | Empresa.                                                                               |
+| `line_id`                   | `bigint`      | Línea (FK `ON DELETE RESTRICT`, NOT NULL): una línea con productos no se puede borrar. |
+| `name`                      | `text`        | Nombre.                                                                                |
+| `description`               | `text`        | Descripción.                                                                           |
+| `image_url`                 | `text`        | Foto (bucket `product_images`, máx. 5 MB).                                             |
+| `is_active`                 | `boolean`     | Publicado en la tienda.                                                                |
+| `content_order`             | `integer`     | Orden dentro de la línea (reordenable con arrastrar y soltar).                         |
+| `created_at` / `updated_at` | `timestamptz` | Auditoría.                                                                             |
+
+##### Tabla: `public.product_variants`
+
+**Descripción:** Presentaciones de un producto con su precio; todo producto tiene al menos una.
+
+| Columna                     | Tipo de Datos   | Comentario                                       |
+| :-------------------------- | :-------------- | :----------------------------------------------- |
+| `id`                        | `bigint`        | Identificador (PK, identity).                    |
+| `product_id`                | `uuid`          | Producto (FK `ON DELETE CASCADE`).               |
+| `label`                     | `text`          | Nombre de la presentación; NULL si hay una sola. |
+| `price`                     | `numeric(10,2)` | Precio en USD (CHECK ≥ 0).                       |
+| `unit`                      | `text`          | Unidad de venta (p. ej. «2 unidades»).           |
+| `is_available`              | `boolean`       | false = «Agotado» (visible, no se puede pedir).  |
+| `content_order`             | `integer`       | Orden.                                           |
+| `created_at` / `updated_at` | `timestamptz`   | Auditoría.                                       |
+
+##### Tabla: `public.shop_orders`
+
+**Descripción:** Pedidos enviados desde la canasta de `/productos`.
+
+| Columna                                               | Tipo de Datos   | Comentario                                                          |
+| :---------------------------------------------------- | :-------------- | :------------------------------------------------------------------ |
+| `id`                                                  | `uuid`          | Identificador (PK).                                                 |
+| `order_number`                                        | `bigint`        | Número visible (identity desde 1001, UNIQUE).                       |
+| `company_id`                                          | `bigint`        | Empresa (la de las variantes pedidas).                              |
+| `customer_name` / `customer_phone` / `customer_email` | `text`          | Datos del cliente (correo opcional).                                |
+| `notes`                                               | `text`          | Notas del cliente.                                                  |
+| `total`                                               | `numeric(10,2)` | Total recalculado por el RPC desde `product_variants`.              |
+| `status`                                              | `text`          | CHECK `nuevo` · `confirmado` · `listo` · `entregado` · `cancelado`. |
+| `client_ip`                                           | `text`          | IP (x-forwarded-for) para auditoría anti-abuso; no se expone.       |
+| `created_at` / `updated_at`                           | `timestamptz`   | Auditoría.                                                          |
+
+##### Tabla: `public.shop_order_items`
+
+**Descripción:** Líneas del pedido. Copian nombre y precio: el pedido no cambia si se edita o borra el producto.
+
+| Columna                                   | Tipo de Datos   | Comentario                                |
+| :---------------------------------------- | :-------------- | :---------------------------------------- |
+| `id`                                      | `bigint`        | Identificador (PK, identity).             |
+| `order_id`                                | `uuid`          | Pedido (FK `ON DELETE CASCADE`).          |
+| `variant_id`                              | `bigint`        | Variante (FK `ON DELETE SET NULL`).       |
+| `product_name` / `variant_label` / `unit` | `text`          | Copia de los datos al momento del pedido. |
+| `unit_price`                              | `numeric(10,2)` | Precio unitario aplicado.                 |
+| `quantity`                                | `integer`       | Cantidad (CHECK 1–999).                   |
+| `subtotal`                                | `numeric(10,2)` | `unit_price × quantity`.                  |
+
+##### Tabla: `public.shop_order_attempts`
+
+**Descripción:** Log de intentos de pedido por IP (ventana anti-ráfaga). Se purga lo de más de un día en cada llamada.
+
+| Columna        | Tipo de Datos | Comentario                    |
+| :------------- | :------------ | :---------------------------- |
+| `id`           | `bigint`      | Identificador (PK, identity). |
+| `client_ip`    | `text`        | IP del cliente.               |
+| `attempted_at` | `timestamptz` | Momento del intento.          |
+
+**Notas adicionales (dominio Shop):**
+
+- **Lectura pública:** catálogos, líneas y productos con `is_active = true`; variantes de productos activos. La página pública usa `createStaticClient()` (ISR, `revalidate = 60`).
+- **Escritura:** Server Actions de `src/app/admin/productos/actions.ts` (rol ≥ 6 + empresa); las políticas por `user_companies` quedan como defensa en profundidad.
+- **Pedidos:** `shop_orders`, `shop_order_items` y `shop_order_attempts` tienen RLS **sin políticas** y `REVOKE ALL` a `anon`/`authenticated`: solo escribe el RPC `create_shop_order` y el admin lee con service role.
+- **GRANT explícitos:** las tablas creadas por SQL Editor no reciben privilegios automáticos; sin `GRANT` el error es `permission denied for table …` aunque RLS lo permita.
 ### 4.3 Índices
 
 Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan las PK de tablas lookup (`*_pkey` triviales).
@@ -767,6 +891,11 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `idx_registration_attempts_ip_time` | (client_ip, attempted_at DESC) — ventana anti-ráfaga |
 | `uq_site_content_page_section_order` | UNIQUE (page, section_key, content_order) |
 | `user_companies` | PK (user_id, company_id) + idx (company_id, user_id) + (user_id, company_id, role_id) |
+| `product_lines_catalog_order_idx` / `products_line_order_idx` / `product_variants_product_order_idx` | Orden de líneas, productos y variantes en la tienda |
+| `products_company_active_order_idx` | (company_id, is_active, content_order) |
+| `shop_orders_company_status_created_idx` | (company_id, status, created_at DESC) — pestaña Pedidos por estado |
+| `shop_orders_ip_created_idx` / `shop_order_attempts_ip_time_idx` | Ventanas anti-abuso por IP |
+| `shop_order_items_order_idx` | Ítems de un pedido |
 | `users_email_key`, `roles_name_key`, `country_codes_iso2/iso3_key`, `customer_phone_number_company_id_phone_number_key` | Uniques de catálogos |
 
 ### 4.4 Vistas
@@ -815,6 +944,13 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `set_winner_order()` / `set_winner_order_presents()` | Asigna `winner_order` incremental al ganar (o lo libera al desmarcar) |
 | `prevent_winner_reentry()` | Trigger BEFORE INSERT en wheel_participating_cards: un cartón que ya ganó en una tómbola del evento no puede entrar a otra ronda |
 
+**La Rioja Shop:**
+
+| Función | Propósito |
+| :------ | :-------- |
+| `create_shop_order(p_customer_name, p_customer_phone, p_customer_email, p_notes, p_items jsonb)` → jsonb | **Única puerta de escritura pública** de pedidos (SECURITY DEFINER, `search_path` fijo, ejecutable por `anon`). `p_items = [{variant_id, quantity}]`; **recalcula precios y total** desde `product_variants` (el cliente nunca envía precios), rechaza variantes agotadas o de productos/líneas/catálogos inactivos, máx. 50 líneas, límites por IP de 5 pedidos/min y 20/día (`shop_order_attempts`). Responde `{success, order_number, total, items}` o `{success:false, error}` |
+| `products_set_updated_at()` | Trigger `updated_at` de las tablas de la tienda |
+
 **Administración / introspección (usadas por `/admin/settings/security` y `/api/search`):**
 
 | Función | Propósito |
@@ -839,6 +975,7 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `trg_wheel_participating_prize_limit` / `trg_wheels_presents_prize_limit` | tablas de participantes | Límite de ganadores por tómbola |
 | `trg_wheel_part_winner_order` / `trg_wheels_presents_winner_order` | idem | Consecutivo `winner_order` |
 | `trg_prevent_winner_reentry` | wheel_participating_cards | Garantía BD anti re-ingreso de ganadores entre rondas |
+| `products_set_updated_at`, `product_catalogs_set_updated_at`, `product_lines_set_updated_at`, `product_variants_set_updated_at`, `shop_orders_set_updated_at` | tablas de la tienda | `updated_at` automático vía `products_set_updated_at()` |
 
 ### 4.7 Buckets de Supabase Storage
 
@@ -849,6 +986,8 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `cms_images` | Assets del CMS (incluye videos promo `promos/`) | Público |
 | `event_gallery_images` | Fotos de la galería del evento | Público |
 | `user_avatar` | Avatares de usuarios | Público |
+| `product_images` | Fotos de productos (máx. 5 MB; jpeg/png/webp/gif) | Público; escritura solo con service role desde Server Actions |
+| `product_catalog_pdfs` | Catálogos en PDF por empresa (`{companyId}/…`, máx. 50 MB, solo PDF) | Público; sin políticas de escritura: se sube con URL firmada (`createSignedUploadUrl`) |
 
 ### 4.8 Políticas RLS (patrones)
 
@@ -856,6 +995,7 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 - **Escritura por empresa:** `EXISTS` en `user_companies` con rol `admin_empresa`/`ventas`, o `is_admin_global()`.
 - **Sin acceso directo:** `registration_attempts` (RLS sin políticas — solo la función SECURITY DEFINER); `wheels_presents_cards` INSERT solo vía `register_participant_cards`.
 - **Config:** `registration_limits` lectura autenticada, escritura `admin_empresa`+.
+- **Tienda:** lectura pública de catálogos/líneas/productos activos y variantes de productos activos; escritura por `user_companies` o admin global; pedidos sin políticas (solo `create_shop_order` y service role).
 
 ---
 
@@ -863,7 +1003,10 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 
 ### 5.1 Flujo
 
-1. Login en `/login` (email/password con validación de complejidad, u OAuth Google → `/auth/callback`).
+1. Login en `/login` (email/password con validación de formato y complejidad, u OAuth **Google** — único proveedor social — → `/auth/callback`).
+   - **Retorno al mismo dominio:** `signInWithOAuth` y `resetPasswordForEmail` construyen `redirectTo` con el origen de la petición (`getRequestOrigin()`). El flujo PKCE guarda la cookie `sb-…-auth-token-code-verifier` en el dominio actual; si el retorno apunta al otro dominio la cookie no viaja y `exchangeCodeForSession` falla sin llamar a Supabase. Ambos dominios deben estar en Supabase → Authentication → URL Configuration → Redirect URLs (`https://lariojacflsv.site/**`, `https://la-rioja.vercel.app/**`).
+   - **`/auth/callback`:** valida `next` con `safeNext()` (solo rutas internas: rechaza `//host`, `/\host`, `@host`; por defecto `/auth/select-company`), canjea el código, **exige al menos una empresa en `user_companies`** (si no: `signOut()` y `/login?error=no_autorizado`), registra `LOGIN` en `user_activity_log` y redirige. Errores de canje → `/login?error=oauth`.
+   - El trigger `handle_new_user` crea un perfil (`role = user`) para cualquier cuenta de Google nueva; sin empresa asignada no obtiene acceso.
 2. Tras autenticarse, `/auth/select-company` fija la empresa de trabajo para toda la sesión (cookie de sesión vía `/api/auth/session-config`).
 3. Middleware (`ƒ Proxy`) protege rutas `/admin/*`; páginas usan `requireRoleLevel(minLevel)` en servidor.
 4. Route Handlers `/api/bingo/*` y `/api/dashboard` validan con `checkAdmin(companyId, minLevel=4)` = autenticación + nivel de rol + membresía de empresa (`requireCompanyAccess`).
@@ -889,8 +1032,8 @@ Niveles de referencia en `src/lib/auth/authorization.ts`: SuperAdmin 10, Admin 8
 
 ## 6. Despliegue y CI/CD
 
-- **Hosting:** Vercel — push a `main` dispara build+deploy automático (`lariojacflsv.site`).
-- **Verificación pre-commit habitual:** `npx tsc --noEmit` + `npm run build` (47 rutas generadas).
+- **Hosting:** Vercel — push a `main` dispara build+deploy automático. Dominios: `lariojacflsv.site` y `la-rioja.vercel.app` (ambos sirven el sitio; `sitemap.ts`/`robots.ts` apuntan a `la-rioja.vercel.app`).
+- **Verificación pre-commit habitual:** `npx tsc --noEmit` + `npm run build`. El hook `.githooks/pre-push` ejecuta `tsc --noEmit` y rechaza force-push a `main`.
 - **Migraciones:** manuales vía SQL Editor o `supabase db push` (ver §2.3).
 - **Entornos:** producción y staging documentados en `Documentacion/Ambiente_staging.md`; plan de rollback en `Plan_Rollback.md`.
 - **Pruebas de carga:** `loadtest/` (seed de 5,000 cartones, prueba combinada registro+tómbola, probe XFF, scripts SQL de límites).
@@ -899,17 +1042,21 @@ Niveles de referencia en `src/lib/auth/authorization.ts`: SuperAdmin 10, Admin 8
 
 ## 7. Componentes Funcionales por Opción de la Aplicación
 
+Menú lateral del admin (`src/app/admin/AdminSidebar.tsx`, mismo arreglo `navLinks` para escritorio y móvil), en este orden: **Dashboard**, **Gestión CMS**, **Gestión Productos**, **Gestión Bingo**, **Configuración** y **Galería** (abre `/bingo` en otra pestaña).
+
 ### 7.1 Sitio público
 
 | Ruta | Función | Componentes / datos |
 | :--- | :------ | :------------------ |
+| (todas) | Navegación | `Navbar`: enlaces en escritorio (xl+); en móvil/tablet, `MobileMenu` — panel lateral en tres zonas (marca, navegación con iconos, acciones fijas: Apóyanos, WhatsApp, Contacto, redes y Acceso personal), trampa de foco, Escape, `inert` al cerrar, todo el panel con scroll en pantallas bajas. Insignia «Juega» en Bingo según `GET /api/public/bingo-status`. Estilos `.menu-*` en `globals.css` |
 | `/` | Home institucional | `ParallaxHero`, `ScrollReveal`, secciones CMS (`site_content` page=home), `Navbar`, `Footer`, `FloatingContact`, `WhatsAppFab` |
 | `/about` | Quiénes somos | Secciones CMS (page=about), misión/visión/organización |
 | `/programs` | Oferta formativa | Tarjetas de programas, `ProgramCTA` |
 | `/contact` | Contacto | `ContactModal`, formulario → `contact_submissions` (Server Action `contact.ts`) |
 | `/faq` | Preguntas frecuentes | `faqs` + `faq_sections`, accordion |
 | `/bingo` | **Galería pública del evento** | `GalleryGrid`, `GalleryHeader`, `EventInfoBanner`, `PromoVideoCard`, `ShareButton`, `SlideshowButton`; datos de `event_gallery` + bucket `event_gallery_images` |
-| `/login` | Acceso | Email/password + OAuth Google; `PasswordRequirements`; recuperación (`/auth/forgot-password`, `/auth/reset-password`) |
+| `/productos` | **La Rioja Shop** | Server Component con ISR (`revalidate = 60`): `getPublicShop()` + CMS página `productos` + WhatsApp `social media / whatsapp tienda`. `ShopHero`, `ShopCatalog` (catálogos → líneas → `ProductCard`, descarga de PDF), `GiftsBanner`, `HowToBuy`, `CartProvider` (canasta en `localStorage` `larioja-shop-cart-v1`), `CartDrawer` + `CheckoutForm` → `rpc create_shop_order` → envío por WhatsApp |
+| `/login` | Acceso | Server Component (`searchParams.error`) + `BrandPanel` (panel de marca ≥1024 px / encabezado compacto), `LoginForm` (correo/contraseña, `PasswordRequirements`, mensaje genérico ante credenciales incorrectas, avisos `no_autorizado`/`oauth`), `GoogleLoginButton`. Recuperación: `/auth/forgot-password`, `/auth/reset-password` |
 
 ### 7.2 Operación en vivo del evento
 
@@ -950,11 +1097,23 @@ Sub-página `/admin/bingo/manual`: manual de usuario embebido.
 
 `CMSManagerClient`, `CMSTable`, `CMSFilters`, `CMSCreateDialog`, `CMSEditForm` (`/admin/cms/[id]`), `CMSViewDialog`, `CMSDeleteDialog`, `GalleryManagement`, `FAQManager`/`FAQTable`/`FAQSectionTable`.
 
-- CRUD de secciones `site_content` por página (home, about, contact, global, social media, whatsapp message, tombola), con orden de presentación, activación e imágenes a `cms_images`.
+- CRUD de secciones `site_content` por página (home, about, contact, global, social media, whatsapp message, tombola, productos), con orden de presentación, activación e imágenes a `cms_images`. La página `productos` usa las claves `productos_hero`, `productos_hero_foto_N`, `productos_mensaje`, `productos_regalos`, `productos_como_comprar` y `productos_paso_N`.
 - Gestión de la galería del evento (`event_gallery` + bucket `event_gallery_images`).
 - CRUD de FAQs y secciones de FAQ.
 
-### 7.6 `/admin/settings` — Configuración (9 opciones)
+### 7.6 `/admin/productos` — Gestión Productos (La Rioja Shop, 3 pestañas)
+
+`page.tsx` (SSR inicial con `listShop`) + `ProductsManagerClient`: encabezado fijo, botón **Ver tienda** y pestañas cargadas con `next/dynamic`; el estado de catálogos/líneas/productos vive en el cliente y se actualiza en local (sin `router.refresh`). Todas las operaciones pasan por `callAction`/`callActionForm` → `POST /api/actions` (`productos.*`, `pedidos.*`). Server Actions en `src/app/admin/productos/actions.ts`, envueltas con `withRole(6)` + empresa; tras cada escritura `revalidatePath('/productos')`.
+
+| Pestaña | Componente | Funciones |
+| :------ | :--------- | :-------- |
+| **Productos** | `ProductsTab` | Filtro por catálogo y búsqueda; alta/edición con foto (≤ 5 MB a `product_images`) y presentaciones (`variants` en JSON, sincronizadas: update/insert/delete); publicar/ocultar; agotado por presentación; eliminar (borra variantes y foto); reordenar por línea con @dnd-kit (`reorderProducts`, renumera `content_order` 1…n; deshabilitado con búsqueda activa) |
+| **Catálogos y líneas** | `CatalogsTab`, `CatalogPdfRow` | CRUD de catálogos (slug validado, orden, publicación) y líneas; borrar catálogo solo con líneas vacías y línea solo sin productos. **PDF por catálogo:** `createCatalogPdfUpload` (URL firmada, el archivo va directo del navegador a Storage porque Vercel limita ~4.5 MB por petición) → `uploadToSignedUrl` → `setCatalogPdf` (verifica existencia y carpeta de la empresa, guarda URL/tamaño/fecha, borra el anterior) · `discardCatalogPdfUpload` · `removeCatalogPdf`. `sweepOrphanCatalogPdfs` (`src/lib/storage/catalog-pdf-cleanup.ts`) borra PDF no referenciados de más de 1 h |
+| **Pedidos** | `OrdersTab` | `listOrders` (300 más recientes o por estado), resumen (nuevos, pedidos y total de hoy sin cancelados, hora El Salvador), enlace wa.me al cliente y `updateOrderStatus` (nuevo → confirmado → listo → entregado / cancelado) |
+
+Validación: `src/lib/validation/products.ts` (catálogo, línea, producto, variantes, `CATALOG_PDF_MAX_BYTES`) y `shop-orders.ts` (checkout). Manual de usuario: `Documentacion/Manual_Usuario_Productos.md`, renderizado en la sub-página `/admin/productos/manual` (enlace **Manual de Usuario** del encabezado; mismo patrón que `/admin/cms/manual`).
+
+### 7.7 `/admin/settings` — Configuración (9 opciones)
 
 | Opción | Ruta | Función |
 | :----- | :--- | :------ |
@@ -970,11 +1129,11 @@ Sub-página `/admin/bingo/manual`: manual de usuario embebido.
 
 Otras páginas admin: `/admin/profile` (perfil propio + avatar `user_avatar`) y `/admin/manual` (manual de usuario).
 
-### 7.7 API — Route Handlers JSON (`src/app/api/`)
+### 7.8 API — Route Handlers JSON (`src/app/api/`)
 
 | Endpoint | Método | Función |
 | :------- | :----- | :------ |
-| `/api/actions` | POST | Dispatcher whitelist `REGISTRY` para Server Actions de baja frecuencia (`callAction`/`callActionForm`) |
+| `/api/actions` | POST | Dispatcher whitelist `REGISTRY` para Server Actions de baja frecuencia (`callAction`/`callActionForm`); incluye `productos.*` (15 acciones de catálogo/productos/PDF) y `pedidos.listOrders` / `pedidos.updateOrderStatus` |
 | `/api/auth/session-config` | POST | Fija empresa activa en la sesión |
 | `/api/bingo/cards` | GET/POST/PUT/DELETE | Inventario: listado paginado paralelo (SELECT explícito + embed `students_cards→students`), alta, edición, reasignaciones |
 | `/api/bingo/cards/check-range` | GET | Verificación de rangos de cartones disponibles |
@@ -992,10 +1151,11 @@ Otras páginas admin: `/admin/profile` (perfil propio + avatar `user_avatar`) y 
 | `/api/tombola/state` | GET | Estado en vivo de la tómbola (página pública + monitor) |
 | `/api/tombola/winners` | GET/PUT | Bandeja de ganadores y captura de datos del ganador |
 | `/api/wheel/spin` | POST | Registro de giro de ruleta (`wheel_spins`) con límite de premios |
+| `/api/public/bingo-status` | GET | **Público.** `{ active }` = existe un evento `is_active` con `event_date` ≥ hoy (El Salvador). Consulta `events` con service role (no legible por `anon`) y solo expone el booleano; caché CDN 5 min. Lo usa el menú móvil para la insignia «Juega» |
 
 Todos los handlers de `/api/bingo/*` y `/api/dashboard` ejecutan `checkAdmin(companyId)` (rol ≥4 + membresía de empresa) antes de tocar datos.
 
-### 7.8 Flujos de datos (patrón no-rerender)
+### 7.9 Flujos de datos (patrón no-rerender)
 
 ```
 Client Component ──fetch('/api/...')──▶ Route Handler ──checkAdmin──▶ *-core.ts ──▶ Supabase
@@ -1021,12 +1181,22 @@ Client Component ──fetch('/api/...')──▶ Route Handler ──checkAdmin
 | Registro público rechaza cartones | Límite anti-abuso o cartón no vendido/ya registrado | Revisar `registration_limits` (modo `normal` vs `evento`) y motivo devuelto por `register_participant_cards` |
 | Ganador no entra a otra ronda | Trigger `prevent_winner_reentry` | Es la regla de negocio: un ganador no participa en tómbolas siguientes del mismo evento |
 | `ALTER TYPE ... ADD VALUE` falla | No corre dentro de transacción | Ejecutar la migración sin BEGIN/COMMIT (SQL Editor directo) |
+| Login con Google vuelve a `/login?error=oauth` (sobre todo el primer intento) | Cookie PKCE `code-verifier` en otro dominio: se inició en `lariojacflsv.site` y el retorno apuntaba a `la-rioja.vercel.app`. En los logs de Auth no aparece `POST /token` tras `/callback` | Ya corregido con `getRequestOrigin()`. Verificar que ambos dominios estén en Redirect URLs de Supabase |
+| Usuario de Google ve «Esta cuenta no tiene acceso» | La cuenta no tiene fila en `user_companies` | Asignarle empresa y rol en Configuración → Usuarios y Roles |
+| `permission denied for table product_…` | Tabla creada por SQL Editor sin `GRANT` | Ejecutar los `GRANT` de la migración correspondiente |
+| Subida de PDF de catálogo falla con archivos grandes | Límite ~4.5 MB por petición en Vercel | El PDF se sube con URL firmada directo a Storage (`createCatalogPdfUpload`); no enviarlo por Server Action |
+| Cambios del admin de la tienda no se ven en `/productos` | ISR de 60 s | Esperar hasta 1 min (`revalidatePath` fuerza la regeneración en la siguiente visita) |
+| `next build`/pre-push falla con errores en `.next/dev/types/routes.d.ts` | Archivo generado a medio escribir al detener `npm run dev` | Borrar `.next/dev/types` y repetir |
 
 ---
 
 ## 9. Documentos Relacionados
 
 - `Documentacion/ModeloBdBingo.md` — requerimientos y modelo de datos baseline
+- `Documentacion/Manual_Usuario_Productos.md` — manual de usuario de Gestión Productos (La Rioja Shop)
+- `Documentacion/Manual_Usuario_CMS.md`, `Manual_Usuario_Configuracion.md`, `Manual_Usuario_Dashboard.md` — manuales de usuario del admin
+- `Documentacion/La Rioja — Login del Sistema de gestión del Bingo revisión y especificaciones.md` — especificación del login
+- `Documentacion/La Rioja — Menú hamburguesa móvil diseño y especificaciones.md` — especificación del menú móvil
 - `Documentacion/Tablas.md` — diccionario de tablas del esquema base
 - `Documentacion/Auditoria_PreProduccion_20261001.md` — auditoría pre-evento
 - `Documentacion/Analisis_Algoritmo_Sorteos.md` — algoritmo de giros/tómbola

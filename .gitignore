@@ -40,8 +40,10 @@ next-env.d.ts
 .env*.local
 
 # documentación: solo local, excepto los manuales que la app lee en producción
-# (src/app/admin/settings/manual-tecnico, manual-usuario y src/app/admin/cms/manual)
+# (src/app/admin/settings/manual-tecnico, manual-usuario, src/app/admin/cms/manual
+# y src/app/admin/productos/manual)
 /Documentacion/*
 !/Documentacion/Manual_Tecnico.md
 !/Documentacion/Manual_Usuario_Configuracion.md
 !/Documentacion/Manual_Usuario_CMS.md
+!/Documentacion/Manual_Usuario_Productos.md

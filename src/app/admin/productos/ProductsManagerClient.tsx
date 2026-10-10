@@ -3,7 +3,8 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@tremor/react";
-import { ClipboardList, ExternalLink, Layers, Package } from "lucide-react";
+import Link from "next/link";
+import { BookUser, ClipboardList, ExternalLink, Layers, Package } from "lucide-react";
 import type { ShopAdminData } from "@/lib/validation/products";
 
 const tabLoading = () => (
@@ -55,15 +56,24 @@ export default function ProductsManagerClient({
                 Productos de los talleres, catálogos y pedidos recibidos en la tienda.
               </p>
             </div>
-            <a
-              href="/productos"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <ExternalLink size={16} />
-              Ver tienda
-            </a>
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                href="/admin/productos/manual"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-larioja-azul dark:text-larioja-amarillo hover:underline"
+              >
+                <BookUser size={18} />
+                Manual de Usuario
+              </Link>
+              <a
+                href="/productos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <ExternalLink size={16} />
+                Ver tienda
+              </a>
+            </div>
           </div>
 
           <TabList className="mt-4 overflow-x-auto overflow-y-hidden whitespace-nowrap">
