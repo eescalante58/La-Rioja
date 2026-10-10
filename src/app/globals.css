@@ -209,8 +209,9 @@
   }
   .menu-brand-sub {
     font-size: 12px;
+    font-weight: 700;
     line-height: 1.3;
-    color: var(--lr-text-2);
+    color: var(--lr-yellow);
   }
   .menu-close {
     display: flex;
