@@ -142,16 +142,20 @@ export type CustomerInvoice = Pick<
 /** Alumno embebido en `students_cards(students(...))`. */
 export type InvoiceCardStudent = Pick<Tables<"students">, "student_name" | "student_level">;
 
+/** Vínculo cartón-alumno embebido en `students_cards(students(...))`. */
+type InvoiceCardLink = { students: InvoiceCardStudent | InvoiceCardStudent[] | null };
+
 /**
  * Cartón de una factura con el alumno asignado (`getInvoiceCardsCore`).
- * `students` es many-to-one: llega como objeto, pero el cliente sin tipos
- * de esquema lo infiere como arreglo; leerlo con `singleRelation`.
+ * Un cartón tiene a lo sumo un alumno: en ejecución `students_cards` y
+ * `students` llegan como objeto, pero el cliente sin tipos de esquema los
+ * infiere como arreglo; se aceptan ambas formas (ver `singleRelation`).
  */
 export type InvoiceCard = Pick<
   Card,
   "card_number" | "card_type" | "card_status" | "player_name" | "player_phone_number"
 > & {
-  students_cards: { students: InvoiceCardStudent | InvoiceCardStudent[] | null }[] | null;
+  students_cards: InvoiceCardLink | InvoiceCardLink[] | null;
 };
 
 /** Conteo y total por tipo/estado de cartón (`getCardTypeSummaryCore`). */

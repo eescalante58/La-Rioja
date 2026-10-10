@@ -30,6 +30,9 @@ export type InvoiceWithCards = Invoice & { associated_cards?: number[] };
 /** Alumno asignado embebido en `students_cards(students(...))`. */
 export type AssignedStudent = Pick<Tables<"students">, "student_name" | "student_level">;
 
+/** Vínculo cartón-alumno embebido en `students_cards(...)`. */
+export type AssignedStudentLink = { students: AssignedStudent | AssignedStudent[] | null };
+
 /**
  * Cartón del inventario de un evento (`getEventCardsCore`, columnas de
  * `EVENT_CARD_COLUMNS`). `students` es many-to-one: llega como objeto,
@@ -53,7 +56,8 @@ export type InventoryCard = Pick<
   | "created_at"
   | "updated_at"
 > & {
-  students_cards?: { students: AssignedStudent | AssignedStudent[] | null }[] | null;
+  /** Objeto en ejecución (un alumno por cartón); se acepta también arreglo. */
+  students_cards?: AssignedStudentLink | AssignedStudentLink[] | null;
 };
 
 /** Evento en el que operan los diálogos de factura. */
