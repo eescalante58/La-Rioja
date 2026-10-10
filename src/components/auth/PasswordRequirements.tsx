@@ -38,8 +38,8 @@ export function PasswordRequirements({ password }: PasswordRequirementsProps) {
 
   return (
     <div className="mt-2 space-y-1.5 px-1">
-      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
-        Requisitos de seguridad:
+      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+        Requisitos de la contraseña:
       </p>
       <div className="grid grid-cols-1 gap-1">
         {requirements.map((req, index) => (
@@ -58,7 +58,7 @@ export function PasswordRequirements({ password }: PasswordRequirementsProps) {
               )}
             </div>
             <span
-              className={`text-[11px] transition-colors ${
+              className={`text-xs transition-colors ${
                 req.met
                   ? "text-emerald-700 dark:text-emerald-400 font-medium"
                   : "text-gray-500 dark:text-gray-400"
