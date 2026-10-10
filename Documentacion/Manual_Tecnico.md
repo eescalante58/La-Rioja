@@ -30,7 +30,7 @@ Público objetivo: público general, asistentes al evento en vivo, equipo de com
 - **Reportes:** jsPDF + jspdf-autotable (PDF/CSV en cliente)
 - **Integraciones:** UltraMsg (envío WhatsApp), Resend (emails), wa.me links
 - **Testing:** Playwright (`test:responsiveness`)
-- **Despliegue:** Vercel, despliegue automático desde `main`. El sitio responde en **dos dominios**: `lariojacflsv.site` y `la-rioja.vercel.app` (ver §5.1 sobre cookies PKCE)
+- **Despliegue:** Vercel, despliegue automático desde `main`. Dominio canónico **`lariojacflsv.site`**; `la-rioja.vercel.app` redirige con 308 a él (ver §5.1 sobre cookies PKCE)
 
 ### 1.3 Diagrama de Arquitectura
 
@@ -1004,7 +1004,7 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 ### 5.1 Flujo
 
 1. Login en `/login` (email/password con validación de formato y complejidad, u OAuth **Google** — único proveedor social — → `/auth/callback`).
-   - **Retorno al mismo dominio:** `signInWithOAuth` y `resetPasswordForEmail` construyen `redirectTo` con el origen de la petición (`getRequestOrigin()`). El flujo PKCE guarda la cookie `sb-…-auth-token-code-verifier` en el dominio actual; si el retorno apunta al otro dominio la cookie no viaja y `exchangeCodeForSession` falla sin llamar a Supabase. Ambos dominios deben estar en Supabase → Authentication → URL Configuration → Redirect URLs (`https://lariojacflsv.site/**`, `https://la-rioja.vercel.app/**`).
+   - **Retorno al mismo dominio:** `signInWithOAuth` y `resetPasswordForEmail` construyen `redirectTo` con el origen de la petición (`getRequestOrigin()`). El flujo PKCE guarda la cookie `sb-…-auth-token-code-verifier` en el dominio actual; si el retorno apunta al otro dominio la cookie no viaja y `exchangeCodeForSession` falla sin llamar a Supabase. Desde octubre 2026 `la-rioja.vercel.app` redirige (308) a `lariojacflsv.site`, así que el flujo siempre ocurre en el dominio canónico; en Supabase → Authentication → URL Configuration el Site URL debe ser `https://lariojacflsv.site` y Redirect URLs debe incluir `https://lariojacflsv.site/**` (y `http://localhost:3000/**` para desarrollo).
    - **`/auth/callback`:** valida `next` con `safeNext()` (solo rutas internas: rechaza `//host`, `/\host`, `@host`; por defecto `/auth/select-company`), canjea el código, **exige al menos una empresa en `user_companies`** (si no: `signOut()` y `/login?error=no_autorizado`), registra `LOGIN` en `user_activity_log` y redirige. Errores de canje → `/login?error=oauth`.
    - El trigger `handle_new_user` crea un perfil (`role = user`) para cualquier cuenta de Google nueva; sin empresa asignada no obtiene acceso.
 2. Tras autenticarse, `/auth/select-company` fija la empresa de trabajo para toda la sesión (cookie de sesión vía `/api/auth/session-config`).
@@ -1032,7 +1032,7 @@ Niveles de referencia en `src/lib/auth/authorization.ts`: SuperAdmin 10, Admin 8
 
 ## 6. Despliegue y CI/CD
 
-- **Hosting:** Vercel — push a `main` dispara build+deploy automático. Dominios: `lariojacflsv.site` y `la-rioja.vercel.app` (ambos sirven el sitio; `sitemap.ts`/`robots.ts` apuntan a `la-rioja.vercel.app`).
+- **Hosting:** Vercel — push a `main` dispara build+deploy automático. Dominio canónico `lariojacflsv.site`; `la-rioja.vercel.app` redirige con 308 (configurado en Vercel → Settings → Domains). `metadataBase`, Open Graph, `sitemap.ts` y `robots.ts` apuntan a `lariojacflsv.site`.
 - **Verificación pre-commit habitual:** `npx tsc --noEmit` + `npm run build`. El hook `.githooks/pre-push` ejecuta `tsc --noEmit` y rechaza force-push a `main`.
 - **Migraciones:** manuales vía SQL Editor o `supabase db push` (ver §2.3).
 - **Entornos:** producción y staging documentados en `Documentacion/Ambiente_staging.md`; plan de rollback en `Plan_Rollback.md`.
@@ -1181,7 +1181,7 @@ Client Component ──fetch('/api/...')──▶ Route Handler ──checkAdmin
 | Registro público rechaza cartones | Límite anti-abuso o cartón no vendido/ya registrado | Revisar `registration_limits` (modo `normal` vs `evento`) y motivo devuelto por `register_participant_cards` |
 | Ganador no entra a otra ronda | Trigger `prevent_winner_reentry` | Es la regla de negocio: un ganador no participa en tómbolas siguientes del mismo evento |
 | `ALTER TYPE ... ADD VALUE` falla | No corre dentro de transacción | Ejecutar la migración sin BEGIN/COMMIT (SQL Editor directo) |
-| Login con Google vuelve a `/login?error=oauth` (sobre todo el primer intento) | Cookie PKCE `code-verifier` en otro dominio: se inició en `lariojacflsv.site` y el retorno apuntaba a `la-rioja.vercel.app`. En los logs de Auth no aparece `POST /token` tras `/callback` | Ya corregido con `getRequestOrigin()`. Verificar que ambos dominios estén en Redirect URLs de Supabase |
+| Login con Google vuelve a `/login?error=oauth` (sobre todo el primer intento) | Cookie PKCE `code-verifier` en otro dominio: se inició en `lariojacflsv.site` y el retorno apuntaba a `la-rioja.vercel.app`. En los logs de Auth no aparece `POST /token` tras `/callback` | Ya corregido con `getRequestOrigin()`. Además `la-rioja.vercel.app` ya redirige (308) al dominio canónico. Verificar `https://lariojacflsv.site/**` en Redirect URLs de Supabase |
 | Usuario de Google ve «Esta cuenta no tiene acceso» | La cuenta no tiene fila en `user_companies` | Asignarle empresa y rol en Configuración → Usuarios y Roles |
 | `permission denied for table product_…` | Tabla creada por SQL Editor sin `GRANT` | Ejecutar los `GRANT` de la migración correspondiente |
 | Subida de PDF de catálogo falla con archivos grandes | Límite ~4.5 MB por petición en Vercel | El PDF se sube con URL firmada directo a Storage (`createCatalogPdfUpload`); no enviarlo por Server Action |

@@ -17,7 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://la-rioja.vercel.app"),
+  metadataBase: new URL("https://lariojacflsv.site"),
   title: {
     default:
       "La Rioja - Formación Laboral para Personas con Discapacidad Intelectual",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_SV",
-    url: "https://la-rioja.vercel.app",
+    url: "https://lariojacflsv.site",
     siteName: "La Rioja",
     title:
       "La Rioja - Formación Laboral para Personas con Discapacidad Intelectual",

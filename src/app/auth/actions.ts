@@ -9,7 +9,7 @@ import { cookies, headers } from "next/headers";
  * Origen (protocolo + dominio) desde el que el usuario hizo la petición.
  * Los flujos PKCE (OAuth y recuperación de contraseña) guardan la cookie
  * `code-verifier` en el dominio actual; si la URL de retorno apunta a otro
- * dominio (p. ej. lariojacflsv.site → la-rioja.vercel.app) la cookie no
+ * dominio (p. ej. un dominio alterno o un preview de Vercel) la cookie no
  * viaja y el intercambio del código falla. Por eso el retorno debe volver
  * al mismo dominio. Next valida que Origin coincida con Host en las Server
  * Actions, y Supabase solo acepta URLs de su lista de redirección.
