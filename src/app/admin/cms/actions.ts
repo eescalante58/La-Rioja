@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
-import { withRole } from "@/lib/auth/guards";
+import { withRole, type RoleContext } from "@/lib/auth/guards";
 import { faqSchema, faqSectionSchema, cmsContentSchema } from "@/lib/validation/cms";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -64,7 +64,7 @@ function transformSupabaseUrl(url: string): string {
  * @param {FormData} formData - The updated data as FormData.
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-async function updateCMSContentInternal(id: string, formData: FormData, context: { user: any }) {
+async function updateCMSContentInternal(id: string, formData: FormData, context: RoleContext) {
   const { user } = context;
   console.log(`CMS Update started for ID: ${id} by user: ${user?.id}`);
   
@@ -197,7 +197,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
  */
 export const updateCMSContent = withRole(8, updateCMSContentInternal);
 
-async function updateFAQInternal(id: string, formData: FormData, context: { user: any }) {
+async function updateFAQInternal(id: string, formData: FormData, context: RoleContext) {
   const { user } = context;
   // 1. Validation with Zod
   const rawData = {
@@ -262,7 +262,7 @@ async function updateFAQInternal(id: string, formData: FormData, context: { user
  */
 export const updateFAQ = withRole(8, updateFAQInternal);
 
-async function createFAQInternal(formData: FormData, context: { user: any }) {
+async function createFAQInternal(formData: FormData, context: RoleContext) {
   const { user } = context;
   // 1. Validation with Zod
   const rawData = {
@@ -332,7 +332,7 @@ async function createFAQInternal(formData: FormData, context: { user: any }) {
  */
 export const createFAQ = withRole(8, createFAQInternal);
 
-async function deleteFAQInternal(id: string, context: { user: any }) {
+async function deleteFAQInternal(id: string, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 
@@ -369,7 +369,7 @@ async function deleteFAQInternal(id: string, context: { user: any }) {
  */
 export const deleteFAQ = withRole(8, deleteFAQInternal);
 
-async function updateFAQSectionInternal(id: string, formData: FormData, context: { user: any }) {
+async function updateFAQSectionInternal(id: string, formData: FormData, context: RoleContext) {
   const { user } = context;
   // 1. Validation with Zod
   const rawData = {
@@ -432,7 +432,7 @@ async function updateFAQSectionInternal(id: string, formData: FormData, context:
  */
 export const updateFAQSection = withRole(8, updateFAQSectionInternal);
 
-async function createFAQSectionInternal(formData: FormData, context: { user: any }) {
+async function createFAQSectionInternal(formData: FormData, context: RoleContext) {
   const { user } = context;
   // 1. Validation with Zod
   const rawData = {
@@ -499,7 +499,7 @@ async function createFAQSectionInternal(formData: FormData, context: { user: any
  */
 export const createFAQSection = withRole(8, createFAQSectionInternal);
 
-async function deleteFAQSectionInternal(id: string, context: { user: any }) {
+async function deleteFAQSectionInternal(id: string, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 
@@ -535,7 +535,7 @@ async function deleteFAQSectionInternal(id: string, context: { user: any }) {
  */
 export const deleteFAQSection = withRole(8, deleteFAQSectionInternal);
 
-async function createCMSContentInternal(formData: FormData, context: { user: any }) {
+async function createCMSContentInternal(formData: FormData, context: RoleContext) {
   const { user } = context;
   // 1. Validation with Zod
   const rawMetadataStr = formData.get("metadata") as string;
@@ -668,7 +668,7 @@ async function createCMSContentInternal(formData: FormData, context: { user: any
  */
 export const createCMSContent = withRole(8, createCMSContentInternal);
 
-async function deleteCMSContentInternal(id: string, context: { user: any }) {
+async function deleteCMSContentInternal(id: string, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 

@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { withRole } from "@/lib/auth/guards";
+import { withRole, type RoleContext } from "@/lib/auth/guards";
 
 /**
  * Server action to fetch all country codes.
@@ -24,7 +24,7 @@ export async function getCountryCodes() {
 /**
  * Server action to create or update a country code.
  */
-async function saveCountryCodeInternal(formData: FormData, context: { user: any }) {
+async function saveCountryCodeInternal(formData: FormData, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 
@@ -87,7 +87,7 @@ export const saveCountryCode = withRole(10, saveCountryCodeInternal);
 /**
  * Server action to delete a country code.
  */
-async function deleteCountryCodeInternal(id: number, context: { user: any }) {
+async function deleteCountryCodeInternal(id: number, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 
@@ -127,7 +127,7 @@ export const deleteCountryCode = withRole(10, deleteCountryCodeInternal);
 /**
  * Server action to bulk import country codes.
  */
-async function importCountryCodesInternal(countries: any[], context: { user: any }) {
+async function importCountryCodesInternal(countries: any[], context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 
@@ -170,7 +170,7 @@ export const importCountryCodes = withRole(10, importCountryCodesInternal);
 /**
  * Server action to log data export activity.
  */
-async function logExportActivityInternal(count: number, context: { user: any }) {
+async function logExportActivityInternal(count: number, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 

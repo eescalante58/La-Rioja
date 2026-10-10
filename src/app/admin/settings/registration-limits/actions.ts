@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { withRole } from "@/lib/auth/guards";
+import { withRole, type RoleContext } from "@/lib/auth/guards";
 
 /**
  * Presets de límites anti-abuso del registro público /registro.
@@ -55,7 +55,7 @@ export const getRegistrationLimits = withRole(10, getRegistrationLimitsInternal)
  */
 async function setRegistrationModeInternal(
   mode: LimitMode,
-  context: { user: any },
+  context: RoleContext,
 ) {
   const { user } = context;
   const preset = LIMIT_PRESETS[mode];

@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { withRole } from "@/lib/auth/guards";
+import { withRole, type RoleContext } from "@/lib/auth/guards";
 import { getErrorMessage } from "@/lib/utils";
 
 /**
@@ -60,7 +60,7 @@ async function getGalleryEventInternal(companyId: number, eventId: string) {
  */
 async function bulkUploadGalleryImagesInternal(
   formData: FormData,
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
   const companyId = parseInt(formData.get("company_id") as string);
@@ -169,7 +169,7 @@ async function bulkUploadGalleryImagesInternal(
 /**
  * Elimina una imagen de la galería.
  */
-async function deleteGalleryImageInternal(id: string, context: { user: any }) {
+async function deleteGalleryImageInternal(id: string, context: RoleContext) {
   const { user } = context;
   const supabase = createAdminClient();
 
@@ -242,7 +242,7 @@ async function deleteGalleryImageInternal(id: string, context: { user: any }) {
  */
 async function updateGalleryImagesOrderInternal(
   updates: { id: string; content_order: number }[],
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
   const supabase = createAdminClient();

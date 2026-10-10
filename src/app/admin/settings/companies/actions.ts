@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { withRole } from "@/lib/auth/guards";
+import { withRole, type RoleContext } from "@/lib/auth/guards";
 import { roleLevelOf } from "@/lib/auth/authorization";
 
 /**
@@ -73,7 +73,7 @@ export async function getCompanies() {
 /**
  * Server action to save a company (create or update).
  */
-async function saveCompanyInternal(formData: FormData, context: { user: any }) {
+async function saveCompanyInternal(formData: FormData, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
   const id = formData.get("id");
@@ -159,7 +159,7 @@ export const saveCompany = withRole(8, saveCompanyInternal);
 /**
  * Server action to delete a company.
  */
-async function deleteCompanyInternal(id: number, context: { user: any }) {
+async function deleteCompanyInternal(id: number, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
   const { error } = await supabase

@@ -3,7 +3,22 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { withRole } from "@/lib/auth/guards";
+import { withRole, type RoleContext } from "@/lib/auth/guards";
+import type { User } from "@supabase/supabase-js";
+import { singleRelation } from "@/lib/utils";
+import type { Tables } from "@/types/database";
+import type { AssignedCardExportRow, ImportRow, StudentCardDetail } from "@/types/students";
+
+type ServerClient = Awaited<ReturnType<typeof createClient>>;
+
+/** Vínculo alumno-cartón embebido en el export de asignaciones. */
+interface AssignedCardLink {
+  card_number: number;
+  cards:
+    | Pick<Tables<"cards">, "card_type" | "card_status">
+    | Pick<Tables<"cards">, "card_type" | "card_status">[]
+    | null;
+}
 
 /**
  * Resuelve el alcance de empresas para los listados: la empresa activa
@@ -12,8 +27,8 @@ import { withRole } from "@/lib/auth/guards";
  * (nivel 10 sin cookie válida).
  */
 async function resolveCompanyScope(
-  supabase: any,
-  user: any,
+  supabase: ServerClient,
+  user: User | null,
   level: number,
 ): Promise<number[] | null> {
   const cookieStore = await cookies();
@@ -28,7 +43,7 @@ async function resolveCompanyScope(
     .from("user_companies")
     .select("company_id")
     .eq("user_id", user?.id);
-  const companyIds = (memberships?.map((m: any) => m.company_id) ||
+  const companyIds = (memberships?.map((m: Pick<Tables<"user_companies">, "company_id">) => m.company_id) ||
     []) as number[];
 
   // La cookie es manipulable por el cliente: solo se respeta si la
@@ -42,7 +57,7 @@ async function resolveCompanyScope(
 /**
  * Server action to fetch all students with their event names.
  */
-async function getStudentsInternal(context: { user: any; level: number }) {
+async function getStudentsInternal(context: RoleContext) {
   const { user, level } = context;
   const supabase = await createClient();
   const companyScope = await resolveCompanyScope(supabase, user, level);
@@ -106,7 +121,7 @@ export const getStudents = withRole(4, getStudentsInternal);
  * Server action to fetch events for dropdown, acotados a la empresa
  * activa (cookie selected_company_id).
  */
-async function getEventsInternal(context: { user: any; level: number }) {
+async function getEventsInternal(context: RoleContext) {
   const { user, level } = context;
   const supabase = await createClient();
   const companyScope = await resolveCompanyScope(supabase, user, level);
@@ -134,7 +149,7 @@ export const getEvents = withRole(4, getEventsInternal);
 /**
  * Server action to save a student (create or update).
  */
-async function saveStudentInternal(formData: FormData, context: { user: any }) {
+async function saveStudentInternal(formData: FormData, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 
@@ -199,7 +214,7 @@ export const saveStudent = withRole(8, saveStudentInternal);
 /**
  * Server action to delete a student.
  */
-async function deleteStudentInternal(id: number, context: { user: any }) {
+async function deleteStudentInternal(id: number, context: RoleContext) {
   const { user } = context;
   // Se usa createAdminClient para asegurar permisos de eliminación y limpieza
   // de relaciones (students_cards), ya que el usuario admin (rol 8) debe
@@ -287,7 +302,7 @@ export const deleteStudent = withRole(8, deleteStudentInternal);
 /**
  * Server action to import multiple students.
  */
-async function importStudentsInternal(students: any[], context: { user: any }) {
+async function importStudentsInternal(students: ImportRow[], context: RoleContext) {
   const { user } = context;
   // Se usa el cliente admin porque la importación hace UPSERT, que requiere
   // políticas de INSERT *y* UPDATE en RLS. El acceso ya está protegido a
@@ -297,10 +312,10 @@ async function importStudentsInternal(students: any[], context: { user: any }) {
   // Sanitizar: solo columnas reales de la tabla students. Un export JSON
   // incluye campos derivados (cards_count, event) que romperían el insert.
   const cleanedStudents = students.map((s) => ({
-    student_id: parseInt(s.student_id) || 0,
+    student_id: parseInt(String(s.student_id)) || 0,
     student_name: s.student_name,
     student_level: s.student_level,
-    company_id: parseInt(s.company_id) || 0,
+    company_id: parseInt(String(s.company_id)) || 0,
     event_id: s.event_id,
     updated_at: new Date().toISOString(),
   }));
@@ -358,7 +373,7 @@ export const importStudents = withRole(8, importStudentsInternal);
 /**
  * Server action to log export activity.
  */
-async function logExportActivityInternal(count: number, context: { user: any }) {
+async function logExportActivityInternal(count: number, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 
@@ -419,10 +434,12 @@ async function getStudentCardsInternal(
     return [];
   }
 
-  return data.map((item) => ({
-    card_number: item.card_number,
-    ...(item.cards as any),
-  }));
+  return data.map(
+    (item): StudentCardDetail => ({
+      card_number: item.card_number,
+      ...singleRelation(item.cards),
+    }),
+  );
 }
 
 export const getStudentCards = withRole(4, getStudentCardsInternal);
@@ -435,7 +452,7 @@ async function assignCardToStudentInternal(
   companyId: number,
   eventId: string,
   cardNumber: number,
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
   const supabase = await createClient();
@@ -524,7 +541,7 @@ async function unassignCardFromStudentInternal(
   companyId: number,
   eventId: string,
   cardNumber: number,
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
   const supabase = await createClient();
@@ -587,7 +604,7 @@ export const unassignCardFromStudent = withRole(8, unassignCardFromStudentIntern
 /**
  * Server action to bulk assign cards to students.
  */
-async function bulkAssignCardsInternal(assignments: any[], context: { user: any }) {
+async function bulkAssignCardsInternal(assignments: ImportRow[], context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 
@@ -597,9 +614,9 @@ async function bulkAssignCardsInternal(assignments: any[], context: { user: any 
 
   // 1. Validar cada cartón antes de insertar
   for (const a of assignments) {
-    const companyId = parseInt(a.company_id);
+    const companyId = parseInt(String(a.company_id));
     const eventId = a.event_id;
-    const cardNumber = parseInt(a.card_number);
+    const cardNumber = parseInt(String(a.card_number));
 
     if (isNaN(companyId) || !eventId || isNaN(cardNumber)) {
       return {
@@ -632,10 +649,10 @@ async function bulkAssignCardsInternal(assignments: any[], context: { user: any 
   // 2. Insertar en students_cards
   const { error: insertError } = await supabase.from("students_cards").insert(
     assignments.map((a) => ({
-      student_id: parseInt(a.student_id),
-      company_id: parseInt(a.company_id),
+      student_id: parseInt(String(a.student_id)),
+      company_id: parseInt(String(a.company_id)),
       event_id: a.event_id,
-      card_number: parseInt(a.card_number),
+      card_number: parseInt(String(a.card_number)),
     })),
   );
 
@@ -646,9 +663,9 @@ async function bulkAssignCardsInternal(assignments: any[], context: { user: any 
     await supabase
       .from("cards")
       .update({ card_status: "Asignado", updated_at: new Date().toISOString() })
-      .eq("company_id", parseInt(a.company_id))
+      .eq("company_id", parseInt(String(a.company_id)))
       .eq("event_id", a.event_id)
-      .eq("card_number", parseInt(a.card_number));
+      .eq("card_number", parseInt(String(a.card_number)));
   }
 
   if (user) {
@@ -673,10 +690,7 @@ export const bulkAssignCards = withRole(8, bulkAssignCardsInternal);
  * Server action to fetch all assigned cards for download, acotadas a la
  * empresa activa (cookie selected_company_id).
  */
-async function getAllAssignedCardsInternal(context: {
-  user: any;
-  level: number;
-}) {
+async function getAllAssignedCardsInternal(context: RoleContext) {
   const { user, level } = context;
   const supabase = await createClient();
   const companyScope = await resolveCompanyScope(supabase, user, level);
@@ -715,9 +729,9 @@ async function getAllAssignedCardsInternal(context: {
     return [];
   }
 
-  const rows: any[] = [];
+  const rows: AssignedCardExportRow[] = [];
   for (const s of data || []) {
-    const cards = ((s as any).students_cards as any[]) || [];
+    const cards = (s.students_cards || []) as AssignedCardLink[];
     const base = {
       student_id: s.student_id,
       student_name: s.student_name,
@@ -739,8 +753,8 @@ async function getAllAssignedCardsInternal(context: {
         rows.push({
           ...base,
           card_number: c.card_number,
-          card_type: c.cards?.card_type,
-          card_status: c.cards?.card_status,
+          card_type: singleRelation(c.cards)?.card_type,
+          card_status: singleRelation(c.cards)?.card_status,
         });
       }
     }
@@ -790,7 +804,7 @@ async function assignCardRangeToStudentInternal(
   eventId: string,
   fromCard: number,
   toCard: number,
-  context: { user: any },
+  context: RoleContext,
 ) {
   const { user } = context;
   const supabase = await createClient();
@@ -869,7 +883,7 @@ async function assignCardRangeToStudentInternal(
     const details = assignedToOthers
       .map(
         (r) =>
-          `${r.card_number} → ID ${r.student_id} (${(r.student as any)?.student_name || "desconocido"})`,
+          `${r.card_number} → ID ${r.student_id} (${singleRelation(r.student)?.student_name || "desconocido"})`,
       )
       .join(", ");
     return {

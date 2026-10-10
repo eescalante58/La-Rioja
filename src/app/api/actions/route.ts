@@ -136,8 +136,9 @@ import { submitContactForm } from "@/app/actions/contact";
  * por lo que la seguridad se preserva exactamente igual que en una llamada
  * directa desde un componente cliente.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ActionFn = (...args: any[]) => Promise<unknown>;
+// `never[]`: cualquier función async es asignable (los parámetros son
+// contravariantes); los argumentos JSON se aplican con Reflect.apply.
+type ActionFn = (...args: never[]) => Promise<unknown>;
 
 /**
  * Whitelist de operaciones invocables desde el cliente vía JSON.
@@ -293,7 +294,7 @@ async function dispatch(name: string, args: unknown[]): Promise<NextResponse> {
   }
 
   try {
-    const result = await fn(...args);
+    const result: unknown = await Reflect.apply(fn, undefined, args);
     return NextResponse.json(result ?? { success: true });
   } catch (err) {
     console.error(`[api/actions] ${name} failed:`, err);

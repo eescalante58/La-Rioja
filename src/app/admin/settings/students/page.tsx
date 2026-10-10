@@ -11,8 +11,8 @@ export default async function StudentsSettingsPage() {
     getEvents(),
   ]);
 
-  const students = "error" in studentsRes ? [] : (studentsRes as any[]);
-  const events = "error" in eventsRes ? [] : (eventsRes as any[]);
+  const students = "error" in studentsRes ? [] : studentsRes;
+  const events = "error" in eventsRes ? [] : eventsRes;
 
   if ("error" in studentsRes) {
     console.error("Error loading students:", studentsRes.error);

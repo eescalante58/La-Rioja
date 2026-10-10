@@ -7,7 +7,7 @@ import {
   requireRoleLevel,
   requireCompanyAccess,
 } from "@/lib/auth/authorization";
-import { withRole, withCompanyAccess } from "@/lib/auth/guards";
+import { withRole, withCompanyAccess, type RoleContext } from "@/lib/auth/guards";
 import { 
   eventSchema, 
   invoiceSchema,
@@ -36,6 +36,14 @@ import {
 } from "./whatsapp-core";
 import { getCustomersCore } from "../dashboard-core";
 import { getErrorMessage } from "@/lib/utils";
+import type { PostgrestError } from "@supabase/supabase-js";
+import type { Tables, TablesInsert } from "@/types/database";
+
+type ServerClient = Awaited<ReturnType<typeof createClient>>;
+type CustomerPhoneRow = Pick<
+  Tables<"customer_phone_number">,
+  "id" | "phone_number" | "table_data_source"
+>;
 
 /**
  * Sanitizes string input for Bingo operations.
@@ -71,7 +79,7 @@ async function uploadCardsBatchInternal(
   cardPrice: number,
   cardType: string,
   formData: FormData,
-  context: { user: any }
+  context: RoleContext
 ) {
   const supabase = await createClient();
   const normalizedCardType =
@@ -95,7 +103,7 @@ async function uploadCardsBatchInternal(
 
   const uploadedStoragePaths: string[] = [];
   const errors: string[] = [];
-  const cardsToUpsert: any[] = [];
+  const cardsToUpsert: TablesInsert<"cards">[] = [];
   let maxCardNumber: number | null = null;
   let minCardNumber: number | null = null;
 
@@ -142,7 +150,7 @@ async function uploadCardsBatchInternal(
         card_status: "Disponible",
         image_url: publicUrl,
         updated_at: new Date().toISOString(),
-      },
+      } satisfies TablesInsert<"cards">,
       cardNumber,
     };
   });
@@ -206,7 +214,7 @@ async function uploadSingleCardImageInternal(
   cardType: string,
   fileName: string,
   file: File,
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
   const supabase = await createClient();
@@ -284,9 +292,11 @@ export const uploadSingleCardImage = withRole(4, withCompanyAccess(uploadSingleC
 async function clearEventCardsInternal(
   companyId: number,
   eventId: string,
-  start?: number | any,
-  end?: number | any,
-  ...rest: any[]
+  // `unknown`: si el cliente omite el rango, aquí llega el contexto del
+  // guard; por eso se valida que sean números antes de usarlos.
+  start?: unknown,
+  end?: unknown,
+  ...rest: unknown[]
 ) {
   const parsedStart = typeof start === "number" && !isNaN(start) ? start : undefined;
   const parsedEnd = typeof end === "number" && !isNaN(end) ? end : undefined;
@@ -363,8 +373,8 @@ export const clearEventCards = withRole(4, withCompanyAccess(clearEventCardsInte
 async function logUploadActivityInternal(
   companyId: number,
   eventId: string,
-  metadata: any,
-  context: { user: any }
+  metadata: Record<string, unknown>,
+  context: RoleContext
 ) {
   const { user } = context;
   const supabase = await createClient();
@@ -411,7 +421,7 @@ export const logUploadActivity = withRole(4, withCompanyAccess(logUploadActivity
 async function verifyUploadInternal(
   companyId: number,
   eventId: string,
-  context: { user: any }
+  context: RoleContext
 ) {
   const supabase = await createClient();
   const { count, error } = await supabase
@@ -426,7 +436,7 @@ async function verifyUploadInternal(
 
 export const verifyUpload = withRole(4, withCompanyAccess(verifyUploadInternal, 0));
 
-async function getBingoDataInternal(context: { user: any, level: number }) {
+async function getBingoDataInternal(context: RoleContext) {
   const { user, level } = context;
   const supabase = await createClient();
 
@@ -491,7 +501,7 @@ export const getBingoData = withRole(4, getBingoDataInternal);
 /**
  * Save or update a Bingo event.
  */
-async function saveEventInternal(formData: FormData, context: { user: any }) {
+async function saveEventInternal(formData: FormData, context: RoleContext) {
   const { user } = context;
   const id = formData.get("id");
   const rawData = {
@@ -575,7 +585,7 @@ export const saveEvent = withRole(
 /**
  * Delete a Bingo event.
  */
-async function deleteEventInternal(id: number, context: { user: any }) {
+async function deleteEventInternal(id: number, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 
@@ -628,14 +638,14 @@ export const deleteEvent = withRole(4, deleteEventInternal);
  * Obtiene todas las filas de una tabla filtradas por empresa/evento,
  * paginando en bloques de 1000 (límite por consulta de PostgREST).
  */
-async function fetchAllRows(
-  supabase: any,
+async function fetchAllRows<T>(
+  supabase: ServerClient,
   table: string,
   columns: string,
   companyId: number,
   eventId: string,
   orderBy: string,
-) {
+): Promise<{ data: T[] | null; error: PostgrestError | null }> {
   const pageSize = 1000;
   const firstPage = await supabase
     .from(table)
@@ -646,9 +656,9 @@ async function fetchAllRows(
     .range(0, pageSize - 1);
   if (firstPage.error) return { data: null, error: firstPage.error };
 
-  const all: any[] = [...(firstPage.data || [])];
+  const all: T[] = [...((firstPage.data as T[] | null) || [])];
   const total = firstPage.count ?? all.length;
-  if (total <= pageSize) return { data: all, error: null as any };
+  if (total <= pageSize) return { data: all, error: null };
 
   const rest = await Promise.all(
     Array.from({ length: Math.ceil(total / pageSize) - 1 }, (_, i) =>
@@ -663,9 +673,9 @@ async function fetchAllRows(
   );
   for (const res of rest) {
     if (res.error) return { data: null, error: res.error };
-    all.push(...(res.data || []));
+    all.push(...((res.data as T[] | null) || []));
   }
-  return { data: all, error: null as any };
+  return { data: all, error: null };
 }
 
 async function getEventCardsInternal(companyId: number, eventId: string) {
@@ -682,7 +692,7 @@ async function generateCardsInternal(
   price: number,
   cardType: "Virtual" | "Fisico" | "Ticket ruleta",
   deleteExisting: boolean = false,
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
   // Validation with Zod
@@ -853,7 +863,7 @@ async function updateCardTypeInternal(
   cardNumber: number,
   newType: string,
   officialName: string,
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
   // Validation with Zod
@@ -932,7 +942,7 @@ async function updateCardRangeTypeInternal(
   end: number,
   newType: string,
   officialName: string,
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
   // Validation with Zod
@@ -1008,7 +1018,7 @@ async function updateCardRangePlayerInternal(
   playerName: string,
   playerPhone: string,
   officialName: string,
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
   const validation = updateCardRangePlayerSchema.safeParse({
@@ -1081,7 +1091,7 @@ async function updateSingleCardInternal(
   eventId: string,
   cardNumber: number,
   formData: FormData,
-  context: { user: any }
+  context: RoleContext
 ) {
   const { user } = context;
 
@@ -1089,7 +1099,7 @@ async function updateSingleCardInternal(
   // jugador). Se construye rawData únicamente con lo presente en el
   // FormData y se valida con el esquema parcial para no exigir campos
   // que el formulario no envía ni sobrescribirlos con null.
-  const rawData: Record<string, any> = {};
+  const rawData: Record<string, FormDataEntryValue | number | null> = {};
   formData.forEach((value, key) => {
     if (key !== "file") rawData[key] = value;
   });
@@ -1124,7 +1134,9 @@ async function updateSingleCardInternal(
     return { error: "No se encontró el cartón original." };
   }
 
-  const updates: any = { updated_at: new Date().toISOString() };
+  const updates: Record<string, string | number | null> = {
+    updated_at: new Date().toISOString(),
+  };
   const sanitizedKeys = [
     "sold_by",
     "player_name",
@@ -1238,9 +1250,9 @@ export const getNextAutoInvoiceNumber = withRole(
  * Aquí sí se revalidan las páginas afectadas porque la acción se usa en
  * flujos admin de menor frecuencia (editar/detalle).
  */
-async function saveInvoiceInternal(formData: FormData, context: { user: any }) {
+async function saveInvoiceInternal(formData: FormData, context: RoleContext) {
   const result = await saveInvoiceCore(formData, context.user?.id);
-  if ((result as any)?.success) {
+  if ("success" in result && result.success) {
     revalidatePath("/admin/bingo");
     revalidatePath("/admin");
   }
@@ -1253,9 +1265,9 @@ export const saveInvoice = withRole(4, withCompanyAccess(saveInvoiceInternal, 0)
  * Update an existing invoice and associated cards.
  * La lógica vive en invoice-core.ts (compartida con PUT /api/bingo/invoices).
  */
-async function updateInvoiceInternal(formData: FormData, context: { user: any }) {
+async function updateInvoiceInternal(formData: FormData, context: RoleContext) {
   const result = await updateInvoiceCore(formData, context.user?.id);
-  if ((result as any)?.success) {
+  if ("success" in result && result.success) {
     revalidatePath("/admin/bingo");
     revalidatePath("/admin");
   }
@@ -1273,7 +1285,7 @@ async function checkCardsRangeInternal(
   eventId: string,
   start: number,
   end: number,
-  context: { user: any }
+  context: RoleContext
 ) {
   return checkCardsRangeCore(companyId, eventId, start, end);
 }
@@ -1289,9 +1301,9 @@ export const sendWhatsAppAutomation = withRole(
  * Delete an invoice and release its associated cards.
  * La lógica vive en invoice-core.ts (compartida con DELETE /api/bingo/invoices).
  */
-async function deleteInvoiceInternal(id: string, context: { user: any }) {
+async function deleteInvoiceInternal(id: string, context: RoleContext) {
   const result = await deleteInvoiceCore(id, context.user?.id);
-  if ((result as any)?.success) {
+  if ("success" in result && result.success) {
     revalidatePath("/admin/bingo");
     revalidatePath("/admin");
   }
@@ -1300,7 +1312,7 @@ async function deleteInvoiceInternal(id: string, context: { user: any }) {
 
 export const deleteInvoice = withRole(4, deleteInvoiceInternal);
 
-async function updateInvoiceWhatsAppStatusInternal(id: string, status: string, context: { user: any }) {
+async function updateInvoiceWhatsAppStatusInternal(id: string, status: string, context: RoleContext) {
   const result = await updateInvoiceWhatsAppStatusCore(
     id,
     status,
@@ -1489,7 +1501,9 @@ async function syncCustomersInternal(companyId: number) {
   // 2. Obtener facturas del evento por defecto y jugadores de cartones
   //    (paginado: el evento puede superar el límite de 1000 filas por consulta)
   const [invRes, cardsRes] = await Promise.all([
-    fetchAllRows(
+    fetchAllRows<
+      Pick<Tables<"invoices">, "customer_name" | "whatsapp_number" | "phone_area" | "phone_number">
+    >(
       supabase,
       "invoices",
       "customer_name, whatsapp_number, phone_area, phone_number",
@@ -1497,7 +1511,7 @@ async function syncCustomersInternal(companyId: number) {
       company.def_dash_event_id,
       "invoice_number",
     ),
-    fetchAllRows(
+    fetchAllRows<Pick<Tables<"cards">, "player_name" | "player_phone_number">>(
       supabase,
       "cards",
       "player_name, player_phone_number",
@@ -1556,7 +1570,7 @@ async function syncCustomersInternal(companyId: number) {
   if (existError) return { success: false, error: existError.message };
 
   const existingPhones = new Set(
-    (existing || []).map((c: any) =>
+    ((existing || []) as CustomerPhoneRow[]).map((c) =>
       (c.phone_number || "").replace(/\D/g, ""),
     ),
   );
@@ -1588,8 +1602,8 @@ async function syncCustomersInternal(companyId: number) {
   };
 
   let updated = 0;
-  const updates = (existing || [])
-    .map((row: any) => {
+  const updates = ((existing || []) as CustomerPhoneRow[])
+    .map((row) => {
       const phone = (row.phone_number || "").replace(/\D/g, "");
       const entry = phoneMap.get(phone);
       if (!entry) return null;

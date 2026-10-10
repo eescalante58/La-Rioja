@@ -44,6 +44,14 @@ import {
 import Link from "next/link";
 import { callAction, callActionForm } from "@/lib/action-client";
 import UnsoldCardsReportDialog from "@/components/admin/UnsoldCardsReportDialog";
+import { singleRelation } from "@/lib/utils";
+import type {
+  AssignedCardExportRow,
+  EventCardsInfo,
+  ImportRow,
+  StudentCardDetail,
+  StudentCardInvoice,
+} from "@/types/students";
 
 interface Student {
   id: number;
@@ -69,7 +77,7 @@ export default function StudentManagerClient({
   initialData,
   events,
 }: {
-  initialData: any[];
+  initialData: Student[];
   events: Event[];
 }) {
   const [students, setStudents] = useState<Student[]>(initialData);
@@ -80,8 +88,8 @@ export default function StudentManagerClient({
   const [isCardsDialogOpen, setIsCardsDialogOpen] = useState(false);
   const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [studentCards, setStudentCards] = useState<any[]>([]);
-  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [studentCards, setStudentCards] = useState<StudentCardDetail[]>([]);
+  const [selectedInvoice, setSelectedInvoice] = useState<StudentCardInvoice | null>(null);
   const [loadingCards, setLoadingCards] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [assignMode, setAssignDialogOpen] = useState<"single" | "bulk">(
@@ -102,11 +110,7 @@ export default function StudentManagerClient({
   const [assignStudent, setAssignStudent] = useState<Student | null>(null);
   const [assignCardFrom, setAssignCardFrom] = useState("");
   const [assignCardTo, setAssignCardTo] = useState("");
-  const [assignEventInfo, setAssignEventInfo] = useState<{
-    max: number;
-    total: number;
-    available: number;
-  } | null>(null);
+  const [assignEventInfo, setAssignEventInfo] = useState<EventCardsInfo | null>(null);
 
   // Sync state if initialData changes
   useEffect(() => {
@@ -214,7 +218,7 @@ export default function StudentManagerClient({
           content = latinDecoder.decode(buffer);
         }
 
-        let data: any[] = [];
+        let data: ImportRow[] = [];
 
         if (isCsv) {
           const lines = content.split(/\r?\n/);
@@ -228,7 +232,7 @@ export default function StudentManagerClient({
             .filter((line) => line.trim())
             .map((line) => {
               const values = line.split(",");
-              const obj: any = {};
+              const obj: ImportRow = {};
               headers.forEach((header, index) => {
                 let val = values[index]?.trim();
                 // Map user-friendly headers to db columns if necessary
@@ -315,7 +319,7 @@ export default function StudentManagerClient({
     setStudentCards([]);
 
     try {
-      const cards = await callAction<any[]>("students.getStudentCards", [
+      const cards = await callAction<StudentCardDetail[]>("students.getStudentCards", [
         student.student_id,
         student.company_id,
         student.event_id,
@@ -329,14 +333,14 @@ export default function StudentManagerClient({
     }
   };
 
-  const handleViewInvoice = (invoice: any) => {
+  const handleViewInvoice = (invoice: StudentCardInvoice | null) => {
     setSelectedInvoice(invoice);
     setIsInvoiceDialogOpen(true);
   };
 
   const handleDownloadAssignments = async () => {
     try {
-      const res = await callAction<any[] | { error: string }>(
+      const res = await callAction<AssignedCardExportRow[] | { error: string }>(
         "students.getAllAssignedCards",
       );
       
@@ -345,7 +349,7 @@ export default function StudentManagerClient({
         return;
       }
 
-      const data = res as any[];
+      const data = res;
 
       if (data.length === 0) {
         alert("No hay cartones asignados para descargar.");
@@ -362,7 +366,7 @@ export default function StudentManagerClient({
         "company_id",
         "event_id",
       ];
-      const rows = data.map((d: any) => [
+      const rows = data.map((d) => [
         d.student_id,
         d.student_name,
         d.student_level,
@@ -439,7 +443,7 @@ export default function StudentManagerClient({
       if (result.success) {
         setQuickCardNumber("");
         // Refresh cards list
-        const cards = await callAction<any[]>("students.getStudentCards", [
+        const cards = await callAction<StudentCardDetail[]>("students.getStudentCards", [
           selectedStudent.student_id,
           selectedStudent.company_id,
           selectedStudent.event_id,
@@ -484,7 +488,7 @@ export default function StudentManagerClient({
 
       if (result.success) {
         // Refresh cards list
-        const cards = await callAction<any[]>("students.getStudentCards", [
+        const cards = await callAction<StudentCardDetail[]>("students.getStudentCards", [
           selectedStudent.student_id,
           selectedStudent.company_id,
           selectedStudent.event_id,
@@ -542,12 +546,12 @@ export default function StudentManagerClient({
 
     if (!key) return;
     const [cId, eId] = key.split("|");
-    const info = await callAction<{ success?: boolean; error?: string }>(
+    const info = await callAction<{ success?: boolean; error?: string } & Partial<EventCardsInfo>>(
       "students.getEventCardsInfo",
       [parseInt(cId), eId],
     );
     if (info.success) {
-      setAssignEventInfo(info as any);
+      setAssignEventInfo(info as EventCardsInfo);
     } else {
       alert("Error al consultar cartones del evento: " + info.error);
     }
@@ -624,11 +628,11 @@ export default function StudentManagerClient({
               : s,
           ),
         );
-        const info = await callAction<{ success?: boolean }>(
+        const info = await callAction<{ success?: boolean } & Partial<EventCardsInfo>>(
           "students.getEventCardsInfo",
           [parseInt(cId), eId],
         );
-        if (info.success) setAssignEventInfo(info as any);
+        if (info.success) setAssignEventInfo(info as EventCardsInfo);
       } else {
         alert("Error: " + result.error);
       }
@@ -670,7 +674,7 @@ export default function StudentManagerClient({
           .filter((l) => l.trim())
           .map((line) => {
             const values = line.split(",");
-            const obj: any = {};
+            const obj: ImportRow = {};
             headers.forEach((h, i) => {
               const val = values[i]?.trim();
               if (h === "id alumno" || h === "student_id") obj.student_id = val;
@@ -1308,7 +1312,7 @@ export default function StudentManagerClient({
                         <TableCell>
                           {card.invoice_number ? (
                             <button
-                              onClick={() => handleViewInvoice(card.invoices)}
+                              onClick={() => handleViewInvoice(singleRelation(card.invoices))}
                               className="flex items-center gap-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium underline transition-colors"
                             >
                               <Eye size={14} />
