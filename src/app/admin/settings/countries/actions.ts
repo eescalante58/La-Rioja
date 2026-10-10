@@ -127,7 +127,12 @@ export const deleteCountryCode = withRole(10, deleteCountryCodeInternal);
 /**
  * Server action to bulk import country codes.
  */
-async function importCountryCodesInternal(countries: any[], context: RoleContext) {
+/** País importado desde CSV/JSON: los valores llegan como texto. */
+type CountryImportRow = Partial<
+  Record<"iso2" | "iso3" | "name" | "phone_code" | "flag_emoji", string>
+>;
+
+async function importCountryCodesInternal(countries: CountryImportRow[], context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
 

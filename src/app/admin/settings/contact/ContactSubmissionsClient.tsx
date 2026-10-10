@@ -28,12 +28,13 @@ import {
   Callout,
 } from "@tremor/react";
 import { callAction } from "@/lib/action-client";
+import type { Tables } from "@/types/database";
 
 /**
  * Client component for managing contact submissions in admin.
  */
 export default function ContactSubmissionsClient() {
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<Tables<"contact_submissions">[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -46,7 +47,7 @@ export default function ContactSubmissionsClient() {
     setLoading(true);
     const result = await callAction<{
       success?: boolean;
-      data?: any[];
+      data?: Tables<"contact_submissions">[];
       error?: string;
     }>("contactSettings.getContactSubmissions", [searchQuery]);
     if (result.success) {
@@ -190,10 +191,10 @@ export default function ContactSubmissionsClient() {
                       <div className="flex flex-col">
                         <Text className="font-medium flex items-center gap-1.5">
                           <Clock size={14} className="text-gray-400" />
-                          {new Date(item.created_at).toLocaleDateString()}
+                          {new Date(item.created_at ?? 0).toLocaleDateString()}
                         </Text>
                         <Text className="text-xs text-gray-400">
-                          {new Date(item.created_at).toLocaleTimeString([], {
+                          {new Date(item.created_at ?? 0).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}

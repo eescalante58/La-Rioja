@@ -4,6 +4,7 @@ import { Card, Title, Text, Button, Grid } from "@tremor/react";
 import { Building2, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { selectCompany } from "./actions";
+import { singleRelation } from "@/lib/utils";
 
 /**
  * Page for selecting which company to work with after login.
@@ -79,13 +80,13 @@ export default async function SelectCompanyPage() {
           </div>
 
           <Grid numItemsSm={1} numItemsLg={2} className="gap-4">
-            {companies.map((uc: any) => (
+            {companies.map((uc) => (
               <form key={uc.company_id} action={selectCompany}>
                 <input type="hidden" name="companyId" value={uc.company_id} />
                 <input
                   type="hidden"
                   name="companyName"
-                  value={uc.companies.company_name}
+                  value={singleRelation(uc.companies)?.company_name}
                 />
                 <button
                   type="submit"
@@ -100,7 +101,7 @@ export default async function SelectCompanyPage() {
                     </div>
                     <div>
                       <Text className="font-bold text-gray-900 dark:text-gray-100">
-                        {uc.companies.company_name}
+                        {singleRelation(uc.companies)?.company_name}
                       </Text>
                       <Text className="text-[10px] uppercase font-bold tracking-wider text-gray-400">
                         Rol: {uc.role}

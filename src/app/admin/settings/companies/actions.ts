@@ -12,7 +12,7 @@ async function logActivity(
   action: string,
   entity: string,
   entityId: string | null,
-  metadata: any = {},
+  metadata: Record<string, unknown> = {},
 ) {
   const supabase = await createClient();
   const {

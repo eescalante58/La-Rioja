@@ -71,8 +71,8 @@ export default function UserCompaniesDialog({
   const loadUserCompanies = async () => {
     if (!user) return;
     setLoadingData(true);
-    const data = await callAction("users.getUserCompanies", [user.id]);
-    setUserCompanies(data as any);
+    const data = await callAction<UserCompany[]>("users.getUserCompanies", [user.id]);
+    setUserCompanies(data);
     setLoadingData(false);
   };
 

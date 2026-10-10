@@ -163,7 +163,8 @@ export default function CountryManagerClient({
     await callAction("countries.logExportActivity", [countries.length]);
   };
 
-  const processImport = async (json: any[]) => {
+  /** Filas importadas (CSV o JSON): los valores llegan como texto. */
+  const processImport = async (json: Record<string, string | undefined>[]) => {
     setLoading(true);
     try {
       const result = await callAction<{ success?: boolean; error?: string }>(
@@ -205,7 +206,7 @@ export default function CountryManagerClient({
           content = latinDecoder.decode(buffer);
         }
 
-        let data: any[] = [];
+        let data: Record<string, string | undefined>[] = [];
 
         if (isCsv) {
           const lines = content.split("\n");
@@ -215,7 +216,7 @@ export default function CountryManagerClient({
             .filter((line) => line.trim())
             .map((line) => {
               const values = line.split(",");
-              const obj: any = {};
+              const obj: Record<string, string | undefined> = {};
               headers.forEach((header, index) => {
                 obj[header] = values[index]?.trim();
               });

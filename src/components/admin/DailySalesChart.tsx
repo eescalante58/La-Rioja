@@ -2,6 +2,7 @@
 
 import React from "react";
 import ReactECharts from "echarts-for-react";
+import type { DefaultLabelFormatterCallbackParams, ECElementEvent } from "echarts";
 import { Card, Title, Text, Badge } from "@tremor/react";
 
 interface DailySalesChartProps {
@@ -86,7 +87,8 @@ export default function DailySalesChart({
         label: {
           show: true,
           position: "top",
-          formatter: (params: any) => formatCurrency(params.value),
+          formatter: (params: DefaultLabelFormatterCallbackParams) =>
+            formatCurrency(Number(params.value)),
           color: "#cbd5e1", // slate-300
           fontSize: 10,
           fontWeight: "bold",
@@ -96,7 +98,7 @@ export default function DailySalesChart({
     ],
   };
 
-  const onChartClick = (params: any) => {
+  const onChartClick = (params: ECElementEvent) => {
     if (params.dataIndex !== undefined) {
       const selectedDate = data[params.dataIndex].date;
       onDrillDown(selectedDate);

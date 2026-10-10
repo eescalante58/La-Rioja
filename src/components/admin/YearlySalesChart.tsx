@@ -2,6 +2,7 @@
 
 import React from "react";
 import ReactECharts from "echarts-for-react";
+import type { DefaultLabelFormatterCallbackParams } from "echarts";
 import { Card, Title, Text } from "@tremor/react";
 
 interface YearlySalesChartProps {
@@ -61,7 +62,8 @@ export default function YearlySalesChart({ data }: YearlySalesChartProps) {
         label: {
           show: true,
           position: "right",
-          formatter: (params: any) => formatCurrency(params.value),
+          formatter: (params: DefaultLabelFormatterCallbackParams) =>
+            formatCurrency(Number(params.value)),
           color: "#FFFF00", // Amarillo oficial para los montos
           fontSize: 14,
           fontWeight: "bold",

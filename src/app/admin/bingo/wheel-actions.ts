@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { withRole, withCompanyAccess } from "@/lib/auth/guards";
 import { randomInt, createHash } from "node:crypto";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Tables } from "@/types/database";
 
 /**
  * Server actions del módulo Ruleta La Rioja.
@@ -444,7 +446,7 @@ interface WheelSegment {
  * - Cartones: números de cards con card_status='Vendido'.
  */
 async function buildSegments(
-  supabase: any,
+  supabase: SupabaseClient,
   cfg: { id: number; company_id: number; event_id: string; mode: string },
 ): Promise<WheelSegment[]> {
   if (cfg.mode === "Cartones") {
@@ -456,7 +458,7 @@ async function buildSegments(
       .eq("card_status", "Vendido")
       .order("card_number");
 
-    return (data || []).map((c: any) => ({
+    return (data || []).map((c: Pick<Tables<"cards">, "card_number">) => ({
       itemId: null,
       label: `#${c.card_number}`,
       color: null,
@@ -479,7 +481,13 @@ async function buildSegments(
   }
 
   const { data } = await query;
-  return (data || []).map((i: any) => ({
+  return (
+    (data || []) as (Pick<
+      Tables<"wheel_items">,
+      "id" | "label" | "color" | "quantity" | "is_prize"
+    > &
+      Partial<Pick<Tables<"wheel_items">, "initial_quantity">>)[]
+  ).map((i) => ({
     itemId: i.id,
     label: i.label,
     color: i.color,

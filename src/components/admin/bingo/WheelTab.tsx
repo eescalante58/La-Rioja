@@ -36,7 +36,7 @@ import { callAction } from "@/lib/action-client";
 import { redirectIfSessionExpired } from "@/lib/auth/sessionFeedback";
 import WheelConfigDialog from "./WheelConfigDialog";
 import WheelItemsDialog from "./WheelItemsDialog";
-import type { Wheel, WheelItem, WheelSpin } from "./wheel-types";
+import type { Wheel, WheelHistoryTarget, WheelItem, WheelSpin } from "./wheel-types";
 
 interface Event {
   id: number;
@@ -73,7 +73,7 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
   const [editingWheel, setEditingWheel] = useState<Wheel | null>(null);
   const [itemsWheel, setItemsWheel] = useState<Wheel | null>(null);
   const [isItemsOpen, setIsItemsOpen] = useState(false);
-  const [historyWheel, setHistoryWheel] = useState<Wheel | null>(null);
+  const [historyWheel, setHistoryWheel] = useState<WheelHistoryTarget | null>(null);
   const [spins, setSpins] = useState<WheelSpin[]>([]);
   /** Error de la última carga del historial (null = sin error). */
   const [spinsError, setSpinsError] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
    * Ref del historial abierto: permite que el listener Realtime sepa a qué
    * ruleta/evento recargar sin depender del closure del estado.
    */
-  const historyWheelRef = useRef<Wheel | null>(null);
+  const historyWheelRef = useRef<WheelHistoryTarget | null>(null);
   useEffect(() => {
     historyWheelRef.current = historyWheel;
   }, [historyWheel]);
@@ -132,7 +132,7 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
    * juegos del evento). Distingue "sin datos" de un error de la acción para
    * que el operador no vea un vacío silencioso (p. ej. sesión expirada).
    */
-  const fetchSpins = useCallback(async (wheel: Wheel) => {
+  const fetchSpins = useCallback(async (wheel: WheelHistoryTarget) => {
     const result = await callAction<{
       success?: boolean;
       data?: WheelSpin[];
@@ -295,7 +295,7 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
     }
   };
 
-  const handleShowHistory = (wheel: Wheel) => {
+  const handleShowHistory = (wheel: WheelHistoryTarget) => {
     setHistoryWheel(wheel);
     setSpins([]);
     setSpinsError(null);
@@ -475,7 +475,7 @@ export default function WheelTab({ events, defaultEvent }: WheelTabProps) {
                   icon={History}
                   onClick={() => {
                     // Cargar historial de TODO el evento
-                    const dummyWheelForHistory: any = {
+                    const dummyWheelForHistory: WheelHistoryTarget = {
                       id: null,
                       wheel_name: "Todos los juegos del evento",
                       mode: "General",

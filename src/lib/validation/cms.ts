@@ -7,7 +7,7 @@ export const cmsContentSchema = z.object({
   content_order: z.number().int().default(0),
   section_key: z.string().min(1, "La clave de sección es requerida"),
   page: z.string().optional(),
-  metadata: z.record(z.string(), z.any()).optional().default({}),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 export const faqSchema = z.object({

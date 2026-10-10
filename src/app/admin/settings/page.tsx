@@ -14,14 +14,24 @@ import {
   BookOpen,
   BookUser,
 } from "lucide-react";
-import { Card, Title, Text, Grid, Icon } from "@tremor/react";
+import { Card, Title, Text, Grid, Icon, type Color } from "@tremor/react";
+import type { LucideIcon } from "lucide-react";
+
+/** Opción del menú de configuración. */
+interface SettingsOption {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  href: string;
+  color: Color;
+}
 
 /**
  * Main Settings page for administration.
  * Provides access to master tables and system configuration.
  */
 export default function SettingsPage() {
-  const settingsOptions = [
+  const settingsOptions: SettingsOption[] = [
     {
       title: "Códigos de Países",
       description: "Administra prefijos telefónicos para envíos de WhatsApp.",
@@ -129,7 +139,7 @@ export default function SettingsPage() {
                   icon={option.icon}
                   variant="light"
                   size="lg"
-                  color={option.color as any}
+                  color={option.color}
                   className="group-hover:scale-105 transition-transform"
                 />
                 <div>

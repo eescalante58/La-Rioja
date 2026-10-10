@@ -79,7 +79,7 @@ export default function UserManagerClient({
   countryCodes,
   currentUserId,
 }: {
-  initialUsers: any[];
+  initialUsers: User[];
   roles: Role[];
   companies: Company[];
   countryCodes: CountryCode[];

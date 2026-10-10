@@ -2,6 +2,7 @@
 
 import React from "react";
 import ReactECharts from "echarts-for-react";
+import type { ECElementEvent } from "echarts";
 import { Card, Title, Text, Badge } from "@tremor/react";
 
 interface SalesProgressChartProps {
@@ -117,7 +118,7 @@ export default function SalesProgressChart({
     ],
   };
 
-  const onChartClick = (params: any) => {
+  const onChartClick = (params: ECElementEvent) => {
     if (params.seriesName === "Realizado") {
       onDrillDown();
     }

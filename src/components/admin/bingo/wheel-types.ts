@@ -21,6 +21,14 @@ export interface WheelItem {
   is_prize: boolean;
 }
 
+/**
+ * Juego cuyo historial de giros se consulta. `id: null` = historial de
+ * todos los juegos del evento ("Historial General").
+ */
+export type WheelHistoryTarget = Pick<Wheel, "wheel_name" | "mode" | "company_id" | "event_id"> & {
+  id: number | null;
+};
+
 /** Configuración de ruleta (wheel_configs) con sus segmentos anidados. */
 export interface Wheel {
   id: number;

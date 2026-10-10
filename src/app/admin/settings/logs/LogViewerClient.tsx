@@ -18,6 +18,7 @@ import {
 } from "@tremor/react";
 import { Search, ArrowLeft, History, User, Activity, X } from "lucide-react";
 import Link from "next/link";
+import type { Json } from "@/types/database";
 
 interface LogEntry {
   id: string;
@@ -25,7 +26,7 @@ interface LogEntry {
   action: string;
   entity: string;
   entity_id: string;
-  metadata: any;
+  metadata: Json | null;
   timestamp: string;
   users: {
     full_name: string | null;

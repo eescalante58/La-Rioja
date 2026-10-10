@@ -116,7 +116,7 @@ export async function updateMyPassword(
   }
 
   const hasEmailIdentity = (user.identities || []).some(
-    (i: any) => i.provider === "email",
+    (i) => i.provider === "email",
   );
   if (!hasEmailIdentity) {
     return {

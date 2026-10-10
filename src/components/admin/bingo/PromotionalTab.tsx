@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { callAction, callActionForm } from "@/lib/action-client";
 import { getErrorMessage } from "@/lib/utils";
+import type { Tables } from "@/types/database";
 
 interface Customer {
   id: number;
@@ -74,9 +75,10 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
   const [sendingBulk, setSendingBulk] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ sent: 0, total: 0 });
   const [isBulkSummaryOpen, setIsBulkSummaryOpen] = useState(false);
-  const [bulkResults, setBulkResults] = useState<any[]>([]);
-  const [batchLogs, setBatchLogs] = useState<any[]>([]);
-  const [selectedBatchDetails, setSelectedBatchDetails] = useState<any[]>([]);
+  const [batchLogs, setBatchLogs] = useState<Tables<"v_promo_batch_summary">[]>([]);
+  const [selectedBatchDetails, setSelectedBatchDetails] = useState<
+    Tables<"whatsapp_promo_logs">[]
+  >([]);
   const [isBatchDetailsOpen, setIsBatchDetailsOpen] = useState(false);
   const [currentBatchId, setCurrentBatchId] = useState<string | null>(null);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<number[]>([]);
@@ -93,7 +95,10 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
   }, [companyId]);
 
   const loadBatchLogs = async (id: number) => {
-    const result = await callAction<{ success?: boolean; data?: any[] }>(
+    const result = await callAction<{
+      success?: boolean;
+      data?: Tables<"v_promo_batch_summary">[];
+    }>(
       "bingo.getBatchLogs",
       [id],
     );
@@ -111,7 +116,7 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
       );
       if (result.success && result.data) {
         setCustomers(result.data);
-        setSelectedCustomerIds(result.data.map((c: any) => c.id));
+        setSelectedCustomerIds(result.data.map((c) => c.id));
       }
     } catch (error) {
       console.error("Error loading customers:", error);
@@ -791,7 +796,7 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
                     <TableRow key={batch.batch_id}>
                       <TableCell className="py-2">
                         <Text className="text-[11px]">
-                          {new Date(batch.started_at).toLocaleString()}
+                          {new Date(batch.started_at ?? 0).toLocaleString()}
                         </Text>
                       </TableCell>
                       <TableCell className="py-2 text-center">
@@ -817,7 +822,7 @@ export default function PromotionalTab({ companyId }: PromotionalTabProps) {
                           onClick={async () => {
                             const res = await callAction<{
                               success?: boolean;
-                              data?: any[];
+                              data?: Tables<"whatsapp_promo_logs">[];
                             }>("bingo.getBatchDetails", [batch.batch_id]);
                             if (res.success && res.data) {
                               setSelectedBatchDetails(res.data);

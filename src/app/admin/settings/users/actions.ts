@@ -69,7 +69,7 @@ async function logActivity(
   action: string,
   entity: string,
   entityId: string | null,
-  metadata: any = {},
+  metadata: Record<string, unknown> = {},
 ) {
   const supabase = await createClient();
   const {
@@ -181,7 +181,7 @@ export async function uploadUserAvatar(file: FormData) {
 /**
  * Server action to update a user's role and status.
  */
-export async function updateUser(userId: string, rawInput: any) {
+export async function updateUser(userId: string, rawInput: unknown) {
   const supabase = await createClient();
   const {
     data: { user: currentUser },
@@ -232,7 +232,7 @@ export async function updateUser(userId: string, rawInput: any) {
     return { error: error.message };
   }
 
-  await logActivity("UPDATE", "users", userId, rawInput);
+  await logActivity("UPDATE", "users", userId, finalData);
 
   revalidatePath("/admin/settings/users");
   return { success: true };
@@ -283,7 +283,7 @@ async function createRoleInternal(rawInput: RoleInput) {
 
 export const createRole = withRole(10, createRoleInternal);
 
-async function updateRoleInternal(roleId: number, rawInput: any) {
+async function updateRoleInternal(roleId: number, rawInput: unknown) {
   // Validation with Zod
   const validation = roleSchema.partial().safeParse(rawInput);
   if (!validation.success) {

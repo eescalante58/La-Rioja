@@ -2,6 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { withRole } from "@/lib/auth/guards";
+import type { Database } from "@/types/database";
+
+type DefinerView =
+  Database["public"]["Functions"]["check_security_definer_views"]["Returns"][number];
 
 /**
  * Server action to fetch security advisors from the database.
@@ -18,7 +22,7 @@ async function getSecurityAdvisorsInternal() {
   const advisors = [];
 
   if (!viewsError && definerViews) {
-    definerViews.forEach((view: any) => {
+    definerViews.forEach((view: DefinerView) => {
       advisors.push({
         name: "security_definer_view",
         title: "Security Definer View",

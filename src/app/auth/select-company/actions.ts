@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { singleRelation } from "@/lib/utils";
 
 /**
  * Server Action for selecting the company.
@@ -41,7 +42,7 @@ export async function selectCompany(formData: FormData) {
     return;
   }
 
-  const companyName = (membership.companies as any)?.company_name || "Empresa";
+  const companyName = singleRelation(membership.companies)?.company_name || "Empresa";
 
   // Set cookies with strict security settings
   const cookieStore = await cookies();
