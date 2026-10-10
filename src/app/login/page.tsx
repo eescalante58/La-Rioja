@@ -4,14 +4,14 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { getPageContent } from "@/services/cms";
 
 export const metadata: Metadata = {
-  title: "Iniciar sesión | Sistema de gestión del Bingo",
+  title: "Iniciar sesión | Sistema de gestión de Productos y Bingo",
 };
 
 /** Respaldo del enlace "Escribe al administrador" si el CMS no tiene WhatsApp. */
 const ADMIN_MAILTO = "mailto:contacto@larioja.com";
 
 /**
- * Login del Sistema de gestión del Bingo.
+ * Login del Sistema de gestión de Productos y Bingo.
  * Especificación: `Documentacion/La Rioja — Login del Sistema de gestión del Bingo revisión y especificaciones.md`.
  *
  * Layout: dividido 44/56 desde 1024 px (panel de marca + formulario);

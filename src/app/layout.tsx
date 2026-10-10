@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site";
 import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
 import "./globals.css";
@@ -17,7 +18,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://lariojacflsv.site"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default:
       "La Rioja - Formación Laboral para Personas con Discapacidad Intelectual",
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_SV",
-    url: "https://lariojacflsv.site",
+    url: SITE_URL,
     siteName: "La Rioja",
     title:
       "La Rioja - Formación Laboral para Personas con Discapacidad Intelectual",

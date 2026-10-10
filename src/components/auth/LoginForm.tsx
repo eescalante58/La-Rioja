@@ -7,7 +7,7 @@ import { login, signInWithOAuth } from "@/app/auth/actions";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import { GoogleLoginButton } from "./GoogleLoginButton";
-import { BingoBadge } from "./BrandPanel";
+import { SystemBadge } from "./BrandPanel";
 
 /** Mensajes para los códigos `?error=` que envía /auth/callback. */
 const QUERY_ERRORS: Record<string, string> = {
@@ -52,7 +52,7 @@ function FieldError({ id, children }: { id: string; children: string }) {
 }
 
 /**
- * Formulario de acceso al Sistema de gestión del Bingo: correo y contraseña
+ * Formulario de acceso al Sistema de gestión de Productos y Bingo: correo y contraseña
  * (con validación de formato y de complejidad), login con Google y enlace
  * para pedir acceso al administrador.
  */
@@ -144,7 +144,7 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
         <ThemeToggle />
       </div>
 
-      <BingoBadge className="mb-4 lg:hidden" />
+      <SystemBadge className="mb-4 lg:hidden" />
       <h1 className="pr-10 text-2xl font-semibold text-[#012060] dark:text-white">Inicia sesión</h1>
       <p className="mt-1 text-sm text-[#5A6782] dark:text-[#AAB3C2]">
         Acceso solo para personal autorizado.

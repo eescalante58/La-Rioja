@@ -1032,7 +1032,7 @@ Niveles de referencia en `src/lib/auth/authorization.ts`: SuperAdmin 10, Admin 8
 
 ## 6. Despliegue y CI/CD
 
-- **Hosting:** Vercel — push a `main` dispara build+deploy automático. Dominio canónico `lariojacflsv.site`; `la-rioja.vercel.app` redirige con 308 (configurado en Vercel → Settings → Domains). `metadataBase`, Open Graph, `sitemap.ts` y `robots.ts` apuntan a `lariojacflsv.site`.
+- **Hosting:** Vercel — push a `main` dispara build+deploy automático. Dominio canónico `lariojacflsv.site`; `la-rioja.vercel.app` redirige con 308 (configurado en Vercel → Settings → Domains). `metadataBase`, Open Graph, `sitemap.ts` y `robots.ts` usan `SITE_URL` (`src/lib/site.ts`): el dominio canónico en producción, la URL del despliegue en previews y `localhost:3000` en desarrollo. `robots.ts` excluye `/admin`, `/auth`, `/login`, `/api`, `/registro`, `/ruleta` y `/tombola`.
 - **Verificación pre-commit habitual:** `npx tsc --noEmit` + `npm run build`. El hook `.githooks/pre-push` ejecuta `tsc --noEmit` y rechaza force-push a `main`.
 - **Migraciones:** manuales vía SQL Editor o `supabase db push` (ver §2.3).
 - **Entornos:** producción y staging documentados en `Documentacion/Ambiente_staging.md`; plan de rollback en `Plan_Rollback.md`.

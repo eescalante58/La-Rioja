@@ -3,13 +3,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 /**
- * Distintivo amarillo "Sistema de gestión de Productos y Bingo" (una sola línea).
+ * Distintivo amarillo "Sistema de gestión de Productos y Bingo" (una línea; en pantallas angostas puede partirse en dos).
  * Se usa en el panel de marca (escritorio) y sobre el formulario (móvil).
  */
-export function BingoBadge({ className = "" }: { className?: string }) {
+export function SystemBadge({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`inline-block whitespace-nowrap rounded-full bg-larioja-amarillo px-3 py-1 text-xs font-medium text-larioja-azul ${className}`}
+      className={`inline-block max-w-full rounded-2xl bg-larioja-amarillo px-3 py-1 text-xs leading-snug min-[380px]:whitespace-nowrap min-[380px]:rounded-full font-medium text-larioja-azul ${className}`}
     >
       Sistema de gestión de Productos y Bingo
     </span>
@@ -65,7 +65,7 @@ export function BrandPanel() {
         </span>
 
         <div className="mt-auto">
-          <BingoBadge />
+          <SystemBadge />
           <h2 className="mt-5 max-w-[18ch] text-[30px] font-semibold leading-tight">
             Cada producto y cartón impulsa la formación de nuestros estudiantes
           </h2>
