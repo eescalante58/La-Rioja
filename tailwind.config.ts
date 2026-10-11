@@ -12,6 +12,14 @@ const config: Config = {
     transparent: "transparent",
     current: "currentColor",
     extend: {
+      screens: {
+        /**
+         * Celular con poca altura útil: p. ej. iPhone 13 con el zoom de
+         * página de Safari en 115-125 % (la página "ve" ~312-340 × 515-560
+         * px). Solo coincide por debajo de `sm`, así que no compite con él.
+         */
+        short: { raw: "(max-width: 639px) and (max-height: 600px)" },
+      },
       boxShadow: {
         // light
         "tremor-input": "0 1px 2px 0 rgb(0 0 0 / 0.05)",

@@ -34,7 +34,7 @@ function friendlyLoginError(raw: string): string {
 }
 
 const inputClass =
-  "h-12 w-full rounded-xl border bg-white pl-11 text-base sm:text-[15px] text-[#012060] placeholder:text-[#8A94A8] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056b3] motion-reduce:transition-none dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus-visible:ring-larioja-amarillo";
+  "h-12 w-full rounded-xl border bg-white pl-11 text-base short:h-11 sm:text-[15px] text-[#012060] placeholder:text-[#8A94A8] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056b3] motion-reduce:transition-none dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus-visible:ring-larioja-amarillo";
 
 /** Mensaje de error de campo: 13 px, rojo con icono. */
 function FieldError({ id, children }: { id: string; children: string }) {
@@ -116,8 +116,10 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
       </div>
 
       {/* En celular el distintivo deja libre la esquina del botón de tema. */}
-      <SystemBadge className="mb-3 max-w-[calc(100%-2.75rem)] sm:mb-4 sm:max-w-full lg:hidden" />
-      <h1 className="pr-10 text-2xl font-semibold text-[#012060] dark:text-white">Inicia sesión</h1>
+      <SystemBadge className="mb-3 max-w-[calc(100%-2.75rem)] short:mb-2 sm:mb-4 sm:max-w-full lg:hidden" />
+      <h1 className="pr-10 text-2xl font-semibold text-[#012060] short:text-xl dark:text-white">
+        Inicia sesión
+      </h1>
       <p className="mt-1 text-sm text-[#5A6782] dark:text-[#AAB3C2]">
         Acceso solo para personal autorizado.
       </p>
@@ -132,7 +134,10 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3.5 sm:mt-6 sm:space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        className="mt-4 space-y-3.5 short:mt-3 short:space-y-2.5 sm:mt-6 sm:space-y-5"
+      >
         <div>
           <label
             htmlFor="email"
@@ -213,7 +218,7 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
         <button
           type="submit"
           disabled={busy}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0056b3] sm:h-[52px] text-base font-medium text-white transition-colors hover:bg-[#004a9a] disabled:cursor-not-allowed disabled:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056b3] focus-visible:ring-offset-2 motion-reduce:transition-none dark:focus-visible:ring-larioja-amarillo dark:focus-visible:ring-offset-gray-900"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0056b3] short:h-11 sm:h-[52px] text-base font-medium text-white transition-colors hover:bg-[#004a9a] disabled:cursor-not-allowed disabled:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056b3] focus-visible:ring-offset-2 motion-reduce:transition-none dark:focus-visible:ring-larioja-amarillo dark:focus-visible:ring-offset-gray-900"
         >
           {loading && <Loader2 size={18} className="animate-spin" aria-hidden="true" />}
           {loading ? "Ingresando…" : "Iniciar sesión"}
@@ -221,7 +226,7 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
       </form>
 
       <div
-        className="mb-3 mt-4 flex items-center gap-3 sm:mb-3.5 sm:mt-5"
+        className="mb-3 mt-4 flex items-center gap-3 short:mb-2 short:mt-3 sm:mb-3.5 sm:mt-5"
         role="separator"
         aria-label="o continúa con"
       >
@@ -234,7 +239,7 @@ export function LoginForm({ errorCode, adminHref }: LoginFormProps) {
 
       <GoogleLoginButton onSelect={handleGoogle} loading={googleLoading} disabled={busy} />
 
-      <p className="mt-4 text-center text-[13px] text-[#5A6782] sm:mt-6 dark:text-[#AAB3C2]">
+      <p className="mt-4 text-center text-[13px] text-[#5A6782] short:mt-3 short:text-xs sm:mt-6 dark:text-[#AAB3C2]">
         ¿No tienes acceso?{" "}
         <a
           href={adminHref}

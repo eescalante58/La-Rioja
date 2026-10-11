@@ -47,7 +47,7 @@ export function GoogleLoginButton({ onSelect, loading, disabled = false }: Googl
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       title="Continuar con Google"
-      className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-[#E1E6EE] bg-[#F2F4F7] text-[15px] font-medium text-[#012060] transition-[background-color,transform] duration-150 hover:bg-[#E7EBF1] active:scale-[.97] disabled:cursor-not-allowed disabled:opacity-60 aria-busy:cursor-progress aria-busy:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056b3] focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100 dark:border-transparent dark:bg-[#2A2D31] dark:text-white dark:hover:bg-[#34383D] dark:focus-visible:ring-larioja-amarillo dark:focus-visible:ring-offset-gray-900"
+      className="flex h-12 w-full items-center justify-center gap-3 rounded-full short:h-11 border border-[#E1E6EE] bg-[#F2F4F7] text-[15px] font-medium text-[#012060] transition-[background-color,transform] duration-150 hover:bg-[#E7EBF1] active:scale-[.97] disabled:cursor-not-allowed disabled:opacity-60 aria-busy:cursor-progress aria-busy:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0056b3] focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100 dark:border-transparent dark:bg-[#2A2D31] dark:text-white dark:hover:bg-[#34383D] dark:focus-visible:ring-larioja-amarillo dark:focus-visible:ring-offset-gray-900"
     >
       {loading ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <GoogleLogo />}
       Continuar con Google

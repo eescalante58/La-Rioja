@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /**
  * Distintivo amarillo "Sistema de gestión de Productos y Bingo" (una línea; en pantallas angostas puede partirse en dos).
@@ -9,7 +10,12 @@ import { ArrowLeft } from "lucide-react";
 export function SystemBadge({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`inline-block max-w-full rounded-2xl bg-larioja-amarillo px-3 py-1 text-[11px] leading-snug min-[380px]:whitespace-nowrap min-[380px]:rounded-full sm:text-xs font-medium text-larioja-azul ${className}`}
+      // cn (tailwind-merge): las clases de `className` (p. ej. un max-w
+      // distinto) deben reemplazar a las base, no competir con ellas.
+      className={cn(
+        "inline-block max-w-full rounded-2xl bg-larioja-amarillo px-3 py-1 text-[11px] leading-snug min-[380px]:whitespace-nowrap min-[380px]:rounded-full sm:text-xs font-medium text-larioja-azul",
+        className,
+      )}
     >
       Sistema de gestión de Productos y Bingo
     </span>
@@ -27,7 +33,7 @@ export function BrandPanel() {
   return (
     <>
       {/* Encabezado compacto (móvil y tablet) */}
-      <header className="flex h-14 shrink-0 items-center justify-between bg-larioja-azul px-4 sm:h-16 sm:px-6 lg:hidden">
+      <header className="flex h-14 shrink-0 items-center justify-between bg-larioja-azul px-4 short:h-12 sm:h-16 sm:px-6 lg:hidden">
         <Link
           href="/"
           className="inline-flex min-h-11 items-center gap-2 rounded-lg px-1 text-sm text-white/80 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-amarillo motion-reduce:transition-none"
@@ -35,7 +41,7 @@ export function BrandPanel() {
           <ArrowLeft size={18} aria-hidden="true" />
           Volver al sitio
         </Link>
-        <span className="relative block h-9 w-28 rounded-lg bg-white px-2 py-1 sm:h-10">
+        <span className="relative block h-9 w-28 rounded-lg bg-white px-2 py-1 short:h-8 sm:h-10">
           <span className="relative block h-full w-full">
             <Image
               src="/logo.png"
