@@ -51,6 +51,38 @@ El formulario permite configurar:
 
 > **Importante:** una sección solo es visible al público si está **Activa**. Desactivarla la oculta sin borrarla.
 
+### Página «Apóyanos» (donaciones, `/apoyanos`)
+
+En **Contenido General**, filtra por la página **Apóyanos**. Reglas:
+
+- **Un dato vacío no se publica.** Si un monto, dato bancario o equivalencia está vacío (`""`), ese elemento se oculta o se reemplaza por un botón de WhatsApp. **Nunca** escribas marcadores como `[monto]`.
+- **Imágenes:** la imagen subida en la sección tiene prioridad. Si no hay, se usa la foto incluida (`metadata.foto`).
+- **Textos largos:** separa los párrafos con una línea en blanco. `**texto**` se muestra en negrita.
+- Los cambios se publican al guardar; puede tardar hasta un minuto.
+
+| Sección (`section_key`) | Qué controla | Datos en «Metadata» (JSON) |
+|---|---|---|
+| `apoyanos_hero` | Título y subtítulo principal | `antetitulo`, `resaltado` (parte amarilla del título), `boton_1`, `boton_2`, `insignia_titulo`, `insignia_texto` |
+| `apoyanos_credencial_1..4` | Franja de credibilidad bajo los botones | — |
+| `apoyanos_reto` | «Aquí, el talento no depende del bolsillo» | `titulo_resultados`, `boton` |
+| `apoyanos_cifra_1..4` | Cifras grandes (el título es la etiqueta) | `valor` (vacío = no se muestra). **Pendiente:** número de estudiantes |
+| `apoyanos_resultado_1..4` | Tarjetas de resultado con foto | `foto_alt` |
+| `apoyanos_testimonio` | Testimonio (cita en la descripción, autor en el título) | Actívala solo con consentimiento firmado |
+| `apoyanos_apadrina` | Tarjeta «Apadrina un futuro» | `beca_completa`, `media_beca` (p. ej. `"$45"`), `periodo`, `beneficios` (lista), `nota`, `boton`, `mensaje_whatsapp` |
+| `apoyanos_donacion` | Selector de montos | `montos`: lista de `{"monto": "$25", "equivalencia": "..."}` |
+| `apoyanos_especie` | Donación en especie | `insumos`: lista de `{"taller": "...", "necesidades": "..."}`. Revísala cada trimestre |
+| `apoyanos_empresas` | Empresas y alianzas | `opciones`: lista de `{"titulo", "texto"}`, `beneficios`, `boton`, `mensaje_whatsapp` |
+| `apoyanos_transparencia`, `apoyanos_pilar_N` | Transparencia y pilares de confianza | — |
+| `apoyanos_hito_N` | Línea de tiempo (título = año) | — |
+| `apoyanos_logro_N` | Logros (con foto = tarjeta; sin foto = lista) | `foto`, `foto_alt` |
+| `apoyanos_compromiso` | Frase de compromiso | `resaltado`: llénalo solo si la Junta aprueba publicar el informe anual |
+| `apoyanos_pago` | «Dona en pocos pasos» | `banco`, `tipo_cuenta`, `numero_cuenta`, `titular`, `nit`, `direccion`, `horario`, `enlace_tarjeta` (vacío = «Solicitar enlace de pago» por WhatsApp), `telefono_admin` |
+| `apoyanos_comprobante`, `apoyanos_paso_1..3` | Cómo obtener el comprobante | `boton`, `mensaje_whatsapp`, `nota` |
+| `apoyanos_faq_N` | Preguntas frecuentes (título = pregunta) | — |
+| `apoyanos_cierre` | Llamado final | `resaltado`, `boton_1`, `boton_2`, `mensaje_whatsapp`, `telefonos` |
+
+El correo, el Instagram y el WhatsApp de la página salen de la página **Social Media** (`email`, `instagram`, `whatsapp`).
+
 ---
 
 ## 2. Preguntas Frecuentes (FAQ)

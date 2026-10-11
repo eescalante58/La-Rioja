@@ -167,7 +167,7 @@ La-Rioja/
 | `invoice_payment_method_enum` | `efectivo`, `tarjeta credito`, `tarjeta debito`, `transferencia` | `invoices.payment_method` |
 | `invoice_status_enum` | `pagada`, `pendiente`, `anulada`, `Donada` | `invoices.status` |
 | `student_level_enum` | `1.Terapeutico`, `2.Inicial`, `3.Medio`, `4.Prelaboral`, `5.Laboral`, `6.Personal La Rioja` | Nivel del alumno |
-| `site_page_type` | `home`, `about`, `contact`, `global`, `social media`, `whatsapp message`, `services`, `programs`, `Bingo`, `bingo`, `tombola`, `productos` | Páginas administrables del CMS (`productos` = La Rioja Shop). **Nota:** existen `Bingo` y `bingo` como valores distintos (enum es case-sensitive) — las consultas deben usar el case exacto del contenido |
+| `site_page_type` | `home`, `about`, `contact`, `global`, `social media`, `whatsapp message`, `services`, `programs`, `Bingo`, `bingo`, `tombola`, `productos`, `apoyanos` | Páginas administrables del CMS (`productos` = La Rioja Shop, `apoyanos` = página de donaciones). **Nota:** existen `Bingo` y `bingo` como valores distintos (enum es case-sensitive) — las consultas deben usar el case exacto del contenido |
 
 **CHECK constraints tipo enum (no son TYPE):**
 
@@ -1052,7 +1052,7 @@ Menú lateral del admin (`src/app/admin/AdminSidebar.tsx`, mismo arreglo `navLin
 | `/` | Home institucional | `ParallaxHero`, `ScrollReveal`, secciones CMS (`site_content` page=home), `Navbar`, `Footer`, `FloatingContact`, `WhatsAppFab` |
 | `/about` | Quiénes somos | Secciones CMS (page=about), misión/visión/organización |
 | `/programs` | Oferta formativa | Tarjetas de programas, `ProgramCTA` |
-| `/contact` | Contacto | `ContactModal`, formulario → `contact_submissions` (Server Action `contact.ts`) |
+| `/apoyanos` | Apóyanos (donaciones) | Contenido del CMS (página `apoyanos`); `/contact` redirige aquí (301 en `next.config.mjs`). Clics medidos con Vercel Analytics (`TrackedLink`) |
 | `/faq` | Preguntas frecuentes | `faqs` + `faq_sections`, accordion |
 | `/bingo` | **Galería pública del evento** | `GalleryGrid`, `GalleryHeader`, `EventInfoBanner`, `PromoVideoCard`, `ShareButton`, `SlideshowButton`; datos de `event_gallery` + bucket `event_gallery_images` |
 | `/productos` | **La Rioja Shop** | Server Component con ISR (`revalidate = 60`): `getPublicShop()` + CMS página `productos` + WhatsApp `social media / whatsapp tienda`. `ShopHero`, `ShopCatalog` (catálogos → líneas → `ProductCard`, descarga de PDF), `GiftsBanner`, `HowToBuy`, `CartProvider` (canasta en `localStorage` `larioja-shop-cart-v1`), `CartDrawer` + `CheckoutForm` → `rpc create_shop_order` → envío por WhatsApp |
@@ -1097,7 +1097,7 @@ Sub-página `/admin/bingo/manual`: manual de usuario embebido.
 
 `CMSManagerClient`, `CMSTable`, `CMSFilters`, `CMSCreateDialog`, `CMSEditForm` (`/admin/cms/[id]`), `CMSViewDialog`, `CMSDeleteDialog`, `GalleryManagement`, `FAQManager`/`FAQTable`/`FAQSectionTable`.
 
-- CRUD de secciones `site_content` por página (home, about, contact, global, social media, whatsapp message, tombola, productos), con orden de presentación, activación e imágenes a `cms_images`. La página `productos` usa las claves `productos_hero`, `productos_hero_foto_N`, `productos_mensaje`, `productos_regalos`, `productos_como_comprar` y `productos_paso_N`.
+- CRUD de secciones `site_content` por página (home, about, contact, global, social media, whatsapp message, tombola, productos, apoyanos), con orden de presentación, activación e imágenes a `cms_images`. La página `productos` usa las claves `productos_hero`, `productos_hero_foto_N`, `productos_mensaje`, `productos_regalos`, `productos_como_comprar` y `productos_paso_N`. La página `apoyanos` usa las claves `apoyanos_*` documentadas en `supabase/migrations/20261021000001_apoyanos_cms_secciones.sql`.
 - Gestión de la galería del evento (`event_gallery` + bucket `event_gallery_images`).
 - CRUD de FAQs y secciones de FAQ.
 
