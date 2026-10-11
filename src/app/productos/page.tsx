@@ -59,11 +59,13 @@ export default async function ProductosPage() {
       <ShopHero hero={hero} photos={heroPhotos(content, catalogs)} />
 
       {/* Catálogo */}
+      {/* Cuadrícula de productos: márgenes 12/24/32 px y contenedor de 1280 px
+          (especificación "La Rioja Shop — Cuadrícula de productos"). */}
       <section
         id="catalogo"
-        className="py-16 md:py-24 min-h-[60vh] bg-gray-50 dark:bg-slate-900/50 scroll-mt-[98px] md:scroll-mt-[132px] lg:scroll-mt-[140px]"
+        className="pb-16 pt-2 md:pb-24 md:pt-4 min-h-[60vh] bg-[var(--shop-bg)] scroll-mt-[98px] md:scroll-mt-[132px] lg:scroll-mt-[140px]"
       >
-        <div className="container mx-auto px-6 max-w-6xl">
+        <div className="mx-auto max-w-screen-xl px-3 sm:px-6 lg:px-8">
           <ShopCatalog catalogs={catalogs} whatsappDigits={whatsappDigits} />
         </div>
       </section>

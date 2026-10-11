@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronDown, Download, Package } from "lucide-react";
 import {
   formatBytes,
@@ -9,8 +10,10 @@ import {
   type PublicCatalog,
 } from "@/lib/validation/products";
 import { CartProvider } from "./CartProvider";
-import { CartButton, CartDrawer } from "./CartDrawer";
-import { ProductCard } from "./ProductCard";
+import { CartDrawer } from "./CartDrawer";
+import { ShopNav } from "@/components/shop/ShopNav";
+import { ProductLine } from "@/components/shop/ProductLine";
+import { ProductSheet } from "@/components/shop/ProductSheet";
 
 interface ShopCatalogProps {
   catalogs: PublicCatalog[];
@@ -18,16 +21,64 @@ interface ShopCatalogProps {
   whatsappDigits?: string;
 }
 
-/** Líneas con al menos este número de productos usan tarjetas compactas (p. ej. panadería). */
-const COMPACT_FROM = 12;
+/** Producto con el taller al que pertenece (para abrirlo desde la URL). */
+interface IndexedProduct {
+  product: Product;
+  catalogSlug: string;
+}
+
+/** Imágenes con prioridad: las primeras visibles al cargar (especificación). */
+const PRIORITY_IMAGES = 4;
+
+/** Duración del aviso "Agregado a la canasta". */
+const TOAST_MS = 2000;
+
+/** URL actual con `?producto=` cambiado (o quitado) conservando el `#taller`. */
+function urlWithProduct(slug: string | null): string {
+  const url = new URL(window.location.href);
+  if (slug) url.searchParams.set("producto", slug);
+  else url.searchParams.delete("producto");
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+interface SheetFromUrlProps {
+  index: Map<string, IndexedProduct>;
+  onShowCatalog: (slug: string) => void;
+  onClose: () => void;
+  onAdded: (name: string) => void;
+}
 
 /**
- * Tienda pública: selector de catálogo (taller) con su lema y «Quiénes somos»,
- * secciones por línea con su texto y eslogan, tarjetas con presentaciones y
- * canasta flotante que registra el pedido y lo envía por WhatsApp.
+ * Lee `?producto=` y muestra la hoja de detalle. Va dentro de `<Suspense>`
+ * porque `useSearchParams` en una página ISR se resuelve en el cliente.
+ * Si el producto es de otro taller, cambia el taller activo.
+ */
+function SheetFromUrl({ index, onShowCatalog, onClose, onAdded }: SheetFromUrlProps) {
+  const params = useSearchParams();
+  const slug = params.get("producto");
+  const entry = slug ? index.get(slug) : undefined;
+
+  useEffect(() => {
+    if (entry) onShowCatalog(entry.catalogSlug);
+  }, [entry, onShowCatalog]);
+
+  return <ProductSheet product={entry?.product ?? null} onClose={onClose} onAdded={onAdded} />;
+}
+
+/**
+ * Tienda pública (rediseño "Cuadrícula de productos"): navegación fija con
+ * canasta, talleres y líneas; encabezado del taller (lema, «Quiénes somos»,
+ * catálogo PDF); una cuadrícula de 2-5 columnas por línea; hoja de detalle
+ * enlazable con `?producto=<slug>` y canasta que envía el pedido por WhatsApp.
  */
 export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
   const [activeSlug, setActiveSlug] = useState<string>(catalogs[0]?.slug ?? "");
+  const [toast, setToast] = useState("");
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Elemento que abrió la hoja (recibe el foco al cerrarla). */
+  const triggerRef = useRef<HTMLElement | null>(null);
+  /** true si la hoja se abrió desde la tienda (cerrar = volver atrás). */
+  const openedInApp = useRef(false);
 
   // Permite enlazar un catálogo: /productos#panaderia
   useEffect(() => {
@@ -35,10 +86,12 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
     if (catalogs.some((c) => c.slug === fromHash)) setActiveSlug(fromHash);
   }, [catalogs]);
 
-  const selectCatalog = (slug: string) => {
+  const selectCatalog = useCallback((slug: string) => {
     setActiveSlug(slug);
-    window.history.replaceState(null, "", `#${slug}`);
-  };
+    const url = new URL(window.location.href);
+    url.hash = slug;
+    window.history.replaceState(window.history.state, "", url.toString());
+  }, []);
 
   /** Variantes a la venta (para ajustar la canasta guardada). */
   const available = useMemo(() => {
@@ -50,13 +103,55 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
     return map;
   }, [catalogs]);
 
+  /** Productos por slug, para abrir la hoja desde la URL. */
+  const index = useMemo(() => {
+    const map = new Map<string, IndexedProduct>();
+    for (const c of catalogs)
+      for (const l of c.lines)
+        for (const p of l.products) map.set(p.slug, { product: p, catalogSlug: c.slug });
+    return map;
+  }, [catalogs]);
+
+  const announce = useCallback((name: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(`${name}: agregado a la canasta`);
+    toastTimer.current = setTimeout(() => setToast(""), TOAST_MS);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    },
+    [],
+  );
+
+  /** Abre la hoja (pushState: sin pedir la página al servidor). */
+  const openProduct = useCallback((product: Product, trigger: HTMLElement) => {
+    triggerRef.current = trigger;
+    openedInApp.current = true;
+    window.history.pushState(window.history.state, "", urlWithProduct(product.slug));
+  }, []);
+
+  /** Cierra la hoja y devuelve el foco a la tarjeta que la abrió. */
+  const closeProduct = useCallback(() => {
+    if (openedInApp.current) {
+      openedInApp.current = false;
+      window.history.back();
+    } else {
+      window.history.replaceState(window.history.state, "", urlWithProduct(null));
+    }
+    const trigger = triggerRef.current;
+    triggerRef.current = null;
+    if (trigger) setTimeout(() => trigger.focus({ preventScroll: true }), 0);
+  }, []);
+
   const active = catalogs.find((c) => c.slug === activeSlug) ?? catalogs[0];
 
   if (!active) {
     return (
-      <div className="py-24 md:py-32 text-center text-gray-500 dark:text-white/60">
-        <Package size={64} className="mx-auto mb-6 opacity-40" />
-        <p className="italic text-lg md:text-xl">
+      <div className="py-24 text-center text-[var(--shop-text-3)] md:py-32">
+        <Package size={64} className="mx-auto mb-6 opacity-40" aria-hidden="true" />
+        <p className="text-lg italic md:text-xl">
           Pronto publicaremos los productos de nuestros talleres.
         </p>
       </div>
@@ -65,52 +160,34 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
 
   return (
     <CartProvider available={available}>
-      {/* Barra fija: canasta a la izquierda y selector de catálogo. */}
-      <div className="sticky top-[98px] md:top-[132px] lg:top-[140px] z-30 -mx-6 mb-10 px-6 py-3 bg-gray-50/90 dark:bg-slate-900/90 backdrop-blur-md">
-        <div className="mx-auto flex w-fit max-w-full items-center gap-2 sm:gap-3">
-          <CartButton />
-          {catalogs.length > 1 && (
-            <div
-              className="flex min-w-0 gap-1 overflow-x-auto rounded-full bg-white dark:bg-slate-800 p-1 shadow-sm border border-gray-200 dark:border-white/10"
-              role="tablist"
-              aria-label="Catálogos"
-            >
-              {catalogs.map((c) => (
-                <button
-                  key={c.slug}
-                  type="button"
-                  role="tab"
-                  aria-selected={c.slug === active.slug}
-                  onClick={() => selectCatalog(c.slug)}
-                  className={`whitespace-nowrap rounded-full px-3 sm:px-5 py-2 text-xs sm:text-sm font-bold transition-all ${
-                    c.slug === active.slug
-                      ? "bg-larioja-azul text-white dark:bg-larioja-amarillo dark:text-larioja-azul"
-                      : "text-larioja-azul hover:bg-gray-100 dark:text-white dark:hover:bg-white/10"
-                  }`}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      <ShopNav
+        catalogs={catalogs}
+        activeSlug={active.slug}
+        onSelectCatalog={selectCatalog}
+        lines={active.lines}
+      />
 
       <div role="tabpanel" aria-label={active.name}>
-        <header className="mb-10 text-center max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-larioja-azul dark:text-white">
+        <header className="mx-auto mb-6 max-w-3xl text-center sm:mb-8">
+          <h2 className="font-montserrat text-2xl font-medium text-[var(--shop-text)] sm:text-3xl">
             {active.name}
           </h2>
           {active.tagline && (
-            <p className="mt-2 text-lg italic text-larioja-verde">{active.tagline}</p>
+            <p className="mt-1 text-sm italic text-larioja-verde dark:text-green-400 sm:text-base">
+              {active.tagline}
+            </p>
           )}
           {active.description && (
-            <details className="group mt-4 text-left">
-              <summary className="mx-auto flex w-fit cursor-pointer list-none items-center gap-1 text-sm font-semibold text-larioja-azul/80 dark:text-white/70 hover:text-larioja-azul dark:hover:text-white [&::-webkit-details-marker]:hidden">
+            <details className="group mt-2 text-left">
+              <summary className="mx-auto flex w-fit cursor-pointer list-none items-center gap-1 text-[13px] font-medium text-[var(--shop-text-3)] hover:text-[var(--shop-text)] sm:text-sm [&::-webkit-details-marker]:hidden">
                 Quiénes somos
-                <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
+                <ChevronDown
+                  size={16}
+                  className="transition-transform group-open:rotate-180"
+                  aria-hidden="true"
+                />
               </summary>
-              <p className="mt-3 text-gray-600 dark:text-white/70 leading-relaxed text-center whitespace-pre-line">
+              <p className="mt-2 whitespace-pre-line text-center text-sm leading-relaxed text-[var(--shop-text-3)]">
                 {active.description}
               </p>
             </details>
@@ -118,13 +195,12 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
           {active.pdf_url && (
             <a
               href={`${active.pdf_url}?download=${encodeURIComponent(`Catálogo ${active.name}.pdf`)}`}
-              className="mt-5 inline-flex items-center gap-2 rounded-full border-2 border-larioja-azul dark:border-white px-5 py-2 text-sm font-bold text-larioja-azul dark:text-white hover:bg-larioja-azul hover:text-white dark:hover:bg-white dark:hover:text-larioja-azul transition-colors"
+              className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--shop-chip-line)] px-4 text-[13px] font-medium text-[var(--shop-text)] hover:bg-[var(--shop-chip-line)] sm:text-sm"
             >
-              <Download size={16} />
+              <Download size={16} aria-hidden="true" />
               Descargar catálogo
               {active.pdf_size_bytes ? (
-                <span className="font-normal opacity-80">
-                  {" "}
+                <span className="font-normal text-[var(--shop-text-3)]">
                   (PDF · {formatBytes(active.pdf_size_bytes)})
                 </span>
               ) : null}
@@ -132,64 +208,39 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
           )}
         </header>
 
-        {active.lines.length > 1 && (
-          <nav
-            className="mb-10 flex flex-wrap justify-center gap-2"
-            aria-label="Líneas de productos"
-          >
-            {active.lines.map((l) => (
-              <a
-                key={l.id}
-                href={`#linea-${l.id}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById(`linea-${l.id}`)?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="rounded-full border border-gray-200 dark:border-white/20 bg-white dark:bg-transparent px-4 py-1.5 text-sm font-semibold text-larioja-azul dark:text-white hover:border-larioja-azul dark:hover:border-white"
-              >
-                {l.name}
-              </a>
-            ))}
-          </nav>
-        )}
-
-        <div className="space-y-16">
-          {active.lines.map((line) => {
-            const compact = line.products.length >= COMPACT_FROM;
-            return (
-              <section
-                key={line.id}
-                id={`linea-${line.id}`}
-                className="scroll-mt-[170px] md:scroll-mt-[204px] lg:scroll-mt-[212px]"
-              >
-                <div className="mb-6 max-w-3xl">
-                  <h3 className="text-2xl font-bold text-larioja-azul dark:text-white">
-                    {line.name}
-                  </h3>
-                  {line.description && (
-                    <p className="mt-2 text-gray-600 dark:text-white/70 leading-relaxed">
-                      {line.description}
-                    </p>
-                  )}
-                  {line.slogan && (
-                    <p className="mt-2 font-semibold italic text-larioja-verde">{line.slogan}</p>
-                  )}
-                </div>
-                <div
-                  className={
-                    compact
-                      ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4"
-                      : "grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-                  }
-                >
-                  {line.products.map((product) => (
-                    <ProductCard key={product.id} product={product} compact={compact} />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+        <div className="space-y-10 sm:space-y-14">
+          {active.lines.map((line, i) => (
+            <ProductLine
+              key={line.id}
+              line={line}
+              priorityCount={i === 0 ? PRIORITY_IMAGES : 0}
+              onOpen={openProduct}
+              onAdded={announce}
+            />
+          ))}
         </div>
+      </div>
+
+      <Suspense fallback={null}>
+        <SheetFromUrl
+          index={index}
+          onShowCatalog={setActiveSlug}
+          onClose={closeProduct}
+          onAdded={announce}
+        />
+      </Suspense>
+
+      {/* Aviso "Agregado a la canasta" (anunciado a lectores de pantalla). */}
+      <div
+        role="status"
+        aria-live="polite"
+        className="pointer-events-none fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[126] flex justify-center px-4"
+      >
+        {toast && (
+          <p className="rounded-full bg-[#012060] px-4 py-2.5 text-sm font-medium text-white shadow-lg ring-1 ring-white/20 motion-safe:animate-[fadeIn_150ms_ease-out]">
+            {toast}
+          </p>
+        )}
       </div>
 
       <CartDrawer whatsappDigits={whatsappDigits} />

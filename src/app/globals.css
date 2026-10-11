@@ -8,6 +8,39 @@
   --background-end-rgb: 255, 255, 255;
 }
 
+/**
+ * Tokens de La Rioja Shop (/productos, src/components/shop/).
+ * Especificación: "La Rioja Shop — Cuadrícula de productos". Verde y
+ * amarillo usan los hex de marca (larioja-verde / larioja-amarillo) y el
+ * navy es larioja-azul, para coincidir con el encabezado y el pie del sitio.
+ * En oscuro el fondo de la foto es levemente más gris para reducir el brillo.
+ */
+:root {
+  --shop-bg: #ffffff;
+  --shop-tile: #f3f5f8;
+  --shop-text: #012060;
+  --shop-text-3: #5a6782;
+  --shop-price: #012060;
+  --shop-action: #1e9922;
+  --shop-chip-active: #0056b3;
+  --shop-chip-active-text: #ffffff;
+  --shop-chip-line: rgb(1 32 96 / 0.08);
+  --shop-focus: #0056b3;
+}
+
+.dark {
+  --shop-bg: #012060;
+  --shop-tile: #eef1f5;
+  --shop-text: #ffffff;
+  --shop-text-3: rgb(255 255 255 / 0.65);
+  --shop-price: #ffff00;
+  --shop-action: #1e9922;
+  --shop-chip-active: #ffff00;
+  --shop-chip-active-text: #012060;
+  --shop-chip-line: rgb(255 255 255 / 0.14);
+  --shop-focus: #ffff00;
+}
+
 @layer base {
   body {
     @apply text-larioja-azul dark:text-slate-100 font-inter bg-white dark:bg-black transition-colors duration-300;
@@ -610,6 +643,26 @@
   }
   to {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* La Rioja Shop: entrada de la hoja de detalle (ProductSheet). Con
+   prefers-reduced-motion solo se usa el fundido (clases motion-safe:). */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
     transform: translateY(0);
   }
 }
