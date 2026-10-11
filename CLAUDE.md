@@ -12,7 +12,6 @@ La Rioja — Centro de Formación Laboral: public institutional site (CMS-driven
 npm run dev                      # http://localhost:3000
 npx tsc --noEmit                 # typecheck (standard pre-commit check)
 npm run build                    # production build (standard pre-commit check)
-npm run lint
 npm run test:responsiveness      # Playwright (starts dev server; runs 5 viewport projects)
 npx playwright test -g "<title>" --project="Desktop (1440x900)"   # single test / single viewport
 ```
