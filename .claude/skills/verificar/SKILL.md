@@ -28,7 +28,7 @@ Sigue estos pasos en orden y reporta el resultado de cada uno.
      - Tablas, tarjetas y contenedores: `scrollWidth <= clientWidth`; ningún texto ni monto cortado.
      - Botones y enlaces nuevos o modificados con al menos **44 px** de alto (área táctil).
      - Inputs de diálogos con letra de **16 px** o más (si no, iOS hace zoom al enfocar): usar la clase `.dialog-mobile`.
-     - Menús y modales: el contenido clave cabe en 664 px o tiene scroll propio; el borde inferior respeta `env(safe-area-inset-bottom)`.
+     - Menús y modales: el contenido clave cabe en 644 px (y en 515 px con el zoom de 125 %) o tiene scroll propio; el borde inferior respeta `env(safe-area-inset-bottom)`.
      - Gráficas ECharts: etiquetas completas y sin encimarse. Para verlas a tamaño útil, exporta el canvas con `toDataURL()` y muéstralo ampliado en una capa temporal.
    - **Horizontal (844×390):** revísalo también si la pantalla se usa en vivo durante el evento (`/registro`, `/ruleta`, `/tombola`, `/admin/bingo`).
    - **Escritorio sin regresiones:** comprueba en **1440×900** que la pantalla se vea como antes.
