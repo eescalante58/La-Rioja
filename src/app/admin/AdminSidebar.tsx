@@ -135,83 +135,87 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-6 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
-          <span className="text-xl font-bold text-larioja-azul dark:text-white">Menú Admin</span>
+        {/* Versión compacta: en un iPhone 13 vertical (390×~660 px útiles)
+            perfil, empresa, todas las opciones y "Cerrar Sesión" caben sin
+            scroll. Cada opción conserva un área táctil de 44 px. */}
+        <div className="px-5 py-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+          <span className="text-lg font-bold text-larioja-azul dark:text-white">Menú Admin</span>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white"
+            aria-label="Cerrar menú"
+            className="p-2 -mr-2 text-gray-500 hover:text-gray-900 dark:hover:text-white"
           >
-            <X size={24} />
+            <X size={22} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {/* Mobile User Profile Section */}
-          <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4 bg-gray-50/50 dark:bg-slate-900/30">
-            <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-larioja-azul dark:border-slate-800 flex items-center justify-center bg-larioja-azul text-white font-bold">
-              {userProfile?.avatar_url ? (
-                <Image
-                  src={userProfile.avatar_url}
-                  alt={userProfile.full_name || "Profile"}
-                  width={48}
-                  height={48}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span>{initials}</span>
-              )}
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-bold text-gray-900 dark:text-white truncate">
-                {userProfile?.full_name || "Usuario"}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {userProfile?.email}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-900/50">
+        <div className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+          {/* Perfil y empresa actual en un solo bloque */}
+          <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-slate-900/30 space-y-2.5">
             <div className="flex items-center gap-3">
-              <div className="bg-larioja-azul dark:bg-slate-800 p-2 rounded-lg text-white">
-                <Building2 size={20} />
+              <div className="h-10 w-10 shrink-0 rounded-full overflow-hidden border-2 border-larioja-azul dark:border-slate-800 flex items-center justify-center bg-larioja-azul text-white text-sm font-bold">
+                {userProfile?.avatar_url ? (
+                  <Image
+                    src={userProfile.avatar_url}
+                    alt={userProfile.full_name || "Profile"}
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span>{initials}</span>
+                )}
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-sm text-gray-900 dark:text-white truncate">
+                  {userProfile?.full_name || "Usuario"}
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {userProfile?.email}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 shrink-0 flex items-center justify-center bg-larioja-azul dark:bg-slate-800 rounded-lg text-white">
+                <Building2 size={18} />
+              </div>
+              <div className="flex flex-col min-w-0">
                 <span className="text-[10px] uppercase font-bold text-gray-400">
                   Empresa Actual
                 </span>
-                <span className="font-bold text-sm text-larioja-azul dark:text-white truncate max-w-[180px]">
+                <span className="font-bold text-sm text-larioja-azul dark:text-white truncate">
                   {companyName}
                 </span>
               </div>
             </div>
           </div>
 
-          <nav className="p-4 space-y-2">
+          <nav className="px-3 py-3 space-y-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 target={link.external ? "_blank" : undefined}
-                className={`flex items-center gap-4 px-4 py-4 rounded-xl transition-colors outline-none focus-visible:ring-4 focus-visible:ring-larioja-azul/40 ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors outline-none focus-visible:ring-4 focus-visible:ring-larioja-azul/40 ${
                   pathname === link.href
-                    ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-lg shadow-larioja-azul/10"
+                    ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-md shadow-larioja-azul/10"
                     : "text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
                 }`}
               >
-                <link.icon size={22} />
-                <span className="font-medium text-lg">{link.label}</span>
+                <link.icon size={20} />
+                <span className="font-medium text-base">{link.label}</span>
               </Link>
             ))}
 
-            <div className="pt-20 border-t border-gray-100 dark:border-gray-800 mt-10 mb-10">
+            <div className="pt-2 mt-2 border-t border-gray-100 dark:border-gray-800">
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="flex items-center gap-4 px-4 py-4 w-full text-red-600 font-bold hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors outline-none focus-visible:ring-4 focus-visible:ring-red-500/40"
+                  className="flex items-center gap-3 px-4 py-2.5 w-full text-red-600 font-bold hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors outline-none focus-visible:ring-4 focus-visible:ring-red-500/40"
                 >
-                  <LogOut size={24} />
-                  <span className="text-lg">Cerrar Sesión</span>
+                  <LogOut size={20} />
+                  <span className="text-base">Cerrar Sesión</span>
                 </button>
               </form>
             </div>

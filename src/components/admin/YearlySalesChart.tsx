@@ -21,6 +21,20 @@ export default function YearlySalesChart({ data }: YearlySalesChartProps) {
     }).format(val);
   };
 
+  /** Tamaño de los montos y separación respecto al final de la barra. */
+  const LABEL_FONT_SIZE = 14;
+  const LABEL_DISTANCE = 10;
+
+  /**
+   * Espacio a la derecha para el monto más largo. `containLabel` solo
+   * reserva espacio para las etiquetas de los ejes, no para las de la
+   * serie: con un margen porcentual fijo ("15%") los montos se cortaban en
+   * pantallas angostas (p. ej. "$9,760.00" en un iPhone). Se estima el
+   * ancho con ~0.62 em por carácter (dígitos en negrita) más la distancia.
+   */
+  const longestLabel = Math.max(0, ...data.map((d) => formatCurrency(d.total).length));
+  const labelSpace = Math.ceil(longestLabel * LABEL_FONT_SIZE * 0.62) + LABEL_DISTANCE + 6;
+
   const option = {
     backgroundColor: "transparent",
     tooltip: {
@@ -28,7 +42,7 @@ export default function YearlySalesChart({ data }: YearlySalesChartProps) {
     },
     grid: {
       left: "3%",
-      right: "15%",
+      right: labelSpace,
       bottom: "10%",
       top: "5%",
       containLabel: true,
@@ -65,9 +79,9 @@ export default function YearlySalesChart({ data }: YearlySalesChartProps) {
           formatter: (params: DefaultLabelFormatterCallbackParams) =>
             formatCurrency(Number(params.value)),
           color: "#FFFF00", // Amarillo oficial para los montos
-          fontSize: 14,
+          fontSize: LABEL_FONT_SIZE,
           fontWeight: "bold",
-          distance: 10,
+          distance: LABEL_DISTANCE,
         },
         data: data.map((d) => d.total).reverse(),
       },
@@ -86,11 +100,7 @@ export default function YearlySalesChart({ data }: YearlySalesChartProps) {
       </div>
 
       <div className="h-[250px] w-full">
-        <ReactECharts
-          option={option}
-          style={{ height: "100%", width: "100%" }}
-          theme={undefined}
-        />
+        <ReactECharts option={option} style={{ height: "100%", width: "100%" }} theme={undefined} />
       </div>
     </Card>
   );
