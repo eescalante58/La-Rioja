@@ -5,7 +5,7 @@ const pages = [
   '/about',
   '/programs',
   '/faq',
-  '/contact',
+  '/apoyanos',
   '/login'
 ];
 

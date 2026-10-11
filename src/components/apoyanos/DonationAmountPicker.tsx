@@ -42,7 +42,7 @@ export function DonationAmountPicker({ amounts, ctaOnce, ctaMonthly }: DonationA
   const label = current?.monto ?? otherValue;
 
   const pill = (on: boolean) =>
-    `min-h-[48px] rounded-xl font-montserrat text-base font-bold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-larioja-azul dark:focus-visible:outline-white ${
+    `min-h-[48px] rounded-xl font-montserrat text-base font-bold max-[359px]:text-[15px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-larioja-azul dark:focus-visible:outline-white ${
       on
         ? "border-2 border-larioja-azul bg-larioja-azul text-larioja-amarillo dark:border-larioja-amarillo"
         : "border border-[#7C879C] bg-white text-larioja-azul hover:bg-[#F3F5F8] dark:bg-transparent dark:text-white dark:hover:bg-white/10"
@@ -132,11 +132,16 @@ export function DonationAmountPicker({ amounts, ctaOnce, ctaMonthly }: DonationA
           role="switch"
           aria-checked={monthly}
           onClick={() => setMonthly((m) => !m)}
-          className={`flex h-[30px] w-[52px] shrink-0 rounded-full p-[3px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-larioja-azul dark:focus-visible:outline-white ${
-            monthly ? "justify-end bg-larioja-verde-texto" : "justify-start bg-[#7C879C]"
-          }`}
+          className="grid h-11 shrink-0 place-items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-larioja-azul dark:focus-visible:outline-white"
         >
-          <span className="block h-6 w-6 rounded-full bg-white" />
+          {/* Área táctil de 44 px; el riel visible mide 52×30. */}
+          <span
+            className={`flex h-[30px] w-[52px] rounded-full p-[3px] transition-colors ${
+              monthly ? "justify-end bg-larioja-verde-texto" : "justify-start bg-[#7C879C]"
+            }`}
+          >
+            <span className="block h-6 w-6 rounded-full bg-white" />
+          </span>
         </button>
         <label
           htmlFor={switchId}

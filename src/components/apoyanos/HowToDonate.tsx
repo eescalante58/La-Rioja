@@ -159,7 +159,7 @@ export function HowToDonate({ payment, receipt, steps, whatsapp, email }: HowToD
               {email && (
                 <a
                   href={`mailto:${email}`}
-                  className="break-all font-semibold text-larioja-azul-enlace underline dark:text-larioja-azul-celeste"
+                  className="inline-flex min-h-[44px] items-center break-all font-semibold text-larioja-azul-enlace underline dark:text-larioja-azul-celeste"
                 >
                   {email}
                 </a>
@@ -168,7 +168,7 @@ export function HowToDonate({ payment, receipt, steps, whatsapp, email }: HowToD
               {adminPhone && (
                 <a
                   href={`tel:+503${adminPhone.replace(/\D/g, "")}`}
-                  className="font-semibold text-larioja-azul-enlace underline dark:text-larioja-azul-celeste"
+                  className="inline-flex min-h-[44px] items-center font-semibold text-larioja-azul-enlace underline dark:text-larioja-azul-celeste"
                 >
                   {adminPhone}
                 </a>
@@ -215,7 +215,9 @@ export function HowToDonate({ payment, receipt, steps, whatsapp, email }: HowToD
                       {s.title}
                     </strong>
                     {s.description && (
-                      <span className={`text-sm leading-normal ${MUTED}`}>{s.description}</span>
+                      <span className={`text-sm leading-normal [overflow-wrap:anywhere] ${MUTED}`}>
+                        {s.description}
+                      </span>
                     )}
                   </li>
                 ))}

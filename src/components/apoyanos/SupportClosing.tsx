@@ -30,7 +30,7 @@ export function SupportClosing({ closing, whatsapp, email, instagram }: SupportC
   const highlight = metaText(closing, "resaltado", "");
   const phones = metaText(closing, "telefonos", "");
   const handle = instagramHandle(instagram);
-  const link = "font-semibold text-white underline-offset-4 hover:text-larioja-amarillo hover:underline";
+  const link = "inline-flex min-h-[44px] items-center font-semibold text-white underline-offset-4 hover:text-larioja-amarillo hover:underline";
 
   return (
     <section className="relative overflow-hidden bg-larioja-azul text-white dark:bg-larioja-azul-profundo">
@@ -57,7 +57,7 @@ export function SupportClosing({ closing, whatsapp, email, instagram }: SupportC
           </TrackedLink>
         </div>
         {(phones || email || handle) && (
-          <p className="m-0 flex flex-wrap justify-center gap-x-2 gap-y-1 text-[15px] text-white/90">
+          <p className="m-0 flex flex-wrap items-center justify-center gap-x-2 text-[15px] text-white/90">
             {[
               phones && <span key="tel">{phones}</span>,
               email && (
