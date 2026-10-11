@@ -15,13 +15,14 @@ Sigue estos pasos en orden y reporta el resultado de cada uno.
 1. **Rama:** ejecuta `git branch --show-current`. Debe ser `main` (flujo por turnos, ver `CLAUDE.md`). Si no, detente y avísame.
 2. **Alcance del cambio:** lista los archivos modificados con `git status --short` (incluye archivos nuevos sin seguimiento) y `git diff HEAD --stat`. Si ya hay commits sin subir, incluye también `git diff origin/main...HEAD --stat`. Los pasos siguientes se aplican sobre esa lista.
 3. **Tipos:** `npx tsc --noEmit`.
-4. **Build:** `npm run build`.
+4. **Build:** `npm run build`. Si el dev server de `preview_start` está corriendo, detenlo antes (`preview_stop`) y vuelve a levantarlo después: el build reescribe `.next` y el dev server empieza a responder 404 en todas las páginas. Si ya pasó, detén el dev server, borra `.next` (solo contiene archivos generados) y reinícialo.
 5. **Pruebas:**
    - Si tocaste páginas públicas (`/`, `/about`, `/programs`, `/faq`, `/contact`, `/login`), componentes de layout o `globals.css`: `npm run test:responsiveness`. Es lo único que cubre la suite de Playwright actual.
    - Si tocaste `/registro`, `/ruleta`, `/tombola` o `/admin/bingo`: no hay pruebas automáticas. Levanta el dev server con `preview_start` (`dev` en `.claude/launch.json`), abre la página afectada y revisa la consola y las peticiones de red (regla obligatoria de `CLAUDE.md`).
 6. **Apto para iPhone 13 (no Pro):** obligatorio si el cambio afecta **lo que se ve en pantalla**: componentes `.tsx` con markup, estilos, `globals.css`, `tailwind.config.ts` o gráficas. Si el cambio no es visible (tipos, acciones de servidor, rutas `/api`), marca ⚠️ no aplica.
-   - **Dispositivo de referencia:** iPhone 13 estándar del dueño: 390×844 px CSS. En Safari vertical el área visible con las barras es de unos **390×664**. En horizontal es 844×390.
-   - **Cómo:** `preview_start` (`dev`), `resize_window` a **390×664** y abre cada pantalla afectada, incluidos los modales y menús que cambiaron. Si la página pide sesión, pide al usuario que inicie sesión en el panel; nunca escribas credenciales.
+   - **Dispositivo de referencia:** iPhone 13 estándar del dueño: 390×844 px CSS. En Safari vertical el área visible con las barras es de unos **390×644**. En horizontal es 844×390.
+   - **Zoom de página de Safari:** el dueño usa Safari con zoom de página de ~115-125 % (menú "Aa"), así que la página "ve" una pantalla menor. Mide también en **339×560** (115 %) y **312×515** (125 %). Para pantallas con poca altura usa el breakpoint `short:` de `tailwind.config.ts` (≤ 639 px de ancho y ≤ 600 px de alto).
+   - **Cómo:** `preview_start` (`dev`), `resize_window` a **390×644** y abre cada pantalla afectada, incluidos los modales y menús que cambiaron. Si la página pide sesión, pide al usuario que inicie sesión en el panel; nunca escribas credenciales.
    - **Mide con JavaScript, no solo a ojo** (las capturas del panel salen reducidas):
      - Sin scroll horizontal de la página: `document.documentElement.scrollWidth <= innerWidth`.
      - Tablas, tarjetas y contenedores: `scrollWidth <= clientWidth`; ningún texto ni monto cortado.
