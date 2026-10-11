@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  /** /contact se renombró a /apoyanos (página de donaciones). */
+  async redirects() {
+    return [{ source: "/contact", destination: "/apoyanos", permanent: true }];
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",

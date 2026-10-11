@@ -27,6 +27,7 @@ const CMS_PAGES = [
   { value: "programs", label: "Programs" },
   { value: "productos", label: "Productos (La Rioja Shop)" },
   { value: "services", label: "Services (Cards)" },
+  { value: "apoyanos", label: "Apóyanos" },
   { value: "contact", label: "Contact" },
   { value: "global", label: "Global" },
   { value: "social media", label: "Social Media" },

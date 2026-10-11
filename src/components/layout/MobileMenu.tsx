@@ -244,7 +244,7 @@ export function MobileMenu({
 
         {/* Zona 3: acciones fijas al fondo */}
         <div className="menu-actions">
-          <Link href="/contact" onClick={onClose} className="menu-cta">
+          <Link href="/apoyanos" onClick={onClose} className="menu-cta">
             <HeartHandshake size={20} aria-hidden="true" />
             Apóyanos
           </Link>

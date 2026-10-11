@@ -6,7 +6,6 @@ import { WhatsAppIcon } from "./WhatsAppIcon";
 import { getSectionContent, getPageContent } from "@/services/cms";
 import { ScrollReveal } from "./ScrollReveal";
 import { ContactDescription } from "./ContactDescription";
-import DynamicYear from "./DynamicYear";
 import type { SiteContent } from "@/types/cms";
 
 /**
@@ -75,7 +74,7 @@ export async function Footer() {
                 Nosotros
               </Link>
               <Link
-                href="/contact"
+                href="/apoyanos"
                 className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
               >
                 Apóyanos
@@ -158,7 +157,7 @@ export async function Footer() {
         </ScrollReveal>
         <div className="mt-12 pt-8 border-t border-white/10 text-center opacity-50 text-sm">
           <span>
-            &copy; <DynamicYear /> La Rioja. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} La Rioja. Todos los derechos reservados.
           </span>
         </div>
       </div>

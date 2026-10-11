@@ -204,7 +204,7 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/contact"
+            href="/apoyanos"
             className="hidden h-10 shrink-0 items-center gap-2 rounded-full bg-brand-yellow px-[18px] text-sm font-semibold text-brand-ink transition-[filter] hover:brightness-[.92] motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:flex"
           >
             <HeartHandshake size={18} aria-hidden="true" />

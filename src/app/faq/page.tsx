@@ -112,7 +112,7 @@ export default async function FAQPage() {
               asChild
               className="bg-larioja-azul hover:bg-larioja-azul/90 text-white rounded-full px-8 py-6 h-auto text-lg shadow-xl shadow-larioja-azul/20"
             >
-              <Link href="/contact" className="flex items-center gap-2">
+              <Link href="/apoyanos" className="flex items-center gap-2">
                 <MessageSquare size={20} />
                 Enviar Consulta
               </Link>
