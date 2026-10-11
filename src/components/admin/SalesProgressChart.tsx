@@ -108,8 +108,7 @@ export default function SalesProgressChart({
           show: true,
           position: "insideLeft",
           distance: 15,
-          formatter: () =>
-            `${formatCurrency(realized)} (${percentage.toFixed(2)}%)`,
+          formatter: () => `${formatCurrency(realized)} (${percentage.toFixed(2)}%)`,
           color: "#fff",
           fontSize: 14,
           fontWeight: "bold",
@@ -161,27 +160,22 @@ export default function SalesProgressChart({
         />
       </div>
 
-      <div className="grid grid-cols-1 xs:grid-cols-3 gap-4 mt-[-5px] pt-0 border-t border-gray-100 dark:border-gray-800">
+      {/* Siempre 3 columnas: el breakpoint `xs:` no existe en la config de
+          Tailwind, así que antes Meta/Real/% quedaban apilados en todos
+          los tamaños. Los tres montos caben en una fila incluso en iPhone. */}
+      <div className="grid grid-cols-3 gap-2 mt-[-5px] pt-0 border-t border-gray-100 dark:border-gray-800">
         <div className="text-center">
-          <Text className="text-[10px] font-bold uppercase text-slate-500">
-            Meta
-          </Text>
-          <p className="text-sm font-bold dark:text-white">
-            {formatCurrency(goal)}
-          </p>
+          <Text className="text-[10px] font-bold uppercase text-slate-500">Meta</Text>
+          <p className="text-sm font-bold dark:text-white">{formatCurrency(goal)}</p>
         </div>
         <div className="text-center">
-          <Text className="text-[10px] font-bold uppercase text-slate-500">
-            Real
-          </Text>
+          <Text className="text-[10px] font-bold uppercase text-slate-500">Real</Text>
           <p className="text-sm font-bold text-larioja-verde dark:text-green-400">
             {formatCurrency(realized)}
           </p>
         </div>
         <div className="text-center">
-          <Text className="text-[10px] font-bold uppercase text-slate-500">
-            %
-          </Text>
+          <Text className="text-[10px] font-bold uppercase text-slate-500">%</Text>
           <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
             {percentage.toFixed(2)}%
           </p>

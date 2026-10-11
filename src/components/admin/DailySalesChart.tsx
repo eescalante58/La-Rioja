@@ -13,10 +13,7 @@ interface DailySalesChartProps {
 /**
  * Chart component using ECharts to show daily sales progress.
  */
-export default function DailySalesChart({
-  data,
-  onDrillDown,
-}: DailySalesChartProps) {
+export default function DailySalesChart({ data, onDrillDown }: DailySalesChartProps) {
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -25,7 +22,7 @@ export default function DailySalesChart({
     }).format(val);
   };
 
-  const option = {
+  const baseOption = {
     backgroundColor: "transparent",
     tooltip: {
       show: false, // Deshabilitar tooltip para evitar que se quede pegado en móvil al abrir el modal
@@ -94,6 +91,37 @@ export default function DailySalesChart({
           fontWeight: "bold",
         },
         data: data.map((d) => d.total),
+      },
+    ],
+  };
+
+  /**
+   * En pantallas angostas (iPhone) cada barra mide ~12 px y un monto como
+   * "$1,090" ~37 px: los montos horizontales se encimaban. Ahí se giran
+   * 90° sobre la barra, se ocultan los que aún choquen y se reserva
+   * espacio arriba para que el monto de la barra más alta no se corte.
+   * En escritorio se mantiene el estilo original.
+   */
+  const option = {
+    baseOption,
+    media: [
+      {
+        query: { maxWidth: 480 },
+        option: {
+          grid: { top: 48 },
+          series: [
+            {
+              label: {
+                rotate: 90,
+                position: "top",
+                align: "left",
+                verticalAlign: "middle",
+                distance: 4,
+              },
+              labelLayout: { hideOverlap: true },
+            },
+          ],
+        },
       },
     ],
   };
