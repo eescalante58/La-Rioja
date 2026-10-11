@@ -40,7 +40,9 @@ function ShopCartButton() {
       type="button"
       onClick={cart.open}
       aria-label={
-        empty ? "Canasta vacía" : `Ver canasta: ${cart.count} ${cart.count === 1 ? "producto" : "productos"}, ${usd.format(cart.total)}`
+        empty
+          ? "Canasta vacía"
+          : `Ver canasta: ${cart.count} ${cart.count === 1 ? "producto" : "productos"}, ${usd.format(cart.total)}`
       }
       className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--shop-chip-line)] bg-[var(--shop-tile)] text-[#012060] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)]"
     >
@@ -141,7 +143,13 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
       <div className="flex items-center gap-2">
         <ShopCartButton />
         {catalogs.length > 1 && (
-          <div className="flex min-w-0 gap-2 overflow-x-auto" role="tablist" aria-label="Talleres">
+          // En celular los talleres se reparten el ancho y el nombre puede ir en
+          // dos líneas (con el zoom de Safari no cabe en una).
+          <div
+            className="flex min-w-0 flex-1 gap-2 overflow-x-auto [scrollbar-width:none] sm:flex-none [&::-webkit-scrollbar]:hidden"
+            role="tablist"
+            aria-label="Talleres"
+          >
             {catalogs.map((c) => {
               const active = c.slug === activeSlug;
               return (
@@ -151,7 +159,7 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
                   role="tab"
                   aria-selected={active}
                   onClick={() => onSelectCatalog(c.slug)}
-                  className={`h-11 shrink-0 whitespace-nowrap rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] sm:text-sm ${
+                  className={`h-11 min-w-[6.5rem] flex-1 rounded-full px-3 text-[13px] font-medium leading-tight [text-wrap:balance] sm:flex-none sm:shrink-0 sm:whitespace-nowrap sm:px-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] sm:text-sm ${
                     active
                       ? "bg-[var(--shop-chip-active)] text-[var(--shop-chip-active-text)]"
                       : "border border-[var(--shop-chip-line)] text-[var(--shop-text)] hover:bg-[var(--shop-chip-line)]"
