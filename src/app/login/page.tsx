@@ -16,7 +16,9 @@ const ADMIN_MAILTO = "mailto:contacto@larioja.com";
  *
  * Layout: dividido 44/56 desde 1024 px (panel de marca + formulario);
  * tarjeta centrada de 440 px entre 640 y 1023 px; pantalla completa con
- * encabezado azul marino por debajo de 640 px.
+ * encabezado azul marino por debajo de 640 px. En celular los espacios son
+ * compactos para que el login quepa sin scroll en un iPhone 13 (Safari deja
+ * ~644 px visibles en vertical).
  */
 export default async function LoginPage({
   searchParams,
@@ -36,7 +38,7 @@ export default async function LoginPage({
     <main className="min-h-[100dvh] bg-larioja-azul font-montserrat sm:grid sm:place-items-center sm:bg-[#EEF2F8] sm:p-6 dark:sm:bg-gray-950">
       <div className="flex min-h-[100dvh] w-full flex-col sm:min-h-0 sm:max-w-[440px] sm:overflow-hidden sm:rounded-[20px] sm:shadow-xl lg:grid lg:min-h-[600px] lg:max-w-[960px] lg:grid-cols-[44fr_56fr]">
         <BrandPanel />
-        <section className="flex-1 rounded-t-3xl bg-white px-6 py-8 sm:rounded-none sm:p-10 lg:flex lg:flex-col lg:justify-center dark:bg-gray-900">
+        <section className="flex-1 rounded-t-3xl bg-white px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-none sm:p-10 lg:flex lg:flex-col lg:justify-center dark:bg-gray-900">
           <LoginForm errorCode={error} adminHref={adminHref} />
         </section>
       </div>
