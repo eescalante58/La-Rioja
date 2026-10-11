@@ -150,14 +150,14 @@ export function ProductSheet({ product, onClose, onAdded }: ProductSheetProps) {
             onClick={onClose}
             onPointerDown={(e) => e.stopPropagation()}
             aria-label="Cerrar detalle"
-            className="absolute right-2 top-1.5 flex h-11 w-11 items-center justify-center rounded-full opacity-80 hover:bg-black/5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] dark:hover:bg-white/10"
+            className="absolute right-2 top-1.5 z-10 flex h-11 w-11 items-center justify-center rounded-full opacity-80 hover:bg-black/5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] dark:hover:bg-white/10"
           >
             <X size={22} aria-hidden="true" />
           </button>
         </div>
 
         <div className="overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:grid sm:grid-cols-2 sm:gap-6 sm:px-6 sm:pb-6">
-          <div className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-2xl bg-[var(--shop-tile)]">
+          <div className="relative mx-auto aspect-square w-full max-w-[min(360px,40dvh)] overflow-hidden short:max-w-[min(360px,30dvh)] rounded-2xl bg-[var(--shop-tile)]">
             {product.image_url ? (
               <Image
                 src={product.image_url}

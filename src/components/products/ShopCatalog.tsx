@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Download, Package } from "lucide-react";
 import {
   formatBytes,
@@ -41,28 +40,9 @@ function urlWithProduct(slug: string | null): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-interface SheetFromUrlProps {
-  index: Map<string, IndexedProduct>;
-  onShowCatalog: (slug: string) => void;
-  onClose: () => void;
-  onAdded: (name: string) => void;
-}
-
-/**
- * Lee `?producto=` y muestra la hoja de detalle. Va dentro de `<Suspense>`
- * porque `useSearchParams` en una página ISR se resuelve en el cliente.
- * Si el producto es de otro taller, cambia el taller activo.
- */
-function SheetFromUrl({ index, onShowCatalog, onClose, onAdded }: SheetFromUrlProps) {
-  const params = useSearchParams();
-  const slug = params.get("producto");
-  const entry = slug ? index.get(slug) : undefined;
-
-  useEffect(() => {
-    if (entry) onShowCatalog(entry.catalogSlug);
-  }, [entry, onShowCatalog]);
-
-  return <ProductSheet product={entry?.product ?? null} onClose={onClose} onAdded={onAdded} />;
+/** `?producto=` de la URL actual (o null). */
+function productFromUrl(): string | null {
+  return new URLSearchParams(window.location.search).get("producto");
 }
 
 /**
@@ -79,6 +59,23 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
   const triggerRef = useRef<HTMLElement | null>(null);
   /** true si la hoja se abrió desde la tienda (cerrar = volver atrás). */
   const openedInApp = useRef(false);
+  /**
+   * Producto abierto en la hoja (`?producto=`). Es estado local sincronizado
+   * con la URL mediante history.pushState/popstate: no depende del router de
+   * Next ni de `useSearchParams`, así la página sigue siendo estática (ISR).
+   */
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
+
+  // `?producto=` al cargar (enlace compartido) y botón Atrás/Adelante.
+  useEffect(() => {
+    setOpenSlug(productFromUrl());
+    const onPopState = () => {
+      openedInApp.current = false;
+      setOpenSlug(productFromUrl());
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   // Permite enlazar un catálogo: /productos#panaderia
   useEffect(() => {
@@ -130,10 +127,12 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
     triggerRef.current = trigger;
     openedInApp.current = true;
     window.history.pushState(window.history.state, "", urlWithProduct(product.slug));
+    setOpenSlug(product.slug);
   }, []);
 
   /** Cierra la hoja y devuelve el foco a la tarjeta que la abrió. */
   const closeProduct = useCallback(() => {
+    setOpenSlug(null);
     if (openedInApp.current) {
       openedInApp.current = false;
       window.history.back();
@@ -144,6 +143,13 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
     triggerRef.current = null;
     if (trigger) setTimeout(() => trigger.focus({ preventScroll: true }), 0);
   }, []);
+
+  const openEntry = openSlug ? index.get(openSlug) : undefined;
+
+  // Un enlace a un producto de otro taller cambia el taller activo.
+  useEffect(() => {
+    if (openEntry) setActiveSlug(openEntry.catalogSlug);
+  }, [openEntry]);
 
   const active = catalogs.find((c) => c.slug === activeSlug) ?? catalogs[0];
 
@@ -221,14 +227,11 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
         </div>
       </div>
 
-      <Suspense fallback={null}>
-        <SheetFromUrl
-          index={index}
-          onShowCatalog={setActiveSlug}
-          onClose={closeProduct}
-          onAdded={announce}
-        />
-      </Suspense>
+      <ProductSheet
+        product={openEntry?.product ?? null}
+        onClose={closeProduct}
+        onAdded={announce}
+      />
 
       {/* Aviso "Agregado a la canasta" (anunciado a lectores de pantalla). */}
       <div
