@@ -153,6 +153,68 @@
 }
 
 /**
+ * Tablas de detalle del dashboard como tarjetas en smartphone
+ * (src/components/admin/MobileCardTable.tsx). Cada fila es una tarjeta y
+ * cada celda un renglón con la etiqueta de su columna (`data-label`).
+ * Las filas hijas (celdas `pl-12`) se muestran con sangría.
+ */
+@media (max-width: 639px) {
+  .mobile-card-table table,
+  .mobile-card-table tbody,
+  .mobile-card-table tr {
+    display: block;
+    width: 100%;
+  }
+  .mobile-card-table thead {
+    display: none;
+  }
+  .mobile-card-table tbody tr {
+    border: 1px solid rgb(229 231 235);
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .dark .mobile-card-table tbody tr {
+    border-color: rgb(31 41 55);
+  }
+  .mobile-card-table tbody tr:has(> td.pl-12) {
+    margin-left: 1rem;
+  }
+  .mobile-card-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.3rem 0;
+    border: 0;
+    white-space: normal;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .mobile-card-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 45%;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: rgb(107 114 128);
+  }
+  .mobile-card-table td[data-label=""]::before {
+    display: none;
+  }
+  .mobile-card-table td[data-label=""] {
+    justify-content: center;
+    text-align: center;
+  }
+  .mobile-card-table td[data-card-hide] {
+    display: none;
+  }
+}
+
+/**
  * Menú hamburguesa móvil (src/components/layout/MobileMenu.tsx).
  * Especificación: Documentacion/La Rioja — Menú hamburguesa móvil diseño y especificaciones.md
  * Código de color: azul = navegación, verde = tienda, amarillo = apoyar/participar.

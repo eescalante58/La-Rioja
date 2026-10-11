@@ -46,6 +46,7 @@ import dynamic from "next/dynamic";
 import NewInvoiceDialog from "./bingo/NewInvoiceDialog";
 import WhatsAppPopup from "./bingo/WhatsAppPopup";
 import UnsoldCardsReportDialog from "./UnsoldCardsReportDialog";
+import MobileCardTable from "./MobileCardTable";
 import { singleRelation } from "@/lib/utils";
 import type {
   CardPriceSummary,
@@ -1386,7 +1387,7 @@ export default function RealtimeDashboardWrapper({
             </div>
 
             <div className="flex-1 overflow-auto custom-scrollbar">
-              <div className="min-w-[600px] md:min-w-full">
+              <MobileCardTable className="sm:min-w-[600px] md:min-w-full">
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -1456,7 +1457,7 @@ export default function RealtimeDashboardWrapper({
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </MobileCardTable>
             </div>
 
             <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center flex-shrink-0">
@@ -1564,7 +1565,7 @@ export default function RealtimeDashboardWrapper({
                     Sin facturas en esta agrupación.
                   </Text>
                 ) : (
-                  <div className="min-w-[600px] md:min-w-full">
+                  <MobileCardTable className="sm:min-w-[600px] md:min-w-full">
                     <Table>
                       <TableHead>
                         <TableRow>
@@ -1652,14 +1653,14 @@ export default function RealtimeDashboardWrapper({
                         </TableRow>
                       </TableBody>
                     </Table>
-                  </div>
+                  </MobileCardTable>
                 )
               ) : eventDateSummary.length === 0 ? (
                 <Text className="py-10 text-center text-gray-400 italic">
                   Sin ventas registradas en esta fecha.
                 </Text>
               ) : (
-                <div className="min-w-[600px] md:min-w-full">
+                <MobileCardTable className="sm:min-w-[600px] md:min-w-full">
                   <Table>
                     <TableHead>
                       <TableRow>
@@ -1797,7 +1798,7 @@ export default function RealtimeDashboardWrapper({
                       </TableRow>
                     </TableBody>
                   </Table>
-                </div>
+                </MobileCardTable>
               )}
             </div>
 
@@ -1904,7 +1905,7 @@ export default function RealtimeDashboardWrapper({
                   Click en el número de factura, para ver el detalle de
                   cartones.
                 </Text>
-                <div className="min-w-[800px] md:min-w-full">
+                <MobileCardTable className="sm:min-w-[800px] md:min-w-full">
                   <Table>
                     <TableHead>
                       <TableRow>
@@ -1965,11 +1966,11 @@ export default function RealtimeDashboardWrapper({
                       ))}
                     </TableBody>
                   </Table>
-                </div>
+                </MobileCardTable>
               </div>
             ) : (
               <div className="flex-1 overflow-auto custom-scrollbar">
-                <div className="min-w-[800px] md:min-w-full">
+                <MobileCardTable className="sm:min-w-[800px] md:min-w-full">
                   <Table>
                     <TableHead>
                       <TableRow>
@@ -2012,7 +2013,7 @@ export default function RealtimeDashboardWrapper({
                       })}
                     </TableBody>
                   </Table>
-                </div>
+                </MobileCardTable>
               </div>
             )}
 
@@ -2085,7 +2086,7 @@ export default function RealtimeDashboardWrapper({
                   Click en el número de factura, para ver el detalle de
                   cartones.
                 </Text>
-                <div className="min-w-[800px] md:min-w-full">
+                <MobileCardTable className="sm:min-w-[800px] md:min-w-full">
                   <Table>
                     <TableHead>
                       <TableRow>
@@ -2142,11 +2143,11 @@ export default function RealtimeDashboardWrapper({
                       ))}
                     </TableBody>
                   </Table>
-                </div>
+                </MobileCardTable>
               </div>
             ) : (
               <div className="flex-1 overflow-auto custom-scrollbar">
-                <div className="min-w-[800px] md:min-w-full">
+                <MobileCardTable className="sm:min-w-[800px] md:min-w-full">
                   <Table>
                     <TableHead>
                       <TableRow>
@@ -2189,7 +2190,7 @@ export default function RealtimeDashboardWrapper({
                       })}
                     </TableBody>
                   </Table>
-                </div>
+                </MobileCardTable>
               </div>
             )}
 
@@ -2329,7 +2330,7 @@ export default function RealtimeDashboardWrapper({
             </div>
 
             <div className="max-h-[75vh] overflow-auto custom-scrollbar">
-              <div className="min-w-[800px] md:min-w-full">
+              <MobileCardTable className="sm:min-w-[800px] md:min-w-full">
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -2363,7 +2364,7 @@ export default function RealtimeDashboardWrapper({
                     )}
                   </TableBody>
                 </Table>
-              </div>
+              </MobileCardTable>
             </div>
 
             <div className="mt-8">
@@ -2754,7 +2755,7 @@ export default function RealtimeDashboardWrapper({
             </div>
 
             <div className="flex-1 overflow-auto pr-1 custom-scrollbar">
-              <div className="min-w-[400px] md:min-w-full">
+              <MobileCardTable className="sm:min-w-[400px] md:min-w-full">
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -2785,7 +2786,7 @@ export default function RealtimeDashboardWrapper({
                     )}
                   </TableBody>
                 </Table>
-              </div>
+              </MobileCardTable>
             </div>
 
             <div className="mt-8 flex-shrink-0">
@@ -2845,7 +2846,7 @@ export default function RealtimeDashboardWrapper({
             </div>
 
             <div className="flex-1 overflow-auto pr-1 custom-scrollbar">
-              <div className="min-w-[640px] md:min-w-full">
+              <MobileCardTable className="sm:min-w-[640px] md:min-w-full">
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -2899,7 +2900,7 @@ export default function RealtimeDashboardWrapper({
                     )}
                   </TableBody>
                 </Table>
-              </div>
+              </MobileCardTable>
             </div>
 
             <div className="mt-8 flex-shrink-0">
