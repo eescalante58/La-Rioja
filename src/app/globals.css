@@ -119,6 +119,40 @@
 }
 
 /**
+ * Tablas del dashboard compactas en smartphone (RealtimeDashboardWrapper).
+ * Las celdas de Tremor traen `p-4` y `whitespace-nowrap`: en un iPhone las
+ * tablas medían 420-780 px dentro de tarjetas de ~300 px y obligaban a
+ * desplazarse horizontalmente. En pantallas pequeñas se reduce el relleno y
+ * la letra, y encabezados/nombres pueden partirse en dos líneas; los montos
+ * y números (columnas alineadas a la derecha) siguen en una sola línea.
+ */
+@media (max-width: 639px) {
+  .dash-compact-table th,
+  .dash-compact-table td {
+    padding: 0.5rem 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    white-space: normal;
+  }
+  .dash-compact-table td.text-right {
+    white-space: nowrap;
+  }
+  /* Filas hijas (alumnos/estados) conservan una sangría menor que pl-12. */
+  .dash-compact-table td.pl-12 {
+    padding-left: 1.75rem;
+  }
+  /* Variante para tablas de 5 columnas (Asignación por nivel). */
+  .dash-compact-table.dash-compact-table--tight th,
+  .dash-compact-table.dash-compact-table--tight td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.6875rem;
+  }
+  .dash-compact-table.dash-compact-table--tight td.pl-12 {
+    padding-left: 1.5rem;
+  }
+}
+
+/**
  * Menú hamburguesa móvil (src/components/layout/MobileMenu.tsx).
  * Especificación: Documentacion/La Rioja — Menú hamburguesa móvil diseño y especificaciones.md
  * Código de color: azul = navegación, verde = tienda, amarillo = apoyar/participar.

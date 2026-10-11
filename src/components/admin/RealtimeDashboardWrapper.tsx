@@ -892,7 +892,7 @@ export default function RealtimeDashboardWrapper({
                 </Text>
               </div>
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="dash-compact-table">
                   <TableHead>
                     <TableRow className="bg-[#d9e1f2] dark:bg-slate-800/80">
                       <TableHeaderCell className="text-black dark:text-white font-bold w-12">
@@ -962,23 +962,41 @@ export default function RealtimeDashboardWrapper({
                 </Button>
               </div>
               <div className="overflow-x-auto">
-                <Table>
+                {/* En celular: encabezados cortos (el texto completo queda en
+                    `title`) y variante --tight para que las 5 columnas quepan. */}
+                <Table className="dash-compact-table dash-compact-table--tight">
                   <TableHead>
                     <TableRow className="bg-[#d9e1f2] dark:bg-slate-800/80">
                       <TableHeaderCell className="text-black dark:text-white font-bold">
                         Nivel
                       </TableHeaderCell>
-                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
-                        Cant. Cartones
+                      <TableHeaderCell
+                        title="Cant. Cartones"
+                        className="text-black dark:text-white font-bold text-right"
+                      >
+                        <span className="sm:hidden">Cart.</span>
+                        <span className="hidden sm:inline">Cant. Cartones</span>
                       </TableHeaderCell>
-                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
-                        Valor Asignado Alumno
+                      <TableHeaderCell
+                        title="Valor Asignado Alumno"
+                        className="text-black dark:text-white font-bold text-right"
+                      >
+                        <span className="sm:hidden">Asignado</span>
+                        <span className="hidden sm:inline">Valor Asignado Alumno</span>
                       </TableHeaderCell>
-                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
-                        Vendido/Asignado
+                      <TableHeaderCell
+                        title="Vendido/Asignado"
+                        className="text-black dark:text-white font-bold text-right"
+                      >
+                        <span className="sm:hidden">Vendido</span>
+                        <span className="hidden sm:inline">Vendido/Asignado</span>
                       </TableHeaderCell>
-                      <TableHeaderCell className="text-black dark:text-white font-bold text-right">
-                        % Cumplimiento
+                      <TableHeaderCell
+                        title="% Cumplimiento"
+                        className="text-black dark:text-white font-bold text-right"
+                      >
+                        <span className="sm:hidden">%</span>
+                        <span className="hidden sm:inline">% Cumplimiento</span>
                       </TableHeaderCell>
                     </TableRow>
                   </TableHead>
@@ -1104,7 +1122,7 @@ export default function RealtimeDashboardWrapper({
               <Text className="text-xs dark:text-slate-400 mb-4">
                 Cartones del evento actual agrupados por tipo y estado.
               </Text>
-              <Table>
+              <Table className="dash-compact-table">
                 <TableHead>
                   <TableRow>
                     <TableHeaderCell>Tipo / Estado</TableHeaderCell>
@@ -1223,7 +1241,7 @@ export default function RealtimeDashboardWrapper({
                 Cartones vendidos y donados del evento actual agrupados por
                 precio de venta.
               </Text>
-              <Table>
+              <Table className="dash-compact-table">
                 <TableHead>
                   <TableRow>
                     <TableHeaderCell>Precio / Estado</TableHeaderCell>
