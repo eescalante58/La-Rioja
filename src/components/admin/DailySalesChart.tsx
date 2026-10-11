@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import type { DefaultLabelFormatterCallbackParams, ECElementEvent } from "echarts";
 import { Card, Title, Text, Badge } from "@tremor/react";
@@ -10,10 +10,37 @@ interface DailySalesChartProps {
   onDrillDown: (date: string) => void;
 }
 
+/** Ancho máximo (px) del gráfico en el que los montos se muestran verticales. */
+const NARROW_MAX_WIDTH = 480;
+
+/**
+ * Indica si el contenedor mide `NARROW_MAX_WIDTH` px o menos. Se mide con
+ * ResizeObserver en lugar de las media queries de ECharts, que en Safari de
+ * iOS no siempre se aplicaban (los montos seguían horizontales y encimados).
+ * @param ref Contenedor del gráfico.
+ * @returns true si el contenedor es angosto.
+ */
+function useIsNarrow(ref: React.RefObject<HTMLDivElement | null>): boolean {
+  const [isNarrow, setIsNarrow] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setIsNarrow(el.clientWidth > 0 && el.clientWidth <= NARROW_MAX_WIDTH);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return isNarrow;
+}
+
 /**
  * Chart component using ECharts to show daily sales progress.
  */
 export default function DailySalesChart({ data, onDrillDown }: DailySalesChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isNarrow = useIsNarrow(containerRef);
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -22,7 +49,15 @@ export default function DailySalesChart({ data, onDrillDown }: DailySalesChartPr
     }).format(val);
   };
 
-  const baseOption = {
+  /**
+   * En pantallas angostas (iPhone/Android) cada barra mide ~12 px y un
+   * monto como "$1,090" ~37 px: horizontales se encimaban. Ahí se giran 90°
+   * sobre la barra, se ocultan los que aún choquen y se reserva espacio
+   * arriba para que el monto de la barra más alta no se corte. Todos los
+   * valores se fijan en ambos modos para que el merge de ECharts no deje
+   * restos del modo anterior al cambiar de ancho.
+   */
+  const option = {
     backgroundColor: "transparent",
     tooltip: {
       show: false, // Deshabilitar tooltip para evitar que se quede pegado en móvil al abrir el modal
@@ -31,7 +66,7 @@ export default function DailySalesChart({ data, onDrillDown }: DailySalesChartPr
       left: "3%",
       right: "4%",
       bottom: "15%",
-      top: "10%",
+      top: isNarrow ? 48 : "10%",
       containLabel: true,
     },
     xAxis: {
@@ -89,39 +124,13 @@ export default function DailySalesChart({ data, onDrillDown }: DailySalesChartPr
           color: "#cbd5e1", // slate-300
           fontSize: 10,
           fontWeight: "bold",
+          rotate: isNarrow ? 90 : 0,
+          align: isNarrow ? "left" : "center",
+          verticalAlign: isNarrow ? "middle" : "bottom",
+          distance: isNarrow ? 4 : 5,
         },
+        labelLayout: { hideOverlap: isNarrow },
         data: data.map((d) => d.total),
-      },
-    ],
-  };
-
-  /**
-   * En pantallas angostas (iPhone) cada barra mide ~12 px y un monto como
-   * "$1,090" ~37 px: los montos horizontales se encimaban. Ahí se giran
-   * 90° sobre la barra, se ocultan los que aún choquen y se reserva
-   * espacio arriba para que el monto de la barra más alta no se corte.
-   * En escritorio se mantiene el estilo original.
-   */
-  const option = {
-    baseOption,
-    media: [
-      {
-        query: { maxWidth: 480 },
-        option: {
-          grid: { top: 48 },
-          series: [
-            {
-              label: {
-                rotate: 90,
-                position: "top",
-                align: "left",
-                verticalAlign: "middle",
-                distance: 4,
-              },
-              labelLayout: { hideOverlap: true },
-            },
-          ],
-        },
       },
     ],
   };
@@ -149,7 +158,7 @@ export default function DailySalesChart({ data, onDrillDown }: DailySalesChartPr
         </div>
       </div>
 
-      <div className="h-[250px] w-full">
+      <div ref={containerRef} className="h-[250px] w-full">
         <ReactECharts
           option={option}
           style={{ height: "100%", width: "100%" }}
