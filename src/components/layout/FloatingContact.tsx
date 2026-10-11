@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { MessageSquare } from "lucide-react";
 import { ContactTrigger } from "./ContactTrigger";
 
@@ -9,6 +10,8 @@ import { ContactTrigger } from "./ContactTrigger";
  */
 export function FloatingContact() {
   const [isVisible, setIsVisible] = useState(false);
+  // En /apoyanos (celular) sube por encima de la barra fija «Quiero donar hoy».
+  const aboveDonateBar = usePathname() === "/apoyanos";
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -26,7 +29,11 @@ export function FloatingContact() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[90] animate-scale-in">
+    <div
+      className={`fixed right-6 z-[90] animate-scale-in ${
+        aboveDonateBar ? "bottom-[calc(92px+env(safe-area-inset-bottom))] sm:bottom-6" : "bottom-6"
+      }`}
+    >
       <ContactTrigger>
         {(openModal) => (
           <button
