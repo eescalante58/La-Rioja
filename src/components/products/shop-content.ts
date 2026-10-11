@@ -1,36 +1,12 @@
 import type { PublicCatalog } from "@/lib/validation/products";
 
-/** Fila del CMS (`site_content`) usada por /productos. */
-export interface CmsSection {
-  section_key: string;
-  title?: string | null;
-  description?: string | null;
-  image_url?: string | null;
-  content_order?: number | null;
-  metadata?: Record<string, unknown> | null;
-}
+import {
+  sectionsWithPrefix,
+  textOr,
+  type CmsSection,
+} from "@/lib/cms-content";
 
-/** Texto de `metadata[key]` si es un string no vacío; si no, `fallback`. */
-export function metaText(section: CmsSection | undefined, key: string, fallback: string): string {
-  const value = section?.metadata?.[key];
-  return typeof value === "string" && value.trim() !== "" ? value.trim() : fallback;
-}
-
-/** Texto del campo si no está vacío; si no, `fallback`. */
-export function textOr(value: string | null | undefined, fallback: string): string {
-  return value && value.trim() !== "" ? value.trim() : fallback;
-}
-
-/** Secciones cuyo `section_key` empieza con `prefix`, en el orden del CMS. */
-export function sectionsWithPrefix(content: CmsSection[], prefix: string): CmsSection[] {
-  return content
-    .filter((s) => s.section_key.startsWith(prefix))
-    .sort(
-      (a, b) =>
-        (a.content_order ?? 0) - (b.content_order ?? 0) ||
-        a.section_key.localeCompare(b.section_key, "es", { numeric: true }),
-    );
-}
+export { metaText, sectionsWithPrefix, textOr, type CmsSection } from "@/lib/cms-content";
 
 /** Foto del hero: URL y texto alternativo. */
 export interface HeroPhoto {

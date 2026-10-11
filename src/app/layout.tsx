@@ -6,6 +6,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { SessionManager } from "@/components/auth/SessionManager";
 import { FloatingContact } from "@/components/layout/FloatingContact";
+import { Analytics } from "@vercel/analytics/next";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -115,6 +116,7 @@ export default function RootLayout({
           {children}
           <FloatingContact />
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
