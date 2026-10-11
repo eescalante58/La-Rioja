@@ -3,41 +3,73 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Mail } from "lucide-react";
-import { ThemeToggle } from "./ThemeToggle";
-import { ContactTrigger } from "./ContactTrigger";
-import { WhatsAppIcon } from "./WhatsAppIcon";
-import { MobileMenu, type MobileMenuSocialLinks } from "./MobileMenu";
+import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
+import { HeartHandshake, Home, Lock, Menu, Moon, Sun } from "lucide-react";
+import { MobileMenu, isActive, type MobileMenuSocialLinks } from "./MobileMenu";
 import { createClient } from "@/lib/supabase/client";
 
+/** Enlaces públicos, en orden de interés del visitante (Inicio va aparte, como icono). */
+const LINKS = [
+  { href: "/about", label: "Nosotros" },
+  { href: "/programs", label: "Programas" },
+  { href: "/bingo", label: "Bingo" },
+  { href: "/productos", label: "La Rioja Shop" },
+  { href: "/faq", label: "Preguntas" },
+] as const;
+
+/** Foco de teclado amarillo (sobre el azul de la barra). */
+const FOCUS =
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow";
+
+/** Botones de icono (tema y acceso): 44 px en móvil, 40 px en escritorio. */
+const ICON_BTN = `grid h-11 w-11 shrink-0 place-items-center rounded-full border border-nav-icon text-white transition-colors hover:bg-white/10 motion-reduce:transition-none lg:h-10 lg:w-10 ${FOCUS}`;
+
 /**
- * Barra de navegación del sitio público: enlaces en escritorio (xl+) y
- * botón hamburguesa que abre `MobileMenu` en móvil/tablet.
+ * Clases de un enlace de la barra: ocupa todo el alto (área de clic) y marca
+ * la página actual con una línea amarilla de 2 px.
+ * @param active Si el enlace corresponde a la página actual.
  */
-export function Navbar({
-  solid = false,
-  brandHeader = false,
-  simple = false,
-  fixed = true,
-}: {
-  solid?: boolean;
-  brandHeader?: boolean;
-  simple?: boolean;
-  fixed?: boolean;
-}) {
+function linkClass(active: boolean): string {
+  return `flex h-nav items-center border-b-2 border-t-2 border-t-transparent transition-colors motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-yellow ${
+    active
+      ? "border-b-brand-yellow text-white"
+      : "border-b-transparent text-white/[.88] hover:border-b-white/40 hover:text-white"
+  }`;
+}
+
+/**
+ * Barra de navegación del sitio público.
+ * Especificación: "La Rioja — Navbar del sitio: revisión y especificaciones".
+ *
+ * Barra fija (`sticky`) en azul de marca con tres zonas: logo, navegación
+ * (icono de inicio y cinco enlaces, desde `lg`) y acciones (tema, acceso
+ * personal y "Apóyanos"). Por debajo de 1024 px muestra el botón que abre
+ * `MobileMenu`. El alto sale de `--nav-h` (64 / 72 px, en globals.css).
+ */
+export function Navbar() {
+  const pathname = usePathname() ?? "/";
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [social, setSocial] = useState<MobileMenuSocialLinks>({});
   const [bingoActive, setBingoActive] = useState(false);
   const burgerRef = useRef<HTMLButtonElement>(null);
 
-  const whatsappLink = social.whatsapp ?? "#";
   const closeMenu = useCallback(() => setIsOpen(false), []);
+  const isDark = resolvedTheme !== "light";
 
-  const navSolid = isScrolled || solid;
-  const isFixed = fixed;
+  // Tema solo tras montar (next-themes) y estado de scroll para el fondo translúcido.
+  useEffect(() => {
+    setMounted(true);
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-  // Enlaces de WhatsApp y redes desde el CMS (página "social media").
+  // Enlaces de WhatsApp y redes desde el CMS (página "social media") para el menú móvil.
   useEffect(() => {
     const fetchSocial = async () => {
       const supabase = createClient();
@@ -69,247 +101,139 @@ export function Navbar({
 
   // ¿Hay Bingo en curso? Controla la insignia "Juega" del menú móvil.
   useEffect(() => {
-    if (simple) return;
     fetch("/api/public/bingo-status")
       .then((r) => r.json())
       .then((json: { success: boolean; data?: { active: boolean } }) => {
         if (json.success && json.data) setBingoActive(json.data.active);
       })
       .catch(() => {});
-  }, [simple]);
-
-  // Handle scroll for sticky effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const toggleMenu = () => setIsOpen(!isOpen);
+  const homeActive = pathname === "/";
 
   return (
     <>
-      <nav
-        className={`${isFixed ? "fixed top-0 left-0 right-0" : "relative"} z-[100] transition-all duration-500 ${
-          navSolid
-            ? "bg-white/80 dark:bg-larioja-azul/80 backdrop-blur-lg shadow-lg py-1"
-            : "bg-transparent py-4"
+      <header
+        className={`sticky top-0 z-[100] border-b border-nav pt-[env(safe-area-inset-top)] font-montserrat transition-[background-color,box-shadow] duration-200 motion-reduce:transition-none ${
+          scrolled ? "bg-nav/90 shadow-nav backdrop-blur-md" : "bg-nav"
         }`}
       >
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12">
-          {/* Masthead institucional (página Bingo): fila superior centrada —
-              "LA RIOJA" como marca principal y "Centro de Formación Laboral"
-              como subtítulo refinado con amplio tracking, por encima del menú. */}
-          {brandHeader && (
-            <div className="flex select-none flex-col items-center py-1.5 text-center">
-              <span
-                className={`font-montserrat font-black uppercase leading-none tracking-[0.18em] transition-all duration-500 ${
-                  navSolid
-                    ? "text-base sm:text-lg md:text-xl text-larioja-azul dark:text-white"
-                    : simple
-                      ? "text-xl sm:text-2xl md:text-3xl text-white"
-                      : "text-lg sm:text-xl md:text-2xl text-white"
-                }`}
-              >
-                La Rioja
-              </span>
-              <span
-                className={`mt-1 font-montserrat font-medium uppercase leading-none tracking-[0.28em] ${
-                  navSolid
-                    ? "text-[10px] md:text-xs text-amber-600 dark:text-larioja-amarillo"
-                    : simple
-                      ? "text-xs md:text-base text-larioja-amarillo"
-                      : "text-[10px] md:text-xs text-larioja-amarillo"
-                }`}
-              >
-                Centro de Formación Laboral
-              </span>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            {/* Logo — en modo simple (ruleta/tómbola) flota a la izquierda del
-              masthead sin ocupar altura: la ruleta sube ~96px. Oculto en
-              móviles donde el masthead ya cubre la marca.
-              En simple redirige a /admin/bingo (acceso rápido del operador
-              desde la pantalla de proyección). */}
-            <Link
-              href={simple ? "/admin/bingo" : "/"}
-              className={`${
-                simple
-                  ? "absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 hidden sm:block"
-                  : "relative"
-              } z-[110] p-2 transition-colors`}
+        <a
+          href="#contenido"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10 focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-brand-ink"
+        >
+          Saltar al contenido
+        </a>
+
+        <div className="mx-auto flex h-nav max-w-screen-xl items-center gap-2 pl-4 pr-3 lg:gap-6 lg:px-8">
+          {/* Identidad */}
+          <Link
+            href="/"
+            className={`flex h-10 shrink-0 items-center rounded-logo bg-logo-surface px-2 lg:h-12 lg:px-2.5 ${FOCUS}`}
+          >
+            <Image
+              src="/LogoLaRioja.webp"
+              alt="La Rioja, Centro de Formación Laboral — ir al inicio"
+              width={1200}
+              height={630}
+              sizes="160px"
+              className="h-[34px] w-auto lg:h-10"
+              style={{ width: "auto" }}
+              priority
+            />
+          </Link>
+
+          {/* Navegación (escritorio) */}
+          <nav aria-label="Principal" className="hidden flex-1 justify-center lg:flex">
+            <ul className="flex gap-5 xl:gap-7">
+              <li>
+                <Link
+                  href="/"
+                  title="Inicio"
+                  aria-current={homeActive ? "page" : undefined}
+                  className={`${linkClass(homeActive)} px-1`}
+                >
+                  <Home size={20} aria-hidden="true" />
+                  <span className="sr-only">Inicio</span>
+                </Link>
+              </li>
+              {LINKS.map(({ href, label }) => {
+                const active = isActive(pathname, href);
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      aria-current={active ? "page" : undefined}
+                      className={`${linkClass(active)} whitespace-nowrap text-[15px] font-semibold`}
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          <span className="flex-1 lg:hidden" />
+
+          {/* Acciones */}
+          {mounted ? (
+            <button
+              type="button"
+              className={ICON_BTN}
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
             >
-              <div
-                className={`relative transition-all duration-500 ${
-                  navSolid
-                    ? "h-8 w-24 sm:h-10 sm:w-32 md:h-12 md:w-36 lg:h-14 lg:w-56"
-                    : "h-10 w-28 sm:h-12 sm:w-36 md:h-16 md:w-48 lg:h-20 lg:w-72 xl:w-56 2xl:w-72"
-                }`}
-              >
-                <Image
-                  src="/logo.png"
-                  alt="La Rioja Logo"
-                  fill
-                  className="object-contain"
-                  priority
-                  sizes="(max-width: 640px) 112px, (max-width: 768px) 144px, (max-width: 1024px) 192px, 288px"
-                />
-              </div>
-            </Link>
+              {isDark ? (
+                <Sun className="h-[22px] w-[22px] lg:h-5 lg:w-5" aria-hidden="true" />
+              ) : (
+                <Moon className="h-[22px] w-[22px] lg:h-5 lg:w-5" aria-hidden="true" />
+              )}
+            </button>
+          ) : (
+            <span className="h-11 w-11 shrink-0 lg:h-10 lg:w-10" aria-hidden="true" />
+          )}
 
-            {!simple && (
-              <>
-                {/* Desktop Navigation */}
-                <div className="hidden xl:flex items-center gap-4 2xl:gap-8 font-montserrat">
-                  <Link
-                    href="/about"
-                    className={`font-bold text-sm transition-all ${
-                      navSolid
-                        ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                        : "text-white hover:text-larioja-amarillo"
-                    }`}
-                  >
-                    Nosotros
-                  </Link>
-                  <Link
-                    href="/contact"
-                    className={`font-bold text-sm transition-all ${
-                      navSolid
-                        ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                        : "text-white hover:text-larioja-amarillo"
-                    }`}
-                  >
-                    Apóyanos
-                  </Link>
-                  <Link
-                    href="/programs"
-                    className={`font-bold text-sm transition-all ${
-                      navSolid
-                        ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                        : "text-white hover:text-larioja-amarillo"
-                    }`}
-                  >
-                    Programas
-                  </Link>
-                  <Link
-                    href="/faq"
-                    className={`font-bold text-sm transition-all ${
-                      navSolid
-                        ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                        : "text-white hover:text-larioja-amarillo"
-                    }`}
-                  >
-                    Preguntas
-                  </Link>
-                  <Link
-                    href="/bingo"
-                    className={`font-bold text-sm transition-all ${
-                      navSolid
-                        ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                        : "text-white hover:text-larioja-verde"
-                    }`}
-                  >
-                    Bingo
-                  </Link>
-                  <Link
-                    href="/productos"
-                    className={`font-bold text-sm whitespace-nowrap transition-all ${
-                      navSolid
-                        ? "text-larioja-azul dark:text-white hover:text-larioja-verde"
-                        : "text-white hover:text-larioja-amarillo"
-                    }`}
-                  >
-                    La Rioja Shop
-                  </Link>
-                  <Link
-                    href="/admin"
-                    className={`font-bold py-2 px-6 rounded-full text-xs whitespace-nowrap transition-all ${
-                      navSolid
-                        ? "bg-larioja-azul text-white hover:bg-larioja-azul/90"
-                        : "text-white hover:text-larioja-amarillo"
-                    }`}
-                  >
-                    Inicio de sesión
-                  </Link>
+          <Link
+            href="/admin"
+            aria-label="Acceso personal"
+            title="Acceso personal"
+            className={`${ICON_BTN} hidden lg:grid`}
+          >
+            <Lock size={20} aria-hidden="true" />
+          </Link>
 
-                  <ContactTrigger>
-                    {(openModal) => (
-                      <button
-                        onClick={openModal}
-                        className={`flex items-center gap-2 font-bold py-2 px-6 rounded-full text-xs transition-all ${
-                          navSolid
-                            ? "bg-larioja-verde text-white hover:bg-larioja-verde/90"
-                            : "bg-white text-larioja-azul hover:bg-larioja-amarillo hover:text-larioja-azul"
-                        }`}
-                      >
-                        <Mail size={14} />
-                        Contacto
-                      </button>
-                    )}
-                  </ContactTrigger>
+          <Link
+            href="/contact"
+            className="hidden h-10 shrink-0 items-center gap-2 rounded-full bg-brand-yellow px-[18px] text-sm font-semibold text-brand-ink transition-[filter] hover:brightness-[.92] motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:flex"
+          >
+            <HeartHandshake size={18} aria-hidden="true" />
+            Apóyanos
+          </Link>
 
-                  <a
-                    href={whatsappLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`flex items-center justify-center w-9 h-9 rounded-full transition-all ${
-                      navSolid
-                        ? "bg-larioja-verde text-white hover:scale-110"
-                        : "bg-white/10 text-white hover:bg-larioja-verde hover:scale-110 backdrop-blur-md"
-                    }`}
-                    title="WhatsApp"
-                  >
-                    <WhatsAppIcon className="w-5 h-5" />
-                  </a>
-
-                  <div className="">
-                    <ThemeToggle />
-                  </div>
-                </div>
-
-                {/* Mobile & Tablet Toggle */}
-                <div className="xl:hidden flex items-center gap-3 relative z-[120]">
-                  <div className="">
-                    <ThemeToggle />
-                  </div>
-                  <button
-                    ref={burgerRef}
-                    type="button"
-                    onClick={toggleMenu}
-                    className={`burger flex h-11 w-11 flex-col items-center justify-center gap-1 rounded-lg transition-all border ${
-                      navSolid
-                        ? "bg-larioja-azul text-white border-larioja-azul shadow-md"
-                        : "bg-white/10 backdrop-blur-md border-white/30 text-white"
-                    }`}
-                    aria-expanded={isOpen}
-                    aria-controls="mobile-menu"
-                    aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
-                  >
-                    <span className="burger-line" aria-hidden="true" />
-                    <span className="burger-line" aria-hidden="true" />
-                    <span className="burger-line" aria-hidden="true" />
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <button
+            ref={burgerRef}
+            type="button"
+            onClick={() => setIsOpen((o) => !o)}
+            aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-controls="mobile-menu"
+            aria-expanded={isOpen}
+            className={`grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/[.12] text-white transition-colors hover:bg-white/20 motion-reduce:transition-none lg:hidden ${FOCUS}`}
+          >
+            <Menu size={22} aria-hidden="true" />
+          </button>
         </div>
-      </nav>
+      </header>
 
-      {/* Menú móvil — fuera de <nav> para que el backdrop-blur no lo
+      {/* Menú móvil — fuera del <header> para que el backdrop-blur no lo
           confine (backdrop-filter crea un containing block para fixed). */}
-      {!simple && (
-        <MobileMenu
-          open={isOpen}
-          onClose={closeMenu}
-          returnFocusRef={burgerRef}
-          social={social}
-          bingoActive={bingoActive}
-        />
-      )}
+      <MobileMenu
+        open={isOpen}
+        onClose={closeMenu}
+        returnFocusRef={burgerRef}
+        social={social}
+        bingoActive={bingoActive}
+      />
     </>
   );
 }

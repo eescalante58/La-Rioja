@@ -56,6 +56,57 @@
   }
 }
 
+/**
+ * Tokens de diseño compartidos (tailwind.config.ts → colores `ui()`, `h-nav`).
+ * Especificación: "La Rioja — Tokens de diseño en Tailwind (configuración
+ * compartida)". Canales RGB para que Tailwind aplique opacidad.
+ */
+@layer base {
+  :root {
+    /* Tokens por modo — claro */
+    --ui-surface-page: 255 255 255;
+    --ui-surface-card: 255 255 255;
+    --ui-surface-tile: 243 245 248;
+    --ui-ink: 1 32 96; /* larioja-azul */
+    --ui-ink-muted: 107 114 128; /* tremor-content */
+    --ui-price: 1 32 96;
+    --ui-line: 229 231 235; /* tremor-border */
+    --ui-field: 124 135 156;
+    --ui-pill: 242 244 247;
+    --ui-pill-hover: 231 235 241;
+    --ui-x-box: 0 0 0;
+    --ui-x-glyph: 255 255 255;
+
+    /* Alto de la navbar (sin el safe-area del iPhone) */
+    --nav-h: 64px;
+  }
+
+  .dark {
+    --ui-surface-page: 8 27 69; /* #081B45 */
+    --ui-surface-card: 15 23 42; /* #0F172A */
+    --ui-surface-tile: 238 241 245;
+    --ui-ink: 255 255 255;
+    --ui-ink-muted: 148 163 184; /* dark-tremor-content */
+    --ui-price: 255 255 0;
+    --ui-line: 30 41 59; /* dark-tremor-border */
+    --ui-field: 100 116 139;
+    --ui-pill: 42 45 49;
+    --ui-pill-hover: 52 56 61;
+    --ui-x-box: 255 255 255;
+    --ui-x-glyph: 0 0 0;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --nav-h: 72px;
+    }
+  }
+
+  html {
+    scroll-padding-top: var(--nav-h);
+  }
+}
+
 .bg-larioja-gradient {
   background: linear-gradient(135deg, #011640 0%, #145216 50%, #a69200 100%);
 }
@@ -252,7 +303,7 @@
  * Especificación: Documentacion/La Rioja — Menú hamburguesa móvil diseño y especificaciones.md
  * Código de color: azul = navegación, verde = tienda, amarillo = apoyar/participar.
  * Navy, verde y amarillo usan los hex de marca (tailwind `larioja.*`).
- * En @layer components para que utilidades como `xl:hidden` prevalezcan.
+ * En @layer components para que utilidades como `lg:hidden` prevalezcan.
  */
 :root {
   --lr-navy: #012060;

@@ -40,10 +40,10 @@ export default async function FAQPage() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
-      <Navbar brandHeader />
+      <Navbar />
 
       {/* Hero Section */}
-      <section className="bg-larioja-azul text-white pt-40 md:pt-52 pb-20 relative overflow-hidden shadow-inner">
+      <section id="contenido" className="bg-larioja-azul text-white pt-8 lg:pt-14 pb-20 relative overflow-hidden shadow-inner">
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent z-10" />
         <div className="container mx-auto px-6 relative z-20 text-center max-w-4xl">
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in break-words [overflow-wrap:anywhere]">

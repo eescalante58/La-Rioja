@@ -138,7 +138,7 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
   return (
     <div
       ref={navRef}
-      className="sticky top-[98px] z-30 -mx-3 mb-4 border-b border-[var(--shop-chip-line)] bg-[var(--shop-bg)] px-3 py-2 sm:-mx-6 sm:mb-6 sm:px-6 md:top-[132px] lg:-mx-8 lg:top-[140px] lg:px-8"
+      className="sticky top-nav z-30 -mx-3 mb-4 border-b border-[var(--shop-chip-line)] bg-[var(--shop-bg)] px-3 py-2 sm:-mx-6 sm:mb-6 sm:px-6 lg:-mx-8 lg:px-8"
     >
       <div className="flex items-center gap-2">
         <ShopCartButton />

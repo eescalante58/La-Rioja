@@ -27,14 +27,14 @@ export function ParallaxHero({ heroContent }: ParallaxHeroProps) {
   }, []);
 
   return (
-    <section className="relative min-h-[90vh] md:min-h-screen flex items-center justify-center text-white bg-larioja-azul overflow-hidden pt-32 pb-20 md:pt-40">
+    <section id="contenido" className="relative min-h-[calc(90vh-var(--nav-h))] md:min-h-[calc(100vh-var(--nav-h))] flex items-start justify-center text-white bg-larioja-azul overflow-hidden pt-8 pb-20 lg:pt-14">
       {/* Dynamic Background Overlay */}
       <div
         className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-larioja-azul/40 z-10"
         style={{ opacity: 1 - scrollY / 1000 }}
       />
 
-      <div className="container mx-auto px-4 sm:px-6 relative z-20 text-center max-w-5xl mt-12 md:mt-0">
+      <div className="container mx-auto px-4 sm:px-6 relative z-20 text-center max-w-5xl">
         <h1
           className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 sm:mb-8 animate-fade-in tracking-tight leading-[1.1] drop-shadow-sm text-larioja-amarillo break-words [overflow-wrap:anywhere]"
           style={{ transform: `translateY(${scrollY * 0.2}px)` }}

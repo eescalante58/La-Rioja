@@ -26,7 +26,7 @@ export function GiftsBanner({ section, whatsappDigits }: GiftsBannerProps) {
   return (
     <section
       id="regalos"
-      className="mx-auto max-w-[1200px] px-6 pt-12 pb-6 scroll-mt-[110px] md:scroll-mt-[150px]"
+      className="mx-auto max-w-[1200px] px-6 pt-12 pb-6 scroll-mt-[calc(var(--nav-h)+16px)]"
     >
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8 rounded-[28px] bg-[#F9C637] p-8 md:p-12">
         <div className="flex flex-1 flex-col gap-3.5 min-w-0">

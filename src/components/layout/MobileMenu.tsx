@@ -67,6 +67,9 @@ const LINKS: NavLinkDef[] = [
   { href: "/productos", label: "La Rioja Shop", Icon: ShoppingBag, featured: true },
 ];
 
+/** WhatsApp institucional mientras carga (o si falta) el valor del CMS. */
+export const WHATSAPP_FALLBACK = "https://wa.me/50377310792";
+
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /** Logo de X (simple-icons): Lucide no incluye la marca nueva. */
@@ -82,7 +85,7 @@ function XLogo({ size = 22 }: { size?: number }) {
  * Indica si `href` corresponde a la página actual. La raíz solo coincide
  * exacta; el resto también con sus subrutas (p. ej. /productos/...).
  */
-function isActive(pathname: string, href: string): boolean {
+export function isActive(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -166,7 +169,7 @@ export function MobileMenu({
   return (
     <>
       <div
-        className="menu-overlay xl:hidden"
+        className="menu-overlay lg:hidden"
         data-open={open}
         onClick={onClose}
         aria-hidden="true"
@@ -174,7 +177,7 @@ export function MobileMenu({
       <nav
         id="mobile-menu"
         ref={panelRef}
-        className="menu-panel xl:hidden"
+        className="menu-panel lg:hidden"
         data-open={open}
         aria-label="Menú principal"
         inert={!open}
@@ -248,7 +251,7 @@ export function MobileMenu({
 
           <div className="menu-row">
             <a
-              href={social.whatsapp ?? "#"}
+              href={social.whatsapp ?? WHATSAPP_FALLBACK}
               target="_blank"
               rel="noopener noreferrer"
               onClick={onClose}

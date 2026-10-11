@@ -1,5 +1,5 @@
 import { MonitorCheck } from "lucide-react";
-import { Navbar } from "@/components/layout/Navbar";
+import { EventMasthead } from "@/components/layout/EventMasthead";
 import TombolaMonitor from "@/components/tombola/TombolaMonitor";
 import { getPublicWheels } from "@/app/admin/bingo/wheel-actions";
 
@@ -42,7 +42,7 @@ export default async function TombolaMonitorPage({
 
   return (
     <main className="min-h-screen bg-larioja-azul bg-gradient-to-b from-larioja-azul via-[#02184a] to-[#010c28]">
-      <Navbar brandHeader simple fixed={false} />
+      <EventMasthead />
 
       <section className="mx-auto flex min-h-[80vh] max-w-[1600px] flex-col items-center justify-center px-6 pt-4 pb-10 md:pt-6">
         {wheels.length === 0 ? (

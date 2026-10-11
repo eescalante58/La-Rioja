@@ -145,11 +145,11 @@ export default async function AboutPage() {
     : [];
 
   return (
-    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden">
-      <Navbar brandHeader />
+    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-x-clip">
+      <Navbar />
 
       {/* Hero Section - Nuestra Historia */}
-      <section className="relative pt-40 pb-20 md:pt-52 md:pb-32 bg-larioja-azul text-white overflow-hidden">
+      <section id="contenido" className="relative pt-8 pb-20 lg:pt-14 md:pb-32 bg-larioja-azul text-white overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-larioja-azul via-larioja-azul to-blue-900 opacity-50 z-0" />
 
         {/* Decorative elements */}

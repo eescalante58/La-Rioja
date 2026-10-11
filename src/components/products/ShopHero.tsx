@@ -29,7 +29,7 @@ export function ShopHero({ hero, photos }: ShopHeroProps) {
   const external = (href: string) => /^https?:\/\//.test(href);
 
   return (
-    <section className="bg-[#174C6B] text-white pt-40 md:pt-52 pb-16 lg:pb-20">
+    <section id="contenido" className="bg-[#174C6B] text-white pt-8 lg:pt-14 pb-16 lg:pb-20">
       <div className="mx-auto max-w-[1200px] px-6 flex flex-col lg:flex-row lg:items-center gap-12">
         <div className="flex flex-1 flex-col gap-5 min-w-0">
           {badge && (

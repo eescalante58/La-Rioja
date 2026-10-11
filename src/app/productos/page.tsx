@@ -54,7 +54,7 @@ export default async function ProductosPage() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-x-clip">
-      <Navbar brandHeader />
+      <Navbar />
 
       <ShopHero hero={hero} photos={heroPhotos(content, catalogs)} />
 
@@ -63,7 +63,7 @@ export default async function ProductosPage() {
           (especificación "La Rioja Shop — Cuadrícula de productos"). */}
       <section
         id="catalogo"
-        className="pb-16 pt-2 md:pb-24 md:pt-4 min-h-[60vh] bg-[var(--shop-bg)] scroll-mt-[98px] md:scroll-mt-[132px] lg:scroll-mt-[140px]"
+        className="pb-16 pt-2 md:pb-24 md:pt-4 min-h-[60vh] bg-[var(--shop-bg)] scroll-mt-nav"
       >
         <div className="mx-auto max-w-screen-xl px-3 sm:px-6 lg:px-8">
           <ShopCatalog catalogs={catalogs} whatsappDigits={whatsappDigits} />

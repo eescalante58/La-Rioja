@@ -14,8 +14,8 @@ export const revalidate = 3600;
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-hidden">
-      <Navbar brandHeader />
+    <main className="min-h-screen bg-white dark:bg-larioja-azul overflow-x-clip">
+      <Navbar />
       <ContactClient />
       <Footer />
     </main>

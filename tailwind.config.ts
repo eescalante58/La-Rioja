@@ -1,5 +1,22 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Paleta de marca de La Rioja: única fuente de los hex.
+ * Ver "La Rioja — Tokens de diseño en Tailwind (configuración compartida)".
+ */
+const LR = {
+  azul: "#012060",
+  azulProfundo: "#011640",
+  azulEnlace: "#0056B3",
+  azulCeleste: "#4DA3FF",
+  verde: "#1E9922",
+  verdeTexto: "#15801A",
+  amarillo: "#FFFF00",
+} as const;
+
+/** Color de modo desde una variable CSS --ui-* en canales RGB, con soporte de opacidad. */
+const ui = (name: string) => `rgb(var(--ui-${name}) / <alpha-value>)`;
+
 const config: Config = {
   darkMode: "class",
   content: [
@@ -33,11 +50,24 @@ const config: Config = {
           "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
         "dark-tremor-dropdown":
           "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+        // La Rioja
+        nav: "0 4px 16px rgb(0 0 0 / 0.25)",
+        fab: "0 1px 3px rgb(0 0 0 / 0.25)",
       },
+      borderColor: {
+        nav: "rgb(255 255 255 / 0.08)",
+        "nav-icon": "rgb(255 255 255 / 0.28)",
+      },
+      height: { nav: "var(--nav-h)" },
+      spacing: { nav: "var(--nav-h)" },
       borderRadius: {
-        "tremor-small": "0.375 font-medium",
+        "tremor-small": "0.375rem", // corregido: antes "0.375 font-medium" (valor inválido)
         "tremor-default": "0.5rem",
         "tremor-full": "9999px",
+        // La Rioja
+        logo: "10px",
+        tile: "12px",
+        field: "12px",
       },
       fontSize: {
         "tremor-label": ["0.75rem", { lineHeight: "1rem" }],
@@ -106,10 +136,39 @@ const config: Config = {
           },
         },
         larioja: {
-          amarillo: "#FFFF00",
-          verde: "#1E9922",
-          azul: "#012060",
+          amarillo: LR.amarillo,
+          verde: LR.verde,
+          azul: LR.azul,
+          "azul-profundo": LR.azulProfundo,
+          "azul-enlace": LR.azulEnlace,
+          "azul-celeste": LR.azulCeleste,
+          "verde-texto": LR.verdeTexto,
         },
+        // Alias usados en las especificaciones (mismos valores que larioja)
+        brand: {
+          navy: { DEFAULT: LR.azul, 800: LR.azulProfundo },
+          blue: LR.azulEnlace,
+          yellow: LR.amarillo,
+          green: { DEFAULT: LR.verde, strong: LR.verdeTexto },
+          ink: LR.azul,
+        },
+        nav: { DEFAULT: LR.azul, end: LR.azulProfundo },
+        whatsapp: { DEFAULT: "#25D366", ink: "#063B1C" },
+        "logo-surface": "#F7F7F7",
+        danger: "#C62828",
+        // Tokens por modo (variables --ui-* en globals.css)
+        surface: {
+          page: ui("surface-page"),
+          card: ui("surface-card"),
+          tile: ui("surface-tile"),
+        },
+        ink: { DEFAULT: ui("ink"), muted: ui("ink-muted") },
+        price: ui("price"),
+        line: ui("line"),
+        field: ui("field"),
+        pill: { DEFAULT: ui("pill"), hover: ui("pill-hover") },
+        "x-box": ui("x-box"),
+        "x-glyph": ui("x-glyph"),
       },
       fontFamily: {
         montserrat: ["var(--font-montserrat)", "sans-serif"],
