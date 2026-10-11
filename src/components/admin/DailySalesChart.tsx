@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import type { DefaultLabelFormatterCallbackParams, ECElementEvent } from "echarts";
 import { Card, Title, Text, Badge } from "@tremor/react";
+import { useTheme } from "next-themes";
 
 interface DailySalesChartProps {
   data: { date: string; total: number; count?: number; cards?: number }[];
@@ -12,6 +13,9 @@ interface DailySalesChartProps {
 
 /** Ancho máximo (px) del gráfico en el que los montos se muestran verticales. */
 const NARROW_MAX_WIDTH = 480;
+
+/** Color de los montos sobre las barras: azul La Rioja en claro, slate-300 en oscuro. */
+const LABEL_COLOR = { light: "#012060", dark: "#cbd5e1" } as const;
 
 /**
  * Indica si el contenedor mide `NARROW_MAX_WIDTH` px o menos. Se mide con
@@ -40,6 +44,8 @@ function useIsNarrow(ref: React.RefObject<HTMLDivElement | null>): boolean {
 export default function DailySalesChart({ data, onDrillDown }: DailySalesChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isNarrow = useIsNarrow(containerRef);
+  const { resolvedTheme } = useTheme();
+  const labelColor = resolvedTheme === "dark" ? LABEL_COLOR.dark : LABEL_COLOR.light;
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -121,7 +127,7 @@ export default function DailySalesChart({ data, onDrillDown }: DailySalesChartPr
           position: "top",
           formatter: (params: DefaultLabelFormatterCallbackParams) =>
             formatCurrency(Number(params.value)),
-          color: "#cbd5e1", // slate-300
+          color: labelColor,
           fontSize: 10,
           fontWeight: "bold",
           rotate: isNarrow ? 90 : 0,
