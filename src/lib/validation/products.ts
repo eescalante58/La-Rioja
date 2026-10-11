@@ -6,6 +6,26 @@ import { z } from "zod";
  * (migraciones 20261017000000_shop_catalog.sql y siguientes).
  */
 
+/** Formato de los identificadores en URL (catálogos y productos). */
+export const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
+ * Convierte un nombre en identificador para URL: minúsculas, sin acentos y
+ * con guiones ("Tote bag mariposa" → "tote-bag-mariposa"). Misma regla que
+ * el backfill de la migración 20261020000000_products_slug.sql.
+ * @param name Nombre del producto o catálogo.
+ * @returns Identificador que cumple `SLUG_PATTERN` ("producto" si queda vacío).
+ */
+export function slugify(name: string): string {
+  const slug = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "producto";
+}
+
 /** Catálogo de un taller (Arte y Costura, Panadería). */
 export interface ProductCatalog {
   id: number;
@@ -61,6 +81,8 @@ export interface Product {
   company_id: number;
   line_id: number | null;
   name: string;
+  /** Identificador en URL: /productos?producto=<slug> (único por empresa). */
+  slug: string;
   description: string | null;
   image_url: string | null;
   is_active: boolean;
@@ -102,6 +124,13 @@ export const productSchema = z
     company_id: z.number().int().positive("Empresa requerida"),
     line_id: z.number({ error: "Selecciona una línea" }).int().positive("Selecciona una línea"),
     name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(120),
+    /** Vacío o ausente: se genera a partir del nombre en el servidor. */
+    slug: z
+      .string()
+      .trim()
+      .max(120)
+      .refine((s) => s === "" || SLUG_PATTERN.test(s), "Enlace: minúsculas, números y guiones")
+      .optional(),
     description: z.string().trim().max(1000).nullable(),
     is_active: z.boolean(),
     content_order: z.number().int().min(0),
@@ -124,7 +153,7 @@ export const catalogSchema = z.object({
   slug: z
     .string()
     .trim()
-    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Identificador: minúsculas, números y guiones"),
+    .regex(SLUG_PATTERN, "Identificador: minúsculas, números y guiones"),
   name: z.string().trim().min(2, "Nombre requerido").max(80),
   tagline: z.string().trim().max(160).nullable(),
   description: z.string().trim().max(2000).nullable(),

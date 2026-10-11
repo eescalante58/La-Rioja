@@ -11,6 +11,7 @@ import {
   lineSchema,
   normalizeProduct,
   productSchema,
+  slugify,
   type CatalogInput,
   type LineInput,
   type Product,
@@ -135,6 +136,7 @@ function parseProductForm(formData: FormData) {
     company_id: Number(formData.get("company_id")),
     line_id: Number(formData.get("line_id")),
     name: text("name") ?? "",
+    slug: text("slug") ?? "",
     description: text("description"),
     is_active: formData.get("is_active") === "true",
     content_order: Number(formData.get("content_order") ?? 0) || 0,
@@ -196,13 +198,51 @@ async function logActivity(
     });
 }
 
+/**
+ * Slug definitivo de un producto dentro de su empresa.
+ * - Si el usuario escribió uno, debe estar libre (error si otro producto lo usa).
+ * - Si no, se genera desde el nombre y, si ya existe, se agrega -2, -3…
+ * @param companyId Empresa del producto.
+ * @param requested Slug escrito en el formulario (vacío = automático).
+ * @param name Nombre del producto (base del slug automático).
+ * @param excludeId Producto que se está editando (no cuenta como colisión).
+ * @returns El slug a guardar o el mensaje de error.
+ */
+async function resolveProductSlug(
+  companyId: number,
+  requested: string,
+  name: string,
+  excludeId?: string,
+): Promise<{ slug?: string; error?: string }> {
+  const base = requested || slugify(name);
+  let query = createAdminClient()
+    .from("products")
+    .select("slug")
+    .eq("company_id", companyId)
+    .like("slug", `${base}%`);
+  if (excludeId) query = query.neq("id", excludeId);
+  const { data, error } = await query;
+  if (error) return { error: error.message };
+
+  const taken = new Set((data ?? []).map((row: Pick<Product, "slug">) => row.slug));
+  if (!taken.has(base)) return { slug: base };
+  if (requested) return { error: `El enlace "${requested}" ya lo usa otro producto.` };
+
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n++;
+  return { slug: `${base}-${n}` };
+}
+
 /** Lee el `company_id` de un producto y valida que el usuario pertenezca a esa empresa. */
 async function authorizeProduct(
   id: string,
-): Promise<{ product?: Pick<Product, "company_id" | "image_url" | "name">; error?: string }> {
+): Promise<{
+  product?: Pick<Product, "company_id" | "image_url" | "name" | "slug">;
+  error?: string;
+}> {
   const { data, error } = await createAdminClient()
     .from("products")
-    .select("company_id, image_url, name")
+    .select("company_id, image_url, name, slug")
     .eq("id", id)
     .single();
   if (error || !data) return { error: "Producto no encontrado." };
@@ -300,7 +340,7 @@ async function createProductInternal(
 ): Promise<ActionResult<Product>> {
   const parsed = parseProductForm(formData);
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
-  const { variants, ...fields } = parsed.data;
+  const { variants, slug: requestedSlug = "", ...fields } = parsed.data;
 
   const access = await requireCompanyAccess(fields.company_id);
   if (!access.authorized) {
@@ -310,6 +350,8 @@ async function createProductInternal(
   if (line.companyId !== fields.company_id) {
     return { success: false, error: line.error ?? "La línea pertenece a otra empresa." };
   }
+  const resolved = await resolveProductSlug(fields.company_id, requestedSlug, fields.name);
+  if (!resolved.slug) return { success: false, error: resolved.error ?? "Enlace inválido." };
 
   let image_url: string | null = null;
   const image = formData.get("image");
@@ -321,7 +363,7 @@ async function createProductInternal(
 
   const { data, error } = await createAdminClient()
     .from("products")
-    .insert({ ...fields, image_url })
+    .insert({ ...fields, slug: resolved.slug, image_url })
     .select("id, name")
     .single();
 
@@ -359,7 +401,7 @@ async function updateProductInternal(
 
   const parsed = parseProductForm(formData);
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
-  const { variants, ...fields } = parsed.data;
+  const { variants, slug: requestedSlug = "", ...fields } = parsed.data;
   if (fields.company_id !== auth.product.company_id) {
     return { success: false, error: "El producto pertenece a otra empresa." };
   }
@@ -367,6 +409,11 @@ async function updateProductInternal(
   if (line.companyId !== fields.company_id) {
     return { success: false, error: line.error ?? "La línea pertenece a otra empresa." };
   }
+  // Enlace vacío al editar = conservar el actual (no romper enlaces ya compartidos).
+  const resolved = requestedSlug
+    ? await resolveProductSlug(fields.company_id, requestedSlug, fields.name, id)
+    : { slug: auth.product.slug };
+  if (!resolved.slug) return { success: false, error: resolved.error ?? "Enlace inválido." };
 
   let image_url = auth.product.image_url;
   const image = formData.get("image");
@@ -380,7 +427,7 @@ async function updateProductInternal(
 
   const { error } = await createAdminClient()
     .from("products")
-    .update({ ...fields, image_url })
+    .update({ ...fields, slug: resolved.slug, image_url })
     .eq("id", id);
 
   if (error) {

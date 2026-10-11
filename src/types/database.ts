@@ -685,6 +685,7 @@ export type Database = {
           is_active: boolean
           line_id: number
           name: string
+          slug: string
           updated_at: string
         }
         Insert: {
@@ -697,6 +698,7 @@ export type Database = {
           is_active?: boolean
           line_id: number
           name: string
+          slug: string
           updated_at?: string
         }
         Update: {
@@ -709,6 +711,7 @@ export type Database = {
           is_active?: boolean
           line_id?: number
           name?: string
+          slug?: string
           updated_at?: string
         }
         Relationships: [

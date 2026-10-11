@@ -37,7 +37,7 @@ import {
 import { callAction, callActionForm } from "@/lib/action-client";
 import { compressImage } from "@/lib/compress-image";
 import { usd } from "@/lib/validation/shop-orders";
-import type { Product, ProductLine } from "@/lib/validation/products";
+import { slugify, type Product, type ProductLine } from "@/lib/validation/products";
 import { ErrorBox, FieldLabel, inputClass, type Result, type ShopTabProps } from "./shared";
 
 /** Fila del editor de presentaciones (texto tal como se captura). */
@@ -53,6 +53,8 @@ interface VariantRow {
 /** Valores del formulario de producto. */
 interface FormState {
   name: string;
+  /** Enlace /productos?producto=<slug>; vacío = automático (crear) o sin cambio (editar). */
+  slug: string;
   description: string;
   line_id: string;
   content_order: string;
@@ -74,6 +76,7 @@ const newRow = (partial: Partial<VariantRow> = {}): VariantRow => ({
 
 const emptyForm = (lineId = ""): FormState => ({
   name: "",
+  slug: "",
   description: "",
   line_id: lineId,
   content_order: "0",
@@ -248,6 +251,7 @@ export default function ProductsTab({ companyId, data, setData, toolbarSlot }: P
     setEditing(product);
     setForm({
       name: product.name,
+      slug: product.slug,
       description: product.description ?? "",
       line_id: product.line_id ? String(product.line_id) : "",
       content_order: String(product.content_order),
@@ -325,6 +329,7 @@ export default function ProductsTab({ companyId, data, setData, toolbarSlot }: P
     if (editing) fd.append("id", editing.id);
     fd.append("line_id", form.line_id);
     fd.append("name", form.name);
+    fd.append("slug", form.slug);
     fd.append("description", form.description);
     // El orden se cambia arrastrando; aquí solo se conserva o se va al final de la línea.
     const keepsPlace = editing && String(editing.line_id) === form.line_id;
@@ -585,6 +590,26 @@ export default function ProductsTab({ companyId, data, setData, toolbarSlot }: P
                   className={inputClass}
                   placeholder="Tote bag floral"
                 />
+              </label>
+
+              <label className="block">
+                <FieldLabel>Enlace del producto</FieldLabel>
+                <input
+                  maxLength={120}
+                  value={form.slug}
+                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                  onBlur={() =>
+                    setForm((f) => ({ ...f, slug: f.slug.trim() ? slugify(f.slug) : "" }))
+                  }
+                  className={inputClass}
+                  placeholder={slugify(form.name || "tote bag floral")}
+                />
+                <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                  /productos?producto={form.slug || slugify(form.name || "…")}
+                  {editing
+                    ? " · Si lo cambias, los enlaces ya compartidos dejarán de abrir este producto."
+                    : " · Vacío: se genera a partir del nombre."}
+                </span>
               </label>
 
               <label className="block">
