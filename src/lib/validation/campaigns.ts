@@ -3,8 +3,9 @@ import { z } from "zod";
 /** Campaña de la portada: visible solo entre sus fechas de inicio y fin. */
 export const CampaignSchema = z.object({
   tag: z.string().max(24),
-  title: z.string().max(60),
-  text: z.string().max(120),
+  /** title y text son opcionales en metadata — se toman de site_content.title / description si faltan. */
+  title: z.string().max(60).optional(),
+  text: z.string().max(120).optional(),
   linkLabel: z.string().max(40),
   href: z.string(),
   imageAlt: z.string(),
@@ -15,6 +16,9 @@ export const CampaignSchema = z.object({
 export type Campaign = z.infer<typeof CampaignSchema> & {
   imageUrl: string | null;
   sectionKey: string;
+  /** Siempre presente tras la fusión con site_content.title / description */
+  title: string;
+  text: string;
 };
 
 /** Devuelve las campañas vigentes, por prioridad, hasta un máximo de tres. */

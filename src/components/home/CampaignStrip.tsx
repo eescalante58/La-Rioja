@@ -12,15 +12,9 @@ export function CampaignStrip({ rows }: Props) {
   const campaigns: Campaign[] = rows.flatMap((row) => {
     const parsed = CampaignSchema.safeParse(row.metadata);
     if (!parsed.success) return [];
-    return [
-      {
-        ...parsed.data,
-        imageUrl: row.image_url,
-        sectionKey: row.section_key,
-        title: row.title ?? parsed.data.title,
-        text: row.description ?? parsed.data.text,
-      },
-    ];
+    const title = row.title ?? parsed.data.title ?? "";
+    const text = row.description ?? parsed.data.text ?? "";
+    return [{ ...parsed.data, imageUrl: row.image_url, sectionKey: row.section_key, title, text }];
   });
 
   const active = activeCampaigns(campaigns);
