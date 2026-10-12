@@ -132,7 +132,7 @@ export function Navbar() {
             className={`flex h-10 shrink-0 items-center rounded-logo bg-logo-surface px-2 lg:h-12 lg:px-2.5 ${FOCUS}`}
           >
             <Image
-              src="/logo-oscuro.svg"
+              src="/logo.svg"
               alt="La Rioja, Centro de Formación Laboral — ir al inicio"
               width={2498}
               height={745}
