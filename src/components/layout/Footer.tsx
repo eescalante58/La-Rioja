@@ -28,7 +28,7 @@ function SocialIcon({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className={`${colorClass} transition-colors`}
+      className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center ${colorClass} transition-colors`}
     >
       {children}
     </a>
@@ -60,50 +60,25 @@ export async function Footer() {
           <div className="text-center md:text-left">
             <h3 className="text-2xl font-bold mb-2 font-montserrat">La Rioja</h3>
             <p className="opacity-70 mb-4">Formando futuros, integrando vidas.</p>
-            <div className="flex flex-col gap-2 mb-6 font-montserrat">
-              <Link
-                href="/"
-                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
-              >
-                Inicio
-              </Link>
-              <Link
-                href="/about"
-                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
-              >
-                Nosotros
-              </Link>
-              <Link
-                href="/apoyanos"
-                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
-              >
-                Apóyanos
-              </Link>
-              <Link
-                href="/programs"
-                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
-              >
-                Programas
-              </Link>
-              <Link
-                href="/faq"
-                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
-              >
-                Preguntas Frecuentes
-              </Link>
-              <Link
-                href="/bingo"
-                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
-              >
-                Bingo
-              </Link>
-              <Link
-                href="/productos"
-                className="text-sm opacity-70 hover:opacity-100 hover:text-larioja-amarillo transition-all"
-              >
-                La Rioja Shop
-              </Link>
-            </div>
+            <nav className="mb-6 font-montserrat" aria-label="Navegación del pie de página">
+              {[
+                { href: "/", label: "Inicio" },
+                { href: "/about", label: "Nosotros" },
+                { href: "/apoyanos", label: "Apóyanos" },
+                { href: "/programs", label: "Programas" },
+                { href: "/faq", label: "Preguntas Frecuentes" },
+                { href: "/bingo", label: "Bingo" },
+                { href: "/productos", label: "La Rioja Shop" },
+              ].map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex min-h-[44px] items-center text-sm opacity-70 transition-all hover:opacity-100 hover:text-larioja-amarillo"
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
 
             {contactCard && contactCard.is_active && (
               <div className="mb-8 p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 max-w-sm mx-auto md:mx-0">
@@ -126,7 +101,7 @@ export async function Footer() {
               href={getSocialLink("google maps")}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center md:justify-start gap-2 text-sm hover:text-larioja-amarillo transition-colors group"
+              className="flex min-h-[44px] items-center justify-center gap-2 text-sm transition-colors hover:text-larioja-amarillo group md:justify-start"
             >
               <MapPin
                 size={18}
@@ -156,9 +131,7 @@ export async function Footer() {
           </div>
         </ScrollReveal>
         <div className="mt-12 pt-8 border-t border-white/10 text-center opacity-50 text-sm">
-          <span>
-            &copy; {new Date().getFullYear()} La Rioja. Todos los derechos reservados.
-          </span>
+          <span>&copy; {new Date().getFullYear()} La Rioja. Todos los derechos reservados.</span>
         </div>
       </div>
     </footer>
