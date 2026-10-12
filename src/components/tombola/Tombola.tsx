@@ -587,7 +587,7 @@ export default function Tombola({ wheels, cardImageUrl }: TombolaProps) {
         <div className="mb-1 flex items-center justify-center gap-3">
           {/* Logo → consola admin (acceso rápido desde la proyección) */}
           <a href="/admin/bingo">
-            <img src="/logo.png" alt="La Rioja" className="h-10 w-auto md:h-12" />
+            <img src="/logo.svg" alt="La Rioja" className="h-10 w-auto md:h-12" />
           </a>
           <h1 className="font-montserrat text-xl font-black uppercase tracking-[0.15em] text-white md:text-3xl">
             Tómbola <span className="text-larioja-amarillo">Electrónica</span>

@@ -20,7 +20,7 @@ export default function PromoVideoCard({
   videoUrl,
   title,
   subtitle,
-  logoUrl = "/logo.png",
+  logoUrl = "/logo.svg",
 }: PromoVideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [started, setStarted] = useState(false);

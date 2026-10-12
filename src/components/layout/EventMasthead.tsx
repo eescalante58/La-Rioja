@@ -63,7 +63,7 @@ export function EventMasthead() {
               }`}
             >
               <Image
-                src="/logo.png"
+                src="/logo.svg"
                 alt="La Rioja Logo"
                 fill
                 className="object-contain"

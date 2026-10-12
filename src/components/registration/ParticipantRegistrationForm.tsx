@@ -372,7 +372,7 @@ export default function ParticipantRegistrationForm({
       <div className="mb-2 text-center sm:mb-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logo.png"
+          src="/logo.svg"
           alt="La Rioja"
           className="mx-auto h-7 w-auto sm:h-12"
         />

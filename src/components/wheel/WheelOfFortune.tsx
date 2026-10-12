@@ -760,7 +760,7 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
               {/* Logo central: enlace a la consola admin (acceso rápido
                   del operador desde la pantalla de proyección) */}
               <a href="/admin/bingo">
-                <image href="/logo.png" x={CX - 45} y={CY - 34} width={90} height={68} preserveAspectRatio="xMidYMid meet" />
+                <image href="/logo.svg" x={CX - 45} y={CY - 34} width={90} height={68} preserveAspectRatio="xMidYMid meet" />
               </a>
             </svg>
           )}

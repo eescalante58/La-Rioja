@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
           <div className="text-center mb-6">
             <div className="relative h-16 w-48 mx-auto mb-4">
               <Image
-                src="/logo.png"
+                src="/logo.svg"
                 alt="La Rioja Logo"
                 fill
                 className="object-contain"

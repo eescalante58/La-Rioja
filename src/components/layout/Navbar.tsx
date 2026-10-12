@@ -132,10 +132,10 @@ export function Navbar() {
             className={`flex h-10 shrink-0 items-center rounded-logo bg-logo-surface px-2 lg:h-12 lg:px-2.5 ${FOCUS}`}
           >
             <Image
-              src="/LogoLaRioja.webp"
+              src="/logo-oscuro.svg"
               alt="La Rioja, Centro de Formación Laboral — ir al inicio"
-              width={1200}
-              height={630}
+              width={2498}
+              height={745}
               sizes="160px"
               className="h-[34px] w-auto lg:h-10"
               style={{ width: "auto" }}

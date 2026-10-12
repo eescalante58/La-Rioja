@@ -187,10 +187,10 @@ export function MobileMenu({
         <div className="menu-header">
           <span className="menu-logo">
             <Image
-              src="/LogoLaRioja.webp"
+              src="/logo-oscuro.svg"
               alt=""
-              width={44}
-              height={44}
+              width={2498}
+              height={745}
               className="h-full w-full object-contain"
             />
           </span>

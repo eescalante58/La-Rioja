@@ -27,7 +27,7 @@ export default function UnderConstruction({
         {/* Logo */}
         <div className="mb-12 relative h-20 w-80">
           <Image
-            src="/logo.png"
+            src="/logo.svg"
             alt="La Rioja Logo"
             fill
             className="object-contain brightness-0 invert"

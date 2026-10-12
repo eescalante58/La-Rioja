@@ -44,7 +44,7 @@ export function BrandPanel() {
         <span className="relative block h-9 w-28 rounded-lg bg-white px-2 py-1 short:h-8 sm:h-10">
           <span className="relative block h-full w-full">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="La Rioja"
               fill
               sizes="112px"
@@ -60,7 +60,7 @@ export function BrandPanel() {
         <span className="relative block h-16 w-44 rounded-xl bg-white px-3 py-2">
           <span className="relative block h-full w-full">
             <Image
-              src="/logo.png"
+              src="/logo.svg"
               alt="La Rioja"
               fill
               sizes="176px"
