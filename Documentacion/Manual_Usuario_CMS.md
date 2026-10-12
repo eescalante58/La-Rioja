@@ -83,6 +83,40 @@ En **Contenido General**, filtra por la página **Apóyanos**. Reglas:
 
 El correo, el Instagram y el WhatsApp de la página salen de la página **Social Media** (`email`, `instagram`, `whatsapp`).
 
+### Página «Nosotros» (`/about`)
+
+En **Contenido General**, filtra por la página **Nosotros**. Todas las secciones del rediseño llevan el prefijo distintivo **`cl_`**. Las secciones anteriores `about_*` quedaron **inactivas** como respaldo: no las actives, porque la página ya no las muestra.
+
+Las reglas son las mismas que en Apóyanos: un dato vacío no se publica, desactivar una sección la oculta, la imagen subida tiene prioridad sobre `metadata.foto`, los párrafos se separan con una línea en blanco y `**texto**` sale en negrita. Cada elemento de una lista (hito, valor, taller, cifra, rol…) es una sección propia: edita su título y descripción, ordénala con **Orden** y desactívala para ocultarla. Para agregar uno, crea una sección nueva con el siguiente número (por ejemplo `cl_taller_8`).
+
+Los enlaces (`enlace`, `enlace_1`, `enlace_2`) solo aceptan rutas del sitio (`/programs`, `/programs#colegio`) o anclas (`#historia`); cualquier otro valor se ignora y se usa el enlace por defecto.
+
+| Sección (`section_key`) | Qué controla | Datos en «Metadata» (JSON) |
+|---|---|---|
+| `cl_hero` | Lema (título) y subtítulo | `antetitulo`, `resaltado` (parte amarilla del lema), `insignia` («Desde 1993»), `insignia_texto`, `boton_1`, `boton_2`, `foto`, `foto_alt` |
+| `cl_historia` | «Una historia que empezaron las familias» (#historia) | — |
+| `cl_hito_1..5` | Línea de tiempo (título = años, descripción = detalle) | `titulo`, `actual` (`"si"` = punto amarillo; solo el hito vigente) |
+| `cl_proposito` | Título «Lo que nos mueve» (#proposito) | `titulo_valores` |
+| `cl_mision`, `cl_vision` | Texto oficial de misión y visión | — |
+| `cl_valor_1..4` | Valores (el icono se elige por el nombre: Compromiso, Innovación, Inclusión, Calidad) | — |
+| `cl_modelo` | «A quién acompañamos y cómo» (#modelo) | — |
+| `cl_programa_colegio`, `cl_programa_cfl` | Comparador Colegio / CFL (descripción = qué se ofrece) | `edad`, `enfoque`, `boton`, `enlace` |
+| `cl_niveles` | Título y texto de los cinco niveles | `areas_titulo`, `areas` (lista de insignias) |
+| `cl_nivel_1..5` | Niveles del CFL (título = nombre) | **Pendiente:** la descripción está vacía hasta que la valide la dirección académica |
+| `cl_talleres` | «Aprender haciendo» (#talleres) | `materias_titulo`, `materias` (lista), `materias_texto`, `boton`, `enlace` |
+| `cl_taller_1..7` | Tarjetas de taller (descripción = qué se aprende) | `impacto`, `insignia` (con valor = tarjeta grande, p. ej. «Taller insignia»), `foto`, `foto_alt`. Sin foto se muestra un bloque azul con el nombre |
+| `cl_cuentas` | «Una organización que rinde cuentas» (#equipo) | — |
+| `cl_cifra_1..6` | Contadores animados (título = etiqueta) | `valor` (solo número entero; vacío = no se muestra), `prefijo` (`+`), `sufijo` (`%`, `+`). **Pendiente:** cifra de exalumnos (`cl_cifra_6`) |
+| `cl_estructura` | Organigrama | `asamblea`, `asamblea_texto`, `junta`, `junta_texto`, `ramas` (lista de `{"nombre", "unidades": [...]}`), `auditor`, `auditor_texto`, `auditor_insignia` |
+| `cl_equipo`, `cl_rol_1..4` | «Nuestro equipo» y tarjetas por rol | — |
+| `cl_solidario` | Modelo solidario (#sostenibilidad) | `dato` («7 de 10»), `dato_texto` |
+| `cl_fuente_1..4` | Fuentes de ingreso | `enlace_texto`, `enlace` (vacíos = sin enlace) |
+| `cl_cierre` | Banner final | `resaltado`, `boton_1`, `enlace_1`, `boton_2`, `enlace_2`, `foto` |
+
+> **Fotos:** solo se publican fotos de estudiantes y del equipo que hayan dado su autorización.
+
+En la página **Programas**, la sección `programs_colegio` controla el bloque **#colegio** (destino del botón «Conocer el Colegio»): título, descripción y metadata `antetitulo`, `edad`.
+
 ---
 
 ## 2. Preguntas Frecuentes (FAQ)
