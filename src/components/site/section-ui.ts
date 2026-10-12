@@ -1,5 +1,5 @@
 /**
- * Clases compartidas de la página Apóyanos (diseño «Apóyanos — Escritorio»).
+ * Clases compartidas de las páginas institucionales por secciones (Apóyanos, Nosotros).
  * Colores con los tokens de marca (`larioja-*`, `whatsapp`, `line`, `surface-card`).
  */
 
@@ -15,12 +15,23 @@ export const SECTION_TINT = "bg-[#F3F5F8] dark:bg-slate-900/50";
 /** Sección blanca. */
 export const SECTION_PLAIN = "bg-white dark:bg-larioja-azul";
 
+/**
+ * Margen de anclaje de una sección bajo la barra fija de anclas (≈60 px).
+ * El alto de la navbar ya lo descuenta `scroll-padding-top` en `html`.
+ */
+export const SECTION_ANCHOR = "scroll-mt-[64px]";
+
+/** Antetítulo corto (mayúsculas solo por CSS). */
+export const EYEBROW =
+  "m-0 font-montserrat text-[13px] font-bold uppercase tracking-[0.08em] text-larioja-amarillo";
+
 /** Título H2 de sección. */
 export const H2 =
   "font-montserrat font-extrabold text-[clamp(28px,3.4vw,42px)] leading-[1.12] text-larioja-azul dark:text-white text-balance";
 
 /** Título H3 de bloque. */
-export const H3 = "font-montserrat font-bold text-[22px] md:text-2xl text-larioja-azul dark:text-white";
+export const H3 =
+  "font-montserrat font-bold text-[22px] md:text-2xl text-larioja-azul dark:text-white";
 
 /** Texto de cuerpo. */
 export const BODY = "text-gray-700 dark:text-white/80";
