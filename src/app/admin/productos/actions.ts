@@ -326,6 +326,7 @@ async function syncVariants(productId: string, variants: VariantInput[]): Promis
 }
 
 function revalidateShop() {
+  revalidatePath("/");
   revalidatePath("/productos");
   revalidatePath("/admin/productos");
 }

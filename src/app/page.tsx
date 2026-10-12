@@ -28,18 +28,33 @@ export default async function Home() {
     getPageContent("home"),
     createStaticClient()
       .from("products")
-      .select("id, name, price, image_url, slug")
+      .select("id, name, image_url, slug, variants:product_variants(price, is_available)")
       .eq("featured", true)
       .eq("is_active", true)
+      .order("content_order", { ascending: true })
       .limit(4),
     getTalleres(),
   ]);
 
   const rows = homeRows.status === "fulfilled" ? homeRows.value : [];
-  const products =
+  type ProductRow = {
+    id: string;
+    name: string;
+    image_url: string | null;
+    slug: string | null;
+    variants: { price: number; is_available: boolean }[];
+  };
+  const rawProducts =
     productsResult.status === "fulfilled" && !productsResult.value.error
-      ? (productsResult.value.data ?? [])
+      ? ((productsResult.value.data ?? []) as ProductRow[])
       : [];
+  const products = rawProducts.map((p) => ({
+    id: p.id,
+    name: p.name,
+    image_url: p.image_url,
+    slug: p.slug,
+    price: p.variants.length > 0 ? Math.min(...p.variants.map((v) => Number(v.price))) : 0,
+  }));
   const talleresCount = talleresResult.status === "fulfilled" ? talleresResult.value.length : 0;
   const talleresLabel =
     talleresCount > 0 ? `Ver los ${numeroEnPalabras(talleresCount)} talleres` : undefined;

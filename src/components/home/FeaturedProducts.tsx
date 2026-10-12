@@ -33,7 +33,7 @@ export function FeaturedProducts({ products }: Props) {
             </p>
           </div>
           <Link
-            href="/tienda"
+            href="/productos"
             className="shrink-0 rounded-full border-2 border-larioja-azul px-5 py-2 text-sm font-bold text-larioja-azul transition-colors hover:bg-larioja-azul hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul"
           >
             Ver todos los productos →
@@ -44,7 +44,7 @@ export function FeaturedProducts({ products }: Props) {
           {products.map((p) => (
             <Link
               key={p.id}
-              href={p.slug ? `/tienda/${p.slug}` : "/tienda"}
+              href={p.slug ? `/productos?producto=${p.slug}` : "/productos"}
               className="group flex flex-col overflow-hidden rounded-tile border border-line bg-surface-card shadow-tremor-card transition-shadow hover:shadow-md"
             >
               <div className="relative aspect-square overflow-hidden">
