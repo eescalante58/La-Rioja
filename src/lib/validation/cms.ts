@@ -51,3 +51,6 @@ export const orgBranchSchema = z.object({
 });
 
 export type OrgBranch = z.infer<typeof orgBranchSchema>;
+
+/** Grupo de un taller de Programas (`cl_taller_N.metadata.grupo`); por defecto «productivo». */
+export const workshopGroupSchema = z.enum(["productivo", "vida-independiente"]).catch("productivo");
