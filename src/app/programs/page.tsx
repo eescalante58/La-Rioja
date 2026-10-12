@@ -6,7 +6,8 @@ import { ProgramHero } from "@/components/programs/ProgramHero";
 import { AgeSelector } from "@/components/programs/AgeSelector";
 import { AdaptiveLevels } from "@/components/programs/AdaptiveLevels";
 import { CurriculumAxes } from "@/components/programs/CurriculumAxes";
-import { WorkshopGrid } from "@/components/programs/WorkshopGrid";
+import { TalleresGrid } from "@/components/programs/TalleresGrid";
+import { VidaIndependiente } from "@/components/programs/VidaIndependiente";
 import { IntegralTraining } from "@/components/programs/IntegralTraining";
 import { AdmissionSteps } from "@/components/programs/AdmissionSteps";
 import { ProgramsCta } from "@/components/programs/ProgramsCta";
@@ -16,7 +17,6 @@ import type {
   AdmissionStep,
   CurriculumAxis,
   IntegralSubject,
-  Workshop,
 } from "@/components/programs/types";
 import {
   CONTAINER,
@@ -30,12 +30,11 @@ import {
   metaHref,
   metaStrings,
   metaText,
-  sectionImage,
   sectionsWithPrefix,
   textOr,
   type CmsSection,
 } from "@/lib/cms-content";
-import { workshopGroupSchema } from "@/lib/validation/cms";
+import { getTalleresGroups, capitalizar, numeroEnPalabras } from "@/lib/talleres";
 import { whatsappDigits } from "@/lib/whatsapp";
 import { getPageContent } from "@/services/cms";
 
@@ -101,9 +100,10 @@ function httpsUrl(value: string | null | undefined): string {
  * filas `cl_*`; ver supabase/migrations/20261023000000_programas_cms_secciones.sql).
  */
 export default async function ProgramsPage() {
-  const [content, socialMedia] = await Promise.all([
+  const [content, socialMedia, talleresData] = await Promise.all([
     getPageContent("programs") as Promise<CmsSection[]>,
     getPageContent("social media") as Promise<CmsSection[]>,
+    getTalleresGroups(),
   ]);
   const section = (key: string) => content.find((s) => s.section_key === key);
   const social = (key: string) =>
@@ -111,10 +111,32 @@ export default async function ProgramsPage() {
   const whatsapp = whatsappDigits(social("whatsapp"));
 
   const selector = section("cl_selector");
+
+  // Talleres productivos y vida-independiente (calculados antes que programs para el conteo dinámico)
+  const workshopsRow = section("cl_talleres");
+  const { productivos: workshops, vidaIndependiente } = talleresData;
+  const talleresCount = workshops.length;
+  const talleresLabel =
+    talleresCount > 0
+      ? `${capitalizar(numeroEnPalabras(talleresCount))} talleres vocacionales en grupos de 7 a 8 estudiantes`
+      : "";
+
   const programs = [
     toAgeProgram(section("cl_programa_colegio"), "colegio", false, "#admision"),
     toAgeProgram(section("cl_programa_cfl"), "cfl", true, "#niveles"),
-  ].filter((p): p is AgeProgram => p !== null);
+  ]
+    .filter((p): p is AgeProgram => p !== null)
+    .map((p) => {
+      if (p.id === "cfl" && talleresLabel) {
+        return {
+          ...p,
+          includes: p.includes.map((item) =>
+            /talleres vocacionales/i.test(item) ? talleresLabel : item,
+          ),
+        };
+      }
+      return p;
+    });
 
   const levelsRow = section("cl_niveles");
   const levels: AdaptiveLevel[] = titled(content, "cl_nivel_").map((l, i) => ({
@@ -136,24 +158,6 @@ export default async function ProgramsPage() {
   const pdfHref =
     metaHref(levelsRow, "pdf_enlace", "") || httpsUrl(metaText(levelsRow, "pdf_enlace", ""));
   const pdf = pdfLabel && pdfHref ? { label: pdfLabel, href: pdfHref } : undefined;
-
-  const workshopsRow = section("cl_talleres");
-  const workshops: Workshop[] = titled(content, "cl_taller_").map((w) => {
-    const photo = sectionImage(w);
-    const name = textOr(w.title, "");
-    return {
-      slug: w.section_key,
-      name,
-      group: workshopGroupSchema.parse(w.metadata?.grupo),
-      skills: metaText(w, "habilidades", ""),
-      impact: metaText(w, "impacto", ""),
-      products: metaText(w, "productos", ""),
-      image: photo
-        ? { url: photo, alt: metaText(w, "foto_alt", `Estudiantes en el taller de ${name}`) }
-        : undefined,
-      badge: metaText(w, "insignia", ""),
-    };
-  });
 
   const subjects: IntegralSubject[] = titled(content, "cl_materia_").map((s) => ({
     key: s.section_key,
@@ -203,7 +207,7 @@ export default async function ProgramsPage() {
         </section>
       )}
 
-      <WorkshopGrid
+      <TalleresGrid
         title={textOr(workshopsRow?.title, "Talleres donde se aprende haciendo")}
         intro={textOr(workshopsRow?.description, "")}
         workshops={workshops}
@@ -212,6 +216,8 @@ export default async function ProgramsPage() {
           href: metaHref(workshopsRow, "enlace", "/productos"),
         }}
       />
+
+      <VidaIndependiente workshops={vidaIndependiente} />
 
       <IntegralTraining intro={section("cl_integral")} subjects={subjects} />
 

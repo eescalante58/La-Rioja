@@ -12,6 +12,8 @@ interface Taller {
 
 interface Props {
   workshops: SiteContent | null;
+  /** Etiqueta del enlace "Ver los N talleres" calculada a partir de getTalleres(). */
+  talleresLabel?: string;
 }
 
 const TALLERES_FALLBACK: Taller[] = [
@@ -39,12 +41,10 @@ const TALLERES_FALLBACK: Taller[] = [
 ];
 
 /** Sección 5 — Talleres productivos. Bento grid: panadería grande, costura y carpintería a la derecha. */
-export function WorkshopsTeaser({ workshops }: Props) {
+export function WorkshopsTeaser({ workshops, talleresLabel }: Props) {
   const meta = (workshops?.metadata ?? {}) as Record<string, unknown>;
   const talleres: Taller[] = (meta.talleres as Taller[]) ?? TALLERES_FALLBACK;
-  const whatsappGeneral =
-    (meta.whatsapp as string) ??
-    "https://wa.me/5493624000000?text=Hola%2C%20quisiera%20información%20sobre%20los%20talleres";
+  const ctaLabel = talleresLabel ?? "Ver todos los talleres";
 
   const [grande, ...resto] = talleres;
 
@@ -65,12 +65,10 @@ export function WorkshopsTeaser({ workshops }: Props) {
             </p>
           </div>
           <Link
-            href={whatsappGeneral}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 rounded-full border-2 border-larioja-verde px-5 py-2.5 text-sm font-bold text-larioja-verde transition-colors hover:bg-larioja-verde hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul min-h-[44px] inline-flex items-center"
+            href="/programs#talleres"
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-2 border-larioja-azul px-5 py-2.5 text-sm font-bold text-larioja-azul transition-colors hover:bg-larioja-azul hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul"
           >
-            Consultar por WhatsApp →
+            {ctaLabel} →
           </Link>
         </div>
 

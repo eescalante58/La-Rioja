@@ -1,5 +1,6 @@
 import { getPageContent } from "@/services/cms";
 import { createStaticClient } from "@/lib/supabase/server";
+import { getTalleres, numeroEnPalabras } from "@/lib/talleres";
 import type { Metadata } from "next";
 
 import { Navbar } from "@/components/layout/Navbar";
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [homeRows, productsResult] = await Promise.allSettled([
+  const [homeRows, productsResult, talleresResult] = await Promise.allSettled([
     getPageContent("home"),
     createStaticClient()
       .from("products")
@@ -31,6 +32,7 @@ export default async function Home() {
       .eq("featured", true)
       .eq("is_active", true)
       .limit(4),
+    getTalleres(),
   ]);
 
   const rows = homeRows.status === "fulfilled" ? homeRows.value : [];
@@ -38,6 +40,9 @@ export default async function Home() {
     productsResult.status === "fulfilled" && !productsResult.value.error
       ? (productsResult.value.data ?? [])
       : [];
+  const talleresCount = talleresResult.status === "fulfilled" ? talleresResult.value.length : 0;
+  const talleresLabel =
+    talleresCount > 0 ? `Ver los ${numeroEnPalabras(talleresCount)} talleres` : undefined;
 
   const byKey = Object.fromEntries(rows.map((r) => [r.section_key, r]));
   const campaignRows = rows.filter((r) => r.section_key.startsWith("cl_campaign"));
@@ -62,7 +67,7 @@ export default async function Home() {
       <SolidarityBand solidarity={byKey["cl_solidarity"] ?? null} />
 
       {/* 5 — Talleres */}
-      <WorkshopsTeaser workshops={byKey["cl_workshops"] ?? null} />
+      <WorkshopsTeaser workshops={byKey["cl_workshops"] ?? null} talleresLabel={talleresLabel} />
 
       {/* 6 — Video institucional (solo si visible = true en metadata) */}
       <VideoSection video={byKey["cl_video"] ?? null} />
