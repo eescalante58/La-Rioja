@@ -59,6 +59,8 @@ interface FormState {
   line_id: string;
   content_order: string;
   is_active: boolean;
+  /** Aparece en la sección «Productos destacados» de la página de inicio. */
+  featured: boolean;
   variants: VariantRow[];
 }
 
@@ -81,6 +83,7 @@ const emptyForm = (lineId = ""): FormState => ({
   line_id: lineId,
   content_order: "0",
   is_active: true,
+  featured: false,
   variants: [newRow()],
 });
 
@@ -256,6 +259,7 @@ export default function ProductsTab({ companyId, data, setData, toolbarSlot }: P
       line_id: product.line_id ? String(product.line_id) : "",
       content_order: String(product.content_order),
       is_active: product.is_active,
+      featured: product.featured,
       variants:
         product.variants.length > 0
           ? product.variants.map((v) =>
@@ -338,6 +342,7 @@ export default function ProductsTab({ companyId, data, setData, toolbarSlot }: P
       String(keepsPlace ? editing.content_order : nextOrderIn(form.line_id)),
     );
     fd.append("is_active", String(form.is_active));
+    fd.append("featured", String(form.featured));
     fd.append("variants", JSON.stringify(variants));
     if (imageFile) fd.append("image", imageFile);
     if (removeImage) fd.append("remove_image", "true");
@@ -522,9 +527,10 @@ export default function ProductsTab({ companyId, data, setData, toolbarSlot }: P
 
       {/* Dialog de Tremor: gestiona el apilado de portales (Select por encima). */}
       <Dialog open={modalOpen} onClose={closeModal} static={true}>
-        <DialogPanel className="max-w-xl w-full p-0 overflow-hidden rounded-2xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-2xl">
-          <form onSubmit={handleSubmit} className="max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-5 py-4">
+        <DialogPanel className="max-w-2xl w-full p-0 overflow-hidden rounded-2xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col max-h-[92vh]">
+          <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
+            {/* Encabezado fijo */}
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-5 py-4 shrink-0">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                 {editing ? "Editar producto" : "Nuevo producto"}
               </h2>
@@ -538,92 +544,100 @@ export default function ProductsTab({ companyId, data, setData, toolbarSlot }: P
               </button>
             </div>
 
-            <div className="space-y-4 px-5 py-4">
-              {/* Foto */}
-              <div>
-                <FieldLabel>Foto</FieldLabel>
-                <div className="flex items-center gap-4">
-                  <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-[#f3efe7] dark:bg-gray-900">
-                    {imagePreview ? (
-                      <Image
-                        src={imagePreview}
-                        alt="Vista previa"
-                        fill
-                        unoptimized
-                        className="object-contain p-1"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-300 dark:text-gray-700">
-                        <ImageIcon size={32} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2 min-w-0">
+            {/* Cuerpo — scroll solo si hay muchas presentaciones */}
+            <div className="overflow-y-auto flex-1">
+              <div className="space-y-4 px-5 py-4">
+                {/* Fila: foto + nombre + enlace */}
+                <div className="grid grid-cols-[88px_1fr] gap-4 items-start">
+                  {/* Foto */}
+                  <div className="flex flex-col gap-1.5">
+                    <FieldLabel>Foto</FieldLabel>
+                    <div className="relative h-[88px] w-[88px] overflow-hidden rounded-lg bg-[#f3efe7] dark:bg-gray-900">
+                      {imagePreview ? (
+                        <Image
+                          src={imagePreview}
+                          alt="Vista previa"
+                          fill
+                          unoptimized
+                          className="object-contain p-1"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-300 dark:text-gray-700">
+                          <ImageIcon size={28} />
+                        </div>
+                      )}
+                    </div>
                     <input
                       ref={fileInputRef}
+                      id="product-image-input"
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
-                      className="text-sm text-gray-600 dark:text-gray-300 file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-gray-800 file:px-3 file:py-1.5 file:text-sm file:font-semibold"
+                      className="sr-only"
                     />
+                    <label
+                      htmlFor="product-image-input"
+                      className="cursor-pointer text-xs font-semibold text-larioja-azul dark:text-larioja-amarillo hover:underline"
+                    >
+                      {imagePreview ? "Cambiar" : "Elegir foto"}
+                    </label>
                     {imagePreview && (
                       <button
                         type="button"
                         onClick={clearImage}
-                        className="self-start text-xs font-semibold text-red-600 hover:underline"
+                        className="text-left text-xs font-semibold text-red-600 hover:underline"
                       >
-                        Quitar foto
+                        Quitar
                       </button>
                     )}
                   </div>
+
+                  {/* Nombre + enlace */}
+                  <div className="flex flex-col gap-3">
+                    <label className="block">
+                      <FieldLabel>Nombre *</FieldLabel>
+                      <input
+                        required
+                        minLength={2}
+                        maxLength={120}
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        className={inputClass}
+                        placeholder="Tote bag floral"
+                      />
+                    </label>
+                    <label className="block">
+                      <FieldLabel>Enlace del producto</FieldLabel>
+                      <input
+                        maxLength={120}
+                        value={form.slug}
+                        onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                        onBlur={() =>
+                          setForm((f) => ({ ...f, slug: f.slug.trim() ? slugify(f.slug) : "" }))
+                        }
+                        className={inputClass}
+                        placeholder={slugify(form.name || "tote bag floral")}
+                      />
+                      <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                        /productos?producto={form.slug || slugify(form.name || "…")}
+                      </span>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <label className="block">
-                <FieldLabel>Nombre *</FieldLabel>
-                <input
-                  required
-                  minLength={2}
-                  maxLength={120}
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className={inputClass}
-                  placeholder="Tote bag floral"
-                />
-              </label>
+                {/* Descripción */}
+                <label className="block">
+                  <FieldLabel>Descripción</FieldLabel>
+                  <textarea
+                    rows={2}
+                    maxLength={1000}
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    className={inputClass}
+                  />
+                </label>
 
-              <label className="block">
-                <FieldLabel>Enlace del producto</FieldLabel>
-                <input
-                  maxLength={120}
-                  value={form.slug}
-                  onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                  onBlur={() =>
-                    setForm((f) => ({ ...f, slug: f.slug.trim() ? slugify(f.slug) : "" }))
-                  }
-                  className={inputClass}
-                  placeholder={slugify(form.name || "tote bag floral")}
-                />
-                <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
-                  /productos?producto={form.slug || slugify(form.name || "…")}
-                  {editing
-                    ? " · Si lo cambias, los enlaces ya compartidos dejarán de abrir este producto."
-                    : " · Vacío: se genera a partir del nombre."}
-                </span>
-              </label>
-
-              <label className="block">
-                <FieldLabel>Descripción</FieldLabel>
-                <textarea
-                  rows={3}
-                  maxLength={1000}
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className={inputClass}
-                />
-              </label>
-
-              <div>
+                {/* Catálogo y línea */}
                 <div>
                   <FieldLabel>Catálogo y línea *</FieldLabel>
                   <Select
@@ -639,105 +653,112 @@ export default function ProductsTab({ companyId, data, setData, toolbarSlot }: P
                     ))}
                   </Select>
                 </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Para cambiar el orden en la tienda, arrastra la tarjeta desde el asa ⋮⋮ en el
-                  listado.
-                </p>
-              </div>
 
-              {/* Presentaciones y precios */}
-              <div>
-                <FieldLabel>Precios *</FieldLabel>
-                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                  Un precio si el producto tiene una sola presentación. Para varias (p. ej. Pequeño
-                  / Grande), ponle nombre a cada una.
-                </p>
-                <div className="space-y-2">
-                  {form.variants.map((v) => (
-                    <div
-                      key={v.key}
-                      className="grid grid-cols-2 sm:grid-cols-[1fr_6rem_1fr_auto_auto] items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 p-2"
-                    >
-                      <input
-                        aria-label="Presentación"
-                        maxLength={40}
-                        value={v.label}
-                        onChange={(e) => updateRow(v.key, { label: e.target.value })}
-                        className={inputClass}
-                        placeholder={form.variants.length > 1 ? "Presentación *" : "Presentación"}
-                        required={form.variants.length > 1}
-                      />
-                      <input
-                        aria-label="Precio en USD"
-                        required
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={v.price}
-                        onChange={(e) => updateRow(v.key, { price: e.target.value })}
-                        className={inputClass}
-                        placeholder="$"
-                      />
-                      <input
-                        aria-label="Unidad"
-                        maxLength={40}
-                        value={v.unit}
-                        onChange={(e) => updateRow(v.key, { unit: e.target.value })}
-                        className={inputClass}
-                        placeholder="Unidad (2 unidades…)"
-                      />
-                      <label className="inline-flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={v.is_available}
-                          onChange={(e) => updateRow(v.key, { is_available: e.target.checked })}
-                          className="h-4 w-4 accent-larioja-verde"
-                        />
-                        Disponible
-                      </label>
-                      <button
-                        type="button"
-                        disabled={form.variants.length === 1}
-                        onClick={() =>
-                          setForm((f) => ({
-                            ...f,
-                            variants: f.variants.filter((r) => r.key !== v.key),
-                          }))
-                        }
-                        className="justify-self-end rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 disabled:opacity-30 disabled:hover:bg-transparent"
-                        aria-label="Quitar presentación"
+                {/* Presentaciones y precios */}
+                <div>
+                  <FieldLabel>Precios *</FieldLabel>
+                  <div className="space-y-2">
+                    {form.variants.map((v) => (
+                      <div
+                        key={v.key}
+                        className="grid grid-cols-2 sm:grid-cols-[1fr_6rem_1fr_auto_auto] items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-800 p-2"
                       >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
+                        <input
+                          aria-label="Presentación"
+                          maxLength={40}
+                          value={v.label}
+                          onChange={(e) => updateRow(v.key, { label: e.target.value })}
+                          className={inputClass}
+                          placeholder={form.variants.length > 1 ? "Presentación *" : "Presentación"}
+                          required={form.variants.length > 1}
+                        />
+                        <input
+                          aria-label="Precio en USD"
+                          required
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={v.price}
+                          onChange={(e) => updateRow(v.key, { price: e.target.value })}
+                          className={inputClass}
+                          placeholder="$"
+                        />
+                        <input
+                          aria-label="Unidad"
+                          maxLength={40}
+                          value={v.unit}
+                          onChange={(e) => updateRow(v.key, { unit: e.target.value })}
+                          className={inputClass}
+                          placeholder="Unidad (2 unidades…)"
+                        />
+                        <label className="inline-flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={v.is_available}
+                            onChange={(e) => updateRow(v.key, { is_available: e.target.checked })}
+                            className="h-4 w-4 accent-larioja-verde"
+                          />
+                          Disponible
+                        </label>
+                        <button
+                          type="button"
+                          disabled={form.variants.length === 1}
+                          onClick={() =>
+                            setForm((f) => ({
+                              ...f,
+                              variants: f.variants.filter((r) => r.key !== v.key),
+                            }))
+                          }
+                          className="justify-self-end rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 disabled:opacity-30 disabled:hover:bg-transparent"
+                          aria-label="Quitar presentación"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {form.variants.length < 10 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({ ...f, variants: [...f.variants, newRow()] }))
+                      }
+                      className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-larioja-azul dark:text-larioja-amarillo hover:underline"
+                    >
+                      <Plus size={14} />
+                      Agregar presentación
+                    </button>
+                  )}
                 </div>
-                {form.variants.length < 10 && (
-                  <button
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, variants: [...f.variants, newRow()] }))}
-                    className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-larioja-azul dark:text-larioja-amarillo hover:underline"
-                  >
-                    <Plus size={14} />
-                    Agregar presentación
-                  </button>
-                )}
+
+                {/* Visibilidad y destacado */}
+                <div className="flex flex-wrap gap-5">
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={form.is_active}
+                      onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                      className="h-4 w-4 accent-larioja-azul"
+                    />
+                    Publicado en la tienda
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={form.featured}
+                      onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+                      className="h-4 w-4 accent-larioja-amarillo"
+                    />
+                    Destacado en inicio
+                  </label>
+                </div>
+
+                <ErrorBox message={formError} />
               </div>
-
-              <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="checkbox"
-                  checked={form.is_active}
-                  onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                  className="h-4 w-4 accent-larioja-azul"
-                />
-                Publicado en la tienda
-              </label>
-
-              <ErrorBox message={formError} />
             </div>
 
-            <div className="flex justify-end gap-2 border-t border-gray-100 dark:border-gray-800 px-5 py-4">
+            {/* Pie fijo */}
+            <div className="flex justify-end gap-2 border-t border-gray-100 dark:border-gray-800 px-5 py-4 shrink-0">
               <button
                 type="button"
                 onClick={closeModal}

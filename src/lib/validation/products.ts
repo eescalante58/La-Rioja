@@ -86,6 +86,8 @@ export interface Product {
   description: string | null;
   image_url: string | null;
   is_active: boolean;
+  /** Aparece en la sección «Productos destacados» de la página de inicio. */
+  featured: boolean;
   content_order: number;
   created_at: string;
   updated_at: string;
@@ -133,6 +135,7 @@ export const productSchema = z
       .optional(),
     description: z.string().trim().max(1000).nullable(),
     is_active: z.boolean(),
+    featured: z.boolean(),
     content_order: z.number().int().min(0),
     variants: z
       .array(variantInputSchema)
@@ -150,10 +153,7 @@ export type ProductInput = z.infer<typeof productSchema>;
 export const catalogSchema = z.object({
   id: z.number().int().positive().optional(),
   company_id: z.number().int().positive(),
-  slug: z
-    .string()
-    .trim()
-    .regex(SLUG_PATTERN, "Identificador: minúsculas, números y guiones"),
+  slug: z.string().trim().regex(SLUG_PATTERN, "Identificador: minúsculas, números y guiones"),
   name: z.string().trim().min(2, "Nombre requerido").max(80),
   tagline: z.string().trim().max(160).nullable(),
   description: z.string().trim().max(2000).nullable(),

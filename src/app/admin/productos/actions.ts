@@ -139,6 +139,7 @@ function parseProductForm(formData: FormData) {
     slug: text("slug") ?? "",
     description: text("description"),
     is_active: formData.get("is_active") === "true",
+    featured: formData.get("featured") === "true",
     content_order: Number(formData.get("content_order") ?? 0) || 0,
     variants,
   });
@@ -234,9 +235,7 @@ async function resolveProductSlug(
 }
 
 /** Lee el `company_id` de un producto y valida que el usuario pertenezca a esa empresa. */
-async function authorizeProduct(
-  id: string,
-): Promise<{
+async function authorizeProduct(id: string): Promise<{
   product?: Pick<Product, "company_id" | "image_url" | "name" | "slug">;
   error?: string;
 }> {
