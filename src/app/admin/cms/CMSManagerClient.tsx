@@ -21,7 +21,7 @@ const CMSDeleteDialog = dynamic(() => import("@/components/admin/cms/CMSDeleteDi
 
 const CMS_PAGES = [
   { value: "home", label: "Home" },
-  { value: "about", label: "About" },
+  { value: "about", label: "Nosotros" },
   { value: "bingo", label: "Bingo" },
   { value: "tombola", label: "Tombola" },
   { value: "programs", label: "Programs" },

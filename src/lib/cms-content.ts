@@ -3,6 +3,8 @@
  * Un texto vacío cuenta como «sin dato»: la página lo oculta o usa un respaldo.
  */
 
+import { cmsInternalHrefSchema } from "@/lib/validation/cms";
+
 /** Fila del CMS (`site_content`) tal como la usan las páginas públicas. */
 export interface CmsSection {
   section_key: string;
@@ -69,4 +71,13 @@ export function sectionsWithPrefix(content: CmsSection[], prefix: string): CmsSe
         (a.content_order ?? 0) - (b.content_order ?? 0) ||
         a.section_key.localeCompare(b.section_key, "es", { numeric: true }),
     );
+}
+
+/**
+ * Enlace interno de `metadata[key]` validado con `cmsInternalHrefSchema`
+ * (ruta del sitio o ancla); si falta o no es válido, `fallback`.
+ */
+export function metaHref(section: CmsSection | undefined, key: string, fallback: string): string {
+  const parsed = cmsInternalHrefSchema.safeParse(section?.metadata?.[key]);
+  return parsed.success && parsed.data !== "" ? parsed.data : fallback;
 }

@@ -28,3 +28,26 @@ export const faqSectionSchema = z.object({
 export type CMSContentInput = z.infer<typeof cmsContentSchema>;
 export type FAQInput = z.infer<typeof faqSchema>;
 export type FAQSectionInput = z.infer<typeof faqSectionSchema>;
+
+/**
+ * Enlace interno editable en el CMS: ruta del sitio (`/programs`, `/programs#colegio`)
+ * o ancla de la misma página (`#historia`). Rechaza URLs externas y esquemas como `javascript:`.
+ */
+export const cmsInternalHrefSchema = z
+  .string()
+  .trim()
+  .regex(/^(\/(?![/\\])|#)[^\s]*$/, "Debe ser una ruta del sitio (/...) o un ancla (#...)");
+
+/** Valor de un contador de la página Nosotros: número entero de hasta 6 cifras. */
+export const statValueSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{1,6}$/);
+
+/** Rama del organigrama de Nosotros (`cl_estructura.metadata.ramas[]`). */
+export const orgBranchSchema = z.object({
+  nombre: z.string().trim().min(1),
+  unidades: z.array(z.string().trim().min(1)).catch([]),
+});
+
+export type OrgBranch = z.infer<typeof orgBranchSchema>;
