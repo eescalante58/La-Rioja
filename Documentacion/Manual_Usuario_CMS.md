@@ -115,7 +115,28 @@ Los enlaces (`enlace`, `enlace_1`, `enlace_2`) solo aceptan rutas del sitio (`/p
 
 > **Fotos:** solo se publican fotos de estudiantes y del equipo que hayan dado su autorización.
 
-En la página **Programas**, la sección `programs_colegio` controla el bloque **#colegio** (destino del botón «Conocer el Colegio»): título, descripción y metadata `antetitulo`, `edad`.
+### Página «Programas» (`/programs`)
+
+En **Contenido General**, filtra por la página **Programs**. Igual que en Nosotros, todas las secciones del rediseño llevan el prefijo **`cl_`**; las anteriores (`programs_*`, `academic_content`, `workshops`, `supplementary-subjects`) quedaron **inactivas** como respaldo y la página ya no las muestra.
+
+Mismas reglas que en Nosotros: un dato vacío no se publica, desactivar una sección la oculta, la imagen subida tiene prioridad sobre `metadata.foto`, y cada elemento de una lista (nivel, eje, taller, materia, paso) es una sección propia con el siguiente número (por ejemplo `cl_taller_8`). Los enlaces internos solo aceptan rutas del sitio (`/faq`) o anclas (`#admision`). El WhatsApp y el botón «Cómo llegar» salen de la página **Social Media** (`whatsapp`, `google maps`).
+
+| Sección (`section_key`) | Qué controla | Datos en «Metadata» (JSON) |
+|---|---|---|
+| `cl_hero` | Título (H1) y subtítulo | `antetitulo`, `resaltado` (parte amarilla del título), `boton_1`, `enlace_1`, `boton_2`, `enlace_2`, `garantias` (lista), `foto`, `foto_alt` |
+| `cl_selector` | «Un programa para cada etapa» (#programas) | — |
+| `cl_programa_colegio`, `cl_programa_cfl` | Tarjetas por edad (#colegio, destino de «Conocer el Colegio» en Nosotros, y #cfl) | `edad`, `enfoque`, `pestana` (texto corto de la pestaña en celular), `incluye` (lista), `boton`, `enlace` |
+| `cl_niveles` | «Nuestra ruta de formación» (#niveles) | `pdf_texto`, `pdf_enlace` (plan de estudios en PDF; vacíos = sin enlace) |
+| `cl_nivel_1..5` | Niveles del CFL (título = nombre) | `objetivo`, `enfoque`, `logro`. **Pendiente:** validar los textos de `logro` con los docentes de nivel |
+| `cl_ejes` | Título de los ejes y nota final (descripción) | — |
+| `cl_eje_1..4` | Ejes curriculares (descripción = qué aprenden) | `area` |
+| `cl_talleres` | «Talleres donde se aprende haciendo» (#talleres) | `boton`, `enlace` |
+| `cl_taller_1..7` | Tarjetas de taller | `grupo` (`productivo` o `vida-independiente`, usado por los filtros), `habilidades`, `impacto`, `productos`, `insignia` (con valor = tarjeta a lo ancho), `foto`, `foto_alt`. **Pendiente:** productos de carpintería |
+| `cl_integral` | «Formación que va más allá del taller» (#formacion-integral) | `foto`, `foto_alt` |
+| `cl_materia_1..4` | Materias complementarias | `rol` (insignia de la tarjeta) |
+| `cl_admision` | «Cómo inscribir a tu familiar» (#admision) | `titulo_datos`, `documentos`, `periodo`, `duracion`, `horario` (**pendientes**: vacíos = el bloque de datos útiles no se muestra), `boton`, `mensaje_whatsapp`, `enlace_faq_texto`, `enlace_faq` |
+| `cl_paso_1..4` | Pasos de admisión | — |
+| `cl_cierre` | Banner final «Ven a conocernos» | `resaltado`, `boton_1`, `mensaje_whatsapp`, `boton_2` («Cómo llegar»), `contacto`, `foto` |
 
 ---
 
