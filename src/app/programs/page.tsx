@@ -37,6 +37,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { ProgramCTA } from "@/components/programs/ProgramCTA";
+import { ColegioSection } from "@/components/programs/ColegioSection";
+import type { CmsSection } from "@/lib/cms-content";
 import { getPageContent } from "@/services/cms";
 import type { CmsIconMap, CmsItem, SiteContent } from "@/types/cms";
 
@@ -154,6 +156,7 @@ export default async function ProgramsPage() {
   const supplementary = getSection("supplementary-subjects");
   const value = getSection("programs_value");
   const cta = getSection("programs_cta");
+  const colegio = getSection("programs_colegio") as CmsSection | undefined;
 
   const programs = Array.isArray(levels?.metadata) ? levels.metadata : [];
   const academicItems = Array.isArray(academic?.metadata)
@@ -290,6 +293,9 @@ export default async function ProgramsPage() {
           </div>
         </div>
       </section>
+
+      {/* Colegio La Rioja (destino de «Conocer el Colegio» en Nosotros) */}
+      <ColegioSection colegio={colegio} />
 
       {/* Programs Grid (Levels) */}
       <section className="py-24 bg-white dark:bg-larioja-azul">
