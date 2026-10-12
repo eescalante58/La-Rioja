@@ -65,15 +65,21 @@ export function HomeCta({ cta }: Props) {
           {(telefono1 || direccion) && (
             <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-white/70">
               {telefono1 && (
-                <span>
+                <span className="flex flex-wrap items-center justify-center gap-x-2">
                   📞{" "}
-                  <a href={`tel:${telefono1}`} className="hover:text-white hover:underline">
+                  <a
+                    href={`tel:${telefono1}`}
+                    className="inline-flex min-h-[44px] items-center hover:text-white hover:underline"
+                  >
                     {telefono1}
                   </a>
                   {telefono2 && (
                     <>
-                      {" · "}
-                      <a href={`tel:${telefono2}`} className="hover:text-white hover:underline">
+                      <span aria-hidden>·</span>
+                      <a
+                        href={`tel:${telefono2}`}
+                        className="inline-flex min-h-[44px] items-center hover:text-white hover:underline"
+                      >
                         {telefono2}
                       </a>
                     </>

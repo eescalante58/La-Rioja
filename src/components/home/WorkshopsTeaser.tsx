@@ -68,7 +68,7 @@ export function WorkshopsTeaser({ workshops }: Props) {
             href={whatsappGeneral}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 rounded-full border-2 border-larioja-verde px-5 py-2 text-sm font-bold text-larioja-verde transition-colors hover:bg-larioja-verde hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul"
+            className="shrink-0 rounded-full border-2 border-larioja-verde px-5 py-2.5 text-sm font-bold text-larioja-verde transition-colors hover:bg-larioja-verde hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul min-h-[44px] inline-flex items-center"
           >
             Consultar por WhatsApp →
           </Link>

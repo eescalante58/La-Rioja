@@ -52,7 +52,7 @@ export function StagesCards({ colegio, cfl }: Props) {
                   {meta.enlace && meta.boton && (
                     <Link
                       href={meta.enlace}
-                      className="mt-2 inline-flex w-fit items-center gap-1 rounded-full border-2 border-larioja-azul px-5 py-2 text-sm font-bold text-larioja-azul transition-colors hover:bg-larioja-azul hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul"
+                      className="mt-2 inline-flex min-h-[44px] w-fit items-center gap-1 rounded-full border-2 border-larioja-azul px-5 py-2.5 text-sm font-bold text-larioja-azul transition-colors hover:bg-larioja-azul hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul"
                     >
                       {meta.boton}
                     </Link>

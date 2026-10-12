@@ -63,7 +63,7 @@ export function CampaignStrip({ rows }: Props) {
                 <p className="mb-4 text-sm leading-relaxed text-ink-muted">{c.text}</p>
                 <Link
                   href={c.href}
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-larioja-azul-enlace hover:underline dark:text-larioja-azul-celeste"
+                  className="inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-larioja-azul-enlace hover:underline dark:text-larioja-azul-celeste"
                 >
                   {c.linkLabel} →
                 </Link>
