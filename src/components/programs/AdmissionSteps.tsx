@@ -113,7 +113,7 @@ export function AdmissionSteps({ intro, steps, whatsapp }: AdmissionStepsProps) 
             {faqText && (
               <Link
                 href={metaHref(intro, "enlace_faq", "/faq")}
-                className="text-sm font-semibold text-larioja-azul-enlace underline-offset-4 hover:underline dark:text-larioja-amarillo"
+                className="inline-flex min-h-[44px] items-center text-sm font-semibold text-larioja-azul-enlace underline-offset-4 hover:underline dark:text-larioja-amarillo"
               >
                 {faqText}
               </Link>

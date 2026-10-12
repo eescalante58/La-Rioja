@@ -45,7 +45,7 @@ export function AdaptiveLevels({ levels }: AdaptiveLevelsProps) {
                   className={`grid h-9 w-9 shrink-0 place-items-center rounded-full font-extrabold ${
                     selected
                       ? "bg-larioja-amarillo text-larioja-azul dark:bg-larioja-azul dark:text-larioja-amarillo"
-                      : "bg-larioja-azul text-larioja-amarillo"
+                      : "bg-larioja-azul text-larioja-amarillo dark:bg-white/15"
                   }`}
                   aria-hidden="true"
                 >
