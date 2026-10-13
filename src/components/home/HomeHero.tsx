@@ -54,7 +54,7 @@ export function HomeHero({ hero }: Props) {
 
         {/* Imagen */}
         <div className="order-first lg:order-last">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-2xl">
+          <div className="relative aspect-[3/2] overflow-hidden rounded-2xl shadow-2xl">
             <Image
               src={imgSrc}
               alt={imgAlt}
