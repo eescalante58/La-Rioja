@@ -10,6 +10,7 @@ import {
   Upload,
   X as XIcon,
   ImageIcon,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { callActionForm } from "@/lib/action-client";
@@ -37,6 +38,7 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(item.image_url || null);
+  const [clearImage, setClearImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
@@ -90,6 +92,10 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
       submitData.append("old_image_url", item.image_url || "");
       submitData.append("image_url", formData.image_url);
       submitData.append("section_key", item.section_key);
+
+      if (clearImage) {
+        submitData.append("clear_image", "true");
+      }
 
       if (selectedFile) {
         submitData.append("file", selectedFile);
@@ -147,7 +153,25 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
       setSelectedFile(compressed);
       const url = URL.createObjectURL(compressed);
       setPreviewUrl(url);
+      setClearImage(false);
     }
+  };
+
+  const handleClearImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setClearImage(true);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setFormData({ ...formData, image_url: "" });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCancelClear = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setClearImage(false);
+    setPreviewUrl(item.image_url || null);
+    setFormData({ ...formData, image_url: item.image_url || "" });
   };
 
   const triggerFileInput = (e: React.MouseEvent) => {
@@ -172,6 +196,7 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
     e.stopPropagation();
     setSelectedFile(null);
     setPreviewUrl(item.image_url || null);
+    setClearImage(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -246,18 +271,29 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
                       type="button"
                       onClick={triggerFileInput}
                       className="cursor-pointer bg-white text-black p-3 rounded-full hover:bg-gray-100 transition-colors shadow-xl scale-90 group-hover:scale-100 transition-transform"
+                      title="Reemplazar foto"
                     >
                       <Upload size={20} />
                     </button>
-                    {selectedFile && (
+                    {selectedFile ? (
                       <button
                         type="button"
                         onClick={removeFile}
                         className="bg-rose-500 text-white p-3 rounded-full hover:bg-rose-600 transition-colors shadow-xl scale-90 group-hover:scale-100 transition-transform"
+                        title="Cancelar selección"
                       >
                         <XIcon size={20} />
                       </button>
-                    )}
+                    ) : item.image_url ? (
+                      <button
+                        type="button"
+                        onClick={handleClearImage}
+                        className="bg-rose-600 text-white p-3 rounded-full hover:bg-rose-700 transition-colors shadow-xl scale-90 group-hover:scale-100 transition-transform"
+                        title="Eliminar foto"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               ) : (
@@ -286,6 +322,21 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
               <div className="flex items-center gap-2 text-xs text-emerald-500 font-medium">
                 <CheckCircle size={14} />
                 <span>Nueva imagen seleccionada: {selectedFile.name}</span>
+              </div>
+            )}
+            {clearImage && item.image_url && (
+              <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800">
+                <div className="flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400 font-medium">
+                  <AlertCircle size={14} />
+                  <span>La foto actual se eliminará al guardar.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCancelClear}
+                  className="text-xs font-semibold text-rose-600 dark:text-rose-400 underline underline-offset-2 hover:text-rose-800"
+                >
+                  Deshacer
+                </button>
               </div>
             )}
 

@@ -24,37 +24,37 @@ function sanitizeInput(str: string): string {
  */
 function transformSupabaseUrl(url: string): string {
   if (!url) return "";
-  
-  // Example Dashboard URL: 
+
+  // Example Dashboard URL:
   // https://supabase.com/dashboard/project/wfkqsifhxnarmxrvbgiu/storage/files/buckets/cms_images?path=promos%2F1&preview=ReelBingoLaRioja01.mp4
-  
+
   if (url.includes("supabase.com/dashboard/project/")) {
     try {
       const parts = url.split("/dashboard/project/")[1].split("/");
       const projectRef = parts[0];
-      
+
       const bucketMatch = url.match(/buckets\/([^\/?#]+)/);
       const bucketName = bucketMatch ? bucketMatch[1] : "";
-      
+
       const pathMatch = url.match(/path=([^&#]+)/);
       const path = pathMatch ? decodeURIComponent(pathMatch[1]) : "";
-      
+
       const previewMatch = url.match(/preview=([^&#]+)/);
       const filename = previewMatch ? decodeURIComponent(previewMatch[1]) : "";
-      
+
       if (projectRef && bucketName) {
         // Construct public URL: https://[ref].supabase.co/storage/v1/object/public/[bucket]/[path]/[filename]
         let fullPath = "";
         if (path) fullPath += path + "/";
         fullPath += filename;
-        
+
         return `https://${projectRef}.supabase.co/storage/v1/object/public/${bucketName}/${fullPath}`;
       }
     } catch (e) {
       console.error("Error transforming Supabase URL:", e);
     }
   }
-  
+
   return url;
 }
 
@@ -67,7 +67,7 @@ function transformSupabaseUrl(url: string): string {
 async function updateCMSContentInternal(id: string, formData: FormData, context: RoleContext) {
   const { user } = context;
   console.log(`CMS Update started for ID: ${id} by user: ${user?.id}`);
-  
+
   // 1. Validation with Zod
   const rawMetadataStr = formData.get("metadata") as string;
   let rawMetadata = {};
@@ -88,7 +88,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
   if (!validation.success) {
     return {
       success: false,
-      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
     };
   }
 
@@ -96,9 +96,14 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
   const old_image_url = formData.get("old_image_url") as string;
   const file = formData.get("file") as File | null;
   const manual_image_url = formData.get("image_url") as string | null;
+  const clear_image = formData.get("clear_image") === "true";
 
   const supabase = await createClient();
-  let image_url = manual_image_url ? transformSupabaseUrl(manual_image_url) : old_image_url;
+  let image_url: string | null = clear_image
+    ? null
+    : manual_image_url
+      ? transformSupabaseUrl(manual_image_url)
+      : old_image_url || null;
 
   // 1. Handle File Upload if present
   if (file && file instanceof File && file.size > 0) {
@@ -133,12 +138,8 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
   }
 
   // Cleanup: Delete old file if the URL has changed and the old one was in our bucket
-  const finalImageUrl = transformSupabaseUrl(image_url);
-  if (
-    old_image_url &&
-    old_image_url !== finalImageUrl &&
-    old_image_url.includes("/cms_images/")
-  ) {
+  const finalImageUrl = image_url ? transformSupabaseUrl(image_url) : null;
+  if (old_image_url && old_image_url !== finalImageUrl && old_image_url.includes("/cms_images/")) {
     try {
       const oldUrlParts = old_image_url.split("/cms_images/");
       if (oldUrlParts.length > 1) {
@@ -206,7 +207,7 @@ async function updateFAQInternal(id: string, formData: FormData, context: RoleCo
   const rawData = {
     question: formData.get("question") as string,
     answer: formData.get("answer") as string,
-    section_id: formData.get("section_id") as string || null,
+    section_id: (formData.get("section_id") as string) || null,
     is_active: formData.get("is_active") === "true",
     content_order: parseInt(formData.get("content_order") as string) || 0,
   };
@@ -215,7 +216,7 @@ async function updateFAQInternal(id: string, formData: FormData, context: RoleCo
   if (!validation.success) {
     return {
       success: false,
-      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
     };
   }
 
@@ -271,7 +272,7 @@ async function createFAQInternal(formData: FormData, context: RoleContext) {
   const rawData = {
     question: formData.get("question") as string,
     answer: formData.get("answer") as string,
-    section_id: formData.get("section_id") as string || null,
+    section_id: (formData.get("section_id") as string) || null,
     is_active: formData.get("is_active") === "true",
     content_order: parseInt(formData.get("content_order") as string) || 0,
   };
@@ -280,10 +281,10 @@ async function createFAQInternal(formData: FormData, context: RoleContext) {
   if (!validation.success) {
     return {
       success: false,
-      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
     };
   }
-  
+
   const { question, answer, section_id, is_active, content_order } = validation.data;
 
   const supabase = await createClient();
@@ -386,7 +387,7 @@ async function updateFAQSectionInternal(id: string, formData: FormData, context:
   if (!validation.success) {
     return {
       success: false,
-      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
     };
   }
 
@@ -449,7 +450,7 @@ async function createFAQSectionInternal(formData: FormData, context: RoleContext
   if (!validation.success) {
     return {
       success: false,
-      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
     };
   }
 
@@ -561,11 +562,12 @@ async function createCMSContentInternal(formData: FormData, context: RoleContext
   if (!validation.success) {
     return {
       success: false,
-      error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", "),
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
     };
   }
 
-  const { page, section_key, title, description, is_active, content_order, metadata } = validation.data;
+  const { page, section_key, title, description, is_active, content_order, metadata } =
+    validation.data;
   const file = formData.get("file") as File | null;
   const manual_image_url = formData.get("image_url") as string | null;
 
@@ -693,10 +695,7 @@ async function deleteCMSContentInternal(id: string, context: RoleContext) {
         await supabase.storage.from("cms_images").remove([oldStoragePath]);
       }
     } catch (err) {
-      console.error(
-        "Error deleting image from storage during record deletion:",
-        err,
-      );
+      console.error("Error deleting image from storage during record deletion:", err);
     }
   }
 
