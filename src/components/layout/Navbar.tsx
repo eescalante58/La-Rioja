@@ -129,7 +129,7 @@ export function Navbar() {
           {/* Identidad */}
           <Link
             href="/"
-            className={`flex h-[66px] shrink-0 items-center rounded-logo bg-logo-surface px-2 lg:h-20 lg:px-2.5 ${FOCUS}`}
+            className={`flex h-[54px] shrink-0 items-center rounded-logo bg-logo-surface px-2 lg:h-[52px] lg:px-2.5 xl:h-20 ${FOCUS}`}
           >
             <Image
               src="/logo.svg"
@@ -137,7 +137,7 @@ export function Navbar() {
               width={2498}
               height={745}
               sizes="160px"
-              className="h-[60px] w-auto lg:h-[72px]"
+              className="h-[44px] w-auto lg:h-10 xl:h-[72px]"
               style={{ width: "auto" }}
               priority
             />
