@@ -10,6 +10,8 @@ import {
   SeccionTalleres,
   SeccionHabilidades,
   TALLERES,
+  HABILIDADES,
+  cmsToPrograma,
 } from "@/components/programs/ProgramasSecciones";
 import { IntegralTraining } from "@/components/programs/IntegralTraining";
 import { AdmissionSteps } from "@/components/programs/AdmissionSteps";
@@ -114,8 +116,16 @@ export default async function ProgramsPage() {
 
   const selector = section("cl_selector");
 
-  // Conteo de talleres para la ficha del programa CFL
-  const talleresCount = TALLERES.length; // 4 talleres productivos hardcodeados
+  // Talleres productivos y habilidades desde el CMS; fallback a constantes
+  const talleresCmsRows = sectionsWithPrefix(content, "cl_taller_");
+  const talleres = talleresCmsRows.length > 0 ? talleresCmsRows.map(cmsToPrograma) : TALLERES;
+
+  const habilidadesCmsRows = sectionsWithPrefix(content, "cl_habilidad_");
+  const habilidades =
+    habilidadesCmsRows.length > 0 ? habilidadesCmsRows.map(cmsToPrograma) : HABILIDADES;
+
+  // Conteo para la ficha del programa CFL
+  const talleresCount = talleres.length;
   const talleresLabel =
     talleresCount > 0
       ? `${capitalizar(numeroEnPalabras(talleresCount))} talleres vocacionales en grupos de 7 a 8 estudiantes`
@@ -207,9 +217,9 @@ export default async function ProgramsPage() {
         </section>
       )}
 
-      <SeccionTalleres />
+      <SeccionTalleres talleres={talleres} />
 
-      <SeccionHabilidades />
+      <SeccionHabilidades habilidades={habilidades} />
 
       <IntegralTraining intro={section("cl_integral")} subjects={subjects} />
 

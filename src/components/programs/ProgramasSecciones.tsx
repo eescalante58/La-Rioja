@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { H2, H3, MUTED, BTN_YELLOW, SECTION_ANCHOR } from "@/components/site/section-ui";
+import { metaText, metaStrings, type CmsSection } from "@/lib/cms-content";
 
 // ---------------------------------------------------------------------------
 // Modelo de datos interno
 // ---------------------------------------------------------------------------
 
-interface Programa {
+export interface Programa {
   /** Clave de React y ancla de la URL (ej. "panaderia"). */
   id: string;
   titulo: string;
@@ -23,6 +24,42 @@ interface Programa {
   productos?: string[];
   /** Enlace a la tienda (solo talleres productivos). */
   tienda?: { etiqueta: string; href: string };
+}
+
+// ---------------------------------------------------------------------------
+// Converter CMS → Programa
+// ---------------------------------------------------------------------------
+
+/**
+ * Convierte una fila de site_content (page='programs', section_key='cl_taller_*'
+ * o 'cl_habilidad_*') al modelo interno Programa.
+ * image_url del CMS tiene prioridad sobre metadata.foto (ruta pública local).
+ */
+export function cmsToPrograma(row: CmsSection): Programa {
+  const encuadreRaw = metaText(row, "encuadre", "completa");
+  const encuadre = encuadreRaw === "recortada" ? "recortada" : "completa";
+  const foco = metaText(row, "foco", "") || undefined;
+
+  const tiendaEtiqueta = metaText(row, "tienda_etiqueta", "");
+  const tiendaHref = metaText(row, "tienda_href", "");
+
+  // Deriva el id del ancla del section_key quitando el prefijo
+  const id = row.section_key.replace(/^cl_taller_/, "").replace(/^cl_habilidad_/, "");
+
+  return {
+    id,
+    titulo: row.title ?? "",
+    descripcion: row.description ?? "",
+    foto: {
+      src: row.image_url ?? metaText(row, "foto", ""),
+      alt: metaText(row, "foto_alt", row.title ?? ""),
+      encuadre,
+      foco,
+    },
+    productos: metaStrings(row, "productos").length > 0 ? metaStrings(row, "productos") : undefined,
+    tienda:
+      tiendaEtiqueta && tiendaHref ? { etiqueta: tiendaEtiqueta, href: tiendaHref } : undefined,
+  };
 }
 
 // ---------------------------------------------------------------------------
