@@ -6,8 +6,11 @@ import { ProgramHero } from "@/components/programs/ProgramHero";
 import { AgeSelector } from "@/components/programs/AgeSelector";
 import { AdaptiveLevels } from "@/components/programs/AdaptiveLevels";
 import { CurriculumAxes } from "@/components/programs/CurriculumAxes";
-import { TalleresGrid } from "@/components/programs/TalleresGrid";
-import { VidaIndependiente } from "@/components/programs/VidaIndependiente";
+import {
+  SeccionTalleres,
+  SeccionHabilidades,
+  TALLERES,
+} from "@/components/programs/ProgramasSecciones";
 import { IntegralTraining } from "@/components/programs/IntegralTraining";
 import { AdmissionSteps } from "@/components/programs/AdmissionSteps";
 import { ProgramsCta } from "@/components/programs/ProgramsCta";
@@ -34,7 +37,7 @@ import {
   textOr,
   type CmsSection,
 } from "@/lib/cms-content";
-import { getTalleresGroups, capitalizar, numeroEnPalabras } from "@/lib/talleres";
+import { capitalizar, numeroEnPalabras } from "@/lib/talleres";
 import { whatsappDigits } from "@/lib/whatsapp";
 import { getPageContent } from "@/services/cms";
 
@@ -100,10 +103,9 @@ function httpsUrl(value: string | null | undefined): string {
  * filas `cl_*`; ver supabase/migrations/20261023000000_programas_cms_secciones.sql).
  */
 export default async function ProgramsPage() {
-  const [content, socialMedia, talleresData] = await Promise.all([
+  const [content, socialMedia] = await Promise.all([
     getPageContent("programs") as Promise<CmsSection[]>,
     getPageContent("social media") as Promise<CmsSection[]>,
-    getTalleresGroups(),
   ]);
   const section = (key: string) => content.find((s) => s.section_key === key);
   const social = (key: string) =>
@@ -112,10 +114,8 @@ export default async function ProgramsPage() {
 
   const selector = section("cl_selector");
 
-  // Talleres productivos y vida-independiente (calculados antes que programs para el conteo dinámico)
-  const workshopsRow = section("cl_talleres");
-  const { productivos: workshops, vidaIndependiente } = talleresData;
-  const talleresCount = workshops.length;
+  // Conteo de talleres para la ficha del programa CFL
+  const talleresCount = TALLERES.length; // 4 talleres productivos hardcodeados
   const talleresLabel =
     talleresCount > 0
       ? `${capitalizar(numeroEnPalabras(talleresCount))} talleres vocacionales en grupos de 7 a 8 estudiantes`
@@ -207,17 +207,9 @@ export default async function ProgramsPage() {
         </section>
       )}
 
-      <TalleresGrid
-        title={textOr(workshopsRow?.title, "Talleres donde se aprende haciendo")}
-        intro={textOr(workshopsRow?.description, "")}
-        workshops={workshops}
-        cta={{
-          label: metaText(workshopsRow, "boton", ""),
-          href: metaHref(workshopsRow, "enlace", "/productos"),
-        }}
-      />
+      <SeccionTalleres />
 
-      <VidaIndependiente workshops={vidaIndependiente} />
+      <SeccionHabilidades />
 
       <IntegralTraining intro={section("cl_integral")} subjects={subjects} />
 
