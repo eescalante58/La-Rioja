@@ -78,7 +78,7 @@
     --ui-x-glyph: 255 255 255;
 
     /* Alto de la navbar (sin el safe-area del iPhone) */
-    --nav-h: 64px;
+    --nav-h: 80px;
   }
 
   .dark {
@@ -98,7 +98,7 @@
 
   @media (min-width: 1024px) {
     :root {
-      --nav-h: 72px;
+      --nav-h: 90px;
     }
   }
 
