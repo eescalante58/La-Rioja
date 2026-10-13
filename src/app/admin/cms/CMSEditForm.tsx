@@ -1,16 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import {
-  Card,
-  Title,
-  Text,
-  TextInput,
-  Switch,
-  Button,
-  Flex,
-  Callout,
-} from "@tremor/react";
+import { Card, Title, Text, TextInput, Switch, Button, Flex, Callout } from "@tremor/react";
 import {
   Save,
   ArrowLeft,
@@ -22,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { callActionForm } from "@/lib/action-client";
+import { compressImage } from "@/lib/compress-image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getErrorMessage } from "@/lib/utils";
 import type { SiteContent } from "@/types/cms";
@@ -41,14 +33,10 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
     metadata: item.metadata || {},
     image_url: item.image_url || "",
   });
-  const [jsonString, setJsonString] = useState(
-    JSON.stringify(item.metadata || {}, null, 2),
-  );
+  const [jsonString, setJsonString] = useState(JSON.stringify(item.metadata || {}, null, 2));
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    item.image_url || null,
-  );
+  const [previewUrl, setPreviewUrl] = useState<string | null>(item.image_url || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
@@ -152,11 +140,12 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
+      const compressed = await compressImage(file);
+      setSelectedFile(compressed);
+      const url = URL.createObjectURL(compressed);
       setPreviewUrl(url);
     }
   };
@@ -201,8 +190,8 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
           <div>
             <Title className="dark:text-white">Editar Sección</Title>
             <Text className="dark:text-gray-400">
-              Página: <span className="uppercase font-bold">{item.page}</span> |
-              Clave: <span className="font-mono">{item.section_key}</span>
+              Página: <span className="uppercase font-bold">{item.page}</span> | Clave:{" "}
+              <span className="font-mono">{item.section_key}</span>
             </Text>
           </div>
           <Badge color="gray">ID: {item.id.slice(0, 8)}...</Badge>
@@ -210,14 +199,10 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Título
-            </label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Título</label>
             <TextInput
               value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Ingrese el título de la sección"
             />
           </div>
@@ -303,9 +288,11 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
                 <span>Nueva imagen seleccionada: {selectedFile.name}</span>
               </div>
             )}
-            
+
             <div className="space-y-1">
-              <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">URL Directa (Opcional)</Text>
+              <Text className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                URL Directa (Opcional)
+              </Text>
               <TextInput
                 placeholder="https://ejemplo.com/archivo.mp4"
                 value={formData.image_url}
@@ -323,9 +310,7 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Ingrese la descripción o contenido principal"
               rows={12}
               className="w-full p-4 text-base bg-white dark:bg-gray-950 border-2 border-gray-200 dark:border-gray-800 rounded-xl focus:ring-4 focus:ring-larioja-azul/20 focus:border-larioja-azul dark:focus:border-larioja-amarillo outline-none transition-all resize-y dark:text-gray-100 min-h-[300px] leading-normal"
@@ -363,13 +348,11 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
               )}
             </div>
             {jsonError && (
-              <Text className="text-xs text-rose-500 italic mt-1">
-                Error: {jsonError}
-              </Text>
+              <Text className="text-xs text-rose-500 italic mt-1">Error: {jsonError}</Text>
             )}
             <Text className="text-[10px] text-gray-400">
-              Usa este campo para configuraciones extra como links de botones,
-              colores personalizados, etc.
+              Usa este campo para configuraciones extra como links de botones, colores
+              personalizados, etc.
             </Text>
           </div>
 
@@ -396,9 +379,7 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
               <Flex justifyContent="start" className="gap-3">
                 <Switch
                   checked={formData.is_active ?? false}
-                  onChange={(checked) =>
-                    setFormData({ ...formData, is_active: checked })
-                  }
+                  onChange={(checked) => setFormData({ ...formData, is_active: checked })}
                 />
                 <Text>{formData.is_active ? "Activo" : "Inactivo"}</Text>
               </Flex>
@@ -445,13 +426,7 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
 }
 
 // Separate Badge import because it was missing in the code but I need it
-function Badge({
-  children,
-  color,
-}: {
-  children: React.ReactNode;
-  color?: string;
-}) {
+function Badge({ children, color }: { children: React.ReactNode; color?: string }) {
   return (
     <span
       className={`px-2 py-1 rounded text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 uppercase`}

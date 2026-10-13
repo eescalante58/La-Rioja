@@ -12,7 +12,7 @@ import { SolidarityBand } from "@/components/home/SolidarityBand";
 import { WorkshopsTeaser } from "@/components/home/WorkshopsTeaser";
 import { VideoSection } from "@/components/home/VideoSection";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
-import { Testimonial } from "@/components/home/Testimonial";
+import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { HomeCta } from "@/components/home/HomeCta";
 
 export const revalidate = 3600;
@@ -90,8 +90,11 @@ export default async function Home() {
       {/* 7 — La Rioja Shop */}
       <FeaturedProducts products={products} />
 
-      {/* 8 — Testimonio (solo si visible = true en metadata) */}
-      <Testimonial testimonial={byKey["cl_testimonial"] ?? null} />
+      {/* 8 — Testimonios (solo si visible = true en metadata) */}
+      <TestimonialsSection
+        testimonial1={byKey["cl_testimonial"] ?? null}
+        testimonial2={byKey["cl_testimonial_2"] ?? null}
+      />
 
       {/* 9 — CTA cierre */}
       <HomeCta cta={byKey["cl_cta"] ?? null} />
