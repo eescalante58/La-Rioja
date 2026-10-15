@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { SiteContent } from "@/types/cms";
 import { CampaignSchema, activeCampaigns, type Campaign } from "@/lib/validation/campaigns";
+import { CampaignPhoto } from "./CampaignPhoto";
 
 interface Props {
   rows: SiteContent[];
@@ -36,26 +36,16 @@ export function CampaignStrip({ rows }: Props) {
               className="group relative overflow-hidden rounded-tile bg-surface-card shadow-tremor-card"
             >
               {/* Imagen de fondo */}
-              <div className="relative aspect-[16/10] overflow-hidden">
-                {c.imageUrl ? (
-                  <Image
-                    src={c.imageUrl}
-                    alt={c.imageAlt}
-                    fill
-                    sizes="(max-width: 767px) 100vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                ) : (
+              {c.imageUrl ? (
+                <CampaignPhoto src={c.imageUrl} alt={c.imageAlt} tag={c.tag} />
+              ) : (
+                <div className="relative aspect-[16/10]">
                   <div className="h-full w-full bg-larioja-azul/10 dark:bg-larioja-azul/30" />
-                )}
-                {/* Capa oscura para legibilidad */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-
-                {/* Etiqueta */}
-                <span className="absolute left-3 top-3 rounded-full bg-larioja-amarillo px-3 py-1 text-xs font-bold text-larioja-azul">
-                  {c.tag}
-                </span>
-              </div>
+                  <span className="absolute left-3 top-3 rounded-full bg-larioja-amarillo px-3 py-1 text-xs font-bold text-larioja-azul">
+                    {c.tag}
+                  </span>
+                </div>
+              )}
 
               {/* Texto */}
               <div className="p-5">
