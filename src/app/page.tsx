@@ -84,11 +84,11 @@ export default async function Home() {
       {/* 5 — Talleres */}
       <WorkshopsTeaser workshops={byKey["cl_workshops"] ?? null} talleresLabel={talleresLabel} />
 
-      {/* 6 — Video institucional (solo si visible = true en metadata) */}
-      <VideoSection video={byKey["cl_video"] ?? null} />
-
-      {/* 7 — La Rioja Shop */}
+      {/* 6 — La Rioja Shop */}
       <FeaturedProducts products={products} />
+
+      {/* 7 — Video institucional (solo si visible = true en metadata) */}
+      <VideoSection video={byKey["cl_video"] ?? null} />
 
       {/* 8 — Testimonios (solo si visible = true en metadata) */}
       <TestimonialsSection

@@ -5,7 +5,7 @@ interface Props {
   cta: SiteContent | null;
 }
 
-/** Sección 9 — Cierre: llamada a la acción con WhatsApp, apoyanos, dirección y teléfonos. */
+/** Sección — Cierre: llamada a la acción con WhatsApp, apóyanos, dirección y teléfonos. */
 export function HomeCta({ cta }: Props) {
   const meta = (cta?.metadata ?? {}) as Record<string, string>;
   const title = cta?.title ?? "Ven a conocernos";
@@ -16,28 +16,39 @@ export function HomeCta({ cta }: Props) {
   const mensajeWa = encodeURIComponent(
     meta.mensaje_whatsapp ?? "Hola, quisiera más información sobre La Rioja",
   );
-  const telefono1 = meta.telefono_1 ?? "";
-  const telefono2 = meta.telefono_2 ?? "";
-  const direccion = meta.direccion ?? "";
-  const waNumber = meta.telefono_1?.replace(/\D/g, "") ?? "";
+  const botonApoyanos = meta.boton_apoyanos ?? "Apóyanos";
+  const enlaceApoyanos = meta.enlace_apoyanos ?? "/apoyanos";
+  const waNumber = (meta.telefono_1 ?? "").replace(/\D/g, "");
   const waHref = `https://wa.me/${waNumber}?text=${mensajeWa}`;
 
   return (
-    <section className="bg-larioja-azul py-16 text-white lg:py-20" aria-labelledby="cta-heading">
+    <section
+      id="seccion-cierre"
+      className="bg-gradient-to-b from-larioja-azul to-larioja-azul-profundo py-16 text-white lg:py-20"
+      aria-labelledby="cta-heading"
+    >
       <div className="mx-auto max-w-screen-xl px-4 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 id="cta-heading" className="font-montserrat text-3xl font-extrabold lg:text-4xl">
+          <div className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-larioja-amarillo">
+            <span>🤝</span> Puertas Abiertas
+          </div>
+          <h2
+            id="cta-heading"
+            className="font-montserrat text-3xl font-extrabold sm:text-4xl lg:text-5xl"
+          >
             {title}
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-white/85 lg:text-lg">{description}</p>
+          <p className="mt-4 text-base leading-relaxed text-white/90 sm:text-lg">
+            {description}
+          </p>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             {waNumber && (
               <Link
                 href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full bg-larioja-amarillo px-7 py-3 text-sm font-bold text-larioja-azul transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-amarillo focus-visible:ring-offset-2 focus-visible:ring-offset-larioja-azul"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-emerald-500 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-emerald-600 hover:shadow-xl active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-larioja-azul"
               >
                 {/* WhatsApp icon */}
                 <svg
@@ -54,41 +65,12 @@ export function HomeCta({ cta }: Props) {
               </Link>
             )}
             <Link
-              href="/apoyanos"
-              className="inline-block rounded-full border-2 border-white/70 px-7 py-3 text-sm font-bold text-white transition-colors hover:border-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-larioja-azul"
+              href={enlaceApoyanos}
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border-2 border-white/80 px-7 py-3 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:border-white hover:bg-white/10 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-larioja-azul"
             >
-              Apóyanos
+              {botonApoyanos}
             </Link>
           </div>
-
-          {/* Datos de contacto */}
-          {(telefono1 || direccion) && (
-            <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-white/70">
-              {telefono1 && (
-                <span className="flex flex-wrap items-center justify-center gap-x-2">
-                  📞{" "}
-                  <a
-                    href={`tel:${telefono1}`}
-                    className="inline-flex min-h-[44px] items-center hover:text-white hover:underline"
-                  >
-                    {telefono1}
-                  </a>
-                  {telefono2 && (
-                    <>
-                      <span aria-hidden>·</span>
-                      <a
-                        href={`tel:${telefono2}`}
-                        className="inline-flex min-h-[44px] items-center hover:text-white hover:underline"
-                      >
-                        {telefono2}
-                      </a>
-                    </>
-                  )}
-                </span>
-              )}
-              {direccion && <span>📍 {direccion}</span>}
-            </div>
-          )}
         </div>
       </div>
     </section>
