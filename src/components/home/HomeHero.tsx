@@ -31,8 +31,24 @@ export function HomeHero({ hero }: Props) {
       ? (meta.prueba_social_badges as string[])
       : ["33a", "52+", "20p"];
 
+  const cardTitulo =
+    (meta.card_foto_titulo as string) ??
+    (meta.foto_card_titulo as string) ??
+    "Comunidad La Rioja";
+  const cardSubtitulo =
+    (meta.card_foto_subtitulo as string) ??
+    (meta.foto_card_subtitulo as string) ??
+    "Educación, taller y convivencia";
+  const cardTag =
+    (meta.card_foto_tag as string) ??
+    (meta.foto_card_tag as string) ??
+    "ASPAPREM";
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-larioja-azul to-larioja-azul-profundo text-white">
+    <section
+      id="contenido"
+      className="relative overflow-hidden bg-gradient-to-b from-larioja-azul to-larioja-azul-profundo text-white scroll-mt-24"
+    >
       {/* Luz decorativa sutil de fondo */}
       <div
         className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl"
@@ -107,16 +123,28 @@ export function HomeHero({ hero }: Props) {
               sizes="(max-width: 1023px) 100vw, 50vw"
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-larioja-azul-profundo/80 via-transparent to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl border border-white/20 bg-white/15 p-3 text-white backdrop-blur-md">
+            {/* Gradiente sutil y tarjeta flotante solo en escritorio para no tapar la foto en celular */}
+            <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-larioja-azul-profundo/80 via-transparent to-transparent" />
+            <div className="hidden lg:flex absolute bottom-4 left-4 right-4 items-center justify-between rounded-2xl border border-white/20 bg-white/15 p-3 text-white backdrop-blur-md">
               <div>
-                <p className="text-xs font-bold">Comunidad La Rioja</p>
-                <p className="text-[11px] text-white/80">Educación, taller y convivencia</p>
+                <p className="text-xs font-bold">{cardTitulo}</p>
+                <p className="text-[11px] text-white/80">{cardSubtitulo}</p>
               </div>
               <span className="rounded-full bg-larioja-amarillo px-2.5 py-1 text-xs font-extrabold text-larioja-azul">
-                ASPAPREM
+                {cardTag}
               </span>
             </div>
+          </div>
+
+          {/* En móvil (< lg), los datos se muestran debajo de la foto para permitir apreciarla completamente */}
+          <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/20 bg-white/10 p-3.5 text-white shadow-sm backdrop-blur-md lg:hidden">
+            <div>
+              <p className="text-xs font-bold text-white">{cardTitulo}</p>
+              <p className="text-[11px] text-white/80">{cardSubtitulo}</p>
+            </div>
+            <span className="rounded-full bg-larioja-amarillo px-2.5 py-1 text-xs font-extrabold text-larioja-azul shadow-xs">
+              {cardTag}
+            </span>
           </div>
         </div>
       </div>

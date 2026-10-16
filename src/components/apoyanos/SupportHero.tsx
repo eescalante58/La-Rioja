@@ -24,7 +24,8 @@ export function SupportHero({ hero, credentials }: SupportHeroProps) {
   const items = credentials.map((c) => textOr(c.title, "")).filter(Boolean);
 
   return (
-    <section id="inicio" className="bg-larioja-azul text-white dark:bg-larioja-azul-profundo">
+    <section id="inicio" className="relative bg-larioja-azul text-white dark:bg-larioja-azul-profundo">
+      <div id="contenido" className="scroll-mt-24" />
       <div
         className={`${CONTAINER} flex flex-col items-center gap-10 pb-14 pt-10 lg:flex-row lg:gap-12 lg:pb-16 lg:pt-14`}
       >
