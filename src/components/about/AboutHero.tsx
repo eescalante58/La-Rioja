@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowDown } from "lucide-react";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { metaHref, metaText, sectionImage, textOr, type CmsSection } from "@/lib/cms-content";
 import { BTN_OUTLINE_WHITE, BTN_YELLOW, CONTAINER, EYEBROW } from "@/components/site/section-ui";
 
@@ -22,10 +23,11 @@ export function AboutHero({ hero }: AboutHeroProps) {
   const photo = sectionImage(hero);
 
   return (
-    <section id="inicio" className="relative bg-larioja-azul text-white dark:bg-larioja-azul-profundo">
+    <section id="inicio" className="relative overflow-hidden bg-[#0A0C14] text-white">
+      <AuroraBackground />
       <div id="contenido" className="scroll-mt-24" />
       <div
-        className={`${CONTAINER} flex flex-col items-center gap-10 pb-14 pt-10 lg:flex-row lg:gap-12 lg:pb-16 lg:pt-14`}
+        className={`relative z-10 ${CONTAINER} flex flex-col items-center gap-10 pb-14 pt-10 lg:flex-row lg:gap-12 lg:pb-16 lg:pt-14`}
       >
         <div className="flex min-w-0 flex-1 flex-col gap-5 lg:basis-[52%]">
           <p className={EYEBROW}>{eyebrow}</p>

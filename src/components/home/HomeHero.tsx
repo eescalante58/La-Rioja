@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import type { SiteContent } from "@/types/cms";
 
 interface Props {
@@ -47,15 +48,12 @@ export function HomeHero({ hero }: Props) {
   return (
     <section
       id="contenido"
-      className="relative overflow-hidden bg-gradient-to-b from-larioja-azul to-larioja-azul-profundo text-white scroll-mt-24"
+      className="relative overflow-hidden bg-[#0A0C14] text-white scroll-mt-24"
     >
-      {/* Luz decorativa sutil de fondo */}
-      <div
-        className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl"
-        aria-hidden="true"
-      />
+      {/* Capa de iluminación Aurora (Preset Azul La Rioja) */}
+      <AuroraBackground />
 
-      <div className="mx-auto grid max-w-screen-xl items-center gap-10 px-4 py-14 lg:grid-cols-12 lg:gap-12 lg:px-8 lg:py-20">
+      <div className="relative z-10 mx-auto grid max-w-screen-xl items-center gap-10 px-4 py-14 lg:grid-cols-12 lg:gap-12 lg:px-8 lg:py-20">
         {/* Columna de texto */}
         <div className="flex flex-col items-start gap-5 lg:col-span-7">
           {/* Badge antetítulo con contraste óptimo WCAG 2.2 */}

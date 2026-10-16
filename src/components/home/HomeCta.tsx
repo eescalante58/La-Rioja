@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import type { SiteContent } from "@/types/cms";
 
 interface Props {
@@ -24,10 +25,11 @@ export function HomeCta({ cta }: Props) {
   return (
     <section
       id="seccion-cierre"
-      className="bg-gradient-to-b from-larioja-azul to-larioja-azul-profundo py-16 text-white lg:py-20"
+      className="relative overflow-hidden bg-[#0A0C14] py-16 text-white lg:py-20"
       aria-labelledby="cta-heading"
     >
-      <div className="mx-auto max-w-screen-xl px-4 lg:px-8">
+      <AuroraBackground />
+      <div className="relative z-10 mx-auto max-w-screen-xl px-4 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <div className="mb-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-larioja-amarillo">
             <span>🤝</span> Puertas Abiertas

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { metaHref, metaText, sectionImage, textOr, type CmsSection } from "@/lib/cms-content";
 import { BTN_OUTLINE_WHITE, BTN_YELLOW } from "@/components/site/section-ui";
 
@@ -18,11 +19,12 @@ export function AboutCta({ closing }: AboutCtaProps) {
   const highlight = metaText(closing, "resaltado", "");
 
   return (
-    <section className="relative overflow-hidden bg-larioja-azul text-white dark:bg-larioja-azul-profundo">
+    <section className="relative overflow-hidden bg-[#0A0C14] text-white">
+      <AuroraBackground />
       {photo && (
-        <Image src={photo} alt="" fill sizes="100vw" className="object-cover opacity-[0.22]" />
+        <Image src={photo} alt="" fill sizes="100vw" className="object-cover opacity-[0.14]" />
       )}
-      <div className="relative mx-auto flex w-full max-w-[1080px] flex-col items-center gap-6 px-4 py-20 text-center sm:px-6 md:py-24">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1080px] flex-col items-center gap-6 px-4 py-20 text-center sm:px-6 md:py-24">
         <h2 className="m-0 max-w-[860px] font-montserrat text-[clamp(30px,4vw,52px)] font-extrabold leading-[1.1] text-balance">
           {textOr(closing.title, "Sé parte de")}
           {highlight && <span className="text-larioja-amarillo"> {highlight}</span>}

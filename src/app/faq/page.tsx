@@ -1,6 +1,7 @@
 import { createStaticClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import {
   Accordion,
   AccordionContent,
@@ -43,9 +44,12 @@ export default async function FAQPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section id="contenido" className="bg-larioja-azul text-white pt-8 lg:pt-14 pb-20 relative overflow-hidden shadow-inner">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent z-10" />
-        <div className="container mx-auto px-6 relative z-20 text-center max-w-4xl">
+      <section
+        id="contenido"
+        className="relative overflow-hidden bg-[#0A0C14] text-white pt-8 lg:pt-14 pb-20"
+      >
+        <AuroraBackground />
+        <div className="container relative z-10 mx-auto max-w-4xl px-6 text-center">
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold mb-6 animate-fade-in break-words [overflow-wrap:anywhere]">
             Preguntas Frecuentes
           </h1>

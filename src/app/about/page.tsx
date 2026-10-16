@@ -12,6 +12,7 @@ import { OrgChart } from "@/components/about/OrgChart";
 import { TeamGrid } from "@/components/about/TeamGrid";
 import { SolidarityModel } from "@/components/about/SolidarityModel";
 import { AboutCta } from "@/components/about/AboutCta";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { CONTAINER, SECTION_ANCHOR } from "@/components/site/section-ui";
 import {
   metaHref,
@@ -148,8 +149,9 @@ export default async function AboutPage() {
 
       {/* Transparencia, estructura y equipo */}
       <section id="equipo" className={`bg-white dark:bg-larioja-azul ${SECTION_ANCHOR}`}>
-        <div className="bg-larioja-azul text-white dark:bg-larioja-azul-profundo">
-          <div className={`${CONTAINER} flex flex-col gap-8 py-14 md:py-16`}>
+        <div className="relative overflow-hidden bg-[#0A0C14] text-white">
+          <AuroraBackground />
+          <div className={`relative z-10 ${CONTAINER} flex flex-col gap-8 py-14 md:py-16`}>
             <h2 className="m-0 font-montserrat text-[clamp(28px,3.4vw,42px)] font-extrabold leading-[1.12] text-balance">
               {textOr(accountability?.title, "Una organización que rinde cuentas")}
             </h2>

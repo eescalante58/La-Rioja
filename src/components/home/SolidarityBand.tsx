@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import type { SiteContent } from "@/types/cms";
 
 interface Cifra {
@@ -27,8 +28,12 @@ export function SolidarityBand({ solidarity }: Props) {
   ];
 
   return (
-    <section className="bg-gradient-to-b from-larioja-azul to-larioja-azul-profundo py-16 text-white lg:py-20" aria-label="Modelo solidario">
-      <div className="mx-auto max-w-screen-xl px-4 lg:px-8">
+    <section
+      className="relative overflow-hidden bg-[#0A0C14] py-16 text-white lg:py-20"
+      aria-label="Modelo solidario"
+    >
+      <AuroraBackground />
+      <div className="relative z-10 mx-auto max-w-screen-xl px-4 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-larioja-amarillo">
             Compromiso Comunitario
