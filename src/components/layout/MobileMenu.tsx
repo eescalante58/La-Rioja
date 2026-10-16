@@ -60,7 +60,7 @@ interface NavLinkDef {
 
 const LINKS: NavLinkDef[] = [
   { href: "/", label: "Inicio", Icon: Home },
-  { href: "/about", label: "Nosotros", Icon: Users },
+  { href: "/about", label: "Quiénes Somos", Icon: Users },
   { href: "/programs", label: "Programas", Icon: GraduationCap },
   { href: "/faq", label: "Preguntas", Icon: HelpCircle },
   { href: "/bingo", label: "Bingo", Icon: PartyPopper, badge: "Juega" },

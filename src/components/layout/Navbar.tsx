@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 
 /** Enlaces públicos, en orden de interés del visitante (Inicio va aparte, como icono). */
 const LINKS = [
-  { href: "/about", label: "Nosotros" },
+  { href: "/about", label: "Quiénes Somos" },
   { href: "/programs", label: "Programas" },
   { href: "/bingo", label: "Bingo" },
   { href: "/productos", label: "La Rioja Shop" },
@@ -22,8 +22,8 @@ const LINKS = [
 const FOCUS =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow";
 
-/** Botones de icono (tema y acceso): 44 px en móvil, 40 px en escritorio. */
-const ICON_BTN = `grid h-11 w-11 shrink-0 place-items-center rounded-full border border-nav-icon text-white transition-colors hover:bg-white/10 motion-reduce:transition-none lg:h-10 lg:w-10 ${FOCUS}`;
+/** Botones de icono (tema y acceso): 44 px uniforme conforme a WCAG 2.2 Target Size. */
+const ICON_BTN = `grid h-11 w-11 shrink-0 place-items-center rounded-full border border-nav-icon text-white transition-colors hover:bg-white/10 motion-reduce:transition-none ${FOCUS}`;
 
 /**
  * Clases de un enlace de la barra: ocupa todo el alto (área de clic) y marca
@@ -129,7 +129,7 @@ export function Navbar() {
           {/* Identidad */}
           <Link
             href="/"
-            className={`flex h-[54px] shrink-0 items-center rounded-logo bg-logo-surface px-2 lg:h-[52px] lg:px-2.5 xl:h-20 ${FOCUS}`}
+            className={`flex h-[54px] shrink-0 items-center rounded-logo bg-logo-surface px-2 transition-opacity hover:opacity-90 lg:h-[52px] lg:px-2.5 xl:h-20 ${FOCUS}`}
           >
             <Image
               src="/logo.svg"
@@ -205,7 +205,7 @@ export function Navbar() {
 
           <Link
             href="/apoyanos"
-            className="hidden h-10 shrink-0 items-center gap-2 rounded-full bg-brand-yellow px-[18px] text-sm font-semibold text-brand-ink transition-[filter] hover:brightness-[.92] motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:flex"
+            className="hidden h-11 shrink-0 items-center gap-2 rounded-full bg-brand-yellow px-5 text-sm font-bold text-brand-ink shadow-xs transition-all hover:brightness-95 hover:shadow-sm active:scale-95 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:flex"
           >
             <HeartHandshake size={18} aria-hidden="true" />
             Apóyanos
