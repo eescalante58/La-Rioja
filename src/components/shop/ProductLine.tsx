@@ -41,7 +41,7 @@ export function ProductLine({ line, priorityCount, onOpen, onAdded }: ProductLin
         <div className="flex items-baseline justify-between gap-3">
           <h2
             id={`linea-${line.id}-titulo`}
-            className="font-montserrat text-[17px] font-medium text-[var(--shop-text)] sm:text-xl"
+            className="font-montserrat text-[17px] sm:text-xl font-bold text-[#184F95] dark:text-sky-300"
           >
             {line.name}
           </h2>

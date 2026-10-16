@@ -3,8 +3,6 @@
 import Image from "next/image";
 import { Package } from "lucide-react";
 import type { Product } from "@/lib/validation/products";
-import { AddToCartControl } from "./AddToCartControl";
-import { Price } from "./Price";
 
 /** `sizes` de la especificación: la imagen se pide a ~384-640 px, no a 3840. */
 export const PRODUCT_IMAGE_SIZES =
@@ -20,12 +18,12 @@ interface ProductCardProps {
 }
 
 /**
- * Tarjeta de producto estilo catálogo: foto sobre fondo claro con el botón
- * "+" superpuesto, nombre en dos líneas y precio. Sin fondo ni borde propios;
- * la foto clara sobre el fondo de la página define la tarjeta. Foto y nombre
- * abren el detalle; el "+" es un control independiente.
+ * Tarjeta de producto unificada con el diseño de «Compra con propósito» del Home:
+ * contenedor con borde y sombra suave, contenedor 1:1 con `object-contain`,
+ * tipografía Montserrat bold, precio en #184F95 y botón «Ver detalle →».
+ * Toda interacción sobre la tarjeta abre la ficha de detalle (ProductSheet).
  */
-export function ProductCard({ product, priority, onOpen, onAdded }: ProductCardProps) {
+export function ProductCard({ product, priority, onOpen }: ProductCardProps) {
   const available = product.variants.filter((v) => v.is_available);
   const soldOut = available.length === 0;
   const hasVariants = product.variants.length > 1;
@@ -34,69 +32,75 @@ export function ProductCard({ product, priority, onOpen, onAdded }: ProductCardP
   const unit = hasVariants ? null : product.variants[0]?.unit;
 
   return (
-    <article className="group">
-      <div className="relative">
-        {/* Foto: abre el detalle. Fuera del orden de tabulación (el nombre es el control). */}
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-hidden="true"
-          onClick={(e) => onOpen(product, e.currentTarget)}
-          className="relative block aspect-square w-full overflow-hidden rounded-xl bg-[var(--shop-tile)] sm:rounded-[14px]"
-        >
+    <article
+      onClick={(e) => onOpen(product, e.currentTarget)}
+      className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 cursor-pointer"
+    >
+      <div>
+        {/* Contenedor 1:1 con object-contain limpio sin recorte */}
+        <div className="relative mb-2.5 aspect-square overflow-hidden rounded-xl bg-slate-50 border border-slate-100 dark:border-slate-800/80 dark:bg-slate-800 flex items-center justify-center p-3">
           {product.image_url ? (
             <Image
               src={product.image_url}
-              alt=""
+              alt={product.name}
               fill
               preload={priority}
               loading={priority ? "eager" : "lazy"}
               quality={75}
               sizes={PRODUCT_IMAGE_SIZES}
-              className={`object-contain p-[8%] transition-transform duration-200 motion-safe:group-hover:scale-[1.03] ${
+              className={`object-contain p-2 transition-transform duration-300 motion-safe:group-hover:scale-105 ${
                 soldOut ? "opacity-50" : ""
               }`}
             />
           ) : (
-            <span className="absolute inset-0 flex items-center justify-center text-[#5A6782]/40">
-              <Package size={40} aria-hidden="true" />
+            <span className="flex items-center justify-center text-slate-400">
+              <Package size={36} aria-hidden="true" />
             </span>
           )}
-        </button>
 
-        {soldOut ? (
-          <span className="absolute left-1.5 top-1.5 rounded-full bg-[#012060] px-2 py-0.5 text-[11px] font-medium text-white sm:left-2 sm:top-2">
-            Agotado
-          </span>
-        ) : (
-          <AddToCartControl
-            product={product}
-            onChooseVariant={() => {
-              const card = document.getElementById(`producto-${product.slug}`);
-              onOpen(product, card ?? document.body);
+          {soldOut && (
+            <span className="absolute left-2 top-2 z-10 rounded-full bg-[#012060] px-2 py-0.5 text-[11px] font-bold text-white shadow-xs">
+              Agotado
+            </span>
+          )}
+        </div>
+
+        {/* Título en tipografía Montserrat bold */}
+        <h3 className="line-clamp-2 font-montserrat text-xs sm:text-sm font-bold leading-snug text-slate-900 transition-colors group-hover:text-[#184F95] dark:text-white dark:group-hover:text-larioja-amarillo">
+          <button
+            type="button"
+            id={`producto-${product.slug}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpen(product, e.currentTarget);
             }}
-            onAdded={onAdded}
-          />
-        )}
+            className="rounded text-left hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#184F95]"
+          >
+            {product.name}
+          </button>
+        </h3>
       </div>
 
-      <h3 className="mt-2 h-[2.6em] text-[13px] font-normal leading-[1.3] text-[var(--shop-text)] sm:text-sm">
-        <button
-          type="button"
-          id={`producto-${product.slug}`}
-          onClick={(e) => onOpen(product, e.currentTarget)}
-          className="line-clamp-2 rounded text-left hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)]"
-        >
-          {product.name}
-        </button>
-      </h3>
+      {/* Barra inferior: precio en #184F95 y botón Ver detalle */}
+      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 dark:border-slate-800">
+        <div>
+          <p className="font-montserrat text-xs sm:text-sm font-extrabold text-[#184F95] dark:text-larioja-amarillo">
+            {hasVariants && <span className="text-[11px] font-normal text-slate-500 mr-1">Desde</span>}
+            {minPrice > 0 ? `$${minPrice.toLocaleString("es-AR")}` : "Consultar"}
+            {unit && <span className="text-[11px] font-normal text-slate-400 ml-0.5">/{unit}</span>}
+          </p>
+          {hasVariants && (
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              {product.variants.length} tamaños
+            </p>
+          )}
+        </div>
 
-      <Price value={minPrice} from={hasVariants} unit={unit} />
-      {hasVariants && (
-        <p className="text-[11px] text-[var(--shop-text-3)] sm:text-xs">
-          {product.variants.length} tamaños
-        </p>
-      )}
+        <span className="inline-flex items-center gap-0.5 text-xs font-bold text-sky-600 transition-all group-hover:translate-x-1 dark:text-sky-400">
+          Ver detalle →
+        </span>
+      </div>
+
       {soldOut && <p className="sr-only">Agotado</p>}
     </article>
   );

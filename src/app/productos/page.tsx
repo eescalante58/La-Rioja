@@ -78,7 +78,7 @@ export default async function ProductosPage() {
               <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-larioja-verde/15 text-larioja-verde flex items-center justify-center">
                 <HeartHandshake size={32} />
               </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-larioja-azul dark:text-white">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-montserrat font-extrabold mb-4 text-[#184F95] dark:text-white">
                 {mensaje?.title || "Cada compra apoya su formación"}
               </h2>
               <p className="text-lg text-gray-600 dark:text-white/70 leading-relaxed">

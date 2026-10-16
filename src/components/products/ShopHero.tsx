@@ -29,8 +29,58 @@ export function ShopHero({ hero, photos }: ShopHeroProps) {
   const external = (href: string) => /^https?:\/\//.test(href);
 
   return (
-    <section id="contenido" className="bg-[#174C6B] text-white pt-8 lg:pt-14 pb-16 lg:pb-20">
-      <div className="mx-auto max-w-[1200px] px-6 flex flex-col lg:flex-row lg:items-center gap-12">
+    <section
+      id="contenido"
+      className="relative overflow-hidden bg-[#0A0C14] text-white pt-8 lg:pt-14 pb-16 lg:pb-20"
+    >
+      {/* Capa de iluminación Aurora (Preset Azul La Rioja) */}
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden opacity-85 select-none"
+        aria-hidden="true"
+      >
+        {/* Orbe focal inferior dominante (#012060) */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 rounded-full"
+          style={{
+            bottom: "-120px",
+            width: "1050px",
+            height: "480px",
+            backgroundColor: "#012060",
+            filter: "blur(140px)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* Aura lateral izquierda (#081738) */}
+        <div
+          className="absolute top-[28%] -left-28 w-[520px] h-[520px] rounded-full"
+          style={{
+            backgroundColor: "#081738",
+            filter: "blur(120px)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* Aura lateral derecha (#0A1E4A) */}
+        <div
+          className="absolute top-[22%] -right-28 w-[560px] h-[560px] rounded-full"
+          style={{
+            backgroundColor: "#0A1E4A",
+            filter: "blur(125px)",
+            mixBlendMode: "screen",
+          }}
+        />
+        {/* Núcleo suavizador central (#0B2568) */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-40"
+          style={{
+            width: "380px",
+            height: "380px",
+            backgroundColor: "#0B2568",
+            filter: "blur(165px)",
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-[1200px] px-6 flex flex-col lg:flex-row lg:items-center gap-12">
         <div className="flex flex-1 flex-col gap-5 min-w-0">
           {badge && (
             <span className="self-start rounded-full bg-white/[0.14] px-3.5 py-1.5 text-sm font-semibold">

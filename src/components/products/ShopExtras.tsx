@@ -49,7 +49,7 @@ export function GiftsBanner({ section, whatsappDigits }: GiftsBannerProps) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-[52px] shrink-0 items-center justify-center self-start md:self-auto rounded-full bg-[#174C6B] px-7 text-[17px] font-bold text-white hover:bg-[#0F3349] transition-colors"
+            className="inline-flex min-h-[52px] shrink-0 items-center justify-center self-start md:self-auto rounded-full bg-[#184F95] px-7 text-[17px] font-bold text-white hover:bg-[#123E75] transition-colors shadow-sm"
           >
             {button}
           </a>
@@ -73,7 +73,7 @@ export function HowToBuy({ section, steps }: HowToBuyProps) {
   if (steps.length === 0) return null;
   return (
     <section id="como-comprar" className="mx-auto max-w-[1200px] px-6 pt-6 pb-16 md:pb-20">
-      <h2 className="mb-7 font-montserrat font-extrabold text-3xl md:text-[40px] text-[#174C6B] dark:text-white">
+      <h2 className="mb-7 font-montserrat font-extrabold text-3xl md:text-[40px] text-[#184F95] dark:text-white">
         {textOr(section.title, "Cómo comprar")}
       </h2>
       <ol className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-6">
@@ -83,7 +83,7 @@ export function HowToBuy({ section, steps }: HowToBuyProps) {
             className="flex flex-col gap-2.5 rounded-[20px] bg-[#F5F1EA] dark:bg-slate-800 p-7"
           >
             <span
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-[#174C6B] text-xl font-extrabold text-white"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[#184F95] text-xl font-extrabold text-white"
               aria-hidden="true"
             >
               {i + 1}
