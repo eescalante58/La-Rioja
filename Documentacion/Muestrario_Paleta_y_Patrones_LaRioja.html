@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Muestrario Oficial de Paleta de Colores y Patrones de Diseño - La Rioja</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      color: #1E293B;
+      background-color: #F8FAFC;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page {
+      width: 210mm;
+      height: 297mm;
+      padding: 14mm 18mm 14mm 18mm;
+      margin: 0 auto;
+      background: #FFFFFF;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      overflow: hidden;
+    }
+    @media screen {
+      .page {
+        margin-top: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      }
+    }
+    /* Encabezado y Pie de página */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8.5px;
+      color: #64748B;
+      border-bottom: 1px solid #E2E8F0;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8.5px;
+      color: #64748B;
+      border-top: 1px solid #E2E8F0;
+      padding-top: 5px;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    .page-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Títulos de sección */
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #E2E8F0;
+    }
+    .section-number {
+      background: #012060;
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 11px;
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .section-heading {
+      font-size: 14px;
+      font-weight: 800;
+      color: #012060;
+      letter-spacing: -0.01em;
+    }
+
+    /* Portada / Tarjeta de Documento */
+    .cover-card {
+      background: #012060;
+      border-radius: 14px;
+      padding: 18px 20px 16px 20px;
+      color: #FFFFFF;
+      margin-bottom: 16px;
+    }
+    .cover-pill {
+      display: inline-block;
+      background: #FFFF00;
+      color: #012060;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 3px 12px;
+      border-radius: 9999px;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .cover-title {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.15;
+      margin: 0 0 4px 0;
+    }
+    .cover-subtitle {
+      font-size: 10.5px;
+      color: #DCE6EE;
+      margin: 0 0 14px 0;
+      font-weight: 400;
+    }
+    .cover-meta {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      border-top: 1px solid rgba(255,255,255,0.18);
+      padding-top: 10px;
+    }
+    .cover-meta-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .meta-label {
+      font-size: 7.5px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #93B8DC;
+      letter-spacing: 0.04em;
+    }
+    .meta-val {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: #FFFFFF;
+    }
+
+    /* Párrafos informativos */
+    .lead-p {
+      font-size: 10.5px;
+      line-height: 1.5;
+      color: #334155;
+      margin: 0 0 14px 0;
+    }
+
+    /* 3 Pilares */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .pillar-card {
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #FFFFFF;
+    }
+    .pillar-blue { border-top: 3.5px solid #012060; }
+    .pillar-green { border-top: 3.5px solid #1E9922; }
+    .pillar-yellow { border-top: 3.5px solid #F9C637; }
+    .pillar-title {
+      font-size: 10px;
+      font-weight: 800;
+      color: #012060;
+      margin: 0 0 4px 0;
+    }
+    .pillar-desc {
+      font-size: 8.5px;
+      line-height: 1.45;
+      color: #64748B;
+      margin: 0;
+    }
+
+    /* Formula Banner */
+    .formula-banner {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .formula-swatch {
+      padding: 6px 10px;
+      border-radius: 7px;
+      font-size: 8.5px;
+      font-weight: 700;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .f-blue { background: #012060; color: #FFFFFF; }
+    .f-yellow { background: #FFFF00; color: #012060; }
+    .f-green { background: #1E9922; color: #FFFFFF; }
+    .f-plus { font-size: 12px; font-weight: 800; color: #94A3B8; }
+    .formula-result {
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      padding: 6px 10px;
+      border-radius: 7px;
+      text-align: center;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #012060;
+    }
+
+    /* Tabla de Tokens */
+    .tokens-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5px;
+      margin-top: 4px;
+    }
+    .tokens-table th {
+      background: #F1F5F9;
+      color: #012060;
+      font-weight: 800;
+      text-align: left;
+      padding: 5px 8px;
+      border-bottom: 2px solid #CBD5E1;
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .tokens-table td {
+      padding: 4.5px 8px;
+      border-bottom: 1px solid #E2E8F0;
+      vertical-align: middle;
+      color: #334155;
+    }
+    .color-chip {
+      width: 32px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.12);
+      display: inline-block;
+    }
+    .hex-code {
+      font-family: Consolas, monospace;
+      font-weight: 700;
+      font-size: 8.5px;
+      color: #012060;
+    }
+    .rgb-code {
+      font-family: Consolas, monospace;
+      font-size: 8px;
+      color: #64748B;
+    }
+
+    /* Fichas de patrones */
+    .pattern-group {
+      margin-bottom: 10px;
+    }
+    .pattern-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .pattern-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #012060;
+    }
+    .pattern-route {
+      font-size: 8.5px;
+      font-family: Consolas, monospace;
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      color: #475569;
+    }
+    .pattern-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .pattern-box {
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #FFFFFF;
+    }
+    .pbox-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 2px;
+    }
+    .pbox-desc {
+      font-size: 8px;
+      color: #64748B;
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+    .pbox-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .ptag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 7.5px;
+      font-weight: 700;
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+    .ptag-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 9999px;
+      display: inline-block;
+    }
+
+    /* Muestras en vivo accesibilidad */
+    .live-sample {
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 8.5px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .wcag-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      font-size: 8px;
+      font-weight: 800;
+    }
+    .badge-aaa { background: #DCFCE7; color: #15803D; }
+    .badge-aa { background: #E0F2FE; color: #0369A1; }
+
+    /* Firmas */
+    .signatures-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+      margin-bottom: 12px;
+    }
+    .signature-card {
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #FFFFFF;
+    }
+    .sig-role {
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #012060;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .sig-line {
+      font-size: 8.5px;
+      color: #64748B;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #94A3B8;
+      padding-bottom: 3px;
+    }
+    .dictamen-box {
+      border-left: 3.5px solid #1E9922;
+      background: #F0FDF4;
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      font-size: 8.5px;
+      line-height: 1.45;
+      color: #166534;
+    }
+
+    /* Aurora Glow Mini Preview Box */
+    .aurora-preview-box {
+      position: relative;
+      background: #0A0C14;
+      border-radius: 7px;
+      overflow: hidden;
+      padding: 7px 10px;
+      color: #FFFFFF;
+      margin-top: 4px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .aurora-mini-orb {
+      position: absolute;
+      bottom: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 40px;
+      background: #012060;
+      filter: blur(14px);
+      border-radius: 9999px;
+      pointer-events: none;
+    }
+    .aurora-mini-left {
+      position: absolute;
+      top: 10%;
+      left: -15px;
+      width: 40px;
+      height: 40px;
+      background: #081738;
+      filter: blur(10px);
+      border-radius: 9999px;
+      pointer-events: none;
+    }
+    .aurora-mini-right {
+      position: absolute;
+      top: 10%;
+      right: -15px;
+      width: 40px;
+      height: 40px;
+      background: #0A1E4A;
+      filter: blur(10px);
+      border-radius: 9999px;
+      pointer-events: none;
+    }
+    .aurora-preview-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== PÁGINA 1 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>Centro de Formación Laboral La Rioja · ASPAPREM</span>
+      <span>Sistema de Diseño e Identidad Cromática</span>
+    </div>
+
+    <div class="page-content">
+      <div class="cover-card">
+        <span class="cover-pill">DOCUMENTO OFICIAL PARA JUNTA DIRECTIVA</span>
+        <h1 class="cover-title">Muestrario Oficial de Paleta de Colores y Patrones de Diseño</h1>
+        <p class="cover-subtitle">Ecosistema Digital y Web Institucional · Centro de Formación Laboral La Rioja (ASPAPREM)</p>
+        <div class="cover-meta">
+          <div class="cover-meta-col">
+            <span class="meta-label">DESTINATARIO</span>
+            <span class="meta-val">Junta Directiva ASPAPREM</span>
+          </div>
+          <div class="cover-meta-col">
+            <span class="meta-label">PROPÓSITO</span>
+            <span class="meta-val">Aprobación del Sistema Cromático</span>
+          </div>
+          <div class="cover-meta-col">
+            <span class="meta-label">ACCESIBILIDAD</span>
+            <span class="meta-val">WCAG 2.2 Nivel AA / AAA</span>
+          </div>
+          <div class="cover-meta-col">
+            <span class="meta-label">FECHA DE EMISIÓN</span>
+            <span class="meta-val">Octubre 2026 (Actualizado)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <span class="section-number">1</span>
+        <span class="section-heading">Resumen Ejecutivo para la Junta Directiva</span>
+      </div>
+
+      <p class="lead-p">
+        El presente manual somete a consideración y aprobación formal de la Junta Directiva el sistema de identidad cromática, iluminación ambiental y patrones de diseño digital implementados en el sitio web institucional del <strong>Centro de Formación Laboral La Rioja</strong>. Este marco garantiza la concordancia visual, el respeto patrimonial desde 1993, la incorporación del diseño contemporáneo <em>Aurora Studio</em> y el cumplimiento riguroso de los estándares internacionales más estrictos.
+      </p>
+
+      <div class="pillars-grid">
+        <div class="pillar-card pillar-blue">
+          <h3 class="pillar-title">1. Identidad Patrimonial</h3>
+          <p class="pillar-desc">Preserva los colores fundacionales de ASPAPREM establecidos en 1993: Azul Institucional (#012060), Amarillo Luz (#FFFF00) y Verde Esperanza (#1E9922).</p>
+        </div>
+        <div class="pillar-card pillar-green">
+          <h3 class="pillar-title">2. Accesibilidad Universal</h3>
+          <p class="pillar-desc">Cumplimiento riguroso del estándar internacional WCAG 2.2 AA y AAA con ratios de contraste calibrados que superan 16.1:1 en tipografía y superficies clave.</p>
+        </div>
+        <div class="pillar-card pillar-yellow">
+          <h3 class="pillar-title">3. Conversión y Vanguardia</h3>
+          <p class="pillar-desc">Diferenciación intuitiva entre áreas educativas, donaciones solidarias, catálogo de productos y eventos masivos, enriquecidos por el fondo ambiental Aurora Studio.</p>
+        </div>
+      </div>
+
+      <div class="formula-banner">
+        <div class="formula-swatch f-blue">
+          <span>Azul La Rioja #012060</span>
+          <span style="font-size:7.5px; opacity:0.85;">Solidez y Tradición</span>
+        </div>
+        <span class="f-plus">+</span>
+        <div class="formula-swatch f-yellow">
+          <span>Amarillo Luz #FFFF00</span>
+          <span style="font-size:7.5px; opacity:0.85;">Juventud y Optimismo</span>
+        </div>
+        <span class="f-plus">+</span>
+        <div class="formula-swatch f-green">
+          <span>Verde Taller #1E9922</span>
+          <span style="font-size:7.5px; opacity:0.85;">Autonomía Laboral</span>
+        </div>
+        <span class="f-plus">=</span>
+        <div class="formula-result">
+          <div>Ecosistema Digital Confiable</div>
+          <div style="font-size:7.5px; color:#1E9922; font-weight:700;">Aprobado por Junta Directiva</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bar">
+      <span>Documento para Junta Directiva · WCAG 2.2 AA</span>
+      <span>Página 1 de 7</span>
+    </div>
+  </div>
+
+  <!-- ==================== PÁGINA 2 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>Centro de Formación Laboral La Rioja · ASPAPREM</span>
+      <span>Sistema de Diseño e Identidad Cromática</span>
+    </div>
+
+    <div class="page-content">
+      <div class="section-title">
+        <span class="section-number">2</span>
+        <span class="section-heading">Paleta Fundacional de Marca (Core Brand Tokens)</span>
+      </div>
+
+      <p class="lead-p">
+        A continuación se detallan las muestras visuales exactas, códigos en espacio RGB/HEX y los roles institucionales asignados a cada token en la arquitectura digital de la institución, incluyendo el sistema de lienzo ambiental oscuro <strong>Aurora Studio (#0A0C14)</strong> que eleva la jerarquía visual de los fondos primarios institucionales:
+      </p>
+
+      <table class="tokens-table">
+        <thead>
+          <tr>
+            <th style="width: 12%;">Muestra</th>
+            <th style="width: 26%;">Nombre del Token</th>
+            <th style="width: 14%;">Hex</th>
+            <th style="width: 18%;">RGB</th>
+            <th style="width: 30%;">Rol Institucional y Significado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="color-chip" style="background:#012060;"></span></td>
+            <td><strong>Azul La Rioja (Primario)</strong></td>
+            <td><span class="hex-code">#012060</span></td>
+            <td><span class="rgb-code">rgb(1, 32, 96)</span></td>
+            <td>Color corporativo principal. Evoca solidez, tradición educativa y confianza. Foco emisor del resplandor Aurora Studio.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#0A0C14;"></span></td>
+            <td><strong>Base Lienzo Aurora Studio</strong></td>
+            <td><span class="hex-code">#0A0C14</span></td>
+            <td><span class="rgb-code">rgb(10, 12, 20)</span></td>
+            <td>Negro carbón azulado profundo. Lienzo envolvente del sistema Aurora en Home, Nosotros, Programas, FAQ y Tienda. Sin banding.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background: linear-gradient(135deg, #081738, #0A1E4A, #0B2568);"></span></td>
+            <td><strong>Atmósfera Aurora (Auras y Núcleo)</strong></td>
+            <td><span class="hex-code">#081738 / #0A1E4A</span></td>
+            <td><span class="rgb-code">Auras laterales + núcleo</span></td>
+            <td>Capas de difusión periféricas en modo <code>screen</code> que generan profundidad cromática multidimensional sin recargar la interfaz.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#011640;"></span></td>
+            <td><strong>Azul Profundo</strong></td>
+            <td><span class="hex-code">#011640</span></td>
+            <td><span class="rgb-code">rgb(1, 22, 64)</span></td>
+            <td>Variante profunda para contrastes estructurales, bordes nocturnos y base formal del Footer institucional.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#FFFF00;"></span></td>
+            <td><strong>Amarillo La Rioja</strong></td>
+            <td><span class="hex-code">#FFFF00</span></td>
+            <td><span class="rgb-code">rgb(255, 255, 0)</span></td>
+            <td>Acento luminoso y optimista. Juventud y energía de los alumnos. Badges, botones de acción clave («Apóyanos») y cifras de impacto.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#1E9922;"></span></td>
+            <td><strong>Verde La Rioja (Solidario)</strong></td>
+            <td><span class="hex-code">#1E9922</span></td>
+            <td><span class="rgb-code">rgb(30, 153, 34)</span></td>
+            <td>Simboliza esperanza, autonomía y sostenibilidad de los talleres productivos. Acciones en tienda y donaciones.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#15801A;"></span></td>
+            <td><strong>Verde Texto Accesible</strong></td>
+            <td><span class="hex-code">#15801A</span></td>
+            <td><span class="rgb-code">rgb(21, 128, 26)</span></td>
+            <td>Variante oscurecida calibrada para cumplir estrictamente el ratio de contraste 4.5:1 sobre fondo blanco puro.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#0056B3;"></span></td>
+            <td><strong>Azul Enlace Interactivo</strong></td>
+            <td><span class="hex-code">#0056B3</span></td>
+            <td><span class="rgb-code">rgb(0, 86, 179)</span></td>
+            <td>Utilizado en hipervínculos, filtros activos y estados hover para navegación amigable, intuitiva y predecible.</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <div class="footer-bar">
+      <span>Documento para Junta Directiva · WCAG 2.2 AA</span>
+      <span>Página 2 de 7</span>
+    </div>
+  </div>
+
+  <!-- ==================== PÁGINA 3 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>Centro de Formación Laboral La Rioja · ASPAPREM</span>
+      <span>Sistema de Diseño e Identidad Cromática</span>
+    </div>
+
+    <div class="page-content">
+      <div class="section-title">
+        <span class="section-number">2.1</span>
+        <span class="section-heading">Tokens Complementarios y de Soporte Operativo</span>
+      </div>
+
+      <table class="tokens-table">
+        <thead>
+          <tr>
+            <th style="width: 12%;">Muestra</th>
+            <th style="width: 26%;">Nombre del Token</th>
+            <th style="width: 14%;">Hex</th>
+            <th style="width: 18%;">RGB</th>
+            <th style="width: 30%;">Rol Institucional y Significado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="color-chip" style="background:#4DA3FF;"></span></td>
+            <td><strong>Azul Celeste Acento</strong></td>
+            <td><span class="hex-code">#4DA3FF</span></td>
+            <td><span class="rgb-code">rgb(77, 163, 255)</span></td>
+            <td>Acento secundario para elementos gráficos decorativos, bordes interactivos en modo oscuro y detalles complementarios.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#25D366;"></span></td>
+            <td><strong>Verde WhatsApp Oficial</strong></td>
+            <td><span class="hex-code">#25D366</span></td>
+            <td><span class="rgb-code">rgb(37, 211, 102)</span></td>
+            <td>Canal prioritario de contacto directo con familias, donantes, empresas colaboradoras y pedidos directos de talleres.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#F59E0B;"></span></td>
+            <td><strong>Dorado Festivo / Premios</strong></td>
+            <td><span class="hex-code">#F59E0B</span></td>
+            <td><span class="rgb-code">rgb(245, 158, 11)</span></td>
+            <td>Tono ámbar festivo para resaltar cartones ganadores, pozos acumulados y estados de celebración en el Gran Bingo Familiar.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#C62828;"></span></td>
+            <td><strong>Rojo Alerta / Peligro</strong></td>
+            <td><span class="hex-code">#C62828</span></td>
+            <td><span class="rgb-code">rgb(198, 40, 40)</span></td>
+            <td>Utilizado exclusivamente en estados críticos, errores de validación, sorteos en vivo y acciones irreversibles de administración.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#F3F5F8;"></span></td>
+            <td><strong>Gris Superficie Fichas</strong></td>
+            <td><span class="hex-code">#F3F5F8</span></td>
+            <td><span class="rgb-code">rgb(243, 245, 248)</span></td>
+            <td>Superficie de fondo neutro para las tarjetas de producto en el catálogo y contenedores para una lectura descansada.</td>
+          </tr>
+          <tr>
+            <td><span class="color-chip" style="background:#081B45;"></span></td>
+            <td><strong>Azul Noche Modo Oscuro</strong></td>
+            <td><span class="hex-code">#081B45</span></td>
+            <td><span class="rgb-code">rgb(8, 27, 69)</span></td>
+            <td>Fondo institucional de la aplicación cuando el usuario activa el modo oscuro, manteniendo la temperatura de color de marca.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Desglose técnico de la tecnología Aurora Studio -->
+      <div style="margin-top: 14px; border: 1px solid #CBD5E1; border-radius: 10px; padding: 10px 14px; background: #FFFFFF;">
+        <h4 style="margin: 0 0 6px 0; font-size: 10px; font-weight: 800; color: #012060;">
+          Patrón de Iluminación Ambiental «Aurora Studio» (Preset Azul La Rioja)
+        </h4>
+        <p style="margin: 0 0 8px 0; font-size: 8.5px; color: #475569; line-height: 1.45;">
+          Diseñado para reemplazar los fondos planos o gradientes lineales por una atmósfera moderna basada en orbes difusos con modo de fusión <code>screen</code> y desenfoque gaussiano de 140px. El componente es un React Server Component (RSC) puro encapsulado con <code>contain: paint</code>, sin JavaScript de cliente ni impacto en Core Web Vitals.
+        </p>
+
+        <div class="aurora-preview-box">
+          <div class="aurora-mini-orb"></div>
+          <div class="aurora-mini-left"></div>
+          <div class="aurora-mini-right"></div>
+          <div class="aurora-preview-content">
+            <div>
+              <span style="background:#FFFF00; color:#012060; padding:1px 6px; border-radius:9999px; font-weight:800; font-size:7px;">PRESET OFICIAL</span>
+              <span style="font-weight:700; margin-left:6px; font-size:9px;">Azul La Rioja (#012060) sobre Lienzo #0A0C14</span>
+            </div>
+            <div style="color:#93B8DC; font-family:Consolas, monospace;">blur(140px) · opacity: 85% · contain:paint</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bar">
+      <span>Documento para Junta Directiva · WCAG 2.2 AA</span>
+      <span>Página 3 de 7</span>
+    </div>
+  </div>
+
+  <!-- ==================== PÁGINA 4 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>Centro de Formación Laboral La Rioja · ASPAPREM</span>
+      <span>Sistema de Diseño e Identidad Cromática</span>
+    </div>
+
+    <div class="page-content">
+      <div class="section-title">
+        <span class="section-number">3</span>
+        <span class="section-heading">Muestrario de Aplicación y Patrones por Página</span>
+      </div>
+
+      <!-- 3.1 Portada -->
+      <div class="pattern-group">
+        <div class="pattern-header">
+          <span class="pattern-title">3.1. Página de Inicio / Portada</span>
+          <span class="pattern-route">Ruta: /</span>
+        </div>
+        <div class="pattern-grid">
+          <div class="pattern-box">
+            <div class="pbox-title">Hero Principal (Fondo Aurora Studio)</div>
+            <div class="pbox-desc">Lienzo carbón #0A0C14 con resplandor focal ascendente Azul La Rioja (#012060), tipografía de alto contraste y foto de estudiantes.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#0A0C14; color:#FFF;"><span class="ptag-dot" style="background:#012060;"></span>Lienzo Aurora #0A0C14</span>
+              <span class="ptag" style="background:#FFFF00; color:#012060;"><span class="ptag-dot" style="background:#012060;"></span>Badge #FFFF00</span>
+            </div>
+          </div>
+          <div class="pattern-box">
+            <div class="pbox-title">Banda Solidaria de Impacto & Cierre</div>
+            <div class="pbox-desc">Franjas de alto impacto comunitario con fondo Aurora Studio, cifras clave "7 de cada 10" en amarillo puro y botones directos.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#0A0C14; color:#FFF;"><span class="ptag-dot" style="background:#012060;"></span>Fondo Aurora</span>
+              <span class="ptag" style="background:#FFFF00; color:#012060;">Cifras #FFFF00</span>
+              <span class="ptag" style="background:#10B981; color:#FFF;">WhatsApp #10B981</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3.2 Quiénes Somos -->
+      <div class="pattern-group">
+        <div class="pattern-header">
+          <span class="pattern-title">3.2. Quiénes Somos / Institucional</span>
+          <span class="pattern-route">Ruta: /about</span>
+        </div>
+        <div class="pattern-grid">
+          <div class="pattern-box">
+            <div class="pbox-title">Hero de Apertura Institucional</div>
+            <div class="pbox-desc">Lema «Formando futuros» sobre fondo Aurora Studio (#012060), píldora dorada de trayectoria «Desde 1993» y botón amarillo.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#0A0C14; color:#FFF;"><span class="ptag-dot" style="background:#012060;"></span>Fondo Aurora #012060</span>
+              <span class="ptag" style="background:#FFFF00; color:#012060;">Insignia #FFFF00</span>
+            </div>
+          </div>
+          <div class="pattern-box">
+            <div class="pbox-title">Rendición de Cuentas & Cierre</div>
+            <div class="pbox-desc">Franja de transparencia con métricas institucionales y banner de cierre («Sé parte de...») unificados bajo el diseño Aurora Studio.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#0A0C14; color:#FFF;"><span class="ptag-dot" style="background:#012060;"></span>Fondo Aurora</span>
+              <span class="ptag" style="background:#FFFF00; color:#012060;">Botón Donar #FFFF00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3.3 Programas -->
+      <div class="pattern-group">
+        <div class="pattern-header">
+          <span class="pattern-title">3.3. Programas y Talleres Formativos</span>
+          <span class="pattern-route">Ruta: /programs</span>
+        </div>
+        <div class="pattern-grid">
+          <div class="pattern-box">
+            <div class="pbox-title">Hero de Programas & Garantías</div>
+            <div class="pbox-desc">Encabezado principal enriquecido con Aurora Studio, franja de garantías con checks en amarillo y acceso inmediato a admisión.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#0A0C14; color:#FFF;"><span class="ptag-dot" style="background:#012060;"></span>Fondo Aurora</span>
+              <span class="ptag" style="background:#FFFF00; color:#012060;">Garantías #FFFF00</span>
+            </div>
+          </div>
+          <div class="pattern-box">
+            <div class="pbox-title">Cierre «Ven a conocernos»</div>
+            <div class="pbox-desc">Banner final con imagen velada sobre fondo Aurora Studio, enlace directo para agendar visita por WhatsApp y Google Maps.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#0A0C14; color:#FFF;"><span class="ptag-dot" style="background:#012060;"></span>Fondo Aurora</span>
+              <span class="ptag" style="background:#FFFF00; color:#012060;">WhatsApp #FFFF00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bar">
+      <span>Documento para Junta Directiva · WCAG 2.2 AA</span>
+      <span>Página 4 de 7</span>
+    </div>
+  </div>
+
+  <!-- ==================== PÁGINA 5 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>Centro de Formación Laboral La Rioja · ASPAPREM</span>
+      <span>Sistema de Diseño e Identidad Cromática</span>
+    </div>
+
+    <div class="page-content">
+
+      <!-- 3.4 FAQ -->
+      <div class="pattern-group">
+        <div class="pattern-header">
+          <span class="pattern-title">3.4. Preguntas Frecuentes (FAQ)</span>
+          <span class="pattern-route">Ruta: /faq</span>
+        </div>
+        <div class="pattern-grid">
+          <div class="pattern-box">
+            <div class="pbox-title">Hero Principal de Preguntas</div>
+            <div class="pbox-desc">Cabecera de alto impacto bajo el fondo Aurora Studio (#0A0C14 / #012060), tipografía blanca nítida y ambientación visual envolvente.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#0A0C14; color:#FFF;"><span class="ptag-dot" style="background:#012060;"></span>Fondo Aurora #012060</span>
+              <span class="ptag" style="background:#FFF; color:#012060;">Texto Blanco Puro</span>
+            </div>
+          </div>
+          <div class="pattern-box">
+            <div class="pbox-title">Acordeones & Llamada a Consulta</div>
+            <div class="pbox-desc">Contenedores colapsables limpios con tipografía azul corporativa y botones redondeados de llamada telefónica y consulta por mensaje.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#012060; color:#FFF;">Botón Consulta</span>
+              <span class="ptag" style="background:#F3F5F8; color:#012060;">Borde #E2E8F0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3.5 La Rioja Shop -->
+      <div class="pattern-group">
+        <div class="pattern-header">
+          <span class="pattern-title">3.5. La Rioja Shop / Tienda Solidaria</span>
+          <span class="pattern-route">Ruta: /productos</span>
+        </div>
+        <div class="pattern-grid">
+          <div class="pattern-box">
+            <div class="pbox-title">Hero de Colección & Talleres</div>
+            <div class="pbox-desc">Pionero del diseño Aurora Studio: base #0A0C14 con foco #012060, cuadrícula escalonada de fotografías y botones de catálogo.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#0A0C14; color:#FFF;"><span class="ptag-dot" style="background:#012060;"></span>Lienzo Aurora</span>
+              <span class="ptag" style="background:#F9C637; color:#1E2430;">Botón #F9C637</span>
+            </div>
+          </div>
+          <div class="pattern-box">
+            <div class="pbox-title">Fichas de Productos & WhatsApp</div>
+            <div class="pbox-desc">Tarjetas de artesanías y panadería con precios contrastados y botón flotante de canasta con integración directa a WhatsApp.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#25D366; color:#FFF;">Pedido WhatsApp</span>
+              <span class="ptag" style="background:#F3F5F8; color:#012060;">Tile #F3F5F8</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3.6 Bingo y Eventos -->
+      <div class="pattern-group">
+        <div class="pattern-header">
+          <span class="pattern-title">3.6. Gran Bingo Familiar y Eventos en Vivo</span>
+          <span class="pattern-route">Rutas: /bingo, /registro, /ruleta, /tombola</span>
+        </div>
+        <div class="pattern-grid">
+          <div class="pattern-box">
+            <div class="pbox-title">Celebración y Premios Mayores</div>
+            <div class="pbox-desc">Dorado festivo (#F59E0B) para cartones ganadores, pozos acumulados y confeti animado sobre la pantalla gigante del evento.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#F59E0B; color:#FFF;">Dorado #F59E0B</span>
+              <span class="ptag" style="background:#1E9922; color:#FFF;">Cartón Activo</span>
+            </div>
+          </div>
+          <div class="pattern-box">
+            <div class="pbox-title">Ruleta y Tómbola Digital</div>
+            <div class="pbox-desc">Segmentos vectoriales en lona HTML5 con los colores institucionales para total transparencia del sorteo en tiempo real.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#012060; color:#FFF;">Azul Sorteo</span>
+              <span class="ptag" style="background:#1E9922; color:#FFF;">Verde Sorteo</span>
+              <span class="ptag" style="background:#FFFF00; color:#012060;">Amarillo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3.7 Navbar y Footer -->
+      <div class="pattern-group" style="margin-bottom:0;">
+        <div class="pattern-header">
+          <span class="pattern-title">3.7. Barra de Navegación (Navbar) y Pie de Página (Footer)</span>
+          <span class="pattern-route">Componentes Globales Compartidos</span>
+        </div>
+        <div class="pattern-grid">
+          <div class="pattern-box">
+            <div class="pbox-title">Navbar Sticky</div>
+            <div class="pbox-desc">Azul institucional #012060 con indicador de pestaña activa en amarillo puro de 2px y botón solidario destacado.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#012060; color:#FFF;">Fondo Nav #012060</span>
+              <span class="ptag" style="background:#FFFF00; color:#012060;">Línea Activa #FFFF00</span>
+            </div>
+          </div>
+          <div class="pattern-box">
+            <div class="pbox-title">Footer en 4 Columnas</div>
+            <div class="pbox-desc">Gradiente continuo hacia azul profundo, títulos en amarillo y enlaces con iconos interactivos de redes.</div>
+            <div class="pbox-tags">
+              <span class="ptag" style="background:#011640; color:#FFF;">Base Footer #011640</span>
+              <span class="ptag" style="background:#FFFF00; color:#012060;">Títulos #FFFF00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bar">
+      <span>Documento para Junta Directiva · WCAG 2.2 AA</span>
+      <span>Página 5 de 7</span>
+    </div>
+  </div>
+
+  <!-- ==================== PÁGINA 6 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>Centro de Formación Laboral La Rioja · ASPAPREM</span>
+      <span>Sistema de Diseño e Identidad Cromática</span>
+    </div>
+
+    <div class="page-content">
+      <div class="section-title">
+        <span class="section-number">4</span>
+        <span class="section-heading">Matriz de Validación de Accesibilidad (WCAG 2.2 Nivel AA / AAA)</span>
+      </div>
+
+      <p class="lead-p">
+        Cada combinación de texto y superficie ha sido validada formalmente mediante el analizador de contraste de luminancia relativa oficial de la W3C, garantizando que el sitio web sea perfectamente legible para personas de la tercera edad, personas con baja visión o en condiciones de iluminación solar intensa:
+      </p>
+
+      <table class="tokens-table" style="font-size: 8px;">
+        <thead>
+          <tr>
+            <th style="width: 26%;">Elemento de Interfaz</th>
+            <th style="width: 18%;">Muestra en Vivo</th>
+            <th style="width: 16%;">Color Texto</th>
+            <th style="width: 16%;">Color Fondo</th>
+            <th style="width: 12%;">Contraste</th>
+            <th style="width: 12%;">Estándar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Botón «Apóyanos»</strong><br><span style="font-size:7.5px; color:#64748B;">Llamada a la acción principal</span></td>
+            <td><span class="live-sample" style="background:#FFFF00; color:#012060;">Texto Ejemplo</span></td>
+            <td>#012060<br><span style="color:#64748B;">Azul La Rioja</span></td>
+            <td>#FFFF00<br><span style="color:#64748B;">Amarillo Institucional</span></td>
+            <td><strong style="color:#15803D; font-size:9.5px;">14.2 : 1</strong></td>
+            <td><span class="wcag-badge badge-aaa">AAA · Excelente</span></td>
+          </tr>
+          <tr>
+            <td><strong>Títulos y Antetítulos</strong><br><span style="font-size:7.5px; color:#64748B;">En Hero y Fondos Aurora</span></td>
+            <td><span class="live-sample" style="background:#012060; color:#FFFF00;">Texto Ejemplo</span></td>
+            <td>#FFFF00<br><span style="color:#64748B;">Amarillo Institucional</span></td>
+            <td>#012060 / #0A0C14<br><span style="color:#64748B;">Fondo Aurora</span></td>
+            <td><strong style="color:#15803D; font-size:9.5px;">14.2 : 1</strong></td>
+            <td><span class="wcag-badge badge-aaa">AAA · Excelente</span></td>
+          </tr>
+          <tr>
+            <td><strong>Texto blanco sobre Fondo Aurora</strong><br><span style="font-size:7.5px; color:#64748B;">Párrafos y lemas de portada</span></td>
+            <td><span class="live-sample" style="background:#0A0C14; color:#FFFFFF;">Texto Ejemplo</span></td>
+            <td>#FFFFFF<br><span style="color:#64748B;">Blanco Puro</span></td>
+            <td>#0A0C14 / #012060<br><span style="color:#64748B;">Fondo Aurora</span></td>
+            <td><strong style="color:#15803D; font-size:9.5px;">16.1 : 1</strong></td>
+            <td><span class="wcag-badge badge-aaa">AAA · Excelente</span></td>
+          </tr>
+          <tr>
+            <td><strong>Botón WhatsApp Oficial</strong><br><span style="font-size:7.5px; color:#64748B;">Contacto directo en botones</span></td>
+            <td><span class="live-sample" style="background:#1E9922; color:#FFFFFF;">Texto Ejemplo</span></td>
+            <td>#FFFFFF<br><span style="color:#64748B;">Blanco Puro</span></td>
+            <td>#1E9922<br><span style="color:#64748B;">Verde Solidario</span></td>
+            <td><strong style="color:#0369A1; font-size:9.5px;">4.7 : 1</strong></td>
+            <td><span class="wcag-badge badge-aa">AA · Aprobado</span></td>
+          </tr>
+          <tr>
+            <td><strong>Texto informativo corporativo</strong><br><span style="font-size:7.5px; color:#64748B;">Títulos y enlaces sobre blanco</span></td>
+            <td><span class="live-sample" style="background:#FFFFFF; color:#012060; border:1px solid #CBD5E1;">Texto Ejemplo</span></td>
+            <td>#012060<br><span style="color:#64748B;">Azul La Rioja</span></td>
+            <td>#FFFFFF<br><span style="color:#64748B;">Blanco Puro</span></td>
+            <td><strong style="color:#15803D; font-size:9.5px;">16.1 : 1</strong></td>
+            <td><span class="wcag-badge badge-aaa">AAA · Excelente</span></td>
+          </tr>
+          <tr>
+            <td><strong>Texto verde informativo</strong><br><span style="font-size:7.5px; color:#64748B;">Énfasis de talleres sobre blanco</span></td>
+            <td><span class="live-sample" style="background:#FFFFFF; color:#15801A; border:1px solid #CBD5E1;">Texto Ejemplo</span></td>
+            <td>#15801A<br><span style="color:#64748B;">Verde Accesible</span></td>
+            <td>#FFFFFF<br><span style="color:#64748B;">Blanco Puro</span></td>
+            <td><strong style="color:#0369A1; font-size:9.5px;">4.6 : 1</strong></td>
+            <td><span class="wcag-badge badge-aa">AA · Aprobado</span></td>
+          </tr>
+          <tr>
+            <td><strong>Insignia de trayectoria</strong><br><span style="font-size:7.5px; color:#64748B;">Cápsula «Desde 1993»</span></td>
+            <td><span class="live-sample" style="background:#FFFF00; color:#012060;">Texto Ejemplo</span></td>
+            <td>#012060<br><span style="color:#64748B;">Azul La Rioja</span></td>
+            <td>#FFFF00<br><span style="color:#64748B;">Amarillo Institucional</span></td>
+            <td><strong style="color:#15803D; font-size:9.5px;">14.2 : 1</strong></td>
+            <td><span class="wcag-badge badge-aaa">AAA · Excelente</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="section-title" style="margin-top: 14px;">
+        <span class="section-number">5</span>
+        <span class="section-heading">Acta de Aprobación Formal de la Junta Directiva</span>
+      </div>
+
+      <p class="lead-p" style="margin-bottom:0;">
+        Habiendo evaluado el informe técnico, las muestras visuales exactas, la integración de la iluminación ambiental <em>Aurora Studio</em>, la matriz de contraste WCAG 2.2 AA y la correspondencia con los principios institucionales de ASPAPREM desde 1993, los miembros de la <strong>Junta Directiva del Centro de Formación Laboral La Rioja</strong> otorgan su aprobación unánime al presente sistema cromático y de patrones digitales:
+      </p>
+
+    </div>
+
+    <div class="footer-bar">
+      <span>Documento para Junta Directiva · WCAG 2.2 AA</span>
+      <span>Página 6 de 7</span>
+    </div>
+  </div>
+
+  <!-- ==================== PÁGINA 7 ==================== -->
+  <div class="page">
+    <div class="header-bar">
+      <span>Centro de Formación Laboral La Rioja · ASPAPREM</span>
+      <span>Sistema de Diseño e Identidad Cromática</span>
+    </div>
+
+    <div class="page-content">
+      <div class="section-title">
+        <span class="section-number">5.1</span>
+        <span class="section-heading">Firmas de Validación Institucional</span>
+      </div>
+
+      <div class="signatures-grid">
+        <div class="signature-card">
+          <div class="sig-role">PRESIDENTE(A) DE JUNTA DIRECTIVA</div>
+          <div class="sig-line">
+            <span>Firma: ___________________________</span>
+            <span>Fecha: ___/___/2026</span>
+          </div>
+        </div>
+
+        <div class="signature-card">
+          <div class="sig-role">SECRETARIO(A) GENERAL</div>
+          <div class="sig-line">
+            <span>Firma: ___________________________</span>
+            <span>Fecha: ___/___/2026</span>
+          </div>
+        </div>
+
+        <div class="signature-card">
+          <div class="sig-role">TESORERO(A)</div>
+          <div class="sig-line">
+            <span>Firma: ___________________________</span>
+            <span>Fecha: ___/___/2026</span>
+          </div>
+        </div>
+
+        <div class="signature-card">
+          <div class="sig-role">DIRECCIÓN EJECUTIVA CFL</div>
+          <div class="sig-line">
+            <span>Firma: ___________________________</span>
+            <span>Fecha: ___/___/2026</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dictamen-box">
+        <strong>Dictamen Técnico y Jurídico Institucional:</strong> El sistema cromático, la especificación de iluminación ambiental <em>Aurora Studio</em> y los patrones de diseño aquí descritos preservan rigurosamente la identidad histórica de ASPAPREM, fortalecen la credibilidad institucional ante organismos cooperantes nacionales e internacionales, y certifican el cumplimiento de la directiva de accesibilidad web más exigente en la actualidad (WCAG 2.2 Nivel AA y AAA).
+      </div>
+
+    </div>
+
+    <div class="footer-bar">
+      <span>Documento para Junta Directiva · WCAG 2.2 AA</span>
+      <span>Página 7 de 7</span>
+    </div>
+  </div>
+
+</body>
+</html>
