@@ -63,7 +63,7 @@ export default async function Home() {
   const campaignRows = rows.filter((r) => r.section_key.startsWith("cl_campaign"));
 
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-950">
+    <main className="min-h-screen overflow-x-clip bg-white dark:bg-gray-950">
       <Navbar />
 
       {/* 1 — Hero */}

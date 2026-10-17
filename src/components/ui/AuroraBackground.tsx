@@ -15,7 +15,7 @@ interface AuroraBackgroundProps {
 export function AuroraBackground({ className = "" }: AuroraBackgroundProps) {
   return (
     <div
-      className={`pointer-events-none absolute inset-0 overflow-hidden opacity-85 select-none ${className}`}
+      className={`pointer-events-none absolute inset-0 overflow-hidden opacity-85 select-none [contain:paint] ${className}`}
       aria-hidden="true"
     >
       {/* 1. Orbe focal inferior dominante (#012060) */}

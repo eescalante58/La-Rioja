@@ -40,7 +40,7 @@ export default async function FAQPage() {
     .order("content_order", { ascending: true });
 
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300">
+    <main className="min-h-screen overflow-x-clip bg-white dark:bg-gray-950 transition-colors duration-300">
       <Navbar />
 
       {/* Hero Section */}
