@@ -29,10 +29,10 @@ const DESCRIPTION =
   "Conoce a La Rioja: ASPAPREM desde 1993 y el Centro de Formación Laboral para personas con discapacidad intelectual en El Salvador. Historia, modelo de atención, talleres y cómo nos sostenemos.";
 
 export const metadata: Metadata = {
-  title: "Nosotros",
+  title: "Quiénes Somos",
   description: DESCRIPTION,
   alternates: { canonical: "/about" },
-  openGraph: { title: "Nosotros | La Rioja", description: DESCRIPTION, url: "/about" },
+  openGraph: { title: "Quiénes Somos | La Rioja", description: DESCRIPTION, url: "/about" },
 };
 
 export const revalidate = 60;

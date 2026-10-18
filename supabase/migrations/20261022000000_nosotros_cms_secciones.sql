@@ -58,7 +58,7 @@ SELECT v.page::public.site_page_type, v.section_key, v.title, v.description, NUL
     -- 1. Hero
     ('about', 'cl_hero', 'Formando futuros,',
      'Somos el Centro de Formación Laboral La Rioja, administrado por ASPAPREM, una asociación de padres y madres de familia. Acompañamos a jóvenes y adultos con discapacidad intelectual para que aprendan un oficio, ganen autonomía y participen plenamente en la sociedad.',
-     '{"antetitulo": "Nosotros", "resaltado": "integrando vidas", "insignia": "Desde 1993", "insignia_texto": "33 años de ASPAPREM · 17 años del CFL La Rioja", "boton_1": "Conoce nuestra historia", "boton_2": "Ver programas", "foto": "/nosotros/hero-estudiantes.webp", "foto_alt": "Estudiantes del CFL La Rioja con su uniforme, reunidos frente a un edificio durante una salida"}',
+     '{"antetitulo": "Quiénes Somos", "resaltado": "integrando vidas", "insignia": "Desde 1993", "insignia_texto": "33 años de ASPAPREM · 17 años del CFL La Rioja", "boton_1": "Conoce nuestra historia", "boton_2": "Ver programas", "foto": "/nosotros/hero-estudiantes.webp", "foto_alt": "Estudiantes del CFL La Rioja con su uniforme, reunidos frente a un edificio durante una salida"}',
      10, true),
 
     -- 2. Historia

@@ -16,7 +16,7 @@ interface AboutHeroProps {
  * (debajo del texto en celular).
  */
 export function AboutHero({ hero }: AboutHeroProps) {
-  const eyebrow = metaText(hero, "antetitulo", "Nosotros");
+  const eyebrow = metaText(hero, "antetitulo", "Quiénes Somos");
   const highlight = metaText(hero, "resaltado", "");
   const badge = metaText(hero, "insignia", "");
   const badgeText = metaText(hero, "insignia_texto", "");
