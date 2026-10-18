@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { SiteContent } from "@/types/cms";
-import { YouTubeTalleres, VIDEO_TALLERES_ID } from "./YouTubeTalleres";
+import { YouTubeTalleres } from "./YouTubeTalleres";
 
 interface Props {
   video: SiteContent | null;
@@ -20,10 +20,28 @@ function extractYouTubeId(rawUrl: string): string | null {
 }
 
 /**
+ * Determina si una URL corresponde a un archivo directo o de Supabase Storage.
+ */
+function isDirectVideo(url: string): boolean {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("supabase.co/storage/") ||
+    lower.endsWith(".mp4") ||
+    lower.endsWith(".webm") ||
+    lower.endsWith(".mov") ||
+    lower.endsWith(".m4v")
+  );
+}
+
+/**
  * Sección — Video institucional / Testimonio Audiovisual (cl_video).
  * En móvil (<640px): diseño centrado de una columna con ancho máximo 360px.
  * En tablet y escritorio (≥768px): dos columnas con texto de contexto a un lado y video vertical 9:16 al otro.
- * Carga diferida zero-cost: sin llamadas a dominios externos hasta pulsar Play.
+ *
+ * Prioridad de video:
+ * Si existe un archivo en Supabase Storage (o URL directa de video), se utiliza prioritariamente
+ * sin realizar ninguna llamada a YouTube.
  */
 export function VideoSection({ video }: Props) {
   const meta = (video?.metadata ?? {}) as Record<string, unknown>;
@@ -40,18 +58,21 @@ export function VideoSection({ video }: Props) {
     video.description ||
     "Acompaña a nuestros estudiantes en un día de clases y talleres. Descubre el compromiso, la alegría y las habilidades productivas que desarrollan cada día.";
 
-  // Resolución de URL del video
-  const rawUrl =
-    (typeof meta.url === "string" && meta.url.trim()) ||
-    (typeof meta.video_url === "string" && meta.video_url.trim()) ||
-    (typeof video.image_url === "string" && video.image_url.trim()) ||
-    "";
+  // Resolución con prioridad absoluta para Supabase Storage:
+  const imageUrl = typeof video.image_url === "string" ? video.image_url.trim() : "";
+  const metaUrl = typeof meta.url === "string" ? meta.url.trim() : "";
 
-  // ID de YouTube: extraído de la URL configurada, de metadata.videoId o el ID por defecto de Talleres
-  const ytId =
-    extractYouTubeId(rawUrl) ||
-    (typeof meta.videoId === "string" && meta.videoId.trim()) ||
-    VIDEO_TALLERES_ID;
+  const directVideoUrl = isDirectVideo(imageUrl)
+    ? imageUrl
+    : isDirectVideo(metaUrl)
+      ? metaUrl
+      : undefined;
+
+  // Fallback a YouTube solo si NO hay video de Supabase ni video directo
+  const rawUrl = metaUrl || imageUrl || "";
+  const ytId = !directVideoUrl
+    ? extractYouTubeId(rawUrl) || (typeof meta.videoId === "string" && meta.videoId.trim()) || undefined
+    : undefined;
 
   // Resolución segura del póster local
   const posterCandidate =
@@ -140,6 +161,7 @@ export function VideoSection({ video }: Props) {
           {/* Columna de Video Vertical 9:16 (Derecha en Tablet/Desktop) */}
           <div className="flex justify-center lg:col-span-5">
             <YouTubeTalleres
+              videoUrl={directVideoUrl}
               videoId={ytId}
               titulo={title}
               poster={posterUrl}
