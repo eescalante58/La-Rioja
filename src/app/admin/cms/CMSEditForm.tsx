@@ -182,13 +182,32 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
 
   const isVideo = (url: string | null) => {
     if (!url) return false;
-    // Check extension or typical Supabase storage video types
+    const lower = url.toLowerCase();
     return (
-      url.toLowerCase().endsWith(".mp4") ||
-      url.toLowerCase().endsWith(".webm") ||
-      url.toLowerCase().endsWith(".ogg") ||
-      url.includes("/video")
+      lower.endsWith(".mp4") ||
+      lower.endsWith(".webm") ||
+      lower.endsWith(".ogg") ||
+      lower.endsWith(".mov") ||
+      lower.endsWith(".m4v") ||
+      lower.includes("/video")
     );
+  };
+
+  const getYouTubeEmbed = (url: string | null) => {
+    if (!url) return null;
+    const match = url.match(
+      /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/,
+    );
+    return match ? `https://www.youtube-nocookie.com/embed/${match[1]}` : null;
+  };
+
+  const getVimeoEmbed = (url: string | null) => {
+    if (!url) return null;
+    const match = url.match(
+      /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|)(\d+)/,
+    );
+    const id = match ? match[3] || match[2] : null;
+    return id ? `https://player.vimeo.com/video/${id}` : null;
   };
 
   const removeFile = (e: React.MouseEvent) => {
@@ -199,6 +218,9 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
     setClearImage(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  const ytEmbedUrl = getYouTubeEmbed(previewUrl);
+  const vimeoEmbedUrl = getVimeoEmbed(previewUrl);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -247,7 +269,21 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
               />
               {previewUrl ? (
                 <div className="relative w-full aspect-square max-h-[400px] overflow-hidden rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-                  {isVideo(previewUrl) ? (
+                  {ytEmbedUrl ? (
+                    <iframe
+                      src={ytEmbedUrl}
+                      title="Vista previa YouTube"
+                      className="w-full h-full border-0 rounded-2xl"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  ) : vimeoEmbedUrl ? (
+                    <iframe
+                      src={vimeoEmbedUrl}
+                      title="Vista previa Vimeo"
+                      className="w-full h-full border-0 rounded-2xl"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  ) : isVideo(previewUrl) ? (
                     <video
                       key={previewUrl}
                       controls
@@ -345,12 +381,12 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
                 URL Directa (Opcional)
               </Text>
               <TextInput
-                placeholder="https://ejemplo.com/archivo.mp4"
+                placeholder="https://ejemplo.com/archivo.mp4 o enlace de YouTube/Vimeo"
                 value={formData.image_url}
                 onChange={(e) => handleUrlChange(e.target.value)}
               />
               <Text className="text-[10px] text-gray-400 italic">
-                Usa esto si ya tienes el archivo en Supabase o un servidor externo.
+                Usa esto para archivos en Supabase, enlaces directos de video/imagen, o videos de YouTube y Vimeo.
               </Text>
             </div>
           </div>
