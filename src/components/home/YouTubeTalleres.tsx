@@ -14,24 +14,42 @@ export interface YouTubeTalleresProps {
 }
 
 /**
+ * Extrae el ID de 11 caracteres de un enlace de YouTube.
+ */
+function extractYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const match = url.trim().match(
+    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/,
+  );
+  return match ? match[1] : null;
+}
+
+/**
  * Componente interactivo para incrustar videos verticales (9:16).
- * Soporta prioritariamente video directo de Supabase Storage (.mp4) y fallback a YouTube.
- * No carga recursos ni reproductores hasta que el usuario interactúa (Zero-Cost LCP/CLS).
+ * Carga el reproductor diferido de YouTube usando youtube-nocookie.com.
+ * No realiza peticiones a YouTube hasta que el usuario pulsa Play (Zero-Cost LCP/CLS).
  *
  * @param {YouTubeTalleresProps} props Propiedades del reproductor
  * @returns {JSX.Element} Reproductor diferido optimizado
  */
 export function YouTubeTalleres({
   videoUrl,
-  videoId,
+  videoId = VIDEO_TALLERES_ID,
   titulo = "Conoce los talleres del Centro de Formación Laboral La Rioja",
   poster = "/videos/talleres/miniatura-youtube-1280x720.jpg",
   maxWidth = 360,
 }: YouTubeTalleresProps) {
   const [activo, setActivo] = useState(false);
 
-  // Si existe videoUrl directo (ej. Supabase Storage), se utiliza con prioridad absoluta sobre YouTube
-  const hasDirectVideo = Boolean(videoUrl && videoUrl.trim());
+  // Determinar si es YouTube (por defecto o si la URL contiene YouTube)
+  const isYouTube =
+    Boolean(videoId) ||
+    !videoUrl ||
+    videoUrl.includes("youtube") ||
+    videoUrl.includes("youtu.be");
+
+  const resolvedYtId =
+    videoId || (videoUrl ? extractYouTubeId(videoUrl) : null) || VIDEO_TALLERES_ID;
 
   return (
     <div
@@ -62,7 +80,16 @@ export function YouTubeTalleres({
             </svg>
           </button>
 
-          {hasDirectVideo ? (
+          {isYouTube ? (
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${resolvedYtId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+              title={titulo}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              className="absolute inset-0 h-full w-full border-0"
+            />
+          ) : (
             <video
               controls
               autoPlay
@@ -73,15 +100,6 @@ export function YouTubeTalleres({
               <source src={videoUrl} type="video/mp4" />
               Tu navegador no soporta la reproducción de video.
             </video>
-          ) : (
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${videoId || VIDEO_TALLERES_ID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
-              title={titulo}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-              className="absolute inset-0 h-full w-full border-0"
-            />
           )}
         </>
       ) : (
@@ -116,7 +134,7 @@ export function YouTubeTalleres({
             </div>
 
             <span className="mt-4 rounded-full bg-black/60 px-3.5 py-1 text-xs font-semibold text-white backdrop-blur-md">
-              Ver video institucional
+              Ver video (4:18)
             </span>
           </div>
         </button>
