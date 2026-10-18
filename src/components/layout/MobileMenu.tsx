@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Instagram,
   Facebook,
+  Youtube,
   type LucideIcon,
 } from "lucide-react";
 import { ContactTrigger } from "./ContactTrigger";
@@ -34,6 +35,7 @@ export interface MobileMenuSocialLinks {
   whatsapp?: string;
   instagram?: string;
   facebook?: string;
+  youtube?: string;
   x?: string;
 }
 
@@ -162,6 +164,12 @@ export function MobileMenu({
       href: social.facebook,
       label: "Facebook",
       icon: <Facebook size={22} aria-hidden="true" />,
+    },
+    {
+      key: "youtube",
+      href: social.youtube,
+      label: "YouTube",
+      icon: <Youtube size={22} aria-hidden="true" />,
     },
     { key: "x", href: social.x, label: "X", icon: <XLogo /> },
   ].filter((s) => s.href && s.href !== "#");

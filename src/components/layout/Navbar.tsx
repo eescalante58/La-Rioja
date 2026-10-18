@@ -77,7 +77,7 @@ export function Navbar() {
         .from("site_content")
         .select("section_key, description")
         .eq("page", "social media")
-        .in("section_key", ["whatsapp", "instagram", "facebook", "x"])
+        .in("section_key", ["whatsapp", "instagram", "facebook", "x", "youtube"])
         .eq("is_active", true);
 
       if (!data) return;
@@ -90,6 +90,11 @@ export function Navbar() {
           // valor del CMS hacen que WhatsApp reporte "el número no existe".
           const digits = value.match(/(\d{6,15})/);
           links.whatsapp = digits ? `https://wa.me/${digits[1]}` : value;
+        } else if (row.section_key === "youtube") {
+          links.youtube =
+            value.startsWith("http://") || value.startsWith("https://")
+              ? value
+              : `https://${value}`;
         } else {
           links[row.section_key as keyof MobileMenuSocialLinks] = value;
         }
