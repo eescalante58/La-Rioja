@@ -208,7 +208,7 @@ export function WorkshopsTeaser({ workshops, items = [], talleresLabel }: Props)
 
               <div className="flex flex-1 flex-col justify-between p-6 text-white">
                 <div>
-                  <div className="flex items-baseline justify-between gap-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                     <h3 className="font-montserrat text-xl font-extrabold text-white">
                       {taller.nombre}
                     </h3>

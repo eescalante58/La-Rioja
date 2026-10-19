@@ -49,9 +49,6 @@ export function CampaignPhoto({
 
   useEffect(() => {
     if (!isLightboxOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setIsLightboxOpen(false);
@@ -60,7 +57,6 @@ export function CampaignPhoto({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isLightboxOpen]);
@@ -144,11 +140,11 @@ export function CampaignPhoto({
               e.stopPropagation();
               setIsLightboxOpen(true);
             }}
-            className="absolute right-2.5 top-2.5 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-xs transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100"
+            className="absolute right-2.5 top-2.5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-xs transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100"
             aria-label={`Ver imagen completa: ${alt}`}
             title="Ver imagen completa"
           >
-            <Expand className="h-3.5 w-3.5" aria-hidden="true" />
+            <Expand className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -161,14 +157,14 @@ export function CampaignPhoto({
             role="dialog"
             aria-modal="true"
             aria-label={title || alt}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-3 sm:p-6 backdrop-blur-xs"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-contain bg-black/85 p-3 sm:p-6 backdrop-blur-xs"
             onClick={closeLightbox}
           >
             <div
-              className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-slate-950 shadow-2xl ring-1 ring-white/15"
+              className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden overscroll-contain rounded-2xl bg-slate-950 shadow-2xl ring-1 ring-white/15"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 text-white">
+              <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5 text-white">
                 <div className="flex items-center gap-2 truncate pr-3">
                   {tag && (
                     <span className="shrink-0 rounded-full bg-larioja-amarillo px-2.5 py-0.5 text-[11px] font-extrabold text-larioja-azul">
@@ -183,7 +179,7 @@ export function CampaignPhoto({
                   <button
                     type="button"
                     onClick={() => setIsZoomed((z) => !z)}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-xs font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-amarillo"
+                    className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1.5 rounded-full bg-white/10 px-3.5 text-xs font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-amarillo"
                     aria-label={isZoomed ? "Reducir zoom" : "Acercar imagen"}
                     title={isZoomed ? "Reducir zoom" : "Acercar imagen"}
                   >
@@ -202,7 +198,7 @@ export function CampaignPhoto({
                   <button
                     type="button"
                     onClick={closeLightbox}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-amarillo"
+                    className="inline-flex h-11 w-11 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-amarillo"
                     aria-label="Cerrar vista ampliada"
                   >
                     <X className="h-4 w-4" aria-hidden="true" />
@@ -210,7 +206,7 @@ export function CampaignPhoto({
                 </div>
               </div>
 
-              <div className="relative h-[70vh] w-full overflow-auto bg-slate-900 p-3 sm:h-[74vh] sm:p-5">
+              <div className="relative h-[58vh] w-full overflow-auto overscroll-contain bg-slate-900 p-3 sm:h-[70vh] sm:p-5">
                 <div
                   className={`flex min-h-full w-full justify-center ${
                     isZoomed ? "items-start" : "items-center"
@@ -221,18 +217,18 @@ export function CampaignPhoto({
                     src={src}
                     alt={alt}
                     onClick={() => setIsZoomed((z) => !z)}
-                    className={` select-none rounded-lg shadow-lg ${
+                    className={`select-none rounded-lg shadow-lg ${
                       isZoomed
                         ? "h-auto w-full max-w-[680px] cursor-zoom-out"
-                        : "max-h-[64vh] w-auto max-w-full cursor-zoom-in object-contain sm:max-h-[68vh]"
+                        : "max-h-[52vh] w-auto max-w-full cursor-zoom-in object-contain sm:max-h-[64vh]"
                     }`}
                   />
                 </div>
               </div>
 
               {hasRealHref && linkLabel && (
-                <div className="flex items-center justify-between border-t border-white/10 bg-slate-950 px-4 py-3">
-                  <span className="text-xs text-slate-400">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 bg-slate-950 px-4 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                  <span className="hidden text-xs text-slate-400 sm:inline">
                     {isZoomed
                       ? "Haz clic en el afiche para ajustar a la pantalla"
                       : "Haz clic en el afiche para hacer zoom"}
@@ -242,7 +238,7 @@ export function CampaignPhoto({
                     target={isExternal ? "_blank" : undefined}
                     rel={isExternal ? "noopener noreferrer" : undefined}
                     onClick={closeLightbox}
-                    className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-larioja-amarillo px-5 py-2 text-xs font-extrabold text-larioja-azul transition-transform hover:scale-[1.02]"
+                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-larioja-amarillo px-5 py-2.5 text-xs font-extrabold text-larioja-azul transition-transform hover:scale-[1.02]"
                   >
                     {linkLabel}
                     {isExternal ? (
