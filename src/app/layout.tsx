@@ -78,9 +78,11 @@ export const metadata: Metadata = {
         sizes: "16x16 32x32 48x48 64x64 128x128 256x256",
         type: "image/x-icon",
       },
-      { url: "/LogoLaRioja.webp", sizes: "192x192", type: "image/webp" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/LogoLaRioja.webp", sizes: "180x180", type: "image/webp" }],
+    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   manifest: "/manifest.json",
 };
