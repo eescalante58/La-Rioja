@@ -32,14 +32,14 @@ export type Campaign = z.infer<typeof CampaignSchema> & {
   text: string;
 };
 
-/** Devuelve las campañas vigentes, por prioridad, hasta un máximo de tres. */
-export function activeCampaigns(all: Campaign[], now = new Date()): Campaign[] {
+/** Devuelve las campañas vigentes, por orden de contenido, hasta un máximo de seis. */
+export function activeCampaigns(all: Campaign[], now = new Date(), max = 6): Campaign[] {
   return all
     .filter((c) => {
       const start = parseOptionalDate(c.startsAt);
       const end = parseOptionalDate(c.endsAt);
       return (!start || start <= now) && (!end || end >= now);
     })
-    .slice(0, 3);
+    .slice(0, max);
 }
 

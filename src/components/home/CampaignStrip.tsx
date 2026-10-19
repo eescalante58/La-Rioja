@@ -7,7 +7,7 @@ interface Props {
   rows: SiteContent[];
 }
 
-/** Sección 2 — Tres campañas activas del CMS. No se renderiza si no hay ninguna vigente. */
+/** Sección 2 — Hasta seis campañas activas del CMS (cl_campaign_1..6). No se renderiza si no hay ninguna vigente. */
 export function CampaignStrip({ rows }: Props) {
   const campaigns: Campaign[] = rows.flatMap((row) => {
     const rawMeta =
@@ -57,7 +57,7 @@ export function CampaignStrip({ rows }: Props) {
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {active.map((c) => {
             const isExternal = /^https?:\/\//i.test(c.href);
             const rawTipo = (c.tipo || "").trim().toLowerCase();
