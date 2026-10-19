@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { SiteContent } from "@/types/cms";
 import {
@@ -9,6 +8,7 @@ import {
   textOr,
   type CmsSection,
 } from "@/lib/cms-content";
+import { WorkshopPhoto } from "./WorkshopPhoto";
 
 interface TallerItem {
   key: string;
@@ -20,6 +20,7 @@ interface TallerItem {
   enlace?: string;
   enlaceTexto?: string;
   chips: string[];
+  imageFit?: "auto" | "contain" | "cover";
 }
 
 interface Props {
@@ -111,6 +112,14 @@ function rowToTallerItem(row: SiteContent, index: number): TallerItem | null {
   if (!nombre) return null;
 
   const chips = metaStrings(sec, "chips");
+  const rawFit = metaText(sec, "imageFit", metaText(sec, "tipo", "auto")).toLowerCase();
+  const imageFit: "auto" | "contain" | "cover" =
+    rawFit === "contain" || rawFit === "vertical" || rawFit === "afiche"
+      ? "contain"
+      : rawFit === "cover" || rawFit === "horizontal"
+        ? "cover"
+        : "auto";
+
   return {
     key: sec.section_key,
     nombre,
@@ -121,6 +130,7 @@ function rowToTallerItem(row: SiteContent, index: number): TallerItem | null {
     enlace: metaHref(sec, "enlace", base.enlace ?? "/productos"),
     enlaceTexto: metaText(sec, "enlace_texto", base.enlaceTexto ?? "Ver en La Rioja Shop →"),
     chips: chips.length > 0 ? chips : base.chips,
+    imageFit,
   };
 }
 
@@ -179,54 +189,53 @@ export function WorkshopsTeaser({ workshops, items = [], talleresLabel }: Props)
           </Link>
         </div>
 
-        {/* Cuadrícula 2x2 Bento Grid de los 4 Talleres */}
+        {/* Cuadrícula 2x2 de los 4 Talleres (imagen arriba sin superposición + cuerpo de texto debajo) */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {talleres.map((taller) => (
             <article
               key={taller.key}
-              className="group relative flex min-h-[350px] flex-col justify-end overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm transition-all duration-300 hover:shadow-xl dark:border-slate-800"
+              className="group flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm transition-all duration-300 hover:shadow-xl dark:border-slate-800"
             >
-              <Image
+              <WorkshopPhoto
                 src={taller.foto}
                 alt={taller.fotoAlt}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover opacity-80 transition-transform duration-700 group-hover:scale-105"
+                insignia={taller.insignia}
+                nombre={taller.nombre}
+                enlace={taller.enlace}
+                enlaceTexto={taller.enlaceTexto}
+                imageFit={taller.imageFit}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent" />
 
-              <div className="relative p-6 text-white backdrop-blur-[1px]">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="inline-block rounded-full bg-larioja-amarillo px-3 py-0.5 text-[11px] font-extrabold text-larioja-azul shadow-xs">
-                    {taller.insignia || "Taller Productivo"}
-                  </span>
-                  {taller.enlace && (
-                    <Link
-                      href={taller.enlace}
-                      className="inline-flex min-h-[44px] -my-2 items-center gap-1 text-xs font-semibold text-larioja-amarillo hover:underline"
-                    >
-                      {taller.enlaceTexto || "Ver en La Rioja Shop →"}
-                    </Link>
-                  )}
+              <div className="flex flex-1 flex-col justify-between p-6 text-white">
+                <div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h3 className="font-montserrat text-xl font-extrabold text-white">
+                      {taller.nombre}
+                    </h3>
+                    {taller.enlace && (
+                      <Link
+                        href={taller.enlace}
+                        className="inline-flex min-h-[44px] -my-2 shrink-0 items-center gap-1 text-xs font-semibold text-larioja-amarillo hover:underline"
+                      >
+                        {taller.enlaceTexto || "Ver en La Rioja Shop →"}
+                      </Link>
+                    )}
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-white/85 sm:text-sm">
+                    {taller.descripcion}
+                  </p>
                 </div>
-
-                <h3 className="font-montserrat text-xl font-extrabold text-white">
-                  {taller.nombre}
-                </h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-white/80">
-                  {taller.descripcion}
-                </p>
 
                 {/* Chips de productos */}
                 {taller.chips && taller.chips.length > 0 && (
-                  <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-white/20 pt-3">
+                  <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-white/15 pt-3.5">
                     <span className="mr-1 text-[10px] font-bold uppercase tracking-wider text-white/60">
                       Productos:
                     </span>
                     {taller.chips.map((chip) => (
                       <span
                         key={chip}
-                        className="rounded-lg bg-white/20 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/30"
+                        className="rounded-lg bg-white/15 px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-white/25"
                       >
                         {chip}
                       </span>
