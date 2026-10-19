@@ -2,28 +2,38 @@
 
 import Link from "next/link";
 import type { SiteContent } from "@/types/cms";
-import { YouTubeTalleres, VIDEO_TALLERES_ID } from "./YouTubeTalleres";
+import {
+  YouTubeTalleres,
+  VIDEO_TALLERES_ID,
+  extractYouTubeId,
+  isDirectVideoUrl,
+  type VideoAspectRatio,
+} from "./YouTubeTalleres";
 
 interface Props {
   video: SiteContent | null;
 }
 
+const DEFAULT_POSTER_TALLERES = "/videos/talleres/miniatura-youtube-1280x720.jpg";
+
 /**
- * Extrae el ID de 11 caracteres de un enlace de YouTube.
+ * Normaliza `metadata.aspect` aceptando `"9:16"`, `"9,16"`, `"16:9"`, `"16,9"`,
+ * `"vertical"` u `"horizontal"`.
  */
-function extractYouTubeId(rawUrl: string): string | null {
-  if (!rawUrl) return null;
-  const match = rawUrl.trim().match(
-    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/,
-  );
-  return match ? match[1] : null;
+function resolveAspectRatio(rawAspect: unknown, fallbackYtId: string | null): VideoAspectRatio {
+  if (typeof rawAspect === "string" && rawAspect.trim()) {
+    const normalized = rawAspect.trim().toLowerCase().replace(",", ":");
+    if (normalized === "16:9" || normalized === "horizontal") return "16:9";
+    if (normalized === "9:16" || normalized === "vertical") return "9:16";
+  }
+  if (fallbackYtId === "oTpQfUKE9As") return "16:9";
+  return "9:16";
 }
 
 /**
- * Sección — Video institucional / Testimonio Audiovisual (cl_video).
- * En móvil (<640px): diseño centrado de una columna con ancho máximo 360px.
- * En tablet y escritorio (≥768px): dos columnas con texto de contexto a un lado y video vertical 9:16 al otro.
- * Reproduce el video vertical en streaming adaptativo vía youtube-nocookie.com sin bloqueos ni pantallas negras.
+ * Sección — Video institucional / Testimonio Audiovisual (`cl_video`).
+ * Soporta tanto videos subidos a Supabase Storage (`.mp4`) como enlaces de YouTube,
+ * y adapta su diseño según `metadata.aspect` (`"9:16"` vertical o `"16:9"` / `"16,9"` horizontal).
  */
 export function VideoSection({ video }: Props) {
   const meta = (video?.metadata ?? {}) as Record<string, unknown>;
@@ -40,22 +50,54 @@ export function VideoSection({ video }: Props) {
     video.description ||
     "Acompaña a nuestros estudiantes en un día de clases y talleres. Descubre el compromiso, la alegría y las habilidades productivas que desarrollan cada día.";
 
-  // Resolución de ID de YouTube desde metadata, image_url o fallback por defecto (0rCP5NMMasY)
-  const rawMetaUrl = typeof meta.url === "string" ? meta.url.trim() : "";
   const rawImageUrl = typeof video.image_url === "string" ? video.image_url.trim() : "";
+  const rawMetaUrl = typeof meta.url === "string" ? meta.url.trim() : "";
+  const rawMetaVideoId = typeof meta.videoId === "string" ? meta.videoId.trim() : "";
 
-  const ytId =
-    extractYouTubeId(rawMetaUrl) ||
-    extractYouTubeId(rawImageUrl) ||
-    (typeof meta.videoId === "string" && meta.videoId.trim()) ||
-    VIDEO_TALLERES_ID;
+  // Priorizar cualquier URL que haya sido modificada respecto al valor semilla,
+  // ya sea en `image_url` o en `metadata.url`.
+  const legacyDefaultUrl = `https://youtu.be/${VIDEO_TALLERES_ID}`;
+  const primaryUrl =
+    rawImageUrl && rawImageUrl !== legacyDefaultUrl
+      ? rawImageUrl
+      : rawMetaUrl && rawMetaUrl !== legacyDefaultUrl
+        ? rawMetaUrl
+        : rawImageUrl || rawMetaUrl;
 
-  // Resolución segura del póster local
+  const isDirectMp4 = isDirectVideoUrl(primaryUrl);
+  const ytId = isDirectMp4
+    ? null
+    : extractYouTubeId(primaryUrl) ||
+      extractYouTubeId(rawImageUrl) ||
+      extractYouTubeId(rawMetaUrl) ||
+      rawMetaVideoId ||
+      VIDEO_TALLERES_ID;
+
+  const aspect = resolveAspectRatio(meta.aspect, ytId);
+  const isHorizontal = aspect === "16:9";
+
+  // Resolución segura del póster: si se cambió a otro video de YouTube y el póster
+  // sigue siendo el de `0rCP5NMMasY`, usar la miniatura oficial del nuevo video.
   const posterCandidate =
     (typeof meta.posterUrl === "string" && meta.posterUrl.trim()) ||
     (typeof meta.poster === "string" && meta.poster.trim()) ||
     "";
-  const posterUrl = posterCandidate || "/videos/talleres/miniatura-youtube-1280x720.jpg";
+  const isLegacyDefaultPoster = posterCandidate === DEFAULT_POSTER_TALLERES;
+  const posterUrl =
+    posterCandidate && (!isLegacyDefaultPoster || ytId === VIDEO_TALLERES_ID || isDirectMp4)
+      ? posterCandidate
+      : ytId && ytId !== VIDEO_TALLERES_ID
+        ? `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`
+        : DEFAULT_POSTER_TALLERES;
+
+  // Duración opcional en el botón de portada
+  const rawDuracion =
+    (typeof meta.duracion === "string" && meta.duracion.trim()) ||
+    (typeof meta.duration === "string" && meta.duration.trim()) ||
+    "";
+  const duracion =
+    rawDuracion ||
+    (ytId === "oTpQfUKE9As" ? "1:30" : ytId === VIDEO_TALLERES_ID && !isDirectMp4 ? "4:18" : undefined);
 
   return (
     <section
@@ -66,7 +108,11 @@ export function VideoSection({ video }: Props) {
       <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14">
           {/* Columna de Texto Contextual (Izquierda en Tablet/Desktop) */}
-          <div className="flex flex-col text-center lg:col-span-7 lg:text-left">
+          <div
+            className={`flex flex-col text-center lg:text-left ${
+              isHorizontal ? "lg:col-span-6" : "lg:col-span-7"
+            }`}
+          >
             <div className="mb-3 inline-flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-larioja-azul dark:text-sky-400 lg:justify-start">
               <span aria-hidden="true">🎥</span> Testimonio Audiovisual
             </div>
@@ -121,26 +167,33 @@ export function VideoSection({ video }: Props) {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4 lg:justify-start">
               <Link
                 href="/programs"
-                className="inline-flex items-center justify-center rounded-full bg-larioja-azul px-6 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-larioja-azul/90 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-azul dark:bg-larioja-amarillo dark:text-larioja-azul sm:text-sm"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-larioja-azul px-6 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-larioja-azul/90 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-azul dark:bg-larioja-amarillo dark:text-larioja-azul sm:text-sm"
               >
                 Conocer nuestros programas
               </Link>
               <Link
                 href="/apoyanos"
-                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:text-sm"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:text-sm"
               >
                 Apadrina un futuro
               </Link>
             </div>
           </div>
 
-          {/* Columna de Video Vertical 9:16 (Derecha en Tablet/Desktop) */}
-          <div className="flex justify-center lg:col-span-5">
+          {/* Columna de Video (9:16 vertical o 16:9 horizontal según metadata.aspect) */}
+          <div
+            className={`flex justify-center ${
+              isHorizontal ? "lg:col-span-6" : "lg:col-span-5"
+            }`}
+          >
             <YouTubeTalleres
-              videoId={ytId}
+              videoUrl={primaryUrl || undefined}
+              videoId={ytId ?? undefined}
               titulo={title}
               poster={posterUrl}
-              maxWidth={360}
+              aspect={aspect}
+              maxWidth={isHorizontal ? 680 : 360}
+              duracion={duracion}
             />
           </div>
         </div>
