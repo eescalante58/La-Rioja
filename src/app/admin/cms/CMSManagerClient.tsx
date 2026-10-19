@@ -21,7 +21,7 @@ const CMSDeleteDialog = dynamic(() => import("@/components/admin/cms/CMSDeleteDi
 
 const CMS_PAGES = [
   { value: "home", label: "Home" },
-  { value: "about", label: "Nosotros" },
+  { value: "quienes somos", label: "Quienes Somos" },
   { value: "bingo", label: "Bingo" },
   { value: "tombola", label: "Tombola" },
   { value: "programs", label: "Programs" },
@@ -43,7 +43,10 @@ export default function CMSManagerClient({ initialContent }: CMSManagerClientPro
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [pageFilter, setPageFilter] = useState<string>(searchParams.get("page") || "all");
+  const rawInitialPage = searchParams.get("page") || "all";
+  const [pageFilter, setPageFilter] = useState<string>(
+    rawInitialPage === "about" ? "quienes somos" : rawInitialPage,
+  );
   const [searchFilter, setSearchFilter] = useState(searchParams.get("search") || "");
 
   useEffect(() => {
@@ -59,9 +62,15 @@ export default function CMSManagerClient({ initialContent }: CMSManagerClientPro
     });
   }, [pageFilter, searchFilter, router, searchParams]);
 
+  const isQuienesSomosAlias = (val: string | null | undefined) =>
+    val === "quienes somos" || val === "about";
+
   const sortedContent = (initialContent || [])
     .filter((item) => {
-      const matchesPage = pageFilter === "all" || item.page === pageFilter;
+      const matchesPage =
+        pageFilter === "all" ||
+        item.page === pageFilter ||
+        (isQuienesSomosAlias(pageFilter) && isQuienesSomosAlias(item.page));
       const matchesSearch =
         searchFilter === "" ||
         (item.section_key || "").toLowerCase().includes(searchFilter.toLowerCase()) ||

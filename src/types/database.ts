@@ -1877,6 +1877,7 @@ export type Database = {
       site_page_type:
         | "home"
         | "about"
+        | "quienes somos"
         | "contact"
         | "global"
         | "social media"
@@ -2043,6 +2044,7 @@ export const Constants = {
       site_page_type: [
         "home",
         "about",
+        "quienes somos",
         "contact",
         "global",
         "social media",

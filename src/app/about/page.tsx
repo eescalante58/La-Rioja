@@ -92,7 +92,7 @@ function toStats(rows: CmsSection[]): Stat[] {
  * filas `cl_*`; ver supabase/migrations/20261022000000_nosotros_cms_secciones.sql).
  */
 export default async function AboutPage() {
-  const content = (await getPageContent("about")) as CmsSection[];
+  const content = (await getPageContent("quienes somos")) as CmsSection[];
   const section = (key: string) => content.find((s) => s.section_key === key);
 
   const programs = [
