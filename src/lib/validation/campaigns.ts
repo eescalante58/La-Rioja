@@ -1,16 +1,23 @@
 import { z } from "zod";
 
-/** Campaña de la portada: visible solo entre sus fechas de inicio y fin. */
+/** Parseo seguro de fecha opcional (ISO completa o YYYY-MM-DD). Devuelve null si es inválida o vacía. */
+function parseOptionalDate(value: string | undefined): Date | null {
+  if (!value || !value.trim()) return null;
+  const d = new Date(value.trim());
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Campaña de la portada: tolerante a metadatos parciales o editados desde el CMS. */
 export const CampaignSchema = z.object({
-  tag: z.string().max(24),
+  tag: z.string().optional().default(""),
   /** title y text son opcionales en metadata — se toman de site_content.title / description si faltan. */
-  title: z.string().max(60).optional(),
-  text: z.string().max(120).optional(),
-  linkLabel: z.string().max(40),
-  href: z.string(),
-  imageAlt: z.string(),
-  startsAt: z.string().datetime().optional(),
-  endsAt: z.string().datetime().optional(),
+  title: z.string().optional(),
+  text: z.string().optional(),
+  linkLabel: z.string().optional().default(""),
+  href: z.string().optional().default(""),
+  imageAlt: z.string().optional().default(""),
+  startsAt: z.string().optional(),
+  endsAt: z.string().optional(),
 });
 
 export type Campaign = z.infer<typeof CampaignSchema> & {
@@ -24,9 +31,11 @@ export type Campaign = z.infer<typeof CampaignSchema> & {
 /** Devuelve las campañas vigentes, por prioridad, hasta un máximo de tres. */
 export function activeCampaigns(all: Campaign[], now = new Date()): Campaign[] {
   return all
-    .filter(
-      (c) =>
-        (!c.startsAt || new Date(c.startsAt) <= now) && (!c.endsAt || new Date(c.endsAt) >= now),
-    )
+    .filter((c) => {
+      const start = parseOptionalDate(c.startsAt);
+      const end = parseOptionalDate(c.endsAt);
+      return (!start || start <= now) && (!end || end >= now);
+    })
     .slice(0, 3);
 }
+

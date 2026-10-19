@@ -30,7 +30,7 @@ export function StagesCards({ colegio, cfl }: Props) {
         <div className="grid gap-6 md:grid-cols-2">
           {stages.map((s) => {
             const meta = (s.metadata ?? {}) as Record<string, string>;
-            const imgSrc = s.image_url ?? meta.foto ?? null;
+            const imgSrc = (s.image_url || "").trim() || (meta.foto || "").trim() || null;
             const isColegio = s.section_key.includes("colegio");
             return (
               <article

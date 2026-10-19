@@ -11,17 +11,17 @@ interface Props {
 export function HomeHero({ hero }: Props) {
   const meta = (hero?.metadata ?? {}) as Record<string, unknown>;
 
-  const antetitulo = (meta.antetitulo as string) ?? "Desde 1993 · ASPAPREM";
-  const title = hero?.title ?? "Formando futuros, integrando vidas";
+  const antetitulo = ((meta.antetitulo as string) || "").trim() || "Desde 1993 · ASPAPREM";
+  const title = (hero?.title || "").trim() || "Formando futuros, integrando vidas";
   const description =
-    hero?.description ??
+    (hero?.description || "").trim() ||
     "En el Centro de Formación Laboral La Rioja, jóvenes y adultos con discapacidad intelectual aprenden un oficio, ganan autonomía y construyen su lugar en la sociedad.";
-  const btn1 = (meta.boton_1 as string) ?? "Conoce nuestros programas";
-  const href1 = (meta.enlace_1 as string) ?? "/programs";
-  const btn2 = (meta.boton_2 as string) ?? "Apóyanos";
-  const href2 = (meta.enlace_2 as string) ?? "/apoyanos";
-  const imgSrc = hero?.image_url ?? "/nosotros/hero-estudiantes.webp";
-  const imgAlt = (meta.foto_alt as string) ?? "Estudiantes de La Rioja en el taller";
+  const btn1 = ((meta.boton_1 as string) || "").trim() || "Conoce nuestros programas";
+  const href1 = ((meta.enlace_1 as string) || "").trim() || "/programs";
+  const btn2 = ((meta.boton_2 as string) || "").trim() || "Apóyanos";
+  const href2 = ((meta.enlace_2 as string) || "").trim() || "/apoyanos";
+  const imgSrc = (hero?.image_url || "").trim() || "/nosotros/hero-estudiantes.webp";
+  const imgAlt = ((meta.foto_alt as string) || "").trim() || "Estudiantes de La Rioja en el taller";
 
   const socialDestacado = (meta.prueba_social_destacado as string) ?? "+30 escuelas";
   const socialTexto =

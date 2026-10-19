@@ -12,10 +12,16 @@ interface CardProps {
 
 function TestimonialCard({ testimonial }: CardProps) {
   const meta = (testimonial.metadata ?? {}) as Record<string, unknown>;
-  const quote = (meta.quote as string) ?? testimonial.description ?? "";
-  const nombre = (meta.nombre as string) ?? "";
-  const rol = (meta.rol as string) ?? "";
-  const photoUrl = meta.photoUrl as string | undefined;
+  const rawDesc = typeof testimonial.description === "string" ? testimonial.description.trim() : "";
+  const rawMetaQuote = typeof meta.quote === "string" ? meta.quote.trim() : "";
+  const quote = rawDesc || rawMetaQuote;
+  const rawMetaNombre = typeof meta.nombre === "string" ? meta.nombre.trim() : "";
+  const rawTitle = typeof testimonial.title === "string" ? testimonial.title.trim() : "";
+  const nombre = rawMetaNombre || rawTitle;
+  const rol = typeof meta.rol === "string" ? meta.rol.trim() : "";
+  const rawImg = typeof testimonial.image_url === "string" ? testimonial.image_url.trim() : "";
+  const rawMetaPhoto = typeof meta.photoUrl === "string" ? meta.photoUrl.trim() : "";
+  const photoUrl = rawImg || rawMetaPhoto || undefined;
 
   return (
     <div className="flex h-full flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-xs transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 sm:p-8">

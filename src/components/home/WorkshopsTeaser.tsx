@@ -1,8 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { SiteContent } from "@/types/cms";
+import {
+  metaHref,
+  metaStrings,
+  metaText,
+  sectionImage,
+  textOr,
+  type CmsSection,
+} from "@/lib/cms-content";
 
 interface TallerItem {
+  key: string;
   nombre: string;
   descripcion: string;
   foto: string;
@@ -14,13 +23,17 @@ interface TallerItem {
 }
 
 interface Props {
+  /** Fila encabezado `cl_workshops` (título, subtítulo y metadatos de sección). */
   workshops: SiteContent | null;
+  /** Filas individuales `cl_workshop_1..N` de cada taller. */
+  items?: SiteContent[];
   /** Etiqueta del enlace "Ver los N talleres" calculada a partir de getTalleres(). */
   talleresLabel?: string;
 }
 
 const TALLERES_BASE: TallerItem[] = [
   {
+    key: "cl_workshop_1",
     nombre: "Panadería",
     descripcion:
       "Preparan masas, hornean y empacan pan dulce y salado siguiendo recetas e higiene de una panadería real.",
@@ -32,10 +45,11 @@ const TALLERES_BASE: TallerItem[] = [
     chips: ["🥖 Pan francés", "🍞 Pan dulce", "🍪 galletas decoradas"],
   },
   {
+    key: "cl_workshop_2",
     nombre: "Pintura",
     descripcion:
       "Diseñan y pintan a mano artículos personalizados, cuidando el detalle y el acabado de cada pieza.",
-    foto: "/apoyanos/logro-pintura.webp",
+    foto: "/apoyanos/cltaller8Pintura.jpeg",
     fotoAlt: "Alumno pintando a mano en el taller de Pintura",
     insignia: "Taller Productivo",
     enlace: "/productos",
@@ -43,6 +57,7 @@ const TALLERES_BASE: TallerItem[] = [
     chips: ["🎨 Llaveros ilustrados", "🧢 gorras", "👕 camisetas, etc."],
   },
   {
+    key: "cl_workshop_3",
     nombre: "Carpintería",
     descripcion:
       "Miden, cortan, lijan y ensamblan piezas de madera usando herramientas con técnicas seguras.",
@@ -54,6 +69,7 @@ const TALLERES_BASE: TallerItem[] = [
     chips: ["📦 Cajas", "🪵 Repisas", "🪴 Artículos decorativos"],
   },
   {
+    key: "cl_workshop_4",
     nombre: "Costura",
     descripcion:
       "Aprenden a usar la máquina de coser, cortar patrones y terminar prendas y accesorios textiles.",
@@ -66,47 +82,72 @@ const TALLERES_BASE: TallerItem[] = [
   },
 ];
 
-export function WorkshopsTeaser({ workshops, talleresLabel }: Props) {
-  const meta = (workshops?.metadata ?? {}) as Record<string, unknown>;
-  const rawTalleres = Array.isArray(meta.talleres) ? (meta.talleres as Partial<TallerItem>[]) : [];
+/** Adapta `SiteContent` (`metadata: Json`) al contrato `CmsSection` (`metadata: Record<string, unknown>`). */
+function toCmsSection(row: SiteContent | null | undefined): CmsSection | undefined {
+  if (!row) return undefined;
+  const meta =
+    typeof row.metadata === "object" && row.metadata !== null && !Array.isArray(row.metadata)
+      ? (row.metadata as Record<string, unknown>)
+      : null;
+  return {
+    section_key: row.section_key,
+    title: row.title,
+    description: row.description,
+    image_url: row.image_url,
+    content_order: row.content_order,
+    metadata: meta,
+  };
+}
 
-  // Combinar inteligentemente con los datos de Supabase si existen, preservando siempre los 4 talleres y sus chips
-  const talleres: TallerItem[] = TALLERES_BASE.map((base) => {
-    const fromCms = rawTalleres.find(
-      (t) =>
-        t.nombre &&
-        (t.nombre.toLowerCase().includes(base.nombre.toLowerCase()) ||
-          base.nombre.toLowerCase().includes(t.nombre.toLowerCase())),
-    );
+/** Convierte una fila `cl_workshop_N` del CMS en un `TallerItem` con respaldos seguros. */
+function rowToTallerItem(row: SiteContent, index: number): TallerItem | null {
+  const sec = toCmsSection(row);
+  if (!sec) return null;
+  const base =
+    TALLERES_BASE.find((b) => b.key === sec.section_key) ??
+    TALLERES_BASE[index] ??
+    TALLERES_BASE[0];
+  const nombre = textOr(sec.title, base.nombre);
+  if (!nombre) return null;
 
-    if (!fromCms) return base;
+  const chips = metaStrings(sec, "chips");
+  return {
+    key: sec.section_key,
+    nombre,
+    descripcion: textOr(sec.description, base.descripcion),
+    foto: sectionImage(sec) ?? base.foto,
+    fotoAlt: metaText(sec, "foto_alt", base.fotoAlt || `Estudiantes en el taller de ${nombre}`),
+    insignia: metaText(sec, "insignia", base.insignia ?? "Taller Productivo"),
+    enlace: metaHref(sec, "enlace", base.enlace ?? "/productos"),
+    enlaceTexto: metaText(sec, "enlace_texto", base.enlaceTexto ?? "Ver en La Rioja Shop →"),
+    chips: chips.length > 0 ? chips : base.chips,
+  };
+}
 
-    return {
-      nombre: base.nombre === "Pintura" ? "Pintura" : (fromCms.nombre ?? base.nombre),
-      descripcion: fromCms.descripcion || base.descripcion,
-      foto: ((fromCms as Record<string, unknown>).foto as string) || base.foto,
-      fotoAlt:
-        ((fromCms as Record<string, unknown>).foto_alt as string) ||
-        fromCms.fotoAlt ||
-        base.fotoAlt,
-      insignia: fromCms.insignia || base.insignia,
-      enlace: fromCms.enlace || base.enlace,
-      enlaceTexto:
-        fromCms.enlaceTexto ||
-        ((fromCms as Record<string, unknown>).enlace_texto as string) ||
-        base.enlaceTexto,
-      chips:
-        Array.isArray(fromCms.chips) && fromCms.chips.length > 0
-          ? (fromCms.chips as string[])
-          : base.chips,
-    };
-  });
+/**
+ * Sección 5 de Inicio — Cuadrícula 2×2 de talleres vocacionales.
+ * Encabezado en `cl_workshops` y tarjetas individuales en `cl_workshop_1..N`.
+ */
+export function WorkshopsTeaser({ workshops, items = [], talleresLabel }: Props) {
+  const headerSec = toCmsSection(workshops);
+  const fromSections = items
+    .map((row, idx) => rowToTallerItem(row, idx))
+    .filter((t): t is TallerItem => t !== null);
 
-  const heading = workshops?.title || "Aprender haciendo";
-  const subheading =
-    workshops?.description ||
-    "Cada taller es un espacio de trabajo real. Los productos que ves son hechos por nuestros estudiantes.";
-  const ctaLabel = talleresLabel ?? "Ver los cuatro talleres";
+  const talleres: TallerItem[] = fromSections.length > 0 ? fromSections : TALLERES_BASE;
+
+  const eyebrow = metaText(headerSec, "antetitulo", "Formación Vocacional");
+  const heading = textOr(headerSec?.title, "Aprender haciendo");
+  const subheading = textOr(
+    headerSec?.description,
+    "Cada taller es un espacio de trabajo real. Los productos que ves son hechos por nuestros estudiantes.",
+  );
+  const ctaHref = metaHref(headerSec, "enlace", "/programs#talleres");
+  const ctaLabel = metaText(
+    headerSec,
+    "boton",
+    talleresLabel ?? "Ver los cuatro talleres",
+  );
 
   return (
     <section
@@ -118,7 +159,7 @@ export function WorkshopsTeaser({ workshops, talleresLabel }: Props) {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-1 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-larioja-azul dark:text-sky-400">
-              <span aria-hidden="true">🛠️</span> Formación Vocacional
+              <span aria-hidden="true">🛠️</span> {eyebrow}
             </div>
             <h2
               id="workshops-heading"
@@ -131,7 +172,7 @@ export function WorkshopsTeaser({ workshops, talleresLabel }: Props) {
             </p>
           </div>
           <Link
-            href="/programs#talleres"
+            href={ctaHref}
             className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-2 border-larioja-azul px-5 py-2.5 text-xs font-bold text-larioja-azul transition-colors hover:bg-larioja-azul hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul"
           >
             {ctaLabel} →
@@ -142,7 +183,7 @@ export function WorkshopsTeaser({ workshops, talleresLabel }: Props) {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {talleres.map((taller) => (
             <article
-              key={taller.nombre}
+              key={taller.key}
               className="group relative flex min-h-[350px] flex-col justify-end overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 shadow-sm transition-all duration-300 hover:shadow-xl dark:border-slate-800"
             >
               <Image
@@ -162,7 +203,7 @@ export function WorkshopsTeaser({ workshops, talleresLabel }: Props) {
                   {taller.enlace && (
                     <Link
                       href={taller.enlace}
-                      className="flex items-center gap-1 text-xs font-semibold text-larioja-amarillo hover:underline"
+                      className="inline-flex min-h-[44px] -my-2 items-center gap-1 text-xs font-semibold text-larioja-amarillo hover:underline"
                     >
                       {taller.enlaceTexto || "Ver en La Rioja Shop →"}
                     </Link>

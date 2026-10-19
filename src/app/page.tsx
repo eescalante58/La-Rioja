@@ -60,7 +60,22 @@ export default async function Home() {
     talleresCount > 0 ? `Ver los ${numeroEnPalabras(talleresCount)} talleres` : undefined;
 
   const byKey = Object.fromEntries(rows.map((r) => [r.section_key, r]));
-  const campaignRows = rows.filter((r) => r.section_key.startsWith("cl_campaign"));
+  const campaignRows = rows
+    .filter(
+      (r) => r.section_key.startsWith("cl_campaign") || r.section_key.startsWith("cl_campaing"),
+    )
+    .sort(
+      (a, b) =>
+        (a.content_order ?? 0) - (b.content_order ?? 0) ||
+        a.section_key.localeCompare(b.section_key, "es", { numeric: true }),
+    );
+  const workshopRows = rows
+    .filter((r) => r.section_key.startsWith("cl_workshop_"))
+    .sort(
+      (a, b) =>
+        (a.content_order ?? 0) - (b.content_order ?? 0) ||
+        a.section_key.localeCompare(b.section_key, "es", { numeric: true }),
+    );
 
   return (
     <main className="min-h-screen overflow-x-clip bg-white dark:bg-gray-950">
@@ -82,7 +97,11 @@ export default async function Home() {
       <SolidarityBand solidarity={byKey["cl_solidarity"] ?? null} />
 
       {/* 5 — Talleres */}
-      <WorkshopsTeaser workshops={byKey["cl_workshops"] ?? null} talleresLabel={talleresLabel} />
+      <WorkshopsTeaser
+        workshops={byKey["cl_workshops"] ?? null}
+        items={workshopRows}
+        talleresLabel={talleresLabel}
+      />
 
       {/* 6 — La Rioja Shop */}
       <FeaturedProducts products={products} />

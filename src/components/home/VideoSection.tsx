@@ -22,7 +22,10 @@ const DEFAULT_POSTER_TALLERES = "/videos/talleres/miniatura-youtube-1280x720.jpg
  */
 function resolveAspectRatio(rawAspect: unknown, fallbackYtId: string | null): VideoAspectRatio {
   if (typeof rawAspect === "string" && rawAspect.trim()) {
-    const normalized = rawAspect.trim().toLowerCase().replace(",", ":");
+    const normalized = rawAspect
+      .trim()
+      .toLowerCase()
+      .replace(/[,;/\s-]+/g, ":");
     if (normalized === "16:9" || normalized === "horizontal") return "16:9";
     if (normalized === "9:16" || normalized === "vertical") return "9:16";
   }
