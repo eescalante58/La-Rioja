@@ -41,8 +41,13 @@ function resolveAspectRatio(rawAspect: unknown, fallbackYtId: string | null): Vi
 export function VideoSection({ video }: Props) {
   const meta = (video?.metadata ?? {}) as Record<string, unknown>;
 
-  // No renderizar si no existe el registro o si explícitamente se configuró como invisible
-  if (!video || meta.visible === false) return null;
+  // No renderizar si no existe el registro, si está inactivo o si explícitamente se configuró como invisible
+  if (!video || video.is_active === false || meta.visible === false) return null;
+
+  const sectionId =
+    video.section_key === "cl_video" ? "seccion-video" : `seccion-${video.section_key}`;
+  const headingId =
+    video.section_key === "cl_video" ? "video-heading" : `${video.section_key}-heading`;
 
   const title =
     video.title || "Conoce los talleres del Centro de Formación Laboral La Rioja";
@@ -104,9 +109,9 @@ export function VideoSection({ video }: Props) {
 
   return (
     <section
-      id="seccion-video"
+      id={sectionId}
       className="border-y border-slate-200/60 bg-gradient-to-b from-slate-50 to-white py-14 dark:border-slate-800 dark:from-slate-900/60 dark:to-slate-950 lg:py-20"
-      aria-labelledby="video-heading"
+      aria-labelledby={headingId}
     >
       <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14">
@@ -121,7 +126,7 @@ export function VideoSection({ video }: Props) {
             </div>
 
             <h2
-              id="video-heading"
+              id={headingId}
               className="font-montserrat text-2xl font-extrabold text-larioja-azul dark:text-larioja-amarillo sm:text-3xl lg:text-4xl lg:leading-tight"
             >
               {title}
@@ -131,7 +136,7 @@ export function VideoSection({ video }: Props) {
               {contextSubtitle}
             </p>
 
-            <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">
+            <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">
               {description}
             </p>
 

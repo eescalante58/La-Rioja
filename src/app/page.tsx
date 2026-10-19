@@ -106,8 +106,9 @@ export default async function Home() {
       {/* 6 — La Rioja Shop */}
       <FeaturedProducts products={products} />
 
-      {/* 7 — Video institucional (solo si visible = true en metadata) */}
+      {/* 7 — Videos institucionales (solo si visible = true en metadata) */}
       <VideoSection video={byKey["cl_video"] ?? null} />
+      <VideoSection video={byKey["cl_video_2"] ?? null} />
 
       {/* 8 — Testimonios (solo si visible = true en metadata) */}
       <TestimonialsSection
