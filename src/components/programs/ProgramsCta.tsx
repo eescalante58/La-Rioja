@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { MessageCircle } from "lucide-react";
 import { AuroraBackground } from "@/components/ui/AuroraBackground";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { metaText, sectionImage, textOr, type CmsSection } from "@/lib/cms-content";
 import { waLink } from "@/lib/whatsapp";
 import { BTN_OUTLINE_WHITE, BTN_YELLOW } from "@/components/site/section-ui";
@@ -68,6 +69,7 @@ export function ProgramsCta({ closing, whatsapp, mapsUrl }: ProgramsCtaProps) {
             </a>
           )}
         </div>
+        <PrivacyNotice variant="whatsapp" tone="dark" />
         {contact && <p className="m-0 text-[15px] text-white/90">{contact}</p>}
       </div>
     </section>

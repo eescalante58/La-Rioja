@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import GalleryGrid from "@/components/gallery/GalleryGrid";
 import GalleryHeader from "@/components/gallery/GalleryHeader";
@@ -64,9 +65,17 @@ export default async function BingoPage() {
       )}
 
       {/* Footer minimalista */}
-      <footer className="py-12 border-t border-gray-100 dark:border-gray-900 text-center">
+      <footer className="py-12 border-t border-gray-100 dark:border-gray-900 text-center space-y-2">
         <p className="text-xs text-gray-400 uppercase tracking-[0.2em]">
           &copy; {new Date().getFullYear()} Bingo La Rioja - El Salvador
+        </p>
+        <p>
+          <Link
+            href="/privacidad"
+            className="inline-flex min-h-[44px] items-center text-xs text-gray-500 hover:text-larioja-azul dark:text-gray-400 dark:hover:text-larioja-amarillo underline underline-offset-4"
+          >
+            Política de privacidad
+          </Link>
         </p>
       </footer>
     </main>

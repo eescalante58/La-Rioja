@@ -1,3 +1,4 @@
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { metaText, textOr, type CmsSection } from "./shop-content";
 
 interface GiftsBannerProps {
@@ -45,14 +46,17 @@ export function GiftsBanner({ section, whatsappDigits }: GiftsBannerProps) {
           )}
         </div>
         {href && button && (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[52px] shrink-0 items-center justify-center self-start md:self-auto rounded-full bg-[#184F95] px-7 text-[17px] font-bold text-white hover:bg-[#123E75] transition-colors shadow-sm"
-          >
-            {button}
-          </a>
+          <div className="flex shrink-0 flex-col items-start gap-2 md:items-center">
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[52px] shrink-0 items-center justify-center rounded-full bg-[#184F95] px-7 text-[17px] font-bold text-white hover:bg-[#123E75] transition-colors shadow-sm"
+            >
+              {button}
+            </a>
+            <PrivacyNotice variant="whatsapp" tone="light" />
+          </div>
         )}
       </div>
     </section>
@@ -97,6 +101,7 @@ export function HowToBuy({ section, steps }: HowToBuyProps) {
           </li>
         ))}
       </ol>
+      <PrivacyNotice variant="shop" showIcon className="mt-6 text-center" />
     </section>
   );
 }

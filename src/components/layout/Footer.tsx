@@ -194,6 +194,7 @@ export async function Footer() {
                 { href: "/about", label: "Quiénes Somos" },
                 { href: "/programs", label: "Programas y Talleres" },
                 { href: "/faq", label: "Preguntas Frecuentes" },
+                { href: "/privacidad", label: "Política de privacidad" },
               ].map(({ href, label }) => (
                 <li key={href}>
                   <Link
@@ -301,17 +302,26 @@ export async function Footer() {
 
         </div>
 
-        {/* Separador y Sub-footer con Copyright */}
+        {/* Separador y Sub-footer con Copyright y Política de Privacidad */}
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-center text-xs text-white/60 sm:flex-row sm:text-left">
           <p>
             &copy; {new Date().getFullYear()} Asociación de Padres y Amigos de Personas con Discapacidad Intelectual (ASPAPREM) / Centro de Formación Laboral La Rioja.
           </p>
-          <a
-            href="#contenido"
-            className="inline-flex min-h-[44px] items-center text-xs text-white/70 transition-colors hover:text-larioja-amarillo"
-          >
-            Volver arriba ↑
-          </a>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/privacidad"
+              className="inline-flex min-h-[44px] items-center text-xs text-white/75 underline-offset-4 transition-colors hover:text-larioja-amarillo hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-larioja-amarillo"
+            >
+              Política de privacidad
+            </Link>
+            <span aria-hidden="true" className="text-white/30">·</span>
+            <a
+              href="#contenido"
+              className="inline-flex min-h-[44px] items-center text-xs text-white/70 transition-colors hover:text-larioja-amarillo"
+            >
+              Volver arriba ↑
+            </a>
+          </div>
         </div>
       </div>
     </footer>

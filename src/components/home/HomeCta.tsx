@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AuroraBackground } from "@/components/ui/AuroraBackground";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import type { SiteContent } from "@/types/cms";
 
 interface Props {
@@ -73,6 +74,9 @@ export function HomeCta({ cta }: Props) {
               {botonApoyanos}
             </Link>
           </div>
+          {waNumber && (
+            <PrivacyNotice variant="whatsapp" tone="dark" className="mt-4" />
+          )}
         </div>
       </div>
     </section>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { CheckCircle2, Minus, Package, Plus, ShoppingBasket, Trash2, X } from "lucide-react";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import { buildOrderMessage, itemLabel, usd } from "@/lib/validation/shop-orders";
 import { useCart } from "./CartProvider";
@@ -185,6 +186,7 @@ export function CartDrawer({ whatsappDigits }: CartDrawerProps) {
                       <span className="font-semibold">Total</span>
                       <span className="text-xl font-bold">{usd.format(cart.total)}</span>
                     </div>
+                    <PrivacyNotice variant="shop" className="text-center" />
                     <button
                       type="button"
                       onClick={() => setStep("checkout")}
@@ -216,15 +218,18 @@ export function CartDrawer({ whatsappDigits }: CartDrawerProps) {
                   Último paso: envíanos el pedido por WhatsApp para coordinar el pago y la entrega.
                 </p>
                 {waLink ? (
-                  <a
-                    href={waLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-larioja-verde py-3 text-sm font-bold text-white hover:bg-larioja-verde/90"
-                  >
-                    <WhatsAppIcon className="w-5 h-5" />
-                    Enviar pedido por WhatsApp
-                  </a>
+                  <div className="space-y-2">
+                    <a
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-larioja-verde py-3 text-sm font-bold text-white hover:bg-larioja-verde/90"
+                    >
+                      <WhatsAppIcon className="w-5 h-5" />
+                      Enviar pedido por WhatsApp
+                    </a>
+                    <PrivacyNotice variant="whatsapp" className="text-center" />
+                  </div>
                 ) : (
                   <p className="text-sm text-gray-500">
                     Te contactaremos al teléfono que registraste.

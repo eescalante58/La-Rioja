@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Building2, Check, GraduationCap, HeartHandshake, Mail, Package } from "lucide-react";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import { metaRecords, metaStrings, metaText, textOr, type CmsSection } from "@/lib/cms-content";
 import { waLink } from "@/lib/whatsapp";
@@ -142,22 +143,25 @@ export function SupportWays({
                   {metaText(sponsor, "nota", "")}
                 </p>
               )}
-              <TrackedLink
-                href={waLink(
-                  whatsapp,
-                  metaText(
-                    sponsor,
-                    "mensaje_whatsapp",
-                    "Hola, quiero apadrinar a un estudiante de La Rioja",
-                  ),
-                )}
-                event="apadrinar"
-                origin="formas"
-                className={`${BTN_YELLOW} mt-auto w-full rounded-[14px] border-2 border-larioja-azul`}
-              >
-                <WhatsAppIcon className="h-5 w-5" />
-                {metaText(sponsor, "boton", "Quiero apadrinar")}
-              </TrackedLink>
+              <div className="mt-auto flex flex-col gap-2">
+                <TrackedLink
+                  href={waLink(
+                    whatsapp,
+                    metaText(
+                      sponsor,
+                      "mensaje_whatsapp",
+                      "Hola, quiero apadrinar a un estudiante de La Rioja",
+                    ),
+                  )}
+                  event="apadrinar"
+                  origin="formas"
+                  className={`${BTN_YELLOW} w-full rounded-[14px] border-2 border-larioja-azul`}
+                >
+                  <WhatsAppIcon className="h-5 w-5" />
+                  {metaText(sponsor, "boton", "Quiero apadrinar")}
+                </TrackedLink>
+                <PrivacyNotice variant="whatsapp" className="text-center" />
+              </div>
             </article>
           )}
 
@@ -175,6 +179,7 @@ export function SupportWays({
                 ctaOnce={metaText(donation, "boton", "Donar ahora")}
                 ctaMonthly={metaText(donation, "boton_mensual", "Donar cada mes")}
               />
+              <PrivacyNotice variant="apoyanos" showIcon className="text-center" />
             </article>
           )}
 
@@ -204,22 +209,25 @@ export function SupportWays({
                   ))}
                 </dl>
               )}
-              <TrackedLink
-                href={waLink(
-                  whatsapp,
-                  metaText(
-                    inKind,
-                    "mensaje_whatsapp",
-                    "Hola, quiero donar insumos para los talleres de La Rioja",
-                  ),
-                )}
-                event="especie"
-                origin="formas"
-                className={`${BTN_WHATSAPP} mt-auto w-full rounded-[14px]`}
-              >
-                <WhatsAppIcon className="h-5 w-5" />
-                {metaText(inKind, "boton", "Coordinar una entrega")}
-              </TrackedLink>
+              <div className="mt-auto flex flex-col gap-2">
+                <TrackedLink
+                  href={waLink(
+                    whatsapp,
+                    metaText(
+                      inKind,
+                      "mensaje_whatsapp",
+                      "Hola, quiero donar insumos para los talleres de La Rioja",
+                    ),
+                  )}
+                  event="especie"
+                  origin="formas"
+                  className={`${BTN_WHATSAPP} w-full rounded-[14px]`}
+                >
+                  <WhatsAppIcon className="h-5 w-5" />
+                  {metaText(inKind, "boton", "Coordinar una entrega")}
+                </TrackedLink>
+                <PrivacyNotice variant="whatsapp" className="text-center" />
+              </div>
             </article>
           )}
 
@@ -251,34 +259,37 @@ export function SupportWays({
                   {companyBenefits}
                 </p>
               )}
-              <div className="mt-auto flex flex-col gap-2.5 sm:flex-row">
-                <TrackedLink
-                  href={waLink(
-                    whatsapp,
-                    metaText(
-                      companies,
-                      "mensaje_whatsapp",
-                      "Hola, represento a una empresa y quiero agendar una reunión para apoyar a La Rioja",
-                    ),
-                  )}
-                  event="empresas"
-                  origin="formas"
-                  className={`${BTN_NAVY} flex-1 rounded-[14px]`}
-                >
-                  <WhatsAppIcon className="h-5 w-5" />
-                  {metaText(companies, "boton", "Agendar una reunión")}
-                </TrackedLink>
-                {companyMail && (
+              <div className="mt-auto flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5 sm:flex-row">
                   <TrackedLink
-                    href={companyMail}
+                    href={waLink(
+                      whatsapp,
+                      metaText(
+                        companies,
+                        "mensaje_whatsapp",
+                        "Hola, represento a una empresa y quiero agendar una reunión para apoyar a La Rioja",
+                      ),
+                    )}
                     event="empresas"
-                    origin="formas_correo"
-                    className={`${BTN_OUTLINE} flex-1 rounded-[14px]`}
+                    origin="formas"
+                    className={`${BTN_NAVY} flex-1 rounded-[14px]`}
                   >
-                    <Mail size={18} aria-hidden="true" />
-                    {metaText(companies, "boton_correo", "Escribir un correo")}
+                    <WhatsAppIcon className="h-5 w-5" />
+                    {metaText(companies, "boton", "Agendar una reunión")}
                   </TrackedLink>
-                )}
+                  {companyMail && (
+                    <TrackedLink
+                      href={companyMail}
+                      event="empresas"
+                      origin="formas_correo"
+                      className={`${BTN_OUTLINE} flex-1 rounded-[14px]`}
+                    >
+                      <Mail size={18} aria-hidden="true" />
+                      {metaText(companies, "boton_correo", "Escribir un correo")}
+                    </TrackedLink>
+                  )}
+                </div>
+                <PrivacyNotice variant="whatsapp" className="text-center" />
               </div>
             </article>
           )}

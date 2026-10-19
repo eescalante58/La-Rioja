@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Send, CheckCircle2, AlertCircle } from "lucide-react";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { callAction } from "@/lib/action-client";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -216,6 +217,7 @@ export function ContactModal({
               </div>
 
               {/* Botón de envío */}
+              <PrivacyNotice variant="whatsapp" tone="light" className="text-center" />
               <button
                 disabled={isSubmitting}
                 type="submit"

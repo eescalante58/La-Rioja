@@ -1,4 +1,5 @@
 import { CreditCard, ShieldCheck } from "lucide-react";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import { metaText, textOr, type CmsSection } from "@/lib/cms-content";
 import { waLink } from "@/lib/whatsapp";
@@ -96,6 +97,7 @@ export function HowToDonate({ payment, receipt, steps, whatsapp, email }: HowToD
                   <WhatsAppIcon className="h-5 w-5" />
                   Solicitar datos bancarios
                 </TrackedLink>
+                <PrivacyNotice variant="whatsapp" />
               </div>
             )}
           </div>
@@ -141,6 +143,7 @@ export function HowToDonate({ payment, receipt, steps, whatsapp, email }: HowToD
             )}
             {cardLink ? "Donar con tarjeta" : "Solicitar enlace de pago"}
           </TrackedLink>
+          <PrivacyNotice variant={cardLink ? "apoyanos" : "whatsapp"} />
         </div>
       ),
     },
@@ -223,7 +226,7 @@ export function HowToDonate({ payment, receipt, steps, whatsapp, email }: HowToD
                 ))}
               </ol>
             )}
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-2">
               <TrackedLink
                 href={waLink(
                   whatsapp,
@@ -240,15 +243,19 @@ export function HowToDonate({ payment, receipt, steps, whatsapp, email }: HowToD
                 <WhatsAppIcon className="h-5 w-5" />
                 {metaText(receipt, "boton", "Enviar mi comprobante")}
               </TrackedLink>
+              <PrivacyNotice variant="whatsapp" className="text-center" />
             </div>
-            {metaText(receipt, "nota", "") && (
-              <p
-                className={`m-0 flex items-start justify-center gap-2 text-center text-[13px] leading-normal ${MUTED}`}
-              >
-                <ShieldCheck size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-                {metaText(receipt, "nota", "")}
-              </p>
-            )}
+            <div className="flex flex-col items-center gap-1.5 text-center">
+              {metaText(receipt, "nota", "") && (
+                <p
+                  className={`m-0 flex items-start justify-center gap-2 text-center text-[13px] leading-normal ${MUTED}`}
+                >
+                  <ShieldCheck size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  {metaText(receipt, "nota", "")}
+                </p>
+              )}
+              <PrivacyNotice variant="apoyanos" showIcon className="text-center" />
+            </div>
           </div>
         )}
       </div>

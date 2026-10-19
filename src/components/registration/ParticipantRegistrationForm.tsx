@@ -8,6 +8,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 
 interface WheelSummary {
   id: number;
@@ -612,6 +613,8 @@ export default function ParticipantRegistrationForm({
           Solo cartones vendidos o donados del evento. Un cartón solo puede
           registrarse una vez.
         </p>
+
+        <PrivacyNotice variant="whatsapp" tone="light" className="text-center" />
       </form>
     </div>
   );

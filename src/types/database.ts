@@ -1887,6 +1887,8 @@ export type Database = {
         | "bingo"
         | "tombola"
         | "productos"
+        | "apoyanos"
+        | "privacidad"
       student_level_enum:
         | "1.Terapeutico"
         | "2.Inicial"
@@ -2051,6 +2053,8 @@ export const Constants = {
         "bingo",
         "tombola",
         "productos",
+        "apoyanos",
+        "privacidad",
       ],
       student_level_enum: [
         "1.Terapeutico",

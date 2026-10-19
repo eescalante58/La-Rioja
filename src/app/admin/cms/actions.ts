@@ -190,6 +190,8 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
   revalidatePath("/apoyanos");
   revalidatePath("/about");
   revalidatePath("/programs");
+  revalidatePath("/productos");
+  revalidatePath("/privacidad");
   return { success: true };
 }
 
@@ -666,6 +668,8 @@ async function createCMSContentInternal(formData: FormData, context: RoleContext
   revalidatePath("/apoyanos");
   revalidatePath("/about");
   revalidatePath("/programs");
+  revalidatePath("/productos");
+  revalidatePath("/privacidad");
   return { success: true };
 }
 
@@ -723,6 +727,8 @@ async function deleteCMSContentInternal(id: string, context: RoleContext) {
   revalidatePath("/apoyanos");
   revalidatePath("/about");
   revalidatePath("/programs");
+  revalidatePath("/productos");
+  revalidatePath("/privacidad");
   revalidatePath("/admin/cms");
   return { success: true };
 }

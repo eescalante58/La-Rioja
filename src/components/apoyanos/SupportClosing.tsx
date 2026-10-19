@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import { metaText, sectionImage, textOr, type CmsSection } from "@/lib/cms-content";
 import { waLink } from "@/lib/whatsapp";
@@ -56,6 +57,7 @@ export function SupportClosing({ closing, whatsapp, email, instagram }: SupportC
             {metaText(closing, "boton_2", "Hablar con nosotros")}
           </TrackedLink>
         </div>
+        <PrivacyNotice variant="whatsapp" tone="dark" />
         {(phones || email || handle) && (
           <p className="m-0 flex flex-wrap items-center justify-center gap-x-2 text-[15px] text-white/90">
             {[

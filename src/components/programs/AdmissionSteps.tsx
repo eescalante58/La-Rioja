@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { metaHref, metaText, textOr, type CmsSection } from "@/lib/cms-content";
 import { waLink } from "@/lib/whatsapp";
 import {
@@ -110,6 +111,7 @@ export function AdmissionSteps({ intro, steps, whatsapp }: AdmissionStepsProps) 
               <MessageCircle size={20} aria-hidden="true" />
               {metaText(intro, "boton", "Agendar una visita")}
             </a>
+            <PrivacyNotice variant="whatsapp" className="text-center" />
             {faqText && (
               <Link
                 href={metaHref(intro, "enlace_faq", "/faq")}

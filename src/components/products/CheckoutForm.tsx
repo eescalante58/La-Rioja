@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AlertCircle, Loader2, Send } from "lucide-react";
+import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { createClient } from "@/lib/supabase/client";
 import {
   checkoutSchema,
@@ -164,6 +165,7 @@ export function CheckoutForm({ onBack, onPlaced }: CheckoutFormProps) {
           <span className="font-semibold">Total</span>
           <span className="text-xl font-bold">{usd.format(total)}</span>
         </div>
+        <PrivacyNotice variant="shop" className="text-center" />
         <div className="flex gap-2">
           <button
             type="button"
