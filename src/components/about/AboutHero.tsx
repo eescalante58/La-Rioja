@@ -36,7 +36,7 @@ export function AboutHero({ hero }: AboutHeroProps) {
             {highlight && <span className="text-larioja-amarillo"> {highlight}</span>}
           </h1>
           {hero?.description && (
-            <p className="m-0 max-w-[580px] text-base leading-relaxed text-white/90 sm:text-lg">
+            <p className="m-0 max-w-[580px] whitespace-pre-line text-base leading-relaxed text-white/90 sm:text-lg">
               {hero.description}
             </p>
           )}

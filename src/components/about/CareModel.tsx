@@ -73,7 +73,7 @@ function ProgramCard({ program }: { program: CareProgram }) {
         </p>
       )}
       {program.text && (
-        <p className="m-0 text-base leading-relaxed text-gray-700 dark:text-white/80">
+        <p className="m-0 whitespace-pre-line text-base leading-relaxed text-gray-700 dark:text-white/80">
           {program.text}
         </p>
       )}
@@ -131,7 +131,9 @@ export function CareModel({
       <div className={`${CONTAINER} ${SECTION_Y} flex flex-col gap-8`}>
         <div className="flex max-w-[760px] flex-col gap-2.5">
           <h2 className={`${H2} m-0`}>{title}</h2>
-          {intro && <p className={`m-0 text-lg leading-relaxed ${MUTED}`}>{intro}</p>}
+          {intro && (
+            <p className={`m-0 whitespace-pre-line text-lg leading-relaxed ${MUTED}`}>{intro}</p>
+          )}
         </div>
 
         {programs.length > 0 && (
@@ -189,7 +191,7 @@ export function CareModel({
           <div className="flex flex-col gap-[18px] pt-3">
             <h3 className={`${H3} m-0`}>{levelsTitle}</h3>
             {levelsIntro && (
-              <p className={`m-0 max-w-[760px] text-base leading-relaxed ${MUTED}`}>
+              <p className={`m-0 max-w-[760px] whitespace-pre-line text-base leading-relaxed ${MUTED}`}>
                 {levelsIntro}
               </p>
             )}
@@ -213,7 +215,11 @@ export function CareModel({
                     <strong className="font-montserrat text-base text-larioja-azul dark:text-white">
                       {l.name}
                     </strong>
-                    {l.text && <span className={`text-sm leading-normal ${MUTED}`}>{l.text}</span>}
+                    {l.text && (
+                      <span className={`whitespace-pre-line text-sm leading-normal ${MUTED}`}>
+                        {l.text}
+                      </span>
+                    )}
                   </span>
                 </li>
               ))}

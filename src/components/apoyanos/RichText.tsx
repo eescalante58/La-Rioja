@@ -18,7 +18,7 @@ export function RichText({ text, className, strongClassName = "text-larioja-azul
   return (
     <>
       {paragraphs.map((p, i) => (
-        <p key={i} className={className}>
+        <p key={i} className={`whitespace-pre-line ${className ?? ""}`.trim()}>
           {p.split(/\*\*(.+?)\*\*/g).map((part, j) =>
             j % 2 === 1 ? (
               <strong key={j} className={strongClassName}>

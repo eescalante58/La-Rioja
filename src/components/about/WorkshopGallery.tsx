@@ -89,7 +89,9 @@ export function WorkshopGallery({ intro, workshops }: WorkshopGalleryProps) {
         <div className="flex max-w-[760px] flex-col gap-2.5">
           <h2 className={`${H2} m-0`}>{textOr(intro?.title, "Aprender haciendo")}</h2>
           {intro?.description && (
-            <p className={`m-0 text-lg leading-relaxed ${MUTED}`}>{intro.description}</p>
+            <p className={`m-0 whitespace-pre-line text-lg leading-relaxed ${MUTED}`}>
+              {intro.description}
+            </p>
           )}
         </div>
 
@@ -114,7 +116,7 @@ export function WorkshopGallery({ intro, workshops }: WorkshopGalleryProps) {
                         {w.title}
                       </h3>
                       {w.description && (
-                        <p className="m-0 text-base leading-relaxed text-gray-700 dark:text-white/80">
+                        <p className="m-0 whitespace-pre-line text-base leading-relaxed text-gray-700 dark:text-white/80">
                           {w.description}
                         </p>
                       )}
@@ -137,7 +139,9 @@ export function WorkshopGallery({ intro, workshops }: WorkshopGalleryProps) {
                       {w.title}
                     </h3>
                     {w.description && (
-                      <p className={`m-0 text-[15px] leading-relaxed ${MUTED}`}>{w.description}</p>
+                      <p className={`m-0 whitespace-pre-line text-[15px] leading-relaxed ${MUTED}`}>
+                        {w.description}
+                      </p>
                     )}
                     <Impact text={metaText(w, "impacto", "")} />
                   </div>

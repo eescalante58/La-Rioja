@@ -98,7 +98,9 @@ export function PurposeCards({ intro, mission, vision, values }: PurposeCardsPro
                 {textOr(mission.title, "Nuestra misión")}
               </h3>
               {mission.description && (
-                <p className="m-0 text-[17px] leading-[1.7] text-white/90">{mission.description}</p>
+                <p className="m-0 whitespace-pre-line text-[17px] leading-[1.7] text-white/90">
+                  {mission.description}
+                </p>
               )}
             </article>
           )}
@@ -111,7 +113,7 @@ export function PurposeCards({ intro, mission, vision, values }: PurposeCardsPro
                 {textOr(vision.title, "Nuestra visión")}
               </h3>
               {vision.description && (
-                <p className="m-0 text-[17px] leading-[1.7] text-gray-700 dark:text-white/80">
+                <p className="m-0 whitespace-pre-line text-[17px] leading-[1.7] text-gray-700 dark:text-white/80">
                   {vision.description}
                 </p>
               )}
@@ -139,7 +141,9 @@ export function PurposeCards({ intro, mission, vision, values }: PurposeCardsPro
                       {v.title}
                     </h4>
                     {v.description && (
-                      <p className={`m-0 text-[15px] leading-relaxed ${MUTED}`}>{v.description}</p>
+                      <p className={`m-0 whitespace-pre-line text-[15px] leading-relaxed ${MUTED}`}>
+                        {v.description}
+                      </p>
                     )}
                   </article>
                 );

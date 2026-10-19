@@ -65,7 +65,9 @@ export function SolidarityModel({ intro, sources }: SolidarityModelProps) {
                     {s.title}
                   </h3>
                   {s.description && (
-                    <p className={`m-0 text-[15px] leading-relaxed ${MUTED}`}>{s.description}</p>
+                    <p className={`m-0 whitespace-pre-line text-[15px] leading-relaxed ${MUTED}`}>
+                      {s.description}
+                    </p>
                   )}
                   {linkText && href && (
                     <Link

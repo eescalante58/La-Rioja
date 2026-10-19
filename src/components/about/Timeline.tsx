@@ -67,7 +67,7 @@ export function Timeline({ intro, milestones }: TimelineProps) {
                     </h3>
                   )}
                   {m.description && (
-                    <p className="m-0 mt-2 text-sm leading-relaxed text-gray-600 dark:text-white/70">
+                    <p className="m-0 mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-white/70">
                       {m.description}
                     </p>
                   )}

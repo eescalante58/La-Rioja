@@ -21,7 +21,9 @@ export function TeamGrid({ intro, roles }: TeamGridProps) {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h3 className={`${H3} m-0`}>{textOr(intro?.title, "Nuestro equipo")}</h3>
-        {intro?.description && <p className={`m-0 text-base ${MUTED}`}>{intro.description}</p>}
+        {intro?.description && (
+          <p className={`m-0 whitespace-pre-line text-base ${MUTED}`}>{intro.description}</p>
+        )}
       </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((r) => (
@@ -36,7 +38,9 @@ export function TeamGrid({ intro, roles }: TeamGridProps) {
               {r.title}
             </h4>
             {r.description && (
-              <p className={`m-0 text-[15px] leading-relaxed ${MUTED}`}>{r.description}</p>
+              <p className={`m-0 whitespace-pre-line text-[15px] leading-relaxed ${MUTED}`}>
+                {r.description}
+              </p>
             )}
           </article>
         ))}

@@ -30,7 +30,7 @@ export function AboutCta({ closing }: AboutCtaProps) {
           {highlight && <span className="text-larioja-amarillo"> {highlight}</span>}
         </h2>
         {closing.description && (
-          <p className="m-0 max-w-[680px] text-base leading-relaxed text-white/90 sm:text-lg">
+          <p className="m-0 max-w-[680px] whitespace-pre-line text-base leading-relaxed text-white/90 sm:text-lg">
             {closing.description}
           </p>
         )}
