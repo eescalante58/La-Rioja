@@ -60,20 +60,37 @@ export function CampaignStrip({ rows }: Props) {
         <div className="grid gap-5 md:grid-cols-3">
           {active.map((c) => {
             const isExternal = /^https?:\/\//i.test(c.href);
+            const rawTipo = (c.tipo || "").trim().toLowerCase();
+            const resolvedFit: "auto" | "contain" | "cover" =
+              c.imageFit ??
+              (rawTipo === "afiche" || rawTipo === "flyer" || rawTipo === "vertical"
+                ? "contain"
+                : rawTipo === "foto" || rawTipo === "horizontal"
+                  ? "cover"
+                  : "auto");
+
             return (
               <article
                 key={c.sectionKey}
                 className="group relative flex flex-col justify-between overflow-hidden rounded-tile border border-line bg-surface-card shadow-tremor-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
-                {/* Imagen de fondo enlazada */}
+                {/* Imagen o afiche de campaña */}
                 {c.imageUrl ? (
-                  <CampaignPhoto src={c.imageUrl} alt={c.imageAlt} tag={c.tag} href={c.href} />
+                  <CampaignPhoto
+                    src={c.imageUrl}
+                    alt={c.imageAlt}
+                    tag={c.tag}
+                    href={c.href}
+                    title={c.title}
+                    linkLabel={c.linkLabel}
+                    imageFit={resolvedFit}
+                  />
                 ) : (
                   <Link
                     href={c.href}
                     target={isExternal ? "_blank" : undefined}
                     rel={isExternal ? "noopener noreferrer" : undefined}
-                    className="relative block aspect-[16/10] bg-larioja-azul/10 dark:bg-larioja-azul/30"
+                    className="relative block aspect-[4/3] bg-larioja-azul/10 dark:bg-larioja-azul/30"
                     aria-label={`Ir a la campaña: ${c.title}`}
                   >
                     {c.tag && (

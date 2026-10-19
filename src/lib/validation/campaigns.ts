@@ -18,6 +18,10 @@ export const CampaignSchema = z.object({
   imageAlt: z.string().optional().default(""),
   startsAt: z.string().optional(),
   endsAt: z.string().optional(),
+  /** Modo de ajuste de imagen: "auto" (detecta afiche vertical vs foto horizontal), "contain" (afiche completo) o "cover" (foto horizontal). */
+  imageFit: z.enum(["auto", "contain", "cover"]).optional(),
+  /** Alias amigable en español: "afiche" | "flyer" | "foto" */
+  tipo: z.string().optional(),
 });
 
 export type Campaign = z.infer<typeof CampaignSchema> & {
