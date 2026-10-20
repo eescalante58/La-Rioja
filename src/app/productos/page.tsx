@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   title: "La Rioja Shop | La Rioja",
   description:
     "Conoce los productos elaborados por los estudiantes de los talleres de La Rioja. Cada compra apoya su formación laboral.",
+  alternates: { canonical: "/productos" },
+  openGraph: {
+    title: "La Rioja Shop | La Rioja",
+    description:
+      "Conoce los productos elaborados por los estudiantes de los talleres de La Rioja. Cada compra apoya su formación laboral.",
+    url: "/productos",
+  },
 };
 
 export const revalidate = 60;

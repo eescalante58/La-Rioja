@@ -11,9 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Phone, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { Faq } from "@/types/cms";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Preguntas Frecuentes | La Rioja",
   description:
     "Respuestas a las preguntas más comunes sobre nuestros programas, inscripción, servicios y cómo apoyar nuestra misión en El Salvador.",
@@ -25,6 +26,13 @@ export const metadata = {
     "El Salvador",
     "La Rioja FAQ",
   ],
+  alternates: { canonical: "/faq" },
+  openGraph: {
+    title: "Preguntas Frecuentes | La Rioja",
+    description:
+      "Respuestas a las preguntas más comunes sobre nuestros programas, inscripción, servicios y cómo apoyar nuestra misión en El Salvador.",
+    url: "/faq",
+  },
 };
 
 export const revalidate = 3600;

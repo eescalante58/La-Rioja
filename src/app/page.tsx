@@ -21,6 +21,13 @@ export const metadata: Metadata = {
   title: "Inicio | Centro de Formación Laboral La Rioja",
   description:
     "Formamos jóvenes y adultos con discapacidad intelectual para el trabajo y la vida. Conocé nuestros programas, talleres y cómo apoyarnos.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Inicio | Centro de Formación Laboral La Rioja",
+    description:
+      "Formamos jóvenes y adultos con discapacidad intelectual para el trabajo y la vida. Conocé nuestros programas, talleres y cómo apoyarnos.",
+    url: "/",
+  },
 };
 
 export default async function Home() {

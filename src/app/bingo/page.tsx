@@ -11,6 +11,12 @@ import type { SiteContent } from "@/types/cms";
 export const metadata: Metadata = {
   title: "Galería La Rioja 2026",
   description: "Galería de fotos oficial del Bingo La Rioja 2026.",
+  alternates: { canonical: "/bingo" },
+  openGraph: {
+    title: "Galería La Rioja 2026",
+    description: "Galería de fotos oficial del Bingo La Rioja 2026.",
+    url: "/bingo",
+  },
 };
 
 export default async function BingoPage() {
