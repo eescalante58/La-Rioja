@@ -5,6 +5,8 @@ import { Building2, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { selectCompany } from "./actions";
 import { singleRelation } from "@/lib/utils";
+import { getUserCompanies } from "@/lib/auth/company-cookie";
+import { signOut } from "@/app/auth/actions";
 
 /**
  * Page for selecting which company to work with after login.
@@ -20,19 +22,7 @@ export default async function SelectCompanyPage() {
   }
 
   // Fetch companies associated with the user
-  const { data: companies, error } = await supabase
-    .from("user_companies")
-    .select(
-      `
-      company_id,
-      role,
-      companies (
-        company_id,
-        company_name
-      )
-    `,
-    )
-    .eq("user_id", user.id);
+  const { data: companies, error } = await getUserCompanies(supabase, user.id);
 
   if (error || !companies || companies.length === 0) {
     // If no companies, maybe they are global admin or just have no access
@@ -47,12 +37,19 @@ export default async function SelectCompanyPage() {
           <Text className="mt-4">
             No tienes empresas asociadas a tu cuenta. Contacta al administrador.
           </Text>
-          <Button className="mt-6" variant="secondary" color="gray">
-            Cerrar Sesión
-          </Button>
+          <form action={signOut} className="mt-6">
+            <Button type="submit" variant="secondary" color="gray">
+              Cerrar Sesión
+            </Button>
+          </form>
         </Card>
       </div>
     );
+  }
+
+  // Si solo tiene acceso a 1 empresa, se le asigna de inmediato y continúa con el flujo sin pedir selección.
+  if (companies.length === 1) {
+    redirect("/api/auth/auto-select-company");
   }
 
   return (

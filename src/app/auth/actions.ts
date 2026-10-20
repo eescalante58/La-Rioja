@@ -4,6 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
+import {
+  getUserCompanies,
+  getCompanyName,
+  setSelectedCompanyCookies,
+} from "@/lib/auth/company-cookie";
 
 /**
  * Origen (protocolo + dominio) desde el que el usuario hizo la petición.
@@ -54,6 +59,20 @@ export async function login(formData: FormData) {
         timestamp: new Date().toISOString(),
       },
     });
+
+    // Si el usuario solo tiene acceso a 1 empresa, se le asigna de inmediato sin pedir selección.
+    const { data: companies } = await getUserCompanies(supabase, data.user.id);
+    if (companies && companies.length === 1) {
+      const single = companies[0];
+      const cookieStore = await cookies();
+      setSelectedCompanyCookies(
+        cookieStore,
+        single.company_id,
+        getCompanyName(single),
+      );
+      revalidatePath("/", "layout");
+      redirect("/admin");
+    }
   }
 
   revalidatePath("/", "layout");

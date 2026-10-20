@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { singleRelation } from "@/lib/utils";
+import { setSelectedCompanyCookies } from "@/lib/auth/company-cookie";
 
 /**
  * Server Action for selecting the company.
@@ -42,21 +43,12 @@ export async function selectCompany(formData: FormData) {
     return;
   }
 
-  const companyName = singleRelation(membership.companies)?.company_name || "Empresa";
+  const companyName =
+    singleRelation(membership.companies)?.company_name || "Empresa";
 
   // Set cookies with strict security settings
   const cookieStore = await cookies();
-  
-  const cookieOptions = {
-    path: "/",
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const,
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-  };
-
-  cookieStore.set("selected_company_id", companyIdStr, cookieOptions);
-  cookieStore.set("selected_company_name", companyName, cookieOptions);
+  setSelectedCompanyCookies(cookieStore, companyIdStr, companyName);
 
   redirect("/admin");
 }

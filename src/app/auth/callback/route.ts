@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import {
+  getUserCompanies,
+  getCompanyName,
+  setResponseCompanyCookies,
+} from "@/lib/auth/company-cookie";
 
 /** Destino por defecto tras un login OAuth válido. */
 const DEFAULT_NEXT = "/auth/select-company";
@@ -43,12 +48,12 @@ export async function GET(request: Request) {
   }
 
   // RLS user_companies_select permite leer las filas propias.
-  const { count, error: membershipError } = await supabase
-    .from("user_companies")
-    .select("company_id", { count: "exact", head: true })
-    .eq("user_id", user.id);
+  const { data: companies, error: membershipError } = await getUserCompanies(
+    supabase,
+    user.id,
+  );
 
-  if (membershipError || !count) {
+  if (membershipError || !companies || companies.length === 0) {
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/login?error=no_autorizado`);
   }
@@ -63,6 +68,19 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString(),
     },
   });
+
+  // Si solo tiene acceso a 1 empresa, se le asigna de inmediato y continúa el flujo hacia /admin
+  if (companies.length === 1) {
+    const single = companies[0];
+    const targetUrl = next === DEFAULT_NEXT ? "/admin" : next;
+    const response = NextResponse.redirect(`${origin}${targetUrl}`);
+    setResponseCompanyCookies(
+      response,
+      single.company_id,
+      getCompanyName(single),
+    );
+    return response;
+  }
 
   return NextResponse.redirect(`${origin}${next}`);
 }
