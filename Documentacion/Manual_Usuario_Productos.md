@@ -49,11 +49,9 @@ Cada producto muestra su foto, nombre, presentaciones con precio y su estado, co
 | **Editar** (lápiz) | Abre el formulario con los datos del producto. |
 | **Eliminar** (basurero) | Pide confirmación y borra el producto, sus presentaciones y su foto. **No se puede deshacer.** Los pedidos ya recibidos conservan el nombre y el precio. |
 
-### Cambiar el orden
+### Orden de los productos
 
-Dentro de cada línea, arrastra un producto por el asa **⋮⋮** («Arrastrar para reordenar») hasta su nueva posición. El orden se guarda solo y es el mismo que verá el público. También funciona con teclado desde el asa.
-
-> El orden solo se puede cambiar cuando **no hay texto en el buscador** y la línea tiene más de un producto.
+Dentro de cada línea, los productos se muestran automáticamente en orden alfabético (A–Z) por su nombre para facilitar su búsqueda, consulta y mantenimiento tanto en el panel de administración como en la tienda pública.
 
 ### Nuevo producto / Editar producto
 

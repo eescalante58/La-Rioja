@@ -43,7 +43,10 @@ interface RoleContext {
 type ActionResult<T = undefined> = { success: true; data?: T } | { success: false; error: string };
 
 const byOrder = <T extends { content_order: number; name: string }>(a: T, b: T) =>
-  a.content_order - b.content_order || a.name.localeCompare(b.name);
+  a.content_order - b.content_order || a.name.localeCompare(b.name, "es", { sensitivity: "base" });
+
+const byName = <T extends { name: string }>(a: T, b: T) =>
+  a.name.localeCompare(b.name, "es", { sensitivity: "base" });
 
 /**
  * Catálogos publicados con sus líneas y productos para /productos.
@@ -76,7 +79,7 @@ export async function getPublicShop(): Promise<PublicCatalog[]> {
             .filter((p) => p.is_active)
             .map(normalizeProduct)
             .filter((p) => p.variants.length > 0)
-            .sort(byOrder),
+            .sort(byName),
         }))
         .filter((l) => l.products.length > 0)
         .sort(byOrder),
@@ -111,7 +114,7 @@ async function listShopInternal(companyId: number): Promise<ActionResult<ShopAdm
     data: {
       catalogs: catalogRows.map(({ lines: _lines, ...c }) => c).sort(byOrder),
       lines: catalogRows.flatMap((c) => c.lines).sort(byOrder),
-      products: (products.data ?? []).map(normalizeProduct).sort(byOrder),
+      products: (products.data ?? []).map(normalizeProduct).sort(byName),
     },
   };
 }

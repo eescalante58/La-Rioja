@@ -39,6 +39,11 @@ export function ErrorBox({ message }: { message: string | null }) {
 /** Ordena por `content_order` y luego por nombre. */
 export function byOrder<T extends { content_order: number; name: string }>(list: T[]): T[] {
   return [...list].sort(
-    (a, b) => a.content_order - b.content_order || a.name.localeCompare(b.name),
+    (a, b) => a.content_order - b.content_order || a.name.localeCompare(b.name, "es", { sensitivity: "base" }),
   );
+}
+
+/** Ordena alfabéticamente por nombre (español). */
+export function byName<T extends { name: string }>(list: T[]): T[] {
+  return [...list].sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
 }
