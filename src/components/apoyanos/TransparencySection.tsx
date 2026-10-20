@@ -43,7 +43,11 @@ export function TransparencySection({
         </div>
 
         {pillars.length > 0 && (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            className={`grid grid-cols-1 gap-5 sm:grid-cols-2 ${
+              pillars.length <= 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"
+            }`}
+          >
             {pillars.map((p) => (
               <div
                 key={p.section_key}
@@ -53,7 +57,9 @@ export function TransparencySection({
                   {p.title}
                 </h3>
                 {p.description && (
-                  <p className={`m-0 text-sm leading-relaxed ${MUTED}`}>{p.description}</p>
+                  <p className={`m-0 whitespace-pre-line text-sm leading-relaxed ${MUTED}`}>
+                    {p.description}
+                  </p>
                 )}
               </div>
             ))}
