@@ -71,7 +71,18 @@ export async function Footer() {
   const fbUrl = getSocialLink("facebook");
   const ytUrl = getSocialLink("youtube") !== "#" ? getSocialLink("youtube") : "https://www.youtube.com/@LaRiojaCFL";
   const xUrl = getSocialLink("x") !== "#" ? getSocialLink("x") : getSocialLink("twitter");
-  const emailVal = getSocialLink("email") !== "#" ? getSocialLink("email") : "centrodeformacionlarioja@gmail.com";
+
+  // Obtener correo desde CMS (page = 'social media', section_key = 'email', campo description)
+  // Limpiando cualquier prefijo inadvertido como https:// o mailto:
+  const emailRow = Array.isArray(socialLinks)
+    ? socialLinks.find((l: SiteContent) => l.section_key === "email")
+    : null;
+  const rawEmail = emailRow?.description?.trim();
+  const cleanEmail = rawEmail
+    ? rawEmail.replace(/^(?:https?:\/\/|mailto:)+/i, "").trim()
+    : "";
+  const emailVal =
+    cleanEmail && cleanEmail !== "#" ? cleanEmail : "lariojacflsv@gmail.com";
 
   return (
     <footer

@@ -71,7 +71,12 @@ export default async function PrivacidadPage() {
     ctaMeta.direccion ||
     "Urbanización Lomas de Altamira, Calzada El Zenzontle, Block 2 #7, San Salvador, El Salvador";
   const emailRow = socialLinks.find((l) => l.section_key === "email");
-  const emailVal = emailRow?.description?.trim() || "centrodeformacionlarioja@gmail.com";
+  const rawEmail = emailRow?.description?.trim();
+  const cleanEmail = rawEmail
+    ? rawEmail.replace(/^(?:https?:\/\/|mailto:)+/i, "").trim()
+    : "";
+  const emailVal =
+    cleanEmail && cleanEmail !== "#" ? cleanEmail : "lariojacflsv@gmail.com";
   const waDigits = tel1.replace(/\D/g, "") || "50377310792";
   const waHref = `https://wa.me/${waDigits.startsWith("503") ? waDigits : `503${waDigits}`}`;
 

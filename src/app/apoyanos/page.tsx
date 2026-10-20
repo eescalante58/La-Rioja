@@ -44,7 +44,10 @@ export default async function ApoyanosPage() {
     socialMedia.find((s) => s.section_key === key)?.description?.trim() ?? "";
 
   const whatsapp = whatsappDigits(social("whatsapp"));
-  const email = social("email");
+  const rawEmail = social("email");
+  const email = rawEmail
+    ? rawEmail.replace(/^(?:https?:\/\/|mailto:)+/i, "").trim()
+    : "lariojacflsv@gmail.com";
   const hero = section("apoyanos_hero");
 
   return (
