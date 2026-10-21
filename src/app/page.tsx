@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [homeRows, productsResult, talleresResult] = await Promise.allSettled([
+  const [homeRows, productsResult, talleresResult, socialMediaResult] = await Promise.allSettled([
     getPageContent("home"),
     createStaticClient()
       .from("products")
@@ -41,9 +41,12 @@ export default async function Home() {
       .order("content_order", { ascending: true })
       .limit(4),
     getTalleres(),
+    getPageContent("social media"),
   ]);
 
   const rows = homeRows.status === "fulfilled" ? homeRows.value : [];
+  const socialRows = socialMediaResult.status === "fulfilled" ? socialMediaResult.value : [];
+  const whatsappGlobal = socialRows.find((s) => s.section_key === "whatsapp")?.description?.trim();
   type ProductRow = {
     id: string;
     name: string;
@@ -124,7 +127,7 @@ export default async function Home() {
       />
 
       {/* 9 — CTA cierre */}
-      <HomeCta cta={byKey["cl_cta"] ?? null} />
+      <HomeCta cta={byKey["cl_cta"] ?? null} whatsapp={whatsappGlobal} />
 
       <Footer />
     </main>

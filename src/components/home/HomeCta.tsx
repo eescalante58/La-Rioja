@@ -1,27 +1,37 @@
 import Link from "next/link";
 import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
+import { whatsappDigits, waLink } from "@/lib/whatsapp";
 import type { SiteContent } from "@/types/cms";
 
 interface Props {
   cta: SiteContent | null;
+  /** Enlace o número de WhatsApp global desde CMS `social media / whatsapp`. */
+  whatsapp?: string;
 }
 
 /** Sección — Cierre: llamada a la acción con WhatsApp, apóyanos, dirección y teléfonos. */
-export function HomeCta({ cta }: Props) {
+export function HomeCta({ cta, whatsapp }: Props) {
   const meta = (cta?.metadata ?? {}) as Record<string, string>;
   const title = cta?.title ?? "Ven a conocernos";
   const description =
     cta?.description ??
     "Nuestras puertas están abiertas para familias, donantes y comunidad. Visítanos o escríbenos cuando quieras.";
   const botonWa = meta.boton_whatsapp ?? "Escribinos por WhatsApp";
-  const mensajeWa = encodeURIComponent(
-    meta.mensaje_whatsapp ?? "Hola, quisiera más información sobre La Rioja",
-  );
   const botonApoyanos = meta.boton_apoyanos ?? "Apóyanos";
   const enlaceApoyanos = meta.enlace_apoyanos ?? "/apoyanos";
-  const waNumber = (meta.telefono_1 ?? "").replace(/\D/g, "");
-  const waHref = `https://wa.me/${waNumber}?text=${mensajeWa}`;
+
+  // Prevenir doble codificación si el mensaje en CMS ya viene codificado (p. ej. "Hola%2C+me...")
+  let mensajePlano = meta.mensaje_whatsapp ?? "Hola, quisiera más información sobre La Rioja";
+  try {
+    mensajePlano = decodeURIComponent(mensajePlano.replace(/\+/g, " "));
+  } catch {
+    // Mantener original si la descodificación falla
+  }
+
+  // Priorizar WhatsApp global de social media; fallback a telefono_1 de la sección
+  const waNumber = whatsappDigits(whatsapp || meta.telefono_1);
+  const waHref = waLink(waNumber, mensajePlano);
 
   return (
     <section
