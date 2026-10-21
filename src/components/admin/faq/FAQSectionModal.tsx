@@ -85,6 +85,8 @@ export default function FAQSectionModal({
       }
 
       if (result.success) {
+        sessionStorage.setItem("cms_selected_tab", "1");
+        sessionStorage.setItem("faq_sub_tab", "1");
         window.location.reload();
       } else {
         alert("Error al guardar sección: " + result.error);

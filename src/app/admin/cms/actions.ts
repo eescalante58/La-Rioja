@@ -192,6 +192,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
   revalidatePath("/programs");
   revalidatePath("/productos");
   revalidatePath("/privacidad");
+  revalidatePath("/faq");
   return { success: true };
 }
 
@@ -258,6 +259,7 @@ async function updateFAQInternal(id: string, formData: FormData, context: RoleCo
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
+  revalidatePath("/faq");
   return { success: true };
 }
 
@@ -328,6 +330,7 @@ async function createFAQInternal(formData: FormData, context: RoleContext) {
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
+  revalidatePath("/faq");
   return { success: true };
 }
 
@@ -364,6 +367,7 @@ async function deleteFAQInternal(id: string, context: RoleContext) {
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
+  revalidatePath("/faq");
   return { success: true };
 }
 
@@ -428,6 +432,7 @@ async function updateFAQSectionInternal(id: string, formData: FormData, context:
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
+  revalidatePath("/faq");
   return { success: true };
 }
 
@@ -495,6 +500,7 @@ async function createFAQSectionInternal(formData: FormData, context: RoleContext
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
+  revalidatePath("/faq");
   return { success: true };
 }
 
@@ -531,6 +537,7 @@ async function deleteFAQSectionInternal(id: string, context: RoleContext) {
 
   revalidatePath("/admin/cms");
   revalidatePath("/");
+  revalidatePath("/faq");
   return { success: true };
 }
 
@@ -670,6 +677,7 @@ async function createCMSContentInternal(formData: FormData, context: RoleContext
   revalidatePath("/programs");
   revalidatePath("/productos");
   revalidatePath("/privacidad");
+  revalidatePath("/faq");
   return { success: true };
 }
 
@@ -729,6 +737,7 @@ async function deleteCMSContentInternal(id: string, context: RoleContext) {
   revalidatePath("/programs");
   revalidatePath("/productos");
   revalidatePath("/privacidad");
+  revalidatePath("/faq");
   revalidatePath("/admin/cms");
   return { success: true };
 }

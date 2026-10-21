@@ -99,6 +99,8 @@ export default function FAQModal({
       }
 
       if (result.success) {
+        sessionStorage.setItem("cms_selected_tab", "1");
+        sessionStorage.setItem("faq_sub_tab", "0");
         window.location.reload();
       } else {
         alert("Error al guardar FAQ: " + result.error);

@@ -1,10 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import CMSManagerClient from "./CMSManagerClient";
-import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
-import { List, HelpCircle, Image as ImageIcon, BookUser } from "lucide-react";
+import { BookUser } from "lucide-react";
 import FAQManager from "@/components/admin/FAQManager";
 import GalleryManagement from "@/components/admin/cms/GalleryManagement";
+import CMSTabsContainer from "@/components/admin/cms/CMSTabsContainer";
 
 // Force dynamic rendering to avoid build-time RLS issues
 export const dynamic = "force-dynamic";
@@ -60,57 +60,27 @@ export default async function CMSManager() {
           Manual de Usuario
         </Link>
       </div>
-      <TabGroup defaultValue="1">
-        <TabList className="mt-2">
-          <Tab value="1" className="text-base sm:text-lg">
-            <div className="flex items-center gap-2">
-              <List size={20} />
-              <span>Contenido General</span>
+      <CMSTabsContainer
+        contentPanel={<CMSManagerClient initialContent={content || []} />}
+        faqPanel={
+          <FAQManager
+            initialFaqs={faqs || []}
+            faqSections={faqSections || []}
+          />
+        }
+        galleryPanel={
+          galleryError ? (
+            <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-100 text-sm">
+              La tabla de galería no parece estar lista aún: {galleryError.message}
             </div>
-          </Tab>
-          <Tab value="2" className="text-base sm:text-lg">
-            <div className="flex items-center gap-2">
-              <HelpCircle size={20} />
-              <span>Preguntas Frecuentes (FAQ)</span>
-            </div>
-          </Tab>
-          <Tab value="3" className="text-base sm:text-lg">
-            <div className="flex items-center gap-2">
-              <ImageIcon size={20} />
-              <span>Galería de Fotos</span>
-            </div>
-          </Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel>
-            <div className="mt-6">
-              <CMSManagerClient initialContent={content || []} />
-            </div>
-          </TabPanel>
-          <TabPanel>
-            <div className="mt-6">
-              <FAQManager
-                initialFaqs={faqs || []}
-                faqSections={faqSections || []}
-              />
-            </div>
-          </TabPanel>
-          <TabPanel>
-            <div className="mt-6">
-              {galleryError ? (
-                <div className="p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-100 text-sm">
-                  La tabla de galería no parece estar lista aún: {galleryError.message}
-                </div>
-              ) : (
-                <GalleryManagement 
-                  events={events || []} 
-                  initialImages={galleryImages || []} 
-                />
-              )}
-            </div>
-          </TabPanel>
-        </TabPanels>
-      </TabGroup>
+          ) : (
+            <GalleryManagement
+              events={events || []}
+              initialImages={galleryImages || []}
+            />
+          )
+        }
+      />
     </div>
   );
 }

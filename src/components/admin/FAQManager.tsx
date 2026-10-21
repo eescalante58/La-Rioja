@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TabGroup,
   TabList,
@@ -64,10 +64,29 @@ export default function FAQManager({
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState<FAQSection | null>(null);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+  const [subTabIndex, setSubTabIndex] = useState(0);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("faq_sub_tab");
+    if (saved !== null) {
+      const idx = parseInt(saved, 10);
+      if (!isNaN(idx) && (idx === 0 || idx === 1)) {
+        setSubTabIndex(idx);
+      }
+      sessionStorage.removeItem("faq_sub_tab");
+    }
+  }, []);
+
+  const handleSubTabChange = (index: number) => {
+    setSubTabIndex(index);
+    sessionStorage.setItem("faq_sub_tab", String(index));
+  };
 
   const handleDelete = async (faq: FAQ) => {
     if (!confirm("¿Estás seguro de que deseas eliminar esta pregunta?")) return;
     try {
+      sessionStorage.setItem("cms_selected_tab", "1");
+      sessionStorage.setItem("faq_sub_tab", "0");
       const result = await callAction<{ success?: boolean; error?: string }>(
         "cms.deleteFAQ",
         [faq.id],
@@ -82,6 +101,8 @@ export default function FAQManager({
   const handleSectionDelete = async (section: FAQSection) => {
     if (!confirm("¿Estás seguro de eliminar esta sección? Se verán afectadas las preguntas asociadas.")) return;
     try {
+      sessionStorage.setItem("cms_selected_tab", "1");
+      sessionStorage.setItem("faq_sub_tab", "1");
       const result = await callAction<{ success?: boolean; error?: string }>(
         "cms.deleteFAQSection",
         [section.id],
@@ -106,7 +127,7 @@ export default function FAQManager({
         </div>
       </div>
 
-      <TabGroup>
+      <TabGroup index={subTabIndex} onIndexChange={handleSubTabChange}>
         <TabList variant="solid" color="zinc" className="mb-4">
           <Tab icon={HelpCircle}>Preguntas</Tab>
           <Tab icon={LayoutGrid}>Secciones</Tab>
