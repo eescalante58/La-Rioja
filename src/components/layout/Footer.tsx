@@ -38,13 +38,19 @@ function OfficialSocialLink({
  * Obtiene dinámicamente sus datos desde el CMS de Supabase.
  */
 export async function Footer() {
-  const [ctaResult, socialResult] = await Promise.allSettled([
+  const [ctaResult, socialResult, footerResult] = await Promise.allSettled([
     getSectionContent("home", "cl_cta"),
     getPageContent("social media"),
+    getSectionContent("footer", "derechos reservados"),
   ]);
 
   const ctaContent = ctaResult.status === "fulfilled" ? ctaResult.value : null;
   const socialLinks = socialResult.status === "fulfilled" ? socialResult.value : [];
+  const copyrightContent = footerResult.status === "fulfilled" ? footerResult.value : null;
+
+  const copyrightText =
+    copyrightContent?.description?.trim() ||
+    `© ${new Date().getFullYear()} Asociación de Padres y Amigos de Personas con Discapacidad Intelectual (ASPAPREM) / Centro de Formación Laboral La Rioja.`;
 
   const ctaMeta = (ctaContent?.metadata ?? {}) as Record<string, string>;
 
@@ -315,9 +321,7 @@ export async function Footer() {
 
         {/* Separador y Sub-footer con Copyright y Política de Privacidad */}
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-center text-xs text-white/60 sm:flex-row sm:text-left">
-          <p>
-            &copy; {new Date().getFullYear()} Asociación de Padres y Amigos de Personas con Discapacidad Intelectual (ASPAPREM) / Centro de Formación Laboral La Rioja.
-          </p>
+          <p>{copyrightText}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/privacidad"

@@ -1890,6 +1890,7 @@ export type Database = {
         | "productos"
         | "apoyanos"
         | "privacidad"
+        | "footer"
       student_level_enum:
         | "1.Terapeutico"
         | "2.Inicial"
@@ -2057,6 +2058,7 @@ export const Constants = {
         "productos",
         "apoyanos",
         "privacidad",
+        "footer",
       ],
       student_level_enum: [
         "1.Terapeutico",

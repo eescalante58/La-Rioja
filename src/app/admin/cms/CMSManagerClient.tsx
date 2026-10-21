@@ -29,6 +29,7 @@ const CMS_PAGES = [
   { value: "services", label: "Services (Cards)" },
   { value: "apoyanos", label: "Apóyanos" },
   { value: "privacidad", label: "Privacidad" },
+  { value: "footer", label: "Footer" },
   { value: "contact", label: "Contact" },
   { value: "global", label: "Global" },
   { value: "social media", label: "Social Media" },
