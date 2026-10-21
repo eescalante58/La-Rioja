@@ -22,6 +22,19 @@ export function AboutHero({ hero }: AboutHeroProps) {
   const badgeText = metaText(hero, "insignia_texto", "");
   const photo = sectionImage(hero);
 
+  const cardTitulo =
+    metaText(hero, "card_foto_titulo", "") ||
+    metaText(hero, "foto_card_titulo", "") ||
+    "Comunidad La Rioja";
+  const cardSubtitulo =
+    metaText(hero, "card_foto_subtitulo", "") ||
+    metaText(hero, "foto_card_subtitulo", "") ||
+    "Educación, taller y convivencia";
+  const cardTag =
+    metaText(hero, "card_foto_tag", "") ||
+    metaText(hero, "foto_card_tag", "") ||
+    "ASPAPREM";
+
   return (
     <section id="inicio" className="relative overflow-hidden bg-[#0A0C14] text-white">
       <AuroraBackground />
@@ -68,15 +81,39 @@ export function AboutHero({ hero }: AboutHeroProps) {
         </div>
 
         {photo && (
-          <div className="relative aspect-[16/10] w-full min-w-0 flex-1 overflow-hidden rounded-[20px] lg:basis-[48%]">
-            <Image
-              src={photo}
-              alt={metaText(hero, "foto_alt", "Estudiantes del CFL La Rioja reunidos")}
-              fill
-              priority
-              sizes="(max-width: 1023px) 100vw, 600px"
-              className="object-cover"
-            />
+          <div className="w-full min-w-0 flex-1 lg:basis-[48%]">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-3xl border-4 border-white/10 bg-slate-800 shadow-2xl">
+              <Image
+                src={photo}
+                alt={metaText(hero, "foto_alt", "Estudiantes del CFL La Rioja reunidos")}
+                fill
+                priority
+                sizes="(max-width: 1023px) 100vw, 600px"
+                className="object-cover"
+              />
+              {/* Gradiente sutil y tarjeta flotante solo en escritorio para no tapar la foto en celular */}
+              <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-larioja-azul-profundo/80 via-transparent to-transparent" />
+              <div className="hidden lg:flex absolute bottom-4 left-4 right-4 items-center justify-between rounded-2xl border border-white/20 bg-white/15 p-3 text-white backdrop-blur-md">
+                <div>
+                  <p className="text-xs font-bold">{cardTitulo}</p>
+                  <p className="text-[11px] text-white/80">{cardSubtitulo}</p>
+                </div>
+                <span className="rounded-full bg-larioja-amarillo px-2.5 py-1 text-xs font-extrabold text-larioja-azul">
+                  {cardTag}
+                </span>
+              </div>
+            </div>
+
+            {/* En móvil (< lg), los datos se muestran debajo de la foto para permitir apreciarla completamente */}
+            <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/20 bg-white/10 p-3.5 text-white shadow-sm backdrop-blur-md lg:hidden">
+              <div>
+                <p className="text-xs font-bold text-white">{cardTitulo}</p>
+                <p className="text-[11px] text-white/80">{cardSubtitulo}</p>
+              </div>
+              <span className="rounded-full bg-larioja-amarillo px-2.5 py-1 text-xs font-extrabold text-larioja-azul shadow-xs">
+                {cardTag}
+              </span>
+            </div>
           </div>
         )}
       </div>
