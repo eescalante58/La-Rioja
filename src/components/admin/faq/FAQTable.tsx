@@ -22,7 +22,7 @@ interface FAQ {
   section_id: string | null;
   is_active: boolean;
   content_order: number;
-  faq_sections?: { title: string };
+  faq_sections?: { title?: string | null } | null;
 }
 
 interface FAQTableProps {
@@ -53,9 +53,16 @@ export default function FAQTable({
           </TableRow>
         </TableHead>
         <TableBody>
-          {faqs.map((faq) => (
-            <React.Fragment key={faq.id}>
-              <TableRow className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+          {faqs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center py-10 text-gray-500 dark:text-gray-400">
+                No se encontraron preguntas que coincidan con la búsqueda.
+              </TableCell>
+            </TableRow>
+          ) : (
+            faqs.map((faq) => (
+              <React.Fragment key={faq.id}>
+                <TableRow className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                 <TableCell>
                   <Badge color="amber" size="xs">
                     {faq.content_order}
@@ -117,7 +124,8 @@ export default function FAQTable({
                 </TableRow>
               )}
             </React.Fragment>
-          ))}
+          ))
+        )}
         </TableBody>
       </Table>
     </Card>

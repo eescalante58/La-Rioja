@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   TabGroup,
   TabList,
@@ -10,11 +10,13 @@ import {
   Title,
   Text,
   Button,
+  TextInput,
 } from "@tremor/react";
 import {
   Plus,
   HelpCircle,
   LayoutGrid,
+  Search,
 } from "lucide-react";
 import { callAction } from "@/lib/action-client";
 import dynamic from "next/dynamic";
@@ -44,7 +46,7 @@ interface FAQ {
   section_id: string | null;
   is_active: boolean;
   content_order: number;
-  faq_sections?: { title: string };
+  faq_sections?: { title?: string | null } | null;
 }
 
 interface FAQManagerProps {
@@ -56,8 +58,17 @@ export default function FAQManager({
   initialFaqs,
   faqSections,
 }: FAQManagerProps) {
-  const [faqs] = useState<FAQ[]>(initialFaqs);
-  const [sections] = useState<FAQSection[]>(faqSections);
+  const [faqs, setFaqs] = useState<FAQ[]>(initialFaqs);
+  const [sections, setSections] = useState<FAQSection[]>(faqSections);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    setFaqs(initialFaqs);
+  }, [initialFaqs]);
+
+  useEffect(() => {
+    setSections(faqSections);
+  }, [faqSections]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFaq, setSelectedFaq] = useState<FAQ | null>(null);
@@ -65,6 +76,59 @@ export default function FAQManager({
   const [selectedSection, setSelectedSection] = useState<FAQSection | null>(null);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   const [subTabIndex, setSubTabIndex] = useState(0);
+
+  const sectionMap = useMemo(() => {
+    return new Map(sections.map((s) => [s.id, s]));
+  }, [sections]);
+
+  // Ordenar primero por sección (orden de la sección o alfabético), luego por orden de la pregunta
+  const sortedFaqs = useMemo(() => {
+    return [...faqs].sort((a, b) => {
+      const secA = a.section_id ? sectionMap.get(a.section_id) : undefined;
+      const secB = b.section_id ? sectionMap.get(b.section_id) : undefined;
+
+      const secOrderA = secA?.content_order ?? 9999;
+      const secOrderB = secB?.content_order ?? 9999;
+
+      if (secOrderA !== secOrderB) {
+        return secOrderA - secOrderB;
+      }
+
+      const secTitleA = (secA?.title || a.faq_sections?.title || "").toLowerCase();
+      const secTitleB = (secB?.title || b.faq_sections?.title || "").toLowerCase();
+      const titleCompare = secTitleA.localeCompare(secTitleB);
+      if (titleCompare !== 0) {
+        return titleCompare;
+      }
+
+      return (a.content_order ?? 0) - (b.content_order ?? 0);
+    });
+  }, [faqs, sectionMap]);
+
+  // Filtrar preguntas por contenido en pregunta o respuesta
+  const filteredFaqs = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    const list = q
+      ? sortedFaqs.filter((faq) => {
+          const matchQuestion = faq.question.toLowerCase().includes(q);
+          const matchAnswer = faq.answer.toLowerCase().includes(q);
+          const matchSection =
+            (faq.section_id && sectionMap.get(faq.section_id)?.title.toLowerCase().includes(q)) ||
+            (faq.faq_sections?.title && faq.faq_sections.title.toLowerCase().includes(q));
+          return matchQuestion || matchAnswer || Boolean(matchSection);
+        })
+      : sortedFaqs;
+
+    return list.map((faq) => ({
+      ...faq,
+      faq_sections: {
+        title:
+          faq.faq_sections?.title ||
+          (faq.section_id ? sectionMap.get(faq.section_id)?.title : null) ||
+          "Sin sección",
+      },
+    }));
+  }, [sortedFaqs, searchQuery, sectionMap]);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("faq_sub_tab");
@@ -135,10 +199,15 @@ export default function FAQManager({
         <TabPanels>
           <TabPanel>
             <div className="space-y-4">
-              <div className="flex justify-between items-center mb-6 px-4 sm:px-0">
-                <Title className="text-lg font-bold text-larioja-azul dark:text-white uppercase">
-                  Listado de Preguntas
-                </Title>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2 px-4 sm:px-0">
+                <div>
+                  <Title className="text-lg font-bold text-larioja-azul dark:text-white uppercase">
+                    Listado de Preguntas
+                  </Title>
+                  <Text className="text-xs text-gray-500 dark:text-gray-400">
+                    Ordenado por sección y orden de pregunta
+                  </Text>
+                </div>
                 <Button
                   icon={Plus}
                   color="blue"
@@ -149,8 +218,37 @@ export default function FAQManager({
                 </Button>
               </div>
 
+              {/* Barra de búsqueda para contenido en pregunta o respuesta */}
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-white dark:bg-gray-900 p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xs">
+                <div className="flex-1 max-w-md">
+                  <TextInput
+                    icon={Search}
+                    placeholder="Buscar en pregunta o respuesta..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center justify-between sm:justify-end gap-3">
+                  <Text className="text-xs text-gray-500 dark:text-gray-400 italic">
+                    {searchQuery.trim()
+                      ? `Mostrando ${filteredFaqs.length} de ${faqs.length} preguntas`
+                      : `${faqs.length} preguntas`}
+                  </Text>
+                  {searchQuery && (
+                    <Button
+                      variant="light"
+                      size="xs"
+                      color="gray"
+                      onClick={() => setSearchQuery("")}
+                    >
+                      Limpiar
+                    </Button>
+                  )}
+                </div>
+              </div>
+
               <FAQTable
-                faqs={faqs}
+                faqs={filteredFaqs}
                 openFaqId={openFaqId}
                 onToggle={(id) => setOpenFaqId(openFaqId === id ? null : id)}
                 onEdit={(faq) => { setSelectedFaq(faq); setIsModalOpen(true); }}

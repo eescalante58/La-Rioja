@@ -107,7 +107,7 @@ export default async function FAQPage() {
                         <AccordionTrigger className="px-6 py-4 hover:no-underline text-left text-larioja-azul dark:text-white font-semibold">
                           {faq.question}
                         </AccordionTrigger>
-                        <AccordionContent className="px-6 pb-6 text-gray-600 dark:text-gray-400 leading-relaxed">
+                        <AccordionContent className="px-6 pb-6 text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
                           {faq.answer}
                         </AccordionContent>
                       </AccordionItem>
