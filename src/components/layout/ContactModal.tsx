@@ -176,7 +176,7 @@ export function ContactModal({
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="7858-0322"
+                  placeholder="7731-0792"
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 focus-visible:border-larioja-azul focus-visible:ring-2 focus-visible:ring-larioja-azul/20 transition-all outline-none bg-white text-gray-900"
                 />
               </div>

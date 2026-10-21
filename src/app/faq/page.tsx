@@ -1,4 +1,5 @@
 import { createStaticClient } from "@/lib/supabase/server";
+import { getSectionContent } from "@/services/cms";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuroraBackground } from "@/components/ui/AuroraBackground";
@@ -40,12 +41,21 @@ export const revalidate = 60;
 export default async function FAQPage() {
   const supabase = createStaticClient();
 
-  // Fetch sections and faqs from database
-  const { data: sections } = await supabase
-    .from("faq_sections")
-    .select("*, faqs(*)")
-    .eq("is_active", true)
-    .order("content_order", { ascending: true });
+  // Fetch sections, faqs, and dynamic contact phone from database/CMS
+  const [sectionsResult, ctaContent] = await Promise.all([
+    supabase
+      .from("faq_sections")
+      .select("*, faqs(*)")
+      .eq("is_active", true)
+      .order("content_order", { ascending: true }),
+    getSectionContent("home", "cl_cta"),
+  ]);
+
+  const sections = sectionsResult.data;
+  const ctaMeta = (ctaContent?.metadata ?? {}) as Record<string, string>;
+  const telefonoContacto = ctaMeta.telefono_1 || "7731-0792";
+  const telDigits = telefonoContacto.replace(/\D/g, "");
+  const telHref = `tel:+${telDigits.startsWith("503") ? telDigits : `503${telDigits}`}`;
 
   return (
     <main className="min-h-screen overflow-x-clip bg-white dark:bg-gray-950 transition-colors duration-300">
@@ -134,9 +144,9 @@ export default async function FAQPage() {
               variant="outline"
               className="border-larioja-azul text-larioja-azul hover:bg-larioja-azul/5 rounded-full px-8 py-6 h-auto text-lg"
             >
-              <a href="tel:+50378580322" className="flex items-center gap-2">
+              <a href={telHref} className="flex items-center gap-2">
                 <Phone size={20} />
-                Llamar: 7858-0322
+                Llamar: {telefonoContacto}
               </a>
             </Button>
           </div>
