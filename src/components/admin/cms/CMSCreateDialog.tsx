@@ -15,7 +15,7 @@ import {
 } from "@tremor/react";
 import { X as XIcon, Save, ImageIcon, AlertCircle, CheckCircle } from "lucide-react";
 import { callActionForm } from "@/lib/action-client";
-import { getErrorMessage } from "@/lib/utils";
+import { getErrorMessage, formatFriendlyError } from "@/lib/utils";
 
 interface CMSCreateDialogProps {
   isOpen: boolean;
@@ -127,13 +127,13 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
           setNewPreviewUrl(null);
         }, 1500);
       } else {
-        setCreateStatus({ type: "error", message: result.error || "Error al crear." });
+        setCreateStatus({ type: "error", message: formatFriendlyError(result.error) || "Error al crear." });
       }
     } catch (error) {
       console.error("Error creating CMS content:", error);
       setCreateStatus({ 
         type: "error", 
-        message: getErrorMessage(error) || "Error inesperado al crear." 
+        message: formatFriendlyError(error) || "Error inesperado al crear." 
       });
     } finally {
       setIsCreating(false);

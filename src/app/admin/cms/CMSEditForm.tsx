@@ -16,7 +16,7 @@ import Link from "next/link";
 import { callActionForm } from "@/lib/action-client";
 import { compressImage } from "@/lib/compress-image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getErrorMessage } from "@/lib/utils";
+import { getErrorMessage, formatFriendlyError } from "@/lib/utils";
 import type { SiteContent } from "@/types/cms";
 
 /**
@@ -116,7 +116,7 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
       } else {
         setStatus({
           type: "error",
-          message: result.error || "Error al actualizar.",
+          message: formatFriendlyError(result.error) || "Error al actualizar.",
         });
         setLoading(false);
       }
@@ -124,7 +124,7 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
       console.error("Submit error:", error);
       setStatus({
         type: "error",
-        message: getErrorMessage(error) || "Error de red o de servidor. Intente nuevamente.",
+        message: formatFriendlyError(error) || "Error de red o de servidor. Intente nuevamente.",
       });
       setLoading(false);
     }

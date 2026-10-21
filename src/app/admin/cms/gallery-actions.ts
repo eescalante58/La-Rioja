@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole, type RoleContext } from "@/lib/auth/guards";
-import { getErrorMessage } from "@/lib/utils";
+import { getErrorMessage, formatFriendlyError } from "@/lib/utils";
 import type { Tables } from "@/types/database";
 
 /**
@@ -27,7 +27,7 @@ async function getGalleryImagesInternal(eventId?: string) {
 
   if (error) {
     console.error("Error fetching gallery images:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   return { success: true, data };
@@ -50,7 +50,7 @@ async function getGalleryEventInternal(companyId: number, eventId: string) {
 
   if (error) {
     console.error("Error fetching gallery event:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   return { success: true, data };
@@ -221,7 +221,7 @@ async function deleteGalleryImageInternal(id: string, context: RoleContext) {
 
   if (dbError) {
     console.error("Error al borrar registro de base de datos:", dbError);
-    return { success: false, error: dbError.message };
+    return { success: false, error: formatFriendlyError(dbError) };
   }
 
   if (user) {
@@ -259,7 +259,7 @@ async function updateGalleryImagesOrderInternal(
   );
 
   const error = results.find(r => r.error);
-  if (error) return { success: false, error: error.error?.message };
+  if (error) return { success: false, error: formatFriendlyError(error.error) };
 
   if (user) {
     await supabase.from("user_activity_log").insert({

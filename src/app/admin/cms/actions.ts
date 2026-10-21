@@ -1,11 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
 import { withRole, type RoleContext } from "@/lib/auth/guards";
 import { faqSchema, faqSectionSchema, cmsContentSchema } from "@/lib/validation/cms";
-import { getErrorMessage } from "@/lib/utils";
+import { getErrorMessage, formatFriendlyError } from "@/lib/utils";
 
 /**
  * Sanitizes string input to prevent basic HTML injection.
@@ -98,7 +98,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
   const manual_image_url = formData.get("image_url") as string | null;
   const clear_image = formData.get("clear_image") === "true";
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   let image_url: string | null = clear_image
     ? null
     : manual_image_url
@@ -166,7 +166,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
 
   if (error) {
     console.error("Database error:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   // Registro de auditoría
@@ -223,7 +223,7 @@ async function updateFAQInternal(id: string, formData: FormData, context: RoleCo
   }
 
   const { question, answer, section_id, is_active, content_order } = validation.data;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase
     .from("faqs")
@@ -239,7 +239,7 @@ async function updateFAQInternal(id: string, formData: FormData, context: RoleCo
 
   if (error) {
     console.error("Database error (FAQ update):", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   // Registro de auditoría
@@ -289,7 +289,7 @@ async function createFAQInternal(formData: FormData, context: RoleContext) {
 
   const { question, answer, section_id, is_active, content_order } = validation.data;
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("faqs")
@@ -309,7 +309,7 @@ async function createFAQInternal(formData: FormData, context: RoleContext) {
 
   if (error) {
     console.error("Database error (FAQ creation):", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   // Registro de auditoría
@@ -340,13 +340,13 @@ export const createFAQ = withRole(8, createFAQInternal);
 
 async function deleteFAQInternal(id: string, context: RoleContext) {
   const { user } = context;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase.from("faqs").delete().eq("id", id);
 
   if (error) {
     console.error("Error deleting FAQ:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   // Registro de auditoría
@@ -394,7 +394,7 @@ async function updateFAQSectionInternal(id: string, formData: FormData, context:
   }
 
   const { title, description, is_active, content_order } = validation.data;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase
     .from("faq_sections")
@@ -409,7 +409,7 @@ async function updateFAQSectionInternal(id: string, formData: FormData, context:
 
   if (error) {
     console.error("Database error (FAQ section update):", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   // Registro de auditoría
@@ -457,7 +457,7 @@ async function createFAQSectionInternal(formData: FormData, context: RoleContext
   }
 
   const { title, description, is_active, content_order } = validation.data;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("faq_sections")
@@ -476,7 +476,7 @@ async function createFAQSectionInternal(formData: FormData, context: RoleContext
 
   if (error) {
     console.error("Database error (FAQ section creation):", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   // Registro de auditoría
@@ -507,13 +507,13 @@ export const createFAQSection = withRole(8, createFAQSectionInternal);
 
 async function deleteFAQSectionInternal(id: string, context: RoleContext) {
   const { user } = context;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase.from("faq_sections").delete().eq("id", id);
 
   if (error) {
     console.error("Error deleting FAQ section:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   // Registro de auditoría
@@ -573,7 +573,7 @@ async function createCMSContentInternal(formData: FormData, context: RoleContext
   const file = formData.get("file") as File | null;
   const manual_image_url = formData.get("image_url") as string | null;
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Check uniqueness of combination (page, section_key, content_order)
   const { data: existing } = await supabase
@@ -645,7 +645,7 @@ async function createCMSContentInternal(formData: FormData, context: RoleContext
 
   if (error) {
     console.error("Database error:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   // Registro de auditoría
@@ -682,7 +682,7 @@ export const createCMSContent = withRole(8, createCMSContentInternal);
 
 async function deleteCMSContentInternal(id: string, context: RoleContext) {
   const { user } = context;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // 1. Obtener la información del registro antes de borrarlo para limpiar el storage
   const { data: item } = await supabase
@@ -707,7 +707,7 @@ async function deleteCMSContentInternal(id: string, context: RoleContext) {
 
   if (error) {
     console.error("Error deleting CMS content:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: formatFriendlyError(error) };
   }
 
   // Registro de auditoría

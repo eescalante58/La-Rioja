@@ -51,7 +51,7 @@ export async function requireRoleLevel(minLevel: number) {
     return {
       user,
       level,
-      error: `Permisos insuficientes (Nivel: ${level}, Requerido: ${minLevel})`,
+      error: `Permisos insuficientes: tu rol actual (nivel ${level}) requiere nivel ${minLevel} o superior. Por favor, solicita al Administrador que asigne los permisos necesarios.`,
     };
   }
 
