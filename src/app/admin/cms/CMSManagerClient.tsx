@@ -44,15 +44,19 @@ export default function CMSManagerClient({ initialContent }: CMSManagerClientPro
   const router = useRouter();
 
   const rawInitialPage = searchParams.get("page") || "all";
+  const rawInitialStatus = searchParams.get("status") || "all";
   const [pageFilter, setPageFilter] = useState<string>(
     rawInitialPage === "about" ? "quienes somos" : rawInitialPage,
   );
+  const [statusFilter, setStatusFilter] = useState<string>(rawInitialStatus);
   const [searchFilter, setSearchFilter] = useState(searchParams.get("search") || "");
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
     if (pageFilter !== "all") params.set("page", pageFilter);
     else params.delete("page");
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    else params.delete("status");
     if (searchFilter) params.set("search", searchFilter);
     else params.delete("search");
 
@@ -60,7 +64,7 @@ export default function CMSManagerClient({ initialContent }: CMSManagerClientPro
     router.replace(`/admin/cms${queryString ? `?${queryString}` : ""}`, {
       scroll: false,
     });
-  }, [pageFilter, searchFilter, router, searchParams]);
+  }, [pageFilter, statusFilter, searchFilter, router, searchParams]);
 
   const isQuienesSomosAlias = (val: string | null | undefined) =>
     val === "quienes somos" || val === "about";
@@ -71,12 +75,16 @@ export default function CMSManagerClient({ initialContent }: CMSManagerClientPro
         pageFilter === "all" ||
         item.page === pageFilter ||
         (isQuienesSomosAlias(pageFilter) && isQuienesSomosAlias(item.page));
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && item.is_active === true) ||
+        (statusFilter === "inactive" && item.is_active === false);
       const matchesSearch =
         searchFilter === "" ||
         (item.section_key || "").toLowerCase().includes(searchFilter.toLowerCase()) ||
         (item.title || "").toLowerCase().includes(searchFilter.toLowerCase()) ||
         (item.description || "").toLowerCase().includes(searchFilter.toLowerCase());
-      return matchesPage && matchesSearch;
+      return matchesPage && matchesStatus && matchesSearch;
     })
     .sort((a, b) => {
       const pageCompare = (a.page || "").localeCompare(b.page || "");
@@ -136,6 +144,8 @@ export default function CMSManagerClient({ initialContent }: CMSManagerClientPro
       <CMSFilters
         pageFilter={pageFilter}
         setPageFilter={setPageFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
         searchFilter={searchFilter}
         setSearchFilter={setSearchFilter}
         CMS_PAGES={CMS_PAGES}
@@ -155,6 +165,7 @@ export default function CMSManagerClient({ initialContent }: CMSManagerClientPro
         }}
         pageFilter={pageFilter}
         searchFilter={searchFilter}
+        statusFilter={statusFilter}
       />
 
       <CMSViewDialog isOpen={isViewOpen} onClose={() => setIsViewOpen(false)} item={selectedItem} />

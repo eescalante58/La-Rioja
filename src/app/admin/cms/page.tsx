@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import CMSManagerClient from "./CMSManagerClient";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  * @returns {Promise<JSX.Element>} The CMS management interface.
  */
 export default async function CMSManager() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Consultas con manejo de errores silencioso para diagnóstico
   const { data: content, error: contentError } = await supabase

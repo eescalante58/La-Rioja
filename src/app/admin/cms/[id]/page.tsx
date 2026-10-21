@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import CMSEditForm from "../CMSEditForm";
 
@@ -14,7 +14,7 @@ export default async function EditCMSPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data: item, error } = await supabase
     .from("site_content")

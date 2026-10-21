@@ -6,6 +6,8 @@ import { Search, Filter } from "lucide-react";
 interface CMSFiltersProps {
   pageFilter: string;
   setPageFilter: (val: string) => void;
+  statusFilter: string;
+  setStatusFilter: (val: string) => void;
   searchFilter: string;
   setSearchFilter: (val: string) => void;
   CMS_PAGES: readonly { value: string; label: string }[];
@@ -16,6 +18,8 @@ interface CMSFiltersProps {
 export default function CMSFilters({
   pageFilter,
   setPageFilter,
+  statusFilter,
+  setStatusFilter,
   searchFilter,
   setSearchFilter,
   CMS_PAGES,
@@ -39,7 +43,18 @@ export default function CMSFilters({
             ))}
           </Select>
         </div>
-        <div className="md:col-span-1 lg:col-span-3 space-y-2">
+        <div className="space-y-2">
+          <Text className="text-xs font-bold uppercase text-gray-500 flex items-center gap-2">
+            <Filter size={14} />
+            Filtrar por Estado
+          </Text>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectItem value="all">Todos los Estados</SelectItem>
+            <SelectItem value="active">Solo Activos</SelectItem>
+            <SelectItem value="inactive">Solo Inactivos</SelectItem>
+          </Select>
+        </div>
+        <div className="md:col-span-2 lg:col-span-2 space-y-2">
           <Text className="text-xs font-bold uppercase text-gray-500 flex items-center gap-2">
             <Search size={14} />
             Buscar Sección, Título o Descripción
@@ -52,7 +67,7 @@ export default function CMSFilters({
           />
         </div>
       </div>
-      {(pageFilter !== "all" || searchFilter !== "") && (
+      {(pageFilter !== "all" || statusFilter !== "all" || searchFilter !== "") && (
         <div className="mt-4 flex justify-between items-center border-t border-gray-50 dark:border-gray-800 pt-4">
           <Text className="text-xs text-gray-500 italic">
             Mostrando {sortedCount} de {totalCount} resultados
@@ -63,6 +78,7 @@ export default function CMSFilters({
             color="gray"
             onClick={() => {
               setPageFilter("all");
+              setStatusFilter("all");
               setSearchFilter("");
             }}
           >

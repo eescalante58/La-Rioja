@@ -59,7 +59,8 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
   // Obtener filtros de la URL para regresar al mismo estado
   const pageFilter = searchParams.get("page") || "all";
   const searchFilter = searchParams.get("search") || "";
-  const backUrl = `/admin/cms?page=${pageFilter}&search=${searchFilter}`;
+  const statusFilter = searchParams.get("status") || "all";
+  const backUrl = `/admin/cms?page=${pageFilter}&search=${searchFilter}&status=${statusFilter}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

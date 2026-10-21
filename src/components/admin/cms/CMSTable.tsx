@@ -22,6 +22,7 @@ interface CMSTableProps {
   onDelete: (item: SiteContent) => void;
   pageFilter: string;
   searchFilter: string;
+  statusFilter?: string;
 }
 
 /** Encabezado fijo: sticky en cada th (no en thead) para que funcione
@@ -44,6 +45,7 @@ export default function CMSTable({
   onDelete,
   pageFilter,
   searchFilter,
+  statusFilter,
 }: CMSTableProps) {
   return (
     <Card className="p-0 overflow-hidden shadow-md border-gray-200 dark:border-gray-800 transition-all duration-300">
@@ -124,7 +126,7 @@ export default function CMSTable({
                     title="Ver"
                   />
                   <Link
-                    href={`/admin/cms/${item.id}?page=${pageFilter}&search=${searchFilter}`}
+                    href={`/admin/cms/${item.id}?page=${pageFilter}&search=${searchFilter}&status=${statusFilter || "all"}`}
                     title="Editar"
                   >
                     <Button variant="light" icon={Edit2} size="xs" color="blue" />
