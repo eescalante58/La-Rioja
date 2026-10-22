@@ -2,6 +2,7 @@ import { createStaticClient } from "@/lib/supabase/server";
 import { getSectionContent } from "@/services/cms";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { FAQContactButton } from "@/components/faq/FAQContactButton";
 import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import {
   Accordion,
@@ -41,14 +42,20 @@ export const revalidate = 60;
 export default async function FAQPage() {
   const supabase = createStaticClient();
 
-  // Fetch sections, faqs, and dynamic contact phone from database/CMS
-  const [sectionsResult, ctaContent] = await Promise.all([
+  // Fetch sections, faqs, contact phone, and contact email from database/CMS
+  const [sectionsResult, ctaContent, emailResult] = await Promise.all([
     supabase
       .from("faq_sections")
       .select("*, faqs(*)")
       .eq("is_active", true)
       .order("content_order", { ascending: true }),
     getSectionContent("home", "cl_cta"),
+    supabase
+      .from("site_content")
+      .select("description")
+      .eq("page", "social media")
+      .eq("section_key", "email")
+      .maybeSingle(),
   ]);
 
   const sections = sectionsResult.data;
@@ -56,6 +63,11 @@ export default async function FAQPage() {
   const telefonoContacto = ctaMeta.telefono_1 || "7731-0792";
   const telDigits = telefonoContacto.replace(/\D/g, "");
   const telHref = `tel:+${telDigits.startsWith("503") ? telDigits : `503${telDigits}`}`;
+
+  const rawEmail = emailResult.data?.description?.trim();
+  const contactEmail = rawEmail
+    ? rawEmail.replace(/^(?:https?:\/\/|mailto:)+/i, "").trim()
+    : "administracion@cflarioja.org";
 
   return (
     <main className="min-h-screen overflow-x-clip bg-white dark:bg-gray-950 transition-colors duration-300">
@@ -130,15 +142,7 @@ export default async function FAQPage() {
             Nuestro equipo está disponible para ayudarte.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button
-              asChild
-              className="bg-larioja-azul hover:bg-larioja-azul/90 text-white rounded-full px-8 py-6 h-auto text-lg shadow-xl shadow-larioja-azul/20"
-            >
-              <Link href="/apoyanos" className="flex items-center gap-2">
-                <MessageSquare size={20} />
-                Enviar Consulta
-              </Link>
-            </Button>
+            <FAQContactButton contactEmail={contactEmail} />
             <Button
               asChild
               variant="outline"
