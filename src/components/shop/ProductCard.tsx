@@ -85,8 +85,8 @@ export function ProductCard({ product, priority, onOpen }: ProductCardProps) {
       <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 dark:border-slate-800">
         <div>
           <p className="font-montserrat text-xs sm:text-sm font-extrabold text-[#184F95] dark:text-larioja-amarillo">
-            {hasVariants && <span className="text-[11px] font-normal text-slate-500 mr-1">Desde</span>}
-            {minPrice > 0 ? `$${minPrice.toLocaleString("es-AR")}` : "Consultar"}
+            {hasVariants && <span className="text-[11px] font-normal text-slate-500">Desde </span>}
+            {minPrice > 0 ? `$${minPrice.toFixed(2)}` : "Consultar"}
             {unit && <span className="text-[11px] font-normal text-slate-400 ml-0.5">/{unit}</span>}
           </p>
           {hasVariants && (

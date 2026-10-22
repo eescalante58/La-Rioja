@@ -30,7 +30,7 @@ export function Price({ value, from = false, unit, size = "card" }: PriceProps) 
       <span className="sr-only">{spoken}</span>
       <span aria-hidden="true">
         {from && (
-          <span className={big ? "mr-1 text-base" : "mr-1 text-[13px] sm:text-sm"}>Desde</span>
+          <span className={big ? "text-base" : "text-[13px] sm:text-sm"}>Desde </span>
         )}
         ${whole}
         <span className={`ml-px align-[6px] ${big ? "text-sm" : "text-[10px] sm:text-[11px]"}`}>

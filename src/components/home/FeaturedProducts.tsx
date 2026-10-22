@@ -79,7 +79,7 @@ export function FeaturedProducts({ products }: Props) {
 
               <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 dark:border-slate-800">
                 <p className="font-montserrat text-xs font-extrabold text-larioja-azul dark:text-larioja-amarillo sm:text-sm">
-                  {p.price > 0 ? `$${p.price.toLocaleString("es-AR")}` : "Consultar"}
+                  {p.price > 0 ? `$${p.price.toFixed(2)}` : "Consultar"}
                 </p>
                 <span className="text-[11px] font-semibold text-sky-600 transition-all group-hover:translate-x-0.5 dark:text-sky-400">
                   Ver →
