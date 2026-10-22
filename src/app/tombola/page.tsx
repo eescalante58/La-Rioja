@@ -5,7 +5,7 @@ import { getPublicWheels } from "@/app/admin/bingo/wheel-actions";
 import { getSectionContent } from "@/services/cms";
 
 export const metadata = {
-  title: "Tómbola de Cartones | La Rioja",
+  title: "Tómbola de Cartones",
   description:
     "Tómbola de cartones ganadores en vivo del Centro de Formación Laboral La Rioja.",
 };

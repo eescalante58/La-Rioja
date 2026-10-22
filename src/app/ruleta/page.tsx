@@ -4,7 +4,7 @@ import WheelOfFortune from "@/components/wheel/WheelOfFortune";
 import { getPublicWheels } from "@/app/admin/bingo/wheel-actions";
 
 export const metadata = {
-  title: "Ruleta de Sorteos | La Rioja",
+  title: "Ruleta de Sorteos",
   description:
     "Ruleta de sorteos en vivo del Centro de Formación Laboral La Rioja.",
 };

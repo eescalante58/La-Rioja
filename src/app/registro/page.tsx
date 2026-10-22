@@ -4,7 +4,7 @@ import { getPublicWheels } from "@/app/admin/bingo/wheel-actions";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Registro de Cartones | La Rioja",
+  title: "Registro de Cartones",
   description:
     "Registra los números de cartón con los que participarás en la tómbola del evento de La Rioja.",
 };

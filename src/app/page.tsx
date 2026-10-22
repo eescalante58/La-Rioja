@@ -18,7 +18,7 @@ import { HomeCta } from "@/components/home/HomeCta";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Inicio | Centro de Formación Laboral La Rioja",
+  title: "Inicio",
   description:
     "Formamos jóvenes y adultos con discapacidad intelectual para el trabajo y la vida. Conocé nuestros programas, talleres y cómo apoyarnos.",
   alternates: { canonical: "/" },

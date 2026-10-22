@@ -4,7 +4,7 @@ import TombolaMonitor from "@/components/tombola/TombolaMonitor";
 import { getPublicWheels } from "@/app/admin/bingo/wheel-actions";
 
 export const metadata = {
-  title: "Monitor de Tómbola | La Rioja",
+  title: "Monitor de Tómbola",
   description:
     "Monitor en vivo de cartones ganadores de la tómbola del Centro de Formación Laboral La Rioja.",
 };

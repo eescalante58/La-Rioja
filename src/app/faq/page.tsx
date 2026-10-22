@@ -17,7 +17,7 @@ import type { Metadata } from "next";
 import type { Faq } from "@/types/cms";
 
 export const metadata: Metadata = {
-  title: "Preguntas Frecuentes | La Rioja",
+  title: "Preguntas Frecuentes",
   description:
     "Respuestas a las preguntas más comunes sobre nuestros programas, inscripción, servicios y cómo apoyar nuestra misión en El Salvador.",
   keywords: [
