@@ -1,8 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /** /contact se renombró a /apoyanos (página de donaciones). */
+  /** /contact se renombró a /apoyanos (página de donaciones); /inicio redirige al home. */
   async redirects() {
-    return [{ source: "/contact", destination: "/apoyanos", permanent: true }];
+    return [
+      { source: "/contact", destination: "/apoyanos", permanent: true },
+      { source: "/inicio", destination: "/", permanent: true },
+    ];
   },
   experimental: {
     serverActions: {

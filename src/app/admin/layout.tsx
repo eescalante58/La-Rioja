@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -5,6 +6,13 @@ import { AdminSidebar } from "./AdminSidebar";
 import { cookies } from "next/headers";
 import { UserProvider } from "@/providers/UserProvider";
 import UserNav from "@/components/layout/UserNav";
+
+export const metadata: Metadata = {
+  title: {
+    default: "La Rioja - Centro de Formación Laboral",
+    template: "%s | La Rioja Admin",
+  },
+};
 
 /**
  * Administrative Layout component.

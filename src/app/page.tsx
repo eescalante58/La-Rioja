@@ -18,12 +18,12 @@ import { HomeCta } from "@/components/home/HomeCta";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: { absolute: "Inicio | Centro de Formación Laboral La Rioja" },
+  title: { absolute: "La Rioja - Centro de Formación Laboral" },
   description:
     "Formamos jóvenes y adultos con discapacidad intelectual para el trabajo y la vida. Conocé nuestros programas, talleres y cómo apoyarnos.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Inicio | Centro de Formación Laboral La Rioja",
+    title: "La Rioja - Centro de Formación Laboral",
     description:
       "Formamos jóvenes y adultos con discapacidad intelectual para el trabajo y la vida. Conocé nuestros programas, talleres y cómo apoyarnos.",
     url: "/",

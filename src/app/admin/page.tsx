@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import { Title, Text } from "@tremor/react";
 import { AlertCircle } from "lucide-react";
 import { getDashboardData } from "./actions";
 import RealtimeDashboardWrapper from "@/components/admin/RealtimeDashboardWrapper";
+
+export const metadata: Metadata = {
+  title: { absolute: "La Rioja - Centro de Formación Laboral" },
+};
 
 /**
  * Admin Dashboard Home page.
