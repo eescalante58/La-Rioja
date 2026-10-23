@@ -99,3 +99,32 @@ export async function getPageContent(page: string) {
 
   return data || [];
 }
+
+/**
+ * Obtiene el título de la pestaña desde el CMS (site_content con section_key = 'pestaña').
+ * Si no está configurado o falla, devuelve el fallback predeterminado.
+ *
+ * @param page Nombre de la página en el CMS ('home', 'quienes somos', 'productos', etc.)
+ * @param fallback Título por defecto en caso de no encontrarse en el CMS
+ * @returns Título de la pestaña parametrizado en description
+ */
+export async function getPageTabTitle(page: string, fallback: string): Promise<string> {
+  try {
+    let section: { description?: string | null } | null = null;
+    if (page === "admin") {
+      section = await getSectionContent("global", "pestaña_admin");
+    } else if (page === "faq") {
+      section = await getSectionContent("global", "pestaña_faq");
+    } else if (page === "registro") {
+      section = await getSectionContent("global", "pestaña_registro");
+    } else if (page === "ruleta") {
+      section = await getSectionContent("global", "pestaña_ruleta");
+    } else {
+      section = await getSectionContent(page, "pestaña");
+    }
+    const title = section?.description?.trim();
+    return title || fallback;
+  } catch {
+    return fallback;
+  }
+}

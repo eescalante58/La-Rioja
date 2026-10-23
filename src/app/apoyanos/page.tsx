@@ -11,17 +11,20 @@ import { SupportClosing } from "@/components/apoyanos/SupportClosing";
 import { MobileDonateBar } from "@/components/apoyanos/MobileDonateBar";
 import { metaText, sectionsWithPrefix, type CmsSection } from "@/lib/cms-content";
 import { whatsappDigits } from "@/lib/whatsapp";
-import { getPageContent } from "@/services/cms";
+import { getPageContent, getPageTabTitle } from "@/services/cms";
 
 const DESCRIPTION =
   "Apadrina una beca, dona o alíate con La Rioja: formación laboral para personas con discapacidad intelectual en El Salvador desde 1993.";
 
-export const metadata: Metadata = {
-  title: "Apóyanos",
-  description: DESCRIPTION,
-  alternates: { canonical: "/apoyanos" },
-  openGraph: { title: "Apóyanos | La Rioja", description: DESCRIPTION, url: "/apoyanos" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("apoyanos", "Apóyanos | La Rioja");
+  return {
+    title: { absolute: tabTitle },
+    description: DESCRIPTION,
+    alternates: { canonical: "/apoyanos" },
+    openGraph: { title: tabTitle, description: DESCRIPTION, url: "/apoyanos" },
+  };
+}
 
 export const revalidate = 60;
 

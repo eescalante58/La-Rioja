@@ -12,20 +12,23 @@ import {
   type CmsSection,
 } from "@/components/products/shop-content";
 import { getPublicShop } from "@/app/admin/productos/actions";
-import { getPageContent } from "@/services/cms";
+import { getPageContent, getPageTabTitle } from "@/services/cms";
 
-export const metadata: Metadata = {
-  title: "La Rioja Shop",
-  description:
-    "Conoce los productos elaborados por los estudiantes de los talleres de La Rioja. Cada compra apoya su formación laboral.",
-  alternates: { canonical: "/productos" },
-  openGraph: {
-    title: "La Rioja Shop | La Rioja",
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("productos", "La Rioja Shop | La Rioja");
+  return {
+    title: { absolute: tabTitle },
     description:
       "Conoce los productos elaborados por los estudiantes de los talleres de La Rioja. Cada compra apoya su formación laboral.",
-    url: "/productos",
-  },
-};
+    alternates: { canonical: "/productos" },
+    openGraph: {
+      title: tabTitle,
+      description:
+        "Conoce los productos elaborados por los estudiantes de los talleres de La Rioja. Cada compra apoya su formación laboral.",
+      url: "/productos",
+    },
+  };
+}
 
 export const revalidate = 60;
 

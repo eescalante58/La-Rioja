@@ -11,7 +11,7 @@ import {
   getPrivacyPolicySection,
   PRIVACY_PATH,
 } from "@/lib/privacy";
-import { getPageContent, getSectionContent } from "@/services/cms";
+import { getPageContent, getSectionContent, getPageTabTitle } from "@/services/cms";
 import type { SiteContent } from "@/types/cms";
 
 export const revalidate = 3600;
@@ -25,8 +25,12 @@ const DEFAULT_SEO_DESCRIPTION =
  * almacenados en la sección del CMS, con respaldo estático y URL canónica.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const section = await getPrivacyPolicySection();
-  const seoTitle = metaText(section ?? undefined, "seoTitulo", textOr(section?.title, DEFAULT_SEO_TITLE));
+  const [section, pestanaTitle] = await Promise.all([
+    getPrivacyPolicySection(),
+    getPageTabTitle("privacidad", ""),
+  ]);
+  const defaultTitle = metaText(section ?? undefined, "seoTitulo", textOr(section?.title, DEFAULT_SEO_TITLE));
+  const seoTitle = pestanaTitle || defaultTitle;
   const seoDescription = metaText(section ?? undefined, "seoDescripcion", DEFAULT_SEO_DESCRIPTION);
 
   return {

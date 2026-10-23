@@ -1,4 +1,4 @@
-import { getPageContent } from "@/services/cms";
+import { getPageContent, getPageTabTitle } from "@/services/cms";
 import { createStaticClient } from "@/lib/supabase/server";
 import { getTalleres, numeroEnPalabras } from "@/lib/talleres";
 import type { Metadata } from "next";
@@ -17,18 +17,21 @@ import { HomeCta } from "@/components/home/HomeCta";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
-  title: { absolute: "La Rioja - Centro de Formación Laboral" },
-  description:
-    "Formamos jóvenes y adultos con discapacidad intelectual para el trabajo y la vida. Conocé nuestros programas, talleres y cómo apoyarnos.",
-  alternates: { canonical: "/" },
-  openGraph: {
-    title: "La Rioja - Centro de Formación Laboral",
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("home", "La Rioja - Centro de Formación Laboral");
+  return {
+    title: { absolute: tabTitle },
     description:
       "Formamos jóvenes y adultos con discapacidad intelectual para el trabajo y la vida. Conocé nuestros programas, talleres y cómo apoyarnos.",
-    url: "/",
-  },
-};
+    alternates: { canonical: "/" },
+    openGraph: {
+      title: tabTitle,
+      description:
+        "Formamos jóvenes y adultos con discapacidad intelectual para el trabajo y la vida. Conocé nuestros programas, talleres y cómo apoyarnos.",
+      url: "/",
+    },
+  };
+}
 
 export default async function Home() {
   const [homeRows, productsResult, talleresResult, socialMediaResult] = await Promise.allSettled([

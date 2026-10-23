@@ -5,19 +5,22 @@ import GalleryGrid from "@/components/gallery/GalleryGrid";
 import GalleryHeader from "@/components/gallery/GalleryHeader";
 import EventInfoBanner from "@/components/gallery/EventInfoBanner";
 import { getGalleryImages, getGalleryEvent } from "@/app/admin/cms/gallery-actions";
-import { getPageContent } from "@/services/cms";
+import { getPageContent, getPageTabTitle } from "@/services/cms";
 import type { SiteContent } from "@/types/cms";
 
-export const metadata: Metadata = {
-  title: "Galería La Rioja 2026",
-  description: "Galería de fotos oficial del Bingo La Rioja 2026.",
-  alternates: { canonical: "/bingo" },
-  openGraph: {
-    title: "Galería La Rioja 2026",
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("bingo", "Galería La Rioja 2026 | La Rioja");
+  return {
+    title: { absolute: tabTitle },
     description: "Galería de fotos oficial del Bingo La Rioja 2026.",
-    url: "/bingo",
-  },
-};
+    alternates: { canonical: "/bingo" },
+    openGraph: {
+      title: tabTitle,
+      description: "Galería de fotos oficial del Bingo La Rioja 2026.",
+      url: "/bingo",
+    },
+  };
+}
 
 export default async function BingoPage() {
   const { data: images = [] } = await getGalleryImages();

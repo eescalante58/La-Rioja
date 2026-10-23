@@ -41,17 +41,20 @@ import {
 } from "@/lib/cms-content";
 import { capitalizar, numeroEnPalabras } from "@/lib/talleres";
 import { whatsappDigits } from "@/lib/whatsapp";
-import { getPageContent } from "@/services/cms";
+import { getPageContent, getPageTabTitle } from "@/services/cms";
 
 const DESCRIPTION =
   "Programas de La Rioja para personas con discapacidad intelectual: Colegio La Rioja (12 a 20 años) y CFL La Rioja (20 a 55 años), ruta de cinco niveles, talleres vocacionales y proceso de admisión.";
 
-export const metadata: Metadata = {
-  title: "Programas",
-  description: DESCRIPTION,
-  alternates: { canonical: "/programs" },
-  openGraph: { title: "Programas | La Rioja", description: DESCRIPTION, url: "/programs" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("programs", "Programas | La Rioja");
+  return {
+    title: { absolute: tabTitle },
+    description: DESCRIPTION,
+    alternates: { canonical: "/programs" },
+    openGraph: { title: tabTitle, description: DESCRIPTION, url: "/programs" },
+  };
+}
 
 export const revalidate = 60;
 

@@ -1,14 +1,18 @@
+import type { Metadata } from "next";
 import { Dices } from "lucide-react";
 import { EventMasthead } from "@/components/layout/EventMasthead";
 import Tombola from "@/components/tombola/Tombola";
 import { getPublicWheels } from "@/app/admin/bingo/wheel-actions";
-import { getSectionContent } from "@/services/cms";
+import { getSectionContent, getPageTabTitle } from "@/services/cms";
 
-export const metadata = {
-  title: "Tómbola de Cartones",
-  description:
-    "Tómbola de cartones ganadores en vivo del Centro de Formación Laboral La Rioja.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("tombola", "Tómbola de Cartones | La Rioja");
+  return {
+    title: { absolute: tabTitle },
+    description:
+      "Tómbola de cartones ganadores en vivo del Centro de Formación Laboral La Rioja.",
+  };
+}
 
 // La tómbola es un tablero en vivo: cada request lee el estado real de la BD.
 export const dynamic = "force-dynamic";

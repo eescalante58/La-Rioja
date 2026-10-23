@@ -1,13 +1,18 @@
+import type { Metadata } from "next";
 import { MonitorCheck } from "lucide-react";
 import { EventMasthead } from "@/components/layout/EventMasthead";
 import TombolaMonitor from "@/components/tombola/TombolaMonitor";
 import { getPublicWheels } from "@/app/admin/bingo/wheel-actions";
+import { getPageTabTitle } from "@/services/cms";
 
-export const metadata = {
-  title: "Monitor de Tómbola",
-  description:
-    "Monitor en vivo de cartones ganadores de la tómbola del Centro de Formación Laboral La Rioja.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("tombola", "Monitor de Tómbola | La Rioja");
+  return {
+    title: { absolute: tabTitle },
+    description:
+      "Monitor en vivo de cartones ganadores de la tómbola del Centro de Formación Laboral La Rioja.",
+  };
+}
 
 // El monitor es un tablero en vivo: cada request lee el estado real de la BD.
 export const dynamic = "force-dynamic";

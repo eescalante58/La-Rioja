@@ -1,13 +1,18 @@
+import type { Metadata } from "next";
 import { Dices } from "lucide-react";
 import { EventMasthead } from "@/components/layout/EventMasthead";
 import WheelOfFortune from "@/components/wheel/WheelOfFortune";
 import { getPublicWheels } from "@/app/admin/bingo/wheel-actions";
+import { getPageTabTitle } from "@/services/cms";
 
-export const metadata = {
-  title: "Ruleta de Sorteos",
-  description:
-    "Ruleta de sorteos en vivo del Centro de Formación Laboral La Rioja.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("ruleta", "Ruleta de Sorteos | La Rioja");
+  return {
+    title: { absolute: tabTitle },
+    description:
+      "Ruleta de sorteos en vivo del Centro de Formación Laboral La Rioja.",
+  };
+}
 
 // F5 siempre consulta la BD: la ruleta es un tablero en vivo y el stock
 // de premios cambia en cada giro. Sin Full Route Cache ni Data Cache.

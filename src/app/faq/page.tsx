@@ -15,27 +15,31 @@ import { MessageSquare, Phone, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { Faq } from "@/types/cms";
+import { getPageTabTitle } from "@/services/cms";
 
-export const metadata: Metadata = {
-  title: "Preguntas Frecuentes",
-  description:
-    "Respuestas a las preguntas más comunes sobre nuestros programas, inscripción, servicios y cómo apoyar nuestra misión en El Salvador.",
-  keywords: [
-    "preguntas frecuentes",
-    "ayuda",
-    "soporte",
-    "discapacidad intelectual",
-    "El Salvador",
-    "La Rioja FAQ",
-  ],
-  alternates: { canonical: "/faq" },
-  openGraph: {
-    title: "Preguntas Frecuentes | La Rioja",
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("faq", "Preguntas Frecuentes | La Rioja");
+  return {
+    title: { absolute: tabTitle },
     description:
       "Respuestas a las preguntas más comunes sobre nuestros programas, inscripción, servicios y cómo apoyar nuestra misión en El Salvador.",
-    url: "/faq",
-  },
-};
+    keywords: [
+      "preguntas frecuentes",
+      "ayuda",
+      "soporte",
+      "discapacidad intelectual",
+      "El Salvador",
+      "La Rioja FAQ",
+    ],
+    alternates: { canonical: "/faq" },
+    openGraph: {
+      title: tabTitle,
+      description:
+        "Respuestas a las preguntas más comunes sobre nuestros programas, inscripción, servicios y cómo apoyar nuestra misión en El Salvador.",
+      url: "/faq",
+    },
+  };
+}
 
 export const revalidate = 60;
 

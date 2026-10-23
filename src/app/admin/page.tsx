@@ -3,10 +3,14 @@ import { Title, Text } from "@tremor/react";
 import { AlertCircle } from "lucide-react";
 import { getDashboardData } from "./actions";
 import RealtimeDashboardWrapper from "@/components/admin/RealtimeDashboardWrapper";
+import { getPageTabTitle } from "@/services/cms";
 
-export const metadata: Metadata = {
-  title: { absolute: "La Rioja - Centro de Formación Laboral" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("admin", "La Rioja - Centro de Formación Laboral");
+  return {
+    title: { absolute: tabTitle },
+  };
+}
 
 /**
  * Admin Dashboard Home page.

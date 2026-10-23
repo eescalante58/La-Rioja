@@ -1,13 +1,18 @@
+import type { Metadata } from "next";
 import { ClipboardList } from "lucide-react";
 import ParticipantRegistrationForm from "@/components/registration/ParticipantRegistrationForm";
 import { getPublicWheels } from "@/app/admin/bingo/wheel-actions";
 import { createAdminClient } from "@/lib/supabase/server";
+import { getPageTabTitle } from "@/services/cms";
 
-export const metadata = {
-  title: "Registro de Cartones",
-  description:
-    "Registra los números de cartón con los que participarás en la tómbola del evento de La Rioja.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const tabTitle = await getPageTabTitle("registro", "Registro de Cartones | La Rioja");
+  return {
+    title: { absolute: tabTitle },
+    description:
+      "Registra los números de cartón con los que participarás en la tómbola del evento de La Rioja.",
+  };
+}
 
 // El registro depende de la ruleta publicada vigente: siempre fresco.
 export const dynamic = "force-dynamic";
