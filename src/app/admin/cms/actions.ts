@@ -97,6 +97,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
   const file = formData.get("file") as File | null;
   const manual_image_url = formData.get("image_url") as string | null;
   const clear_image = formData.get("clear_image") === "true";
+  const expected_updated_at = formData.get("expected_updated_at") as string | null;
 
   const supabase = createAdminClient();
   let image_url: string | null = clear_image
@@ -148,6 +149,25 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
       }
     } catch (cleanupErr) {
       console.error("Error cleaning up old image:", cleanupErr);
+    }
+  }
+
+    // Control de Concurrencia Optimista (verificación HTTP 409 ante doble edición simultánea)
+  if (expected_updated_at) {
+    const { data: currentItem, error: fetchCurrentErr } = await supabase
+      .from("site_content")
+      .select("updated_at")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (fetchCurrentErr) {
+      console.error("Error al comprobar concurrencia:", fetchCurrentErr);
+    } else if (currentItem?.updated_at && currentItem.updated_at !== expected_updated_at) {
+      return {
+        success: false,
+        error:
+          "Conflicto de concurrencia: el contenido fue modificado recientemente por otro usuario o en otra pestaña. Por favor recarga la página para ver la versión más reciente antes de volver a guardar.",
+      };
     }
   }
 

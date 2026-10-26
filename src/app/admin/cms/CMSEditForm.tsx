@@ -101,6 +101,9 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
       submitData.append("old_image_url", item.image_url || "");
       submitData.append("image_url", formData.image_url);
       submitData.append("section_key", item.section_key);
+      if (item.updated_at) {
+        submitData.append("expected_updated_at", item.updated_at);
+      }
 
       if (clearImage) {
         submitData.append("clear_image", "true");
