@@ -49,7 +49,7 @@ export function StagesCards({ colegio, cfl }: Props) {
                       />
                       {meta.edad && (
                         <span
-                          className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-extrabold shadow-xs ${
+                          className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-extrabold shadow-sm ${
                             isColegio
                               ? "bg-larioja-azul text-white dark:bg-blue-600"
                               : "bg-emerald-600 text-white"

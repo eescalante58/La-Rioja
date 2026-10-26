@@ -110,7 +110,7 @@ export function AboutHero({ hero }: AboutHeroProps) {
                 <p className="text-xs font-bold text-white">{cardTitulo}</p>
                 <p className="text-[11px] text-white/80">{cardSubtitulo}</p>
               </div>
-              <span className="rounded-full bg-larioja-amarillo px-2.5 py-1 text-xs font-extrabold text-larioja-azul shadow-xs">
+              <span className="rounded-full bg-larioja-amarillo px-2.5 py-1 text-xs font-extrabold text-larioja-azul shadow-sm">
                 {cardTag}
               </span>
             </div>

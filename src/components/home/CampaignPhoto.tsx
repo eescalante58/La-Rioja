@@ -99,7 +99,7 @@ export function CampaignPhoto({
             />
 
             {/* Indicador de ampliación */}
-            <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-xs transition-colors group-hover/photo:bg-larioja-azul">
+            <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm transition-colors group-hover/photo:bg-larioja-azul">
               <Expand className="h-3 w-3" aria-hidden="true" />
               Ver afiche
             </span>
@@ -126,7 +126,7 @@ export function CampaignPhoto({
 
         {/* Etiqueta de campaña */}
         {tag && (
-          <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-larioja-amarillo px-3 py-0.5 text-[11px] font-extrabold text-larioja-azul shadow-xs">
+          <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-larioja-amarillo px-3 py-0.5 text-[11px] font-extrabold text-larioja-azul shadow-sm">
             {tag}
           </span>
         )}
@@ -140,7 +140,7 @@ export function CampaignPhoto({
               e.stopPropagation();
               setIsLightboxOpen(true);
             }}
-            className="absolute right-2.5 top-2.5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-xs transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100"
+            className="absolute right-2.5 top-2.5 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100"
             aria-label={`Ver imagen completa: ${alt}`}
             title="Ver imagen completa"
           >
@@ -157,7 +157,7 @@ export function CampaignPhoto({
             role="dialog"
             aria-modal="true"
             aria-label={title || alt}
-            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-contain bg-black/85 p-3 sm:p-6 backdrop-blur-xs"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-contain bg-black/85 p-3 sm:p-6 backdrop-blur-sm"
             onClick={closeLightbox}
           >
             <div

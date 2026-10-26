@@ -57,7 +57,7 @@ export function HomeHero({ hero }: Props) {
         {/* Columna de texto */}
         <div className="flex flex-col items-start gap-5 lg:col-span-7">
           {/* Badge antetítulo con contraste óptimo WCAG 2.2 */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-yellow-300 shadow-xs backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-yellow-300 shadow-sm backdrop-blur-md">
             <span className="h-2 w-2 animate-pulse rounded-full bg-yellow-400" aria-hidden="true" />
             {antetitulo}
           </div>
@@ -140,7 +140,7 @@ export function HomeHero({ hero }: Props) {
               <p className="text-xs font-bold text-white">{cardTitulo}</p>
               <p className="text-[11px] text-white/80">{cardSubtitulo}</p>
             </div>
-            <span className="rounded-full bg-larioja-amarillo px-2.5 py-1 text-xs font-extrabold text-larioja-azul shadow-xs">
+            <span className="rounded-full bg-larioja-amarillo px-2.5 py-1 text-xs font-extrabold text-larioja-azul shadow-sm">
               {cardTag}
             </span>
           </div>

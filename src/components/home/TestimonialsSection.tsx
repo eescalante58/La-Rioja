@@ -24,7 +24,7 @@ function TestimonialCard({ testimonial }: CardProps) {
   const photoUrl = rawImg || rawMetaPhoto || undefined;
 
   return (
-    <div className="flex h-full flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-xs transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+    <div className="flex h-full flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900 sm:p-8">
       <div>
         <svg
           className="mb-4 h-8 w-8 text-larioja-amarillo"

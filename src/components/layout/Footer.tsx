@@ -26,7 +26,7 @@ function OfficialSocialLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/90 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-md ${hoverColor} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-amarillo focus-visible:ring-offset-2 focus-visible:ring-offset-larioja-azul-profundo`}
+      className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-white/15 bg-white/10 text-white/90 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-md ${hoverColor} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-larioja-amarillo focus-visible:ring-offset-2 focus-visible:ring-offset-larioja-azul-profundo`}
     >
       {children}
     </a>

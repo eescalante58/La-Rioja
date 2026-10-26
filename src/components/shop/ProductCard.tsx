@@ -34,7 +34,7 @@ export function ProductCard({ product, priority, onOpen }: ProductCardProps) {
   return (
     <article
       onClick={(e) => onOpen(product, e.currentTarget)}
-      className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 cursor-pointer"
+      className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 cursor-pointer"
     >
       <div>
         {/* Contenedor 1:1 con object-contain limpio sin recorte */}
@@ -59,7 +59,7 @@ export function ProductCard({ product, priority, onOpen }: ProductCardProps) {
           )}
 
           {soldOut && (
-            <span className="absolute left-2 top-2 z-10 rounded-full bg-[#012060] px-2 py-0.5 text-[11px] font-bold text-white shadow-xs">
+            <span className="absolute left-2 top-2 z-10 rounded-full bg-[#012060] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
               Agotado
             </span>
           )}

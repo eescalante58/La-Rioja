@@ -219,7 +219,7 @@ export default function FAQManager({
               </div>
 
               {/* Barra de búsqueda para contenido en pregunta o respuesta */}
-              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-white dark:bg-gray-900 p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-xs">
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-white dark:bg-gray-900 p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <div className="flex-1 max-w-md">
                   <TextInput
                     icon={Search}

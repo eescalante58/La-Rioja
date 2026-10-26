@@ -142,7 +142,7 @@ export function VideoSection({ video }: Props) {
 
             {/* Puntos clave / Valores de los talleres */}
             <div className="mt-6 grid grid-cols-1 gap-3 text-left sm:grid-cols-2">
-              <div className="flex items-start gap-2.5 rounded-2xl border border-slate-200/70 bg-white/80 p-3.5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="flex items-start gap-2.5 rounded-2xl border border-slate-200/70 bg-white/80 p-3.5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-larioja-amarillo/20 text-xs text-larioja-azul dark:text-larioja-amarillo">
                   ✓
                 </span>
@@ -156,7 +156,7 @@ export function VideoSection({ video }: Props) {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2.5 rounded-2xl border border-slate-200/70 bg-white/80 p-3.5 shadow-xs dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="flex items-start gap-2.5 rounded-2xl border border-slate-200/70 bg-white/80 p-3.5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-larioja-amarillo/20 text-xs text-larioja-azul dark:text-larioja-amarillo">
                   ✓
                 </span>
@@ -181,7 +181,7 @@ export function VideoSection({ video }: Props) {
               </Link>
               <Link
                 href="/apoyanos"
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-xs font-semibold text-slate-700 shadow-xs transition-all hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:text-sm"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:text-sm"
               >
                 Apadrina un futuro
               </Link>

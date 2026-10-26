@@ -241,7 +241,7 @@ export function Navbar() {
 
           <Link
             href="/apoyanos"
-            className="hidden h-11 shrink-0 items-center gap-2 rounded-full bg-brand-yellow px-5 text-sm font-bold text-brand-ink shadow-xs transition-all hover:brightness-95 hover:shadow-sm active:scale-95 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:flex"
+            className="hidden h-11 shrink-0 items-center gap-2 rounded-full bg-brand-yellow px-5 text-sm font-bold text-brand-ink shadow-sm transition-all hover:brightness-95 hover:shadow-sm active:scale-95 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:flex"
           >
             <HeartHandshake size={18} aria-hidden="true" />
             Apóyanos

@@ -110,12 +110,12 @@ export function WorkshopPhoto({
         )}
 
         {/* Insignia del taller en la esquina superior izquierda */}
-        <span className="pointer-events-none absolute left-4 top-4 z-10 inline-block rounded-full bg-larioja-amarillo px-3 py-0.5 text-[11px] font-extrabold text-larioja-azul shadow-xs">
+        <span className="pointer-events-none absolute left-4 top-4 z-10 inline-block rounded-full bg-larioja-amarillo px-3 py-0.5 text-[11px] font-extrabold text-larioja-azul shadow-sm">
           {insignia || "Taller Productivo"}
         </span>
 
         {/* Indicador discreto para ampliar foto */}
-        <span className="pointer-events-none absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white opacity-85 backdrop-blur-xs transition-all group-hover/photo:bg-larioja-azul group-hover/photo:opacity-100">
+        <span className="pointer-events-none absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white opacity-85 backdrop-blur-sm transition-all group-hover/photo:bg-larioja-azul group-hover/photo:opacity-100">
           <Expand className="h-3 w-3" aria-hidden="true" />
           Ver foto
         </span>
@@ -128,7 +128,7 @@ export function WorkshopPhoto({
             role="dialog"
             aria-modal="true"
             aria-label={`Taller de ${nombre}`}
-            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-contain bg-black/85 p-3 sm:p-6 backdrop-blur-xs"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-contain bg-black/85 p-3 sm:p-6 backdrop-blur-sm"
             onClick={closeLightbox}
           >
             <div

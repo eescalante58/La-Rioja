@@ -94,7 +94,7 @@ export function CampaignStrip({ rows }: Props) {
                     aria-label={`Ir a la campaña: ${c.title}`}
                   >
                     {c.tag && (
-                      <span className="absolute left-3 top-3 rounded-full bg-larioja-amarillo px-3 py-0.5 text-[11px] font-extrabold text-larioja-azul shadow-xs">
+                      <span className="absolute left-3 top-3 rounded-full bg-larioja-amarillo px-3 py-0.5 text-[11px] font-extrabold text-larioja-azul shadow-sm">
                         {c.tag}
                       </span>
                     )}

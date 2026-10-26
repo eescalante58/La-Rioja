@@ -52,7 +52,7 @@ export function FeaturedProducts({ products }: Props) {
             <Link
               key={p.id}
               href={p.slug ? `/productos?producto=${p.slug}` : "/productos"}
-              className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+              className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
             >
               <div>
                 <div className="relative mb-2.5 aspect-square overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
