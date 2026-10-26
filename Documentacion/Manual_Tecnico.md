@@ -1,9 +1,9 @@
 # Manual Técnico de la Aplicación
 
 **Nombre del Proyecto:** La Rioja — Sitio Institucional + Gestión de Bingo (Bingo La Rioja 2026)
-**Versión del Documento:** 1.1.0
-**Fecha de última actualización:** 10 de octubre de 2026 (v1.1: La Rioja Shop, login rediseñado, menú móvil)
-**Autores / Equipo de Ingeniería:** Equipo de desarrollo La Rioja (Devin/Cognition, Claude Code)
+**Versión del Documento:** 1.2.0
+**Fecha de última actualización:** 26 de octubre de 2026 (v1.2: Módulo de Matrícula 2027, medición Google Ads, atribución UTM y títulos de pestaña en CMS; v1.1: La Rioja Shop, login rediseñado, menú móvil)
+**Autores / Equipo de Ingeniería:** Equipo de desarrollo La Rioja (Devin/Cognition, Claude Code, Gemini Antigravity)
 
 ---
 
@@ -13,7 +13,7 @@
 
 Aplicación web para **La Rioja — Centro de Formación Laboral** que integra tres dominios:
 
-1. **Sitio institucional público** (CMS administrable): home, about, programas, contacto, FAQ, galería del evento.
+1. **Sitio institucional público** (CMS administrable): home, quiénes somos (`/about`), programas (`/programs`), matrícula 2027 (`/matricula` con formulario modal hacia WhatsApp, atribución UTM y conversión Google Ads), donaciones (`/apoyanos`), privacidad (`/privacidad`), FAQ (`/faq`) y galería del evento (`/bingo`).
 2. **Módulo de Bingo** (backoffice + operación en vivo): gestión de eventos, inventario de cartones, ventas y facturación, asignación de cartones a alumnos, mensajes promocionales por WhatsApp, sorteos con ruleta y tómbola (incluye **registro público de cartones** para hasta ~1,200 asistentes), monitor de ganadores y dashboard ejecutivo en tiempo real.
 3. **La Rioja Shop** (`/productos` + `/admin/productos`): catálogos de los talleres con productos y presentaciones, canasta pública que registra pedidos y los envía por WhatsApp, catálogos descargables en PDF y gestión de pedidos.
 
@@ -101,8 +101,8 @@ npm run dev          # http://localhost:3000
 
 # Verificación típica tras cambios
 npx tsc --noEmit     # typecheck
-npm run build        # build de producción (47 rutas)
-npm run test:responsiveness   # Playwright
+npm run build        # build de producción (54 rutas)
+npm run test:responsiveness   # Playwright (responsiveness + matricula.spec.ts)
 ```
 
 Las migraciones SQL viven en `supabase/migrations/*.sql` y se aplican manualmente en el SQL Editor de Supabase o con `supabase db push`. **Nota:** los `ALTER TYPE ... ADD VALUE` deben ejecutarse fuera de transacción.
@@ -117,7 +117,8 @@ La-Rioja/
 ├── loadtest/                   # Scripts de prueba de carga (seed, combined-test)
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx            # Home pública         ├── about, programs, contact, faq
+│   │   ├── page.tsx            # Home pública         ├── about, programs, apoyanos, faq, privacidad
+│   │   ├── matricula/          # Landing pública de admisiones e inscripciones 2027 (CMS + Google Ads)
 │   │   ├── bingo/              # Galería pública del evento
 │   │   ├── productos/          # La Rioja Shop pública (catálogos, canasta, pedidos)
 │   │   ├── registro/           # Registro público de cartones (asistentes)
@@ -127,17 +128,18 @@ La-Rioja/
 │   │   ├── admin/              # Backoffice (ver §7)
 │   │   │   ├── page.tsx        #   Dashboard ejecutivo (Realtime)
 │   │   │   ├── bingo/          #   Gestión Bingo (5 pestañas)
-│   │   │   ├── cms/            #   Gestor CMS + editor por página
+│   │   │   ├── cms/            #   Gestor CMS + editor por página (MatriculaFieldsEditor)
 │   │   │   ├── productos/      #   Gestión Productos (3 pestañas) + actions.ts + manual/
-│   │   │   ├── settings/       #   9 opciones de configuración
+│   │   │   ├── settings/       #   9 opciones de configuración (+ manuales)
 │   │   │   ├── dashboard-core.ts  #   Lógica de datos del dashboard
 │   │   │   └── bingo/*-core.ts    #   Lógica de facturas/WhatsApp compartida
 │   │   └── api/                #   Route Handlers JSON (ver §7.8); api/public/ sin auth
 │   ├── components/
 │   │   ├── admin/              # Dashboard: charts, reportes, drill-downs
 │   │   ├── admin/bingo/        # 20 diálogos/pestañas del módulo bingo
-│   │   ├── admin/cms/, admin/faq/, admin/users/
+│   │   ├── admin/cms/, admin/faq/, admin/users/   # Incluye MatriculaFieldsEditor en admin/cms/
 │   │   ├── admin/products/     # Pestañas del admin de la tienda + CatalogPdfRow
+│   │   ├── matricula/          # Landing Matrícula 2027, modal contacto, cupos, sticky CTA, Google Ads
 │   │   ├── products/           # Tienda pública: catálogo, tarjeta, canasta, checkout
 │   │   ├── auth/               # BrandPanel, LoginForm, GoogleLoginButton, PasswordRequirements
 │   │   ├── registration/       # Formulario público de registro
@@ -147,8 +149,9 @@ La-Rioja/
 │       ├── supabase/           # client.ts (browser) / server.ts (service role)
 │       ├── auth/               # authorization.ts, guards.ts (withRole)
 │       ├── action-client.ts    # callAction/callActionForm → /api/actions
+│       ├── matricula/          # matricula-service.ts, utm.ts, whatsapp.ts
 │       ├── storage/            # catalog-pdf-cleanup.ts (barrido de PDF huérfanos)
-│       └── validation/         # Esquemas zod por dominio
+│       └── validation/         # Esquemas zod por dominio (incluye matricula.ts)
 └── .devin/rules/               # Reglas del repo (JSDoc, no-rerender)
 ```
 
@@ -167,7 +170,7 @@ La-Rioja/
 | `invoice_payment_method_enum` | `efectivo`, `tarjeta credito`, `tarjeta debito`, `transferencia` | `invoices.payment_method` |
 | `invoice_status_enum` | `pagada`, `pendiente`, `anulada`, `Donada` | `invoices.status` |
 | `student_level_enum` | `1.Terapeutico`, `2.Inicial`, `3.Medio`, `4.Prelaboral`, `5.Laboral`, `6.Personal La Rioja` | Nivel del alumno |
-| `site_page_type` | `home`, `about`, `contact`, `global`, `social media`, `whatsapp message`, `services`, `programs`, `Bingo`, `bingo`, `tombola`, `productos`, `apoyanos` | Páginas administrables del CMS (`productos` = La Rioja Shop, `apoyanos` = página de donaciones). **Nota:** existen `Bingo` y `bingo` como valores distintos (enum es case-sensitive) — las consultas deben usar el case exacto del contenido |
+| `site_page_type` | `home`, `about`, `quienes somos`, `contact`, `global`, `social media`, `whatsapp message`, `services`, `programs`, `Bingo`, `bingo`, `tombola`, `productos`, `apoyanos`, `privacidad`, `footer`, `faq`, `matricula` | Páginas administrables del CMS (`productos` = La Rioja Shop, `apoyanos` = página de donaciones, `quienes somos` = Nosotros `/about`, `matricula` = admisiones `/matricula`). **Nota:** existen `Bingo` y `bingo` como valores distintos (enum es case-sensitive) — las consultas deben usar el case exacto del contenido |
 
 **CHECK constraints tipo enum (no son TYPE):**
 
@@ -489,8 +492,9 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 
 **Notas adicionales:**
 
-- **Constraints:** UNIQUE (`page`, `section_key`, `content_order`); lectura pública solo si `is_active`.
+- **Constraints:** UNIQUE (`page`, `section_key`, `content_order`) y `idx_site_content_matricula_unique` UNIQUE (`page`, `section_key`) `WHERE page = 'matricula'`; lectura pública solo si `is_active`.
 - **Relaciones:** El trigger `tr_log_site_content_activity` audita cambios en `user_activity_log`.
+- **Sección `pestaña`:** Cada página pública incluye una fila con `section_key = 'pestaña'` cuya `description` parametriza el `<title>` de la pestaña del navegador; en `page = 'matricula'`, además, `pestaña.is_active` actúa como interruptor maestro de publicación de `/matricula`.
 
 ##### Tabla: `public.faq_sections`
 
@@ -523,7 +527,7 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 
 ##### Tabla: `public.contact_submissions`
 
-**Descripción:** Mensajes recibidos desde el formulario de contacto del sitio público.
+**Descripción:** Mensajes recibidos desde el formulario de contacto del sitio público y prospectos del formulario modal de `/matricula`.
 
 | Columna | Tipo de Datos | Comentario |
 | :------ | :------------ | :--------- |
@@ -534,7 +538,10 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 | `phone` | `text` | Teléfono del remitente. |
 | `type` | `text` | Tipo de solicitud. |
 | `message` | `text` | Cuerpo del mensaje. |
-| `target_email` | `text` | Correo destino al que se reenvió la solicitud. |
+| `target_email` | `text` | Correo destino al que se reenvió la solicitud (nullable en flujos hacia WhatsApp como `/matricula`). |
+| `attribution` | `jsonb` | Metadatos de atribución UTM (`utm_source`, `utm_medium`, `utm_campaign`, `utm_id`, `utm_content`, `utm_term`, `landing_path`, `referrer`, `captured_at`). CHECK `attribution IS NULL OR jsonb_typeof(attribution) = 'object'`. |
+| `idempotency_key` | `uuid` | Clave de idempotencia generada en cliente para evitar duplicados por reintentos (UNIQUE parcial `WHERE idempotency_key IS NOT NULL`). |
+| `payload_hash` | `text` | Hash SHA-256 del payload normalizado para detectar colisiones de `idempotency_key` con datos distintos (HTTP 409). |
 
 ##### Tabla: `public.event_gallery`
 
@@ -890,6 +897,8 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `idx_students_cards_student_id` / `idx_students_cards_card_number` | Joins por alumno y por cartón |
 | `idx_registration_attempts_ip_time` | (client_ip, attempted_at DESC) — ventana anti-ráfaga |
 | `uq_site_content_page_section_order` | UNIQUE (page, section_key, content_order) |
+| `idx_site_content_matricula_unique` | UNIQUE (page, section_key) WHERE page = 'matricula' — unicidad de las 19 claves de Matrícula |
+| `idx_contact_submissions_idempotency_key` | UNIQUE (idempotency_key) WHERE idempotency_key IS NOT NULL — idempotencia de prospectos de `/matricula` |
 | `user_companies` | PK (user_id, company_id) + idx (company_id, user_id) + (user_id, company_id, role_id) |
 | `product_lines_catalog_order_idx` / `products_line_order_idx` / `product_variants_product_order_idx` | Orden de líneas, productos y variantes en la tienda |
 | `products_company_active_order_idx` | (company_id, is_active, content_order) |
@@ -1048,12 +1057,14 @@ Menú lateral del admin (`src/app/admin/AdminSidebar.tsx`, mismo arreglo `navLin
 
 | Ruta | Función | Componentes / datos |
 | :--- | :------ | :------------------ |
-| (todas) | Navegación | `Navbar`: enlaces en escritorio (xl+); en móvil/tablet, `MobileMenu` — panel lateral en tres zonas (marca, navegación con iconos, acciones fijas: Apóyanos, WhatsApp, Contacto, redes y Acceso personal), trampa de foco, Escape, `inert` al cerrar, todo el panel con scroll en pantallas bajas. Insignia «Juega» en Bingo según `GET /api/public/bingo-status`. Estilos `.menu-*` en `globals.css` |
+| (todas) | Navegación y títulos | `Navbar`: enlaces en escritorio (`lg+`); en móvil/tablet, `MobileMenu` — panel lateral en tres zonas (marca, navegación con iconos, acciones fijas: Apóyanos, WhatsApp, Contacto, redes y Acceso personal), trampa de foco, Escape, `inert` al cerrar, todo el panel con scroll en pantallas bajas. Insignia «Juega» en Bingo según `GET /api/public/bingo-status`. Enlace dinámico «Matrícula» en `Navbar`, `MobileMenu`, `Footer` y `/sitemap.xml` según `GET /api/public/matricula-status` / `isMatriculaActive()`. Títulos `<title>` parametrizados desde `site_content` con `section_key = 'pestaña'`. Estilos `.menu-*` en `globals.css` |
 | `/` | Home institucional | `ParallaxHero`, `ScrollReveal`, secciones CMS (`site_content` page=home), `Navbar`, `Footer`, `FloatingContact`, `WhatsAppFab` |
-| `/about` | Nosotros | Contenido del CMS (página `about`, claves `cl_*`; las `about_*` quedan inactivas). Componentes en `src/components/about/`; anclas `#inicio`, `#historia`, `#proposito`, `#modelo`, `#talleres`, `#equipo`, `#sostenibilidad` con barra fija `SectionNav`. Clientes: `SectionNav`, `CareModel` (pestañas en celular), `StatCounters` |
+| `/about` | Quiénes Somos (Nosotros) | Contenido del CMS (página `quienes somos` / `about`, claves `cl_*`; las `about_*` quedan inactivas). Componentes en `src/components/about/`; anclas `#inicio`, `#historia`, `#proposito`, `#modelo`, `#talleres`, `#equipo`, `#sostenibilidad` con barra fija `SectionNav`. Clientes: `SectionNav`, `CareModel` (pestañas en celular), `StatCounters` |
 | `/programs` | Programas | Contenido del CMS (página `programs`, claves `cl_*`; las anteriores quedan inactivas). Componentes en `src/components/programs/`; anclas `#inicio`, `#programas` (`#colegio`, `#cfl`), `#niveles`, `#talleres`, `#formacion-integral`, `#admision` con `SectionNav`. Clientes: `AgeSelector` (pestañas en celular, sincroniza `#colegio`/`#cfl`), `AdaptiveLevels`, `WorkshopGrid` (filtros) |
+| `/matricula` | **Matrícula 2027** (admisiones e inscripciones) | Server Component con ISR (`revalidate = 60`): `isMatriculaActive()` devuelve `notFound()` si `pestaña.is_active = false`. `MatriculaPageClient`, `MatriculaIntro`, `MatriculaHero`, `MatriculaCuposBadge`, `MatriculaProgramas`, `MatriculaProceso`, `MatriculaCierre`, `MatriculaStickyMobileCTA`, `MatriculaModalForm` (guardado idempotente en `POST /api/public/matricula/contact`, atribución UTM de sesión desde `src/lib/matricula/utm.ts` y continuidad hacia `wa.me`), `MatriculaGoogleAds` (etiqueta declarativa `gtag.js` `AW-*` restringida a `/matricula` y conversión `Website lead` disparada únicamente al hacer clic en «Abrir WhatsApp»). `FloatingContact` se oculta en `/matricula` para evitar duplicar el CTA |
 | `/apoyanos` | Apóyanos (donaciones) | Contenido del CMS (página `apoyanos`); `/contact` redirige aquí (301 en `next.config.mjs`). Clics medidos con Vercel Analytics (`TrackedLink`) |
-| `/faq` | Preguntas frecuentes | `faqs` + `faq_sections`, accordion |
+| `/privacidad` | Política de privacidad | Contenido del CMS (página `privacidad`, claves `privacidad_*`) |
+| `/faq` | Preguntas frecuentes | `faqs` + `faq_sections`, accordion, teléfono parametrizado desde CMS y botón que abre el modal de contacto |
 | `/bingo` | **Galería pública del evento** | `GalleryGrid`, `GalleryHeader`, `EventInfoBanner`, `PromoVideoCard`, `ShareButton`, `SlideshowButton`; datos de `event_gallery` + bucket `event_gallery_images` |
 | `/productos` | **La Rioja Shop** | Server Component con ISR (`revalidate = 60`): `getPublicShop()` + CMS página `productos` + WhatsApp `social media / whatsapp tienda`. `ShopHero`, `ShopCatalog` (catálogos → líneas → `ProductCard`, descarga de PDF), `GiftsBanner`, `HowToBuy`, `CartProvider` (canasta en `localStorage` `larioja-shop-cart-v1`), `CartDrawer` + `CheckoutForm` → `rpc create_shop_order` → envío por WhatsApp |
 | `/login` | Acceso | Server Component (`searchParams.error`) + `BrandPanel` (panel de marca ≥1024 px / encabezado compacto), `LoginForm` (correo/contraseña, `PasswordRequirements`, mensaje genérico ante credenciales incorrectas, avisos `no_autorizado`/`oauth`), `GoogleLoginButton`. Recuperación: `/auth/forgot-password`, `/auth/reset-password` |
@@ -1095,11 +1106,14 @@ Sub-página `/admin/bingo/manual`: manual de usuario embebido.
 
 ### 7.5 `/admin/cms` — Gestión de contenido
 
-`CMSManagerClient`, `CMSTable`, `CMSFilters`, `CMSCreateDialog`, `CMSEditForm` (`/admin/cms/[id]`), `CMSViewDialog`, `CMSDeleteDialog`, `GalleryManagement`, `FAQManager`/`FAQTable`/`FAQSectionTable`.
+`CMSManagerClient`, `CMSTable`, `CMSFilters`, `CMSCreateDialog`, `CMSEditForm` (`/admin/cms/[id]`), `MatriculaFieldsEditor`, `CMSViewDialog`, `CMSDeleteDialog`, `GalleryManagement`, `FAQManager`/`FAQTable`/`FAQSectionTable`.
 
-- CRUD de secciones `site_content` por página (home, about, contact, global, social media, whatsapp message, tombola, productos, apoyanos), con orden de presentación, activación e imágenes a `cms_images`. La página `productos` usa las claves `productos_hero`, `productos_hero_foto_N`, `productos_mensaje`, `productos_regalos`, `productos_como_comprar` y `productos_paso_N`. La página `apoyanos` usa las claves `apoyanos_*` documentadas en `supabase/migrations/20261021000001_apoyanos_cms_secciones.sql`. La página `about` (Nosotros) usa las claves `cl_*` documentadas en `supabase/migrations/20261022000000_nosotros_cms_secciones.sql`. La página `programs` usa las claves `cl_*` documentadas en `supabase/migrations/20261023000000_programas_cms_secciones.sql`.
+- CRUD de secciones `site_content` por página (`home`, `quienes somos`, `bingo`, `tombola`, `programs`, `productos`, `services`, `apoyanos`, `privacidad`, `matricula`, `footer`, `contact`, `global`, `social media`, `whatsapp message`), con filtros por página, estado (`active`/`inactive`) y búsqueda textual, orden de presentación, activación e imágenes a `cms_images`.
+  - **Títulos de pestaña (`section_key = 'pestaña'`):** parametrizan el `<title>` de cada página pública. En `matricula`, `pestaña.is_active` actúa como interruptor maestro de publicación de `/matricula` y de los enlaces en navegación/sitemap.
+  - **Página `matricula`:** 19 claves sembradas en `supabase/migrations/20261102000001_matricula_cms_seed.sql` (`pestaña`, `matricula_intro`, `matricula_hero`, `matricula_cupos`, `matricula_programas`, `matricula_programa_colegio`, `matricula_programa_cfl`, `matricula_proceso`, `matricula_paso_01..03`, `matricula_cierre`, `matricula_cta_movil`, `matricula_formulario`, `matricula_config`, `matricula_whatsapp`, `matricula_seo`, `matricula_ads`, `matricula_utm`). `CMSEditForm` integra `MatriculaFieldsEditor` para editar visualmente cupos, WhatsApp, Google Ads (`AW-18533492300` / conversión `Website lead`), UTMs (con generador de sufijo copiable) y año del ciclo sin manipular JSON manualmente.
+  - **Otras páginas:** `productos` usa `productos_*`; `apoyanos` usa `apoyanos_*` (`20261021000001_apoyanos_cms_secciones.sql`); `quienes somos` (`/about`) usa `cl_*` (`20261022000000_nosotros_cms_secciones.sql`); `programs` usa `cl_*` (`20261023000000_programas_cms_secciones.sql`); `privacidad` usa `privacidad_*` (`20261029000001_privacidad_cms_secciones.sql`); `footer` usa `derechos reservados` (`20261031000001_footer_cms_secciones.sql`).
 - Gestión de la galería del evento (`event_gallery` + bucket `event_gallery_images`).
-- CRUD de FAQs y secciones de FAQ.
+- CRUD de FAQs y secciones de FAQ. Sub-página `/admin/cms/manual`: manual de usuario embebido (`Documentacion/Manual_Usuario_CMS.md`).
 
 ### 7.6 `/admin/productos` — Gestión Productos (La Rioja Shop, 3 pestañas)
 
@@ -1124,10 +1138,10 @@ Validación: `src/lib/validation/products.ts` (catálogo, línea, producto, vari
 | Seguridad | `/admin/settings/security` | Auditoría RLS: `get_tables_rls_status`, `get_table_policies`, `get_views_status`, `check_security_definer_views` |
 | Auditoría | `/admin/settings/logs` | Visor de `user_activity_log` (rol ≥8) |
 | Límites de Registro | `/admin/settings/registration-limits` | Edita la fila única `registration_limits` (modo normal/evento) |
-| Mensajes de Contacto | `/admin/settings/contact` | Bandeja de `contact_submissions` |
+| Mensajes de Contacto | `/admin/settings/contact` | Bandeja de `contact_submissions` (`ContactSubmissionsClient`): KPIs de prospectos, filtro por origen (Todos, Matrícula / Campaña, Contacto General), visualización de atribución UTM (`utm_source`, `utm_medium`, `utm_campaign`), modal de detalle y exportación CSV |
 | Datos de Prueba | `/admin/settings/test-data` | Generación/limpieza de datos de respaldo |
 
-Otras páginas admin: `/admin/profile` (perfil propio + avatar `user_avatar`) y `/admin/manual` (manual de usuario).
+Otras páginas admin: `/admin/profile` (perfil propio + avatar `user_avatar`), `/admin/settings/manual-tecnico` (`Documentacion/Manual_Tecnico.md`), `/admin/settings/manual-usuario` (`Documentacion/Manual_Usuario_Configuracion.md`) y `/admin/manual` (`Documentacion/Manual_Usuario_Dashboard.md`).
 
 ### 7.8 API — Route Handlers JSON (`src/app/api/`)
 
@@ -1135,6 +1149,7 @@ Otras páginas admin: `/admin/profile` (perfil propio + avatar `user_avatar`) y 
 | :------- | :----- | :------ |
 | `/api/actions` | POST | Dispatcher whitelist `REGISTRY` para Server Actions de baja frecuencia (`callAction`/`callActionForm`); incluye `productos.*` (15 acciones de catálogo/productos/PDF) y `pedidos.listOrders` / `pedidos.updateOrderStatus` |
 | `/api/auth/session-config` | POST | Fija empresa activa en la sesión |
+| `/api/auth/auto-select-company` | POST | Asigna automáticamente la empresa en sesión cuando el usuario solo tiene acceso a una empresa |
 | `/api/bingo/cards` | GET/POST/PUT/DELETE | Inventario: listado paginado paralelo (SELECT explícito + embed `students_cards→students`), alta, edición, reasignaciones |
 | `/api/bingo/cards/check-range` | GET | Verificación de rangos de cartones disponibles |
 | `/api/bingo/cards/report` | GET | Datos del informe de cartones por estado |
@@ -1152,6 +1167,8 @@ Otras páginas admin: `/admin/profile` (perfil propio + avatar `user_avatar`) y 
 | `/api/tombola/winners` | GET/PUT | Bandeja de ganadores y captura de datos del ganador |
 | `/api/wheel/spin` | POST | Registro de giro de ruleta (`wheel_spins`) con límite de premios |
 | `/api/public/bingo-status` | GET | **Público.** `{ active }` = existe un evento `is_active` con `event_date` ≥ hoy (El Salvador). Consulta `events` con service role (no legible por `anon`) y solo expone el booleano; caché CDN 5 min. Lo usa el menú móvil para la insignia «Juega» |
+| `/api/public/matricula-status` | GET | **Público.** `{ success, active, ads_enabled, conversion_enabled }` según `pestaña.is_active` y `matricula_ads` en `site_content`. Cabecera `Cache-Control: public, max-age=60, must-revalidate`. Lo consume `Navbar` para mostrar/ocultar el enlace «Matrícula» |
+| `/api/public/matricula/contact` | POST | **Público.** Registra prospectos del formulario modal de `/matricula` en `contact_submissions` (rate limit por IP, validación Zod `src/lib/validation/matricula.ts`, idempotencia por `idempotency_key` + `payload_hash` con HTTP 409 ante colisión de payload, atribución UTM filtrada) y devuelve `{ success, submission_id, idempotent_replay, whatsapp_url }` |
 
 Todos los handlers de `/api/bingo/*` y `/api/dashboard` ejecutan `checkAdmin(companyId)` (rol ≥4 + membresía de empresa) antes de tocar datos.
 

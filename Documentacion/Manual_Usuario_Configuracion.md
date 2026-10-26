@@ -135,7 +135,13 @@ Controla la protección anti-abuso del formulario público `/registro` (donde lo
 
 ## 9. Mensajes de Contacto
 
-Bandeja de las solicitudes enviadas desde el formulario de contacto del sitio público (nombre, correo, teléfono, tipo de solicitud y mensaje).
+Bandeja de las solicitudes enviadas desde el formulario de contacto del sitio público y desde el formulario de admisiones de `/matricula`:
+
+- **Tarjetas de resumen (KPIs)**: total de mensajes recibidos, prospectos de Matrícula / Campaña y consultas de Contacto General.
+- **Filtro por origen**: permite ver **Todos**, solo **Matrícula / Campaña** (solicitudes con atribución UTM o provenientes de `/matricula`) o solo **Contacto General**.
+- **Atribución UTM**: muestra la fuente, medio y campaña (`utm_source`, `utm_medium`, `utm_campaign`) cuando el prospecto ingresó desde un anuncio de Google Ads u otra campaña.
+- **Ver detalle y contactar**: abre el mensaje completo y ofrece acceso rápido a correo o WhatsApp (`wa.me`).
+- **Exportar CSV**: descarga las solicitudes filtradas con sus columnas de contacto y atribución.
 
 ---
 

@@ -1,6 +1,6 @@
 # Manual de Usuario — Gestión de Contenido (CMS)
 
-Manual de uso de la sección **Gestión CMS** del panel de administración (`/admin/cms`). Desde aquí se administra el contenido dinámico del sitio público: textos e imágenes de la landing page, las preguntas frecuentes y la galería de fotos de los eventos.
+Manual de uso de la sección **Gestión CMS** del panel de administración (`/admin/cms`). Desde aquí se administra el contenido dinámico del sitio público: textos e imágenes de la landing page, las páginas institucionales, la página de matrícula y campañas, las preguntas frecuentes y la galería de fotos de los eventos.
 
 > **Acceso:** menú lateral → **Gestión CMS**. La pantalla se divide en tres pestañas: **Contenido General**, **Preguntas Frecuentes (FAQ)** y **Galería de Fotos**.
 
@@ -13,18 +13,31 @@ Administra las secciones de texto e imagen que componen las páginas públicas d
 ### Filtros y búsqueda
 
 - **Filtro por página**: muestra solo las secciones de la página elegida. Las páginas disponibles son:
-  - `Home` — página principal
-  - `About` — quiénes somos
-  - `Bingo` — página del bingo
-  - `Tombola` — página de tómbola
-  - `Programs` — programas
+  - `Home` — página principal (`/`)
+  - `Quienes Somos` — quiénes somos (`/about`)
+  - `Bingo` — galería pública del bingo (`/bingo`)
+  - `Tombola` — página de tómbola (`/tombola`)
+  - `Programs` — programas y talleres (`/programs`)
+  - `Productos (La Rioja Shop)` — tienda solidaria (`/productos`)
   - `Services (Cards)` — servicios
+  - `Apóyanos` — donaciones y apadrinamiento (`/apoyanos`)
+  - `Privacidad` — política de privacidad (`/privacidad`)
+  - `Matrícula` — admisiones e inscripciones (`/matricula`)
+  - `Footer` — pie de página institucional (`derechos reservados`)
   - `Contact` — contacto
   - `Global` — contenido compartido por todo el sitio
-  - `Social Media` — redes sociales
-  - `WhatsApp Message` — mensajes de WhatsApp
+  - `Social Media` — enlaces a redes sociales, correo y teléfonos oficiales
+  - `WhatsApp Message` — plantillas de mensajes de WhatsApp
+- **Filtro por estado**: permite alternar entre **Todos los Estados**, **Solo Activos** o **Solo Inactivos** (útil para localizar secciones ocultas o el interruptor de publicación de una página).
 - **Búsqueda**: filtra por clave de sección, título o descripción al escribir.
-- El contador bajo los filtros indica cuántas secciones se muestran del total.
+- El contador bajo los filtros indica cuántas secciones se muestran del total e incluye el botón **Limpiar Filtros**.
+
+### Títulos de pestaña del navegador (`section_key = pestaña`)
+
+Cada página pública cuenta con una sección especial cuya clave es **`pestaña`**:
+
+- Su campo **Descripción** define el título que muestra la pestaña del navegador (`<title>`) cuando un visitante abre esa página (por ejemplo, `Matrícula 2027 | La Rioja`).
+- En la página **Matrícula**, además, el interruptor **Activo** de la fila `pestaña` funciona como **interruptor maestro de publicación** de toda la página `/matricula` (ver sección *Página «Matrícula»* más abajo).
 
 ### Tabla de secciones
 
@@ -46,7 +59,7 @@ El formulario permite configurar:
 | **Imagen o video** | Se sube un archivo (imagen o video, ej: `.mp4`) o se pega una **URL Directa** externa; se muestra vista previa |
 | **Descripción** | Texto o cuerpo principal de la sección |
 | **Orden** | Posición de la sección dentro de la página |
-| **Metadata** | Datos extra en formato JSON (solo casos especiales; se valida antes de guardar) |
+| **Metadata** | Datos extra en formato JSON (solo casos especiales; se valida antes de guardar). En la página **Matrícula**, las secciones clave muestran un **panel visual asistido** para no tener que editar JSON manualmente |
 | **Activo** | Interruptor que publica u oculta la sección en el sitio |
 
 > **Importante:** una sección solo es visible al público si está **Activa**. Desactivarla la oculta sin borrarla.
@@ -83,9 +96,9 @@ En **Contenido General**, filtra por la página **Apóyanos**. Reglas:
 
 El correo, el Instagram y el WhatsApp de la página salen de la página **Social Media** (`email`, `instagram`, `whatsapp`).
 
-### Página «Nosotros» (`/about`)
+### Página «Nosotros» / «Quienes Somos» (`/about`)
 
-En **Contenido General**, filtra por la página **Nosotros**. Todas las secciones del rediseño llevan el prefijo distintivo **`cl_`**. Las secciones anteriores `about_*` quedaron **inactivas** como respaldo: no las actives, porque la página ya no las muestra.
+En **Contenido General**, filtra por la página **Quienes Somos**. Todas las secciones del rediseño llevan el prefijo distintivo **`cl_`**. Las secciones anteriores `about_*` quedaron **inactivas** como respaldo: no las actives, porque la página ya no las muestra.
 
 Las reglas son las mismas que en Apóyanos: un dato vacío no se publica, desactivar una sección la oculta, la imagen subida tiene prioridad sobre `metadata.foto`, los párrafos se separan con una línea en blanco y `**texto**` sale en negrita. Cada elemento de una lista (hito, valor, taller, cifra, rol…) es una sección propia: edita su título y descripción, ordénala con **Orden** y desactívala para ocultarla. Para agregar uno, crea una sección nueva con el siguiente número (por ejemplo `cl_taller_8`).
 
@@ -137,6 +150,51 @@ Mismas reglas que en Nosotros: un dato vacío no se publica, desactivar una secc
 | `cl_admision` | «Cómo inscribir a tu familiar» (#admision) | `titulo_datos`, `documentos`, `periodo`, `duracion`, `horario` (**pendientes**: vacíos = el bloque de datos útiles no se muestra), `boton`, `mensaje_whatsapp`, `enlace_faq_texto`, `enlace_faq` |
 | `cl_paso_1..4` | Pasos de admisión | — |
 | `cl_cierre` | Banner final «Ven a conocernos» | `resaltado`, `boton_1`, `mensaje_whatsapp`, `boton_2` («Cómo llegar»), `contacto`, `foto` |
+
+### Página «Matrícula» (`/matricula`)
+
+En **Contenido General**, filtra por la página **Matrícula**. Esta página administra la landing de admisiones e inscripciones, el formulario de captura de prospectos hacia WhatsApp, la atribución de campañas UTM y la medición declarativa de conversiones de Google Ads.
+
+#### Interruptor maestro de publicación (`pestaña`)
+
+- La sección con clave **`pestaña`** controla la visibilidad global de `/matricula`:
+  - **Activa (`true`)**: la página `/matricula` está publicada y el enlace **«Matrícula»** aparece automáticamente en la barra de navegación superior (`Navbar`), en el menú móvil (`MobileMenu`), en el pie de página (`Footer`) y en `/sitemap.xml`.
+  - **Inactiva (`false`)**: `/matricula` devuelve `404 Not Found` a cualquier visitante directo y el enlace se oculta en todos los menús del sitio (puede tardar hasta 60 segundos en actualizarse por caché).
+
+#### Paneles de edición asistida (sin editar JSON manual)
+
+Al hacer clic en **Editar** sobre las secciones clave de `Matrícula`, el formulario presenta un **panel visual específico** encima del campo JSON:
+
+1. **`pestaña`**: interruptor maestro con indicador de estado («Página Publicada» / «Página Oculta (404)»).
+2. **`matricula_cupos`**: campo numérico para los cupos disponibles (`count`), interruptor para mostrar/ocultar la insignia en el Hero, etiqueta cuando los cupos llegan a `0` (`zero_label`) y texto de actualización (`updated_label`).
+3. **`matricula_whatsapp`**: teléfono destino en formato `E.164` (`+50377310792`), teléfono visible en pantalla (`7731-0792`) y plantilla del mensaje con tokens dinámicos (`{year}`, `{name}`, `{email}`, `{phone}`, `{type}`, `{message}`).
+4. **`matricula_ads`**: interruptor de integración activa de Google Ads, `Tag ID` (ej. `AW-18533492300`), `Conversion Label`, interruptor de disparo de conversión (`Website lead` al abrir WhatsApp tras guardar el formulario) y modo «Solo en Producción».
+5. **`matricula_utm`**: configuración de `utm_source`, `utm_medium`, `utm_campaign`, tiempo de vida en sesión (`ttl_minutes`) y **generador de sufijo de URL con botón «Copiar Sufijo»** listo para pegar en Google Ads.
+6. **`matricula_config`**: selector del año del ciclo de admisión (`admission_year`, p. ej. `2027`), que reemplaza automáticamente el token `{year}` en títulos y mensajes.
+
+#### Tabla de secciones de «Matrícula»
+
+| Sección (`section_key`) | Qué controla | Datos principales en «Metadata» |
+|---|---|---|
+| `pestaña` | **Interruptor maestro** de `/matricula` y título de la pestaña del navegador (`description`) | `{}` |
+| `matricula_intro` | Franja superior de bienvenida y botón rápido | `cta_label`, `cta_aria_label`, `show_cta` |
+| `matricula_hero` | Hero principal (soporta `{year}` en el título e imagen destacada) | `eyebrow`, `image_alt`, `image_position`, `cta_label`, `secondary_label`, `secondary_anchor` |
+| `matricula_cupos` | Insignia de cupos disponibles (soporta `{count}` en el título) | `count`, `show_count`, `zero_label`, `updated_label`, `last_verified_at` |
+| `matricula_programas` | Encabezado del bloque de programas (Colegio y CFL) | `layout_variant`, `show_intro` |
+| `matricula_programa_colegio` | Tarjeta informativa de Colegio (12 a 20 años) | `icon`, `image_alt`, `link_label`, `link_href`, `show_link` |
+| `matricula_programa_cfl` | Tarjeta informativa del CFL (20 a 55 años) | `icon`, `image_alt`, `link_label`, `link_href`, `show_link` |
+| `matricula_proceso` | Encabezado de los pasos de admisión (`#proceso`) | `layout_variant`, `anchor` |
+| `matricula_paso_01..03` | Pasos 1, 2 y 3 del proceso («Escríbenos», «Consulta requisitos», «Coordina una visita») | `icon`, `step_number` |
+| `matricula_cierre` | Bloque final de llamado a la acción | `image_alt`, `cta_label`, `cta_aria_label`, `show_phone` |
+| `matricula_cta_movil` | Barra inferior fija en móviles («Consultar por WhatsApp») | `aria_label`, `sticky_enabled`, `visibility_mode` |
+| `matricula_formulario` | Textos, etiquetas, opciones de consulta y mensajes del modal de contacto | `field_labels`, `field_placeholders`, `help_texts`, `inquiry_options`, `default_inquiry`, `submit_label`, `success_title`, `whatsapp_link_label` |
+| `matricula_config` | Año del ciclo escolar y parámetros generales | `admission_year` (`2027`), `route`, `contact_fallback_text` |
+| `matricula_whatsapp` | Teléfono destino y plantilla del mensaje `wa.me` | `phone_e164`, `display_phone`, `message_template`, `enabled` |
+| `matricula_seo` | Metadatos SEO y Open Graph de `/matricula` | `og_image_alt`, `canonical_path`, `robots_index`, `robots_follow` |
+| `matricula_ads` | Medición de Google Ads y evento de conversión | `enabled`, `tag_id`, `conversion_enabled`, `conversion_label`, `production_only` |
+| `matricula_utm` | Reglas de captura UTM y valores por defecto de campaña | `enabled`, `campaign_defaults`, `allowed_keys`, `ttl_minutes`, `persist_to_submission` |
+
+> **Nota sobre prospectos recibidos:** todas las solicitudes enviadas desde el formulario de `/matricula` se guardan en **Configuración → Mensajes de Contacto** (`/admin/settings/contact`) con su atribución de campaña (`utm_source`, `utm_medium`, `utm_campaign`) y pueden filtrarse o exportarse a CSV.
 
 ---
 
