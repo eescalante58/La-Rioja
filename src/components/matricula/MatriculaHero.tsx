@@ -56,7 +56,7 @@ export function MatriculaHero({
           <div className="flex flex-col items-start gap-5 lg:col-span-7">
             <div className="flex flex-wrap items-center gap-3">
               {eyebrow && (
-                <span className="rounded-full bg-white/10 px-3.5 py-1 font-montserrat text-xs font-bold uppercase tracking-wider text-larioja-amarillo backdrop-blur-xs border border-white/10">
+                <span className="rounded-full bg-white/10 px-3.5 py-1 font-montserrat text-xs font-bold uppercase tracking-wider text-larioja-amarillo backdrop-blur-sm border border-white/10">
                   {eyebrow}
                 </span>
               )}
@@ -100,9 +100,9 @@ export function MatriculaHero({
           </div>
 
           {/* Columna de Imagen */}
-          <div className="lg:col-span-5">
+          <div className={`lg:col-span-5 ${meta.image_position === "left" ? "lg:order-first" : ""}`}>
             <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-              <div className="relative aspect-4/3 overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-2xl backdrop-blur-xs">
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-2xl backdrop-blur-sm">
                 <Image
                   src={imageUrl}
                   alt={imageAlt}

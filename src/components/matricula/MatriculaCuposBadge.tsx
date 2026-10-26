@@ -22,7 +22,7 @@ export function MatriculaCuposBadge({ cuposConfig, titleTemplate }: MatriculaCup
     : cuposConfig.zero_label || "Cupos agotados";
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-brand-yellow/40 bg-brand-yellow/15 px-3.5 py-1.5 backdrop-blur-xs font-montserrat">
+    <div className="inline-flex items-center gap-2 rounded-full border border-brand-yellow/40 bg-brand-yellow/15 px-3.5 py-1.5 backdrop-blur-sm font-montserrat">
       <span className="flex h-2 w-2 rounded-full bg-brand-yellow animate-pulse" aria-hidden="true" />
       <span className="text-xs font-bold uppercase tracking-wider text-white">
         {label}

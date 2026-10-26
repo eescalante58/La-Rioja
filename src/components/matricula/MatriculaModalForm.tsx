@@ -212,7 +212,7 @@ export function MatriculaModalForm({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -227,7 +227,7 @@ export function MatriculaModalForm({
         <div className="relative border-b border-gray-100 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/50 px-6 py-5 sm:px-8">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-white p-1.5 shadow-xs border border-gray-100">
+              <div className="rounded-lg bg-white p-1.5 shadow-sm border border-gray-100">
                 <Image
                   src="/logo.svg"
                   alt="La Rioja"

@@ -42,7 +42,7 @@ export function MatriculaIntro({ introSection, onOpenModal }: MatriculaIntroProp
             type="button"
             onClick={onOpenModal}
             aria-label={ctaAriaLabel}
-            className="inline-flex min-h-[38px] items-center justify-center rounded-full bg-larioja-azul px-4 py-1.5 font-montserrat text-xs font-bold text-white shadow-xs transition-all hover:bg-larioja-azul-profundo active:scale-95"
+            className="inline-flex min-h-[38px] items-center justify-center rounded-full bg-larioja-azul px-4 py-1.5 font-montserrat text-xs font-bold text-white shadow-sm transition-all hover:bg-larioja-azul-profundo active:scale-95"
           >
             {ctaLabel}
           </button>

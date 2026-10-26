@@ -1,5 +1,6 @@
 import React from "react";
-import { Phone, MessageSquare } from "lucide-react";
+import Image from "next/image";
+import { Phone } from "lucide-react";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import type { SiteContent } from "@/types/cms";
 import type { MatriculaWhatsAppConfig } from "@/lib/validation/matricula";
@@ -29,6 +30,7 @@ export function MatriculaCierre({
   const ctaAriaLabel = (meta.cta_aria_label as string) || "Consultar por WhatsApp sobre matrícula";
   const showPhone = meta.show_phone !== false;
   const displayPhone = whatsappConfig?.display_phone || "7731-0792";
+  const imageAlt = (meta.image_alt as string) || title;
 
   return (
     <section className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 py-16 sm:py-20 lg:py-24 border-t border-gray-100 dark:border-gray-800">
@@ -39,33 +41,58 @@ export function MatriculaCierre({
             aria-hidden="true"
           />
 
-          <div className="relative max-w-3xl">
-            <h2 className="font-montserrat text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-4">
-              {title}
-            </h2>
+          <div
+            className={`relative ${
+              cierreSection.image_url
+                ? "grid grid-cols-1 items-center gap-8 lg:grid-cols-12"
+                : "max-w-3xl"
+            }`}
+          >
+            <div className={cierreSection.image_url ? "lg:col-span-7" : ""}>
+              <h2 className="font-montserrat text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-4">
+                {title}
+              </h2>
 
-            <p className="font-inter text-base sm:text-lg text-white/90 leading-relaxed mb-8 max-w-2xl">
-              {description}
-            </p>
+              <p className="font-inter text-base sm:text-lg text-white/90 leading-relaxed mb-8 max-w-2xl">
+                {description}
+              </p>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <button
-                type="button"
-                onClick={onOpenModal}
-                aria-label={ctaAriaLabel}
-                className="inline-flex min-h-[50px] items-center justify-center gap-2.5 rounded-full bg-emerald-600 px-7 py-3.5 font-montserrat text-sm font-bold text-white shadow-md transition-all hover:bg-emerald-500 hover:shadow-lg active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-yellow"
-              >
-                <WhatsAppIcon className="h-5 w-5 fill-current" />
-                <span>{ctaLabel}</span>
-              </button>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <button
+                  type="button"
+                  onClick={onOpenModal}
+                  aria-label={ctaAriaLabel}
+                  className="inline-flex min-h-[50px] items-center justify-center gap-2.5 rounded-full bg-emerald-600 px-7 py-3.5 font-montserrat text-sm font-bold text-white shadow-md transition-all hover:bg-emerald-500 hover:shadow-lg active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-yellow"
+                >
+                  <WhatsAppIcon className="h-5 w-5 fill-current" />
+                  <span>{ctaLabel}</span>
+                </button>
 
-              {showPhone && (
-                <div className="flex items-center gap-2 font-inter text-sm text-white/80 px-2 py-2">
-                  <Phone size={16} className="text-larioja-amarillo" />
-                  <span>WhatsApp: <strong className="text-white font-semibold">{displayPhone}</strong></span>
-                </div>
-              )}
+                {showPhone && (
+                  <div className="flex items-center gap-2 font-inter text-sm text-white/80 px-2 py-2">
+                    <Phone size={16} className="text-larioja-amarillo" />
+                    <span>
+                      WhatsApp:{" "}
+                      <strong className="text-white font-semibold">{displayPhone}</strong>
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {cierreSection.image_url && (
+              <div className="lg:col-span-5">
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/15 bg-white/5 shadow-lg">
+                  <Image
+                    src={cierreSection.image_url}
+                    alt={imageAlt}
+                    fill
+                    sizes="(min-width: 1024px) 35vw, 90vw"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

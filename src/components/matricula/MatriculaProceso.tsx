@@ -54,7 +54,7 @@ export function MatriculaProceso({ procesoSection, pasos }: MatriculaProcesoProp
                     <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-larioja-azul text-white font-montserrat text-base font-extrabold shadow-sm">
                       {stepNumber}
                     </span>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-gray-800 text-larioja-azul dark:text-larioja-amarillo shadow-xs border border-gray-100 dark:border-gray-700">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-gray-800 text-larioja-azul dark:text-larioja-amarillo shadow-sm border border-gray-100 dark:border-gray-700">
                       <IconComponent size={20} />
                     </div>
                   </div>
