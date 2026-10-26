@@ -28,8 +28,9 @@ export function TransparencySection({
   achievements,
   commitment,
 }: TransparencySectionProps) {
+  const achievementText = (a: CmsSection) => textOr(a.title, textOr(a.description, ""));
   const photoAchievements = achievements.filter((a) => sectionImage(a));
-  const listAchievements = achievements.filter((a) => !sectionImage(a) && textOr(a.title, ""));
+  const listAchievements = achievements.filter((a) => !sectionImage(a) && achievementText(a));
   const commitmentHighlight = metaText(commitment, "resaltado", "");
 
   return (
@@ -105,13 +106,13 @@ export function TransparencySection({
                     <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
                       <Image
                         src={sectionImage(a) as string}
-                        alt={metaText(a, "foto_alt", textOr(a.title, ""))}
+                        alt={metaText(a, "foto_alt", achievementText(a))}
                         fill
                         sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 400px"
                         className="object-cover"
                       />
                     </div>
-                    <figcaption className={`text-sm ${MUTED}`}>{a.title}</figcaption>
+                    <figcaption className={`text-sm ${MUTED}`}>{achievementText(a)}</figcaption>
                   </figure>
                 ))}
               </div>
@@ -127,7 +128,7 @@ export function TransparencySection({
                       className="shrink-0 text-larioja-verde-texto dark:text-larioja-verde"
                       aria-hidden="true"
                     />
-                    {a.title}
+                    {achievementText(a)}
                   </li>
                 ))}
               </ul>
