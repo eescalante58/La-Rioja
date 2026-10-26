@@ -1,8 +1,8 @@
 # Manual Técnico de la Aplicación
 
 **Nombre del Proyecto:** La Rioja — Sitio Institucional + Gestión de Bingo (Bingo La Rioja 2026)
-**Versión del Documento:** 1.2.0
-**Fecha de última actualización:** 26 de octubre de 2026 (v1.2: Módulo de Matrícula 2027, medición Google Ads, atribución UTM y títulos de pestaña en CMS; v1.1: La Rioja Shop, login rediseñado, menú móvil)
+**Versión del Documento:** 1.2.1
+**Fecha de última actualización:** 26 de octubre de 2026 (v1.2.1: Especificación explícita de Tailwind CSS v3.4.17 y directivas de compatibilidad de estilos; v1.2: Módulo de Matrícula 2027, medición Google Ads, atribución UTM y títulos de pestaña en CMS; v1.1: La Rioja Shop, login rediseñado, menú móvil)
 **Autores / Equipo de Ingeniería:** Equipo de desarrollo La Rioja (Devin/Cognition, Claude Code, Gemini Antigravity)
 
 ---
@@ -22,7 +22,7 @@ Público objetivo: público general, asistentes al evento en vivo, equipo de com
 ### 1.2 Stack Tecnológico
 
 - **Framework:** Next.js 16.2.7 (App Router, Turbopack) — React 19 + TypeScript 5
-- **Frontend:** Server Components + Client Components; Tailwind CSS 3.4; Tremor React 3.18 (dashboards/tablas); Radix UI; lucide-react (iconos); next-themes (dark mode); ECharts (gráficas); @dnd-kit (drag & drop CMS)
+- **Frontend:** Server Components + Client Components; **Tailwind CSS v3.4.17** (PostCSS clásico con `tailwind.config.ts`; uso estricto de utilidades v3, prohibido sintaxis v4 sin corchetes o utilidades inexistentes en v3); Tremor React 3.18 (dashboards/tablas); Radix UI; lucide-react (iconos); next-themes (dark mode); ECharts (gráficas); @dnd-kit (drag & drop CMS)
 - **Backend:** Route Handlers (`src/app/api/**`) + Server Actions (`"use server"`) + dispatcher `POST /api/actions`; funciones compartidas en `*-core.ts`; Supabase JS SDK (`@supabase/ssr` + `supabase-js`)
 - **Base de datos:** PostgreSQL 17 sobre Supabase — RLS, triggers, funciones SECURITY DEFINER, vistas, enums
 - **Auth:** Supabase Auth (email/password + OAuth Google con PKCE) con validación de empresa en el callback y selección de empresa por sesión
@@ -1191,6 +1191,7 @@ Client Component ──fetch('/api/...')──▶ Route Handler ──checkAdmin
 
 | Problema | Causa probable | Solución |
 | :------- | :------------- | :------- |
+| Estilos de Tailwind sin efecto (ej. `aspect-4/3`, `shadow-xs`, `backdrop-blur-xs`) | Uso de clases exclusivas de Tailwind CSS v4 | El proyecto utiliza **Tailwind CSS v3.4.17**. Usar sintaxis con corchetes para aspectos arbitrarios (`aspect-[4/3]`, `aspect-[16/9]`) y utilidades válidas en v3 (`shadow-sm`, `backdrop-blur-sm`) |
 | `select()` devuelve `[]` sin error | RLS bloquea la lectura | Verificar membresía en `user_companies` y política SELECT; rutas públicas dependen de `published=true`/`is_active=true` |
 | Inventario lento al abrir | Antes: render de ~12,000 componentes | Ya mitigado: paginación 100 filas, SELECT explícito, páginas en paralelo, cache por evento |
 | Encabezado sticky no se fija | `Table` de Tremor envuelve en `div.overflow-auto` propio | El `max-h` debe ir en el `className` de `<Table>` (su wrapper interno es el scroll container) |
