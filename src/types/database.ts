@@ -147,33 +147,42 @@ export type Database = {
       }
       contact_submissions: {
         Row: {
+          attribution: Json | null
           created_at: string | null
           email: string
           id: string
+          idempotency_key: string | null
           message: string
           name: string
+          payload_hash: string | null
           phone: string | null
-          target_email: string
+          target_email: string | null
           type: string | null
         }
         Insert: {
+          attribution?: Json | null
           created_at?: string | null
           email: string
           id?: string
+          idempotency_key?: string | null
           message: string
           name: string
+          payload_hash?: string | null
           phone?: string | null
-          target_email: string
+          target_email?: string | null
           type?: string | null
         }
         Update: {
+          attribution?: Json | null
           created_at?: string | null
           email?: string
           id?: string
+          idempotency_key?: string | null
           message?: string
           name?: string
+          payload_hash?: string | null
           phone?: string | null
-          target_email?: string
+          target_email?: string | null
           type?: string | null
         }
         Relationships: []
@@ -1891,6 +1900,7 @@ export type Database = {
         | "apoyanos"
         | "privacidad"
         | "footer"
+        | "matricula"
       student_level_enum:
         | "1.Terapeutico"
         | "2.Inicial"
@@ -2059,6 +2069,7 @@ export const Constants = {
         "apoyanos",
         "privacidad",
         "footer",
+        "matricula",
       ],
       student_level_enum: [
         "1.Terapeutico",

@@ -17,6 +17,7 @@ import { callActionForm } from "@/lib/action-client";
 import { compressImage } from "@/lib/compress-image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getErrorMessage, formatFriendlyError } from "@/lib/utils";
+import { MatriculaFieldsEditor } from "@/components/admin/cms/MatriculaFieldsEditor";
 import type { SiteContent } from "@/types/cms";
 
 /**
@@ -26,12 +27,19 @@ import type { SiteContent } from "@/types/cms";
  * @returns {JSX.Element} The edit form.
  */
 export default function CMSEditForm({ item }: { item: SiteContent }) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    is_active: boolean;
+    content_order: number;
+    metadata: Record<string, unknown>;
+    image_url: string;
+  }>({
     title: item.title || "",
     description: item.description || "",
-    is_active: item.is_active,
+    is_active: Boolean(item.is_active),
     content_order: item.content_order || 0,
-    metadata: item.metadata || {},
+    metadata: (item.metadata && typeof item.metadata === "object" && !Array.isArray(item.metadata) ? item.metadata : {}) as Record<string, unknown>,
     image_url: item.image_url || "",
   });
   const [jsonString, setJsonString] = useState(JSON.stringify(item.metadata || {}, null, 2));
@@ -411,6 +419,30 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
               autoComplete="off"
             />
           </div>
+
+          {item.page === "matricula" && (
+            <div className="space-y-4">
+              <MatriculaFieldsEditor
+                sectionKey={item.section_key}
+                metadata={formData.metadata}
+                onChange={(updatedMeta) => {
+                  setFormData({ ...formData, metadata: updatedMeta });
+                  setJsonString(JSON.stringify(updatedMeta, null, 2));
+                }}
+                isActive={Boolean(formData.is_active)}
+                onToggleActive={(active) => setFormData({ ...formData, is_active: active })}
+              />
+              <div className="flex justify-end">
+                <Link
+                  href="/matricula"
+                  target="_blank"
+                  className="text-xs text-larioja-azul hover:underline dark:text-larioja-amarillo font-semibold inline-flex items-center gap-1"
+                >
+                  Abrir vista previa de /matricula ↗
+                </Link>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">

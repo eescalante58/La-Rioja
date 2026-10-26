@@ -50,6 +50,8 @@ interface MobileMenuProps {
   social: MobileMenuSocialLinks;
   /** Hay un Bingo en curso: muestra la insignia "Juega". */
   bingoActive: boolean;
+  /** Si la página de Matrícula está activa en el CMS. */
+  matriculaActive?: boolean;
 }
 
 interface NavLinkDef {
@@ -108,9 +110,20 @@ export function MobileMenu({
   returnFocusRef,
   social,
   bingoActive,
+  matriculaActive = false,
 }: MobileMenuProps) {
   const pathname = usePathname() ?? "/";
   const panelRef = useRef<HTMLElement>(null);
+
+  const links: NavLinkDef[] = [
+    { href: "/", label: "Inicio", Icon: Home },
+    { href: "/about", label: "Quiénes Somos", Icon: Users },
+    { href: "/programs", label: "Programas", Icon: GraduationCap },
+    ...(matriculaActive ? [{ href: "/matricula", label: "Matrícula", Icon: GraduationCap }] : []),
+    { href: "/faq", label: "Preguntas", Icon: HelpCircle },
+    { href: "/bingo", label: "Bingo", Icon: PartyPopper, badge: "Juega" },
+    { href: "/productos", label: "La Rioja Shop", Icon: ShoppingBag, featured: true },
+  ];
   const closeRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
@@ -223,7 +236,7 @@ export function MobileMenu({
             Explora
           </p>
           <ul aria-labelledby="mobile-menu-explora">
-            {LINKS.map(({ href, label, Icon, badge, featured }, i) => {
+            {links.map(({ href, label, Icon, badge, featured }, i) => {
               const showBadge = Boolean(badge) && bingoActive;
               return (
                 <li key={href} className="menu-stagger" style={{ "--i": i } as CSSProperties}>

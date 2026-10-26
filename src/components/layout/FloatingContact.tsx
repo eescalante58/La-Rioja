@@ -10,8 +10,9 @@ import { ContactTrigger } from "./ContactTrigger";
  */
 export function FloatingContact() {
   const [isVisible, setIsVisible] = useState(false);
+  const pathname = usePathname();
   // En /apoyanos (celular) sube por encima de la barra fija «Quiero donar hoy».
-  const aboveDonateBar = usePathname() === "/apoyanos";
+  const aboveDonateBar = pathname === "/apoyanos";
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -26,7 +27,8 @@ export function FloatingContact() {
     return () => window.removeEventListener("scroll", toggleVisibility);
   }, []);
 
-  if (!isVisible) return null;
+  // En /matricula se oculta para no duplicar el CTA ni interferir con la medición
+  if (pathname === "/matricula" || !isVisible) return null;
 
   return (
     <div

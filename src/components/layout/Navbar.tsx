@@ -55,6 +55,7 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [social, setSocial] = useState<MobileMenuSocialLinks>({});
   const [bingoActive, setBingoActive] = useState(false);
+  const [matriculaActive, setMatriculaActive] = useState(false);
   const burgerRef = useRef<HTMLButtonElement>(null);
 
   const closeMenu = useCallback(() => setIsOpen(false), []);
@@ -114,6 +115,36 @@ export function Navbar() {
       .catch(() => {});
   }, []);
 
+  // Disponibilidad de Matrícula (actualiza en montaje y al recuperar foco, límite 60s)
+  useEffect(() => {
+    let isMounted = true;
+    const checkMatricula = () => {
+      fetch("/api/public/matricula-status")
+        .then((r) => r.json())
+        .then((json: { success: boolean; active?: boolean }) => {
+          if (isMounted && json.success && typeof json.active === "boolean") {
+            setMatriculaActive(json.active);
+          }
+        })
+        .catch(() => {});
+    };
+    checkMatricula();
+    window.addEventListener("focus", checkMatricula);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", checkMatricula);
+    };
+  }, []);
+
+  const navLinks = [
+    { href: "/about", label: "Quiénes Somos" },
+    { href: "/programs", label: "Programas" },
+    ...(matriculaActive ? [{ href: "/matricula", label: "Matrícula" }] : []),
+    { href: "/bingo", label: "Bingo" },
+    { href: "/productos", label: "La Rioja Shop" },
+    { href: "/faq", label: "Preguntas" },
+  ];
+
   const homeActive = pathname === "/";
 
   return (
@@ -162,7 +193,7 @@ export function Navbar() {
                   <span className="sr-only">Inicio</span>
                 </Link>
               </li>
-              {LINKS.map(({ href, label }) => {
+              {navLinks.map(({ href, label }) => {
                 const active = isActive(pathname, href);
                 return (
                   <li key={href}>
@@ -238,6 +269,7 @@ export function Navbar() {
         returnFocusRef={burgerRef}
         social={social}
         bingoActive={bingoActive}
+        matriculaActive={matriculaActive}
       />
     </>
   );

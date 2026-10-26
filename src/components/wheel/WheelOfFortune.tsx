@@ -425,7 +425,9 @@ export default function WheelOfFortune({ wheels }: { wheels: WheelSummary[] }) {
 
   // Detiene el estado operativo cuando ya no hay giros disponibles.
   useEffect(() => {
-    if (prizeLimitReached || segments.length === 0) setAutoRunning(false);
+    if (prizeLimitReached || segments.length === 0) {
+      setTimeout(() => setAutoRunning(false), 0);
+    }
   }, [prizeLimitReached, segments.length]);
 
   // Programa el siguiente giro cuando la ruleta está en modo automático.

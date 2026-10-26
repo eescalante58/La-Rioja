@@ -33,9 +33,11 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
   const pathname = usePathname();
 
   // Close sidebar on route change
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setIsOpen(false);
-  }, [pathname]);
+  }
 
   // Block scroll when mobile sidebar is open
   useEffect(() => {

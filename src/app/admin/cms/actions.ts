@@ -192,6 +192,7 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
   revalidatePath("/programs");
   revalidatePath("/productos");
   revalidatePath("/privacidad");
+  revalidatePath("/matricula");
   revalidatePath("/faq");
   return { success: true };
 }
@@ -677,6 +678,7 @@ async function createCMSContentInternal(formData: FormData, context: RoleContext
   revalidatePath("/programs");
   revalidatePath("/productos");
   revalidatePath("/privacidad");
+  revalidatePath("/matricula");
   revalidatePath("/faq");
   return { success: true };
 }
@@ -737,6 +739,7 @@ async function deleteCMSContentInternal(id: string, context: RoleContext) {
   revalidatePath("/programs");
   revalidatePath("/productos");
   revalidatePath("/privacidad");
+  revalidatePath("/matricula");
   revalidatePath("/faq");
   revalidatePath("/admin/cms");
   return { success: true };

@@ -164,7 +164,7 @@ export default function BingoManualPage() {
             generación/carga de PDF directamente.
           </Text>
 
-          <Title className="text-lg">Ventana "Inventario de Cartones"</Title>
+          <Title className="text-lg">Ventana &quot;Inventario de Cartones&quot;</Title>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -272,7 +272,7 @@ export default function BingoManualPage() {
               <li>
                 <strong>Paginación</strong>: la tabla muestra{" "}
                 <strong>100 cartones por página</strong> con flechas ←/→ y la
-                leyenda "Mostrando X–Y de N". El buscador filtra sobre el
+                leyenda &quot;Mostrando X–Y de N&quot;. El buscador filtra sobre el
                 inventario completo y vuelve a la página 1.
               </li>
               <li>
@@ -280,10 +280,10 @@ export default function BingoManualPage() {
                 permanecen visibles al hacer scroll dentro de la tabla.
               </li>
               <li>
-                <strong>Columna "Jugador"</strong>: en cartones con estado{" "}
+                <strong>Columna &quot;Jugador&quot;</strong>: en cartones con estado{" "}
                 <strong>Asignado</strong> muestra el{" "}
-                <strong>nombre y nivel del alumno</strong> (ej. "Sebastian
-                Arrieta · 2.Inicial") en lugar del comprador.
+                <strong>nombre y nivel del alumno</strong> (ej. &quot;Sebastian
+                Arrieta · 2.Inicial&quot;) en lugar del comprador.
               </li>
             </ul>
           </div>
@@ -312,7 +312,7 @@ export default function BingoManualPage() {
           <ul className="list-disc pl-5 space-y-2 text-sm text-slate-600 dark:text-slate-300">
             <li>
               <strong>Nueva Factura Plus</strong>: único punto de creación de
-              facturas (el formulario clásico "Nueva Factura" fue retirado; el
+              facturas (el formulario clásico &quot;Nueva Factura&quot; fue retirado; el
               lápiz ✏️ de la tabla sigue editando facturas existentes).
             </li>
             <li>
@@ -570,7 +570,7 @@ export default function BingoManualPage() {
                     área de segmentos muestra los <strong>primeros 7 sin
                     scroll</strong>; los demás se alcanzan con scroll interno.
                     En modo Premios incluye el bloque{" "}
-                    <strong>"Segmentos sin derecho a premio"</strong>: se
+                    <strong>&quot;Segmentos sin derecho a premio&quot;</strong>: se
                     indican cantidad y texto, y el sistema los distribuye
                     aleatoriamente <em>sin que queden adyacentes</em>. Desde
                     aquí también se abre la página pública (
@@ -591,7 +591,7 @@ export default function BingoManualPage() {
                   </td>
                   <td className="py-2 text-slate-600 dark:text-slate-300">
                     Activa o retira la ruleta de las páginas públicas. Solo una
-                    tómbola "Participantes" publicada habilita el registro
+                    tómbola &quot;Participantes&quot; publicada habilita el registro
                     público.
                   </td>
                 </tr>
@@ -636,14 +636,14 @@ export default function BingoManualPage() {
             </Text>
             <ul className="list-disc pl-5 space-y-1 text-sm text-amber-800 dark:text-amber-300">
               <li>
-                <strong>"Premios sorteados: X de Y"</strong> solo incrementa
+                <strong>&quot;Premios sorteados: X de Y&quot;</strong> solo incrementa
                 cuando sale un premio real. Los segmentos{" "}
-                <em>sin derecho a premio</em> (ej. "Sigue participando") no
+                <em>sin derecho a premio</em> (ej. &quot;Sigue participando&quot;) no
                 consumen stock ni mueven el contador.
               </li>
               <li>
                 Al llegar al límite configurado, la ruleta muestra la alerta y
-                el indicador rojo pulsante <strong>"SORTEO FINALIZADO"</strong>;
+                el indicador rojo pulsante <strong>&quot;SORTEO FINALIZADO&quot;</strong>;
                 también finaliza si solo quedan segmentos sin premio.
               </li>
               <li>
@@ -682,7 +682,7 @@ export default function BingoManualPage() {
             </Title>
             <Text className="text-xs text-slate-600 dark:text-slate-300">
               Formulario público para que los asistentes registren sus números
-              de cartón. Requiere una tómbola "Participantes" publicada. Con{" "}
+              de cartón. Requiere una tómbola &quot;Participantes&quot; publicada. Con{" "}
               <code>?id=&lt;wheel_id&gt;</code> fija una ruleta específica.
             </Text>
           </Card>

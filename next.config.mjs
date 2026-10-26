@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: process.cwd(),
+  },
+  outputFileTracingRoot: process.cwd(),
   /** /contact se renombró a /apoyanos (página de donaciones); /inicio redirige al home. */
   async redirects() {
     return [

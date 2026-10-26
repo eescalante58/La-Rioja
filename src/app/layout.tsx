@@ -1,8 +1,6 @@
 import { SITE_URL } from "@/lib/site";
 import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
-import "./globals.css";
-
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { SessionManager } from "@/components/auth/SessionManager";
 import { FloatingContact } from "@/components/layout/FloatingContact";

@@ -156,8 +156,13 @@ export default function BingoManagerClient({
   useEffect(() => {
     const savedTab = sessionStorage.getItem("bingo_selected_tab");
     if (savedTab !== null) {
-      setSelectedTab(parseInt(savedTab));
       sessionStorage.removeItem("bingo_selected_tab");
+      const parsed = parseInt(savedTab, 10);
+      if (!isNaN(parsed)) {
+        setTimeout(() => {
+          setSelectedTab(parsed);
+        }, 0);
+      }
     }
   }, []);
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Phone, Mail, ArrowUpRight } from "lucide-react";
 import { getSectionContent, getPageContent } from "@/services/cms";
+import { isMatriculaActive } from "@/lib/matricula/matricula-service";
 import type { SiteContent } from "@/types/cms";
 
 /**
@@ -38,15 +39,17 @@ function OfficialSocialLink({
  * Obtiene dinámicamente sus datos desde el CMS de Supabase.
  */
 export async function Footer() {
-  const [ctaResult, socialResult, footerResult] = await Promise.allSettled([
+  const [ctaResult, socialResult, footerResult, matriculaResult] = await Promise.allSettled([
     getSectionContent("home", "cl_cta"),
     getPageContent("social media"),
     getSectionContent("footer", "derechos reservados"),
+    isMatriculaActive(),
   ]);
 
   const ctaContent = ctaResult.status === "fulfilled" ? ctaResult.value : null;
   const socialLinks = socialResult.status === "fulfilled" ? socialResult.value : [];
   const copyrightContent = footerResult.status === "fulfilled" ? footerResult.value : null;
+  const matriculaActive = matriculaResult.status === "fulfilled" ? matriculaResult.value : false;
 
   const copyrightText =
     copyrightContent?.description?.trim() ||
@@ -210,6 +213,7 @@ export async function Footer() {
                 { href: "/", label: "Inicio" },
                 { href: "/about", label: "Quiénes Somos" },
                 { href: "/programs", label: "Programas y Talleres" },
+                ...(matriculaActive ? [{ href: "/matricula", label: "Matrícula" }] : []),
                 { href: "/faq", label: "Preguntas Frecuentes" },
                 { href: "/privacidad", label: "Política de privacidad" },
               ].map(({ href, label }) => (
