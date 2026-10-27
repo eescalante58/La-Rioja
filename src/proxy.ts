@@ -2,10 +2,19 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Proxy to handle session refreshing and route protection.
+ * Proxy to handle canonical domain redirection, session refreshing and route protection.
  * @param {NextRequest} request - The incoming request.
  */
 export async function proxy(request: NextRequest) {
+  // Redirección canónica de www al dominio principal conservando ruta y parámetros
+  const host = request.headers.get("host") || "";
+  if (host === "www.lariojacflsv.site") {
+    const url = request.nextUrl.clone();
+    url.host = "lariojacflsv.site";
+    url.protocol = "https:";
+    return NextResponse.redirect(url, 308);
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,

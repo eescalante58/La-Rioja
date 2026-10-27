@@ -4,9 +4,18 @@ const nextConfig = {
     root: process.cwd(),
   },
   outputFileTracingRoot: process.cwd(),
-  /** /contact se renombró a /apoyanos (página de donaciones); /inicio redirige al home. */
+  /**
+   * Redirección canónica de www al dominio principal (preserva ruta y query params);
+   * /contact se renombró a /apoyanos (página de donaciones); /inicio redirige al home.
+   */
   async redirects() {
     return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.lariojacflsv.site" }],
+        destination: "https://lariojacflsv.site/:path*",
+        permanent: true,
+      },
       { source: "/contact", destination: "/apoyanos", permanent: true },
       { source: "/inicio", destination: "/", permanent: true },
     ];
