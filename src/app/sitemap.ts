@@ -2,6 +2,8 @@ import { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { isMatriculaActive } from "@/lib/matricula/matricula-service";
 
+export const revalidate = 60;
+
 /** Páginas públicas indexables con su frecuencia de cambio y prioridad. */
 const BASE_PAGES: { path: string; changeFrequency: "weekly" | "monthly"; priority: number }[] = [
   { path: "", changeFrequency: "monthly", priority: 1 },
