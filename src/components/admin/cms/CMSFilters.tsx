@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Text, TextInput, Select, SelectItem, Button } from "@tremor/react";
 import { Search, Filter } from "lucide-react";
 
@@ -26,6 +27,14 @@ export default function CMSFilters({
   sortedCount,
   totalCount,
 }: CMSFiltersProps) {
+  const sortedPages = useMemo(
+    () =>
+      [...CMS_PAGES].sort((a, b) =>
+        a.label.localeCompare(b.label, "es", { sensitivity: "base" })
+      ),
+    [CMS_PAGES]
+  );
+
   return (
     <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -36,7 +45,7 @@ export default function CMSFilters({
           </Text>
           <Select value={pageFilter} onValueChange={setPageFilter}>
             <SelectItem value="all">Todas las Páginas</SelectItem>
-            {CMS_PAGES.map((p) => (
+            {sortedPages.map((p) => (
               <SelectItem key={p.value} value={p.value}>
                 {p.label}
               </SelectItem>

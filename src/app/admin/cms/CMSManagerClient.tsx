@@ -20,20 +20,20 @@ const CMSCreateDialog = dynamic(() => import("@/components/admin/cms/CMSCreateDi
 const CMSDeleteDialog = dynamic(() => import("@/components/admin/cms/CMSDeleteDialog"));
 
 const CMS_PAGES = [
-  { value: "home", label: "Home" },
-  { value: "quienes somos", label: "Quienes Somos" },
-  { value: "bingo", label: "Bingo" },
-  { value: "tombola", label: "Tombola" },
-  { value: "programs", label: "Programs" },
-  { value: "productos", label: "Productos (La Rioja Shop)" },
-  { value: "services", label: "Services (Cards)" },
   { value: "apoyanos", label: "Apóyanos" },
-  { value: "privacidad", label: "Privacidad" },
-  { value: "matricula", label: "Matrícula" },
-  { value: "footer", label: "Footer" },
+  { value: "bingo", label: "Bingo" },
   { value: "contact", label: "Contact" },
+  { value: "footer", label: "Footer" },
   { value: "global", label: "Global" },
+  { value: "home", label: "Home" },
+  { value: "matricula", label: "Matrícula" },
+  { value: "privacidad", label: "Privacidad" },
+  { value: "productos", label: "Productos (La Rioja Shop)" },
+  { value: "programs", label: "Programs" },
+  { value: "quienes somos", label: "Quienes Somos" },
+  { value: "services", label: "Services (Cards)" },
   { value: "social media", label: "Social Media" },
+  { value: "tombola", label: "Tombola" },
   { value: "whatsapp message", label: "WhatsApp Message" },
 ] as const;
 
