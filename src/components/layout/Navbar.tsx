@@ -161,7 +161,7 @@ export function Navbar() {
           Saltar al contenido
         </a>
 
-        <div className="mx-auto flex h-nav max-w-screen-xl items-center gap-2 pl-4 pr-3 lg:gap-6 lg:px-8">
+        <div className="mx-auto flex h-nav max-w-screen-xl items-center gap-2 pl-4 pr-3 lg:gap-3 xl:gap-6 lg:px-6 xl:px-8">
           {/* Identidad */}
           <Link
             href="/"
@@ -181,7 +181,7 @@ export function Navbar() {
 
           {/* Navegación (escritorio) */}
           <nav aria-label="Principal" className="hidden flex-1 justify-center lg:flex">
-            <ul className="flex gap-5 xl:gap-7">
+            <ul className="flex gap-2.5 lg:gap-3 xl:gap-6">
               <li>
                 <Link
                   href="/"
@@ -200,7 +200,7 @@ export function Navbar() {
                     <Link
                       href={href}
                       aria-current={active ? "page" : undefined}
-                      className={`${linkClass(active)} whitespace-nowrap text-[15px] font-semibold`}
+                      className={`${linkClass(active)} whitespace-nowrap text-sm xl:text-[15px] font-semibold`}
                     >
                       {label}
                     </Link>
@@ -241,7 +241,7 @@ export function Navbar() {
 
           <Link
             href="/apoyanos"
-            className="hidden h-11 shrink-0 items-center gap-2 rounded-full bg-brand-yellow px-5 text-sm font-bold text-brand-ink shadow-sm transition-all hover:brightness-95 hover:shadow-sm active:scale-95 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:flex"
+            className="hidden h-11 shrink-0 items-center gap-2 rounded-full bg-brand-yellow px-3.5 xl:px-5 text-sm font-bold text-brand-ink shadow-sm transition-all hover:brightness-95 hover:shadow-sm active:scale-95 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:flex"
           >
             <HeartHandshake size={18} aria-hidden="true" />
             Apóyanos

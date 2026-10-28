@@ -1,7 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowDown, MessageSquare } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import { MatriculaCuposBadge } from "./MatriculaCuposBadge";
 import type { SiteContent } from "@/types/cms";
@@ -101,15 +100,16 @@ export function MatriculaHero({
 
           {/* Columna de Imagen */}
           <div className={`lg:col-span-5 ${meta.image_position === "left" ? "lg:order-first" : ""}`}>
-            <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-2xl backdrop-blur-sm">
+            <div className="relative mx-auto w-full max-w-md lg:max-w-none flex justify-center">
+              <div className="relative w-full overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-2xl backdrop-blur-sm">
                 <Image
                   src={imageUrl}
                   alt={imageAlt}
-                  fill
+                  width={1080}
+                  height={1162}
                   sizes="(min-width: 1024px) 40vw, 90vw"
                   priority
-                  className="object-cover"
+                  className="block h-auto w-full object-contain"
                 />
               </div>
             </div>

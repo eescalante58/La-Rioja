@@ -33,7 +33,7 @@ export function MatriculaCierre({
   const imageAlt = (meta.image_alt as string) || title;
 
   return (
-    <section className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 py-16 sm:py-20 lg:py-24 border-t border-gray-100 dark:border-gray-800">
+    <section className="overflow-hidden bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 py-16 sm:py-20 lg:py-24 border-t border-gray-100 dark:border-gray-800">
       <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-3xl bg-larioja-azul p-8 sm:p-12 lg:p-16 text-white shadow-xl">
           <div
