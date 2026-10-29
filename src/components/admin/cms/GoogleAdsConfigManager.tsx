@@ -633,11 +633,11 @@ window.dispatchEvent(
 
         <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-800/60 dark:bg-emerald-950/30">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <div>
+            <div className="min-w-0">
               <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
                 Destino de Conversión Principal (Lead / Matrícula):
               </span>
-              <div className="mt-0.5 font-mono text-sm font-bold text-emerald-900 dark:text-emerald-200">
+              <div className="mt-0.5 break-all font-mono text-sm font-bold text-emerald-900 dark:text-emerald-200">
                 {mainSendToPreview}
               </div>
             </div>
@@ -648,7 +648,7 @@ window.dispatchEvent(
         </div>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="google-ads-tag-id"
               className="block text-sm font-semibold text-slate-700 dark:text-slate-200"
@@ -661,7 +661,7 @@ window.dispatchEvent(
               value={tagId}
               onChange={(e) => setTagId(e.target.value.toUpperCase())}
               placeholder="Ej. AW-18533492300"
-              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-mono text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              className="mt-1.5 min-h-[44px] sm:min-h-0 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-base sm:text-sm font-mono text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
             <p className="mt-1 text-xs text-slate-500">
               Formato obligatorio <code>AW-XXXXXXXXXX</code> obtenido en Google Ads →
@@ -669,7 +669,7 @@ window.dispatchEvent(
             </p>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center justify-between">
               <label
                 htmlFor="google-ga4-id"
@@ -689,7 +689,7 @@ window.dispatchEvent(
                 setGa4MeasurementId(e.target.value.toUpperCase())
               }
               placeholder="Ej. G-XXXXXXXXXX (Opcional)"
-              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-mono text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              className="mt-1.5 min-h-[44px] sm:min-h-0 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-base sm:text-sm font-mono text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             />
             <p className="mt-1 text-xs text-slate-500">
               Si lo ingresas, <code>gtag.js</code> vinculará también tu flujo de GA4 sin
@@ -735,7 +735,7 @@ window.dispatchEvent(
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="google-ads-currency"
               className="block text-sm font-semibold text-slate-700 dark:text-slate-200"
@@ -746,7 +746,7 @@ window.dispatchEvent(
               id="google-ads-currency"
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              className="mt-1.5 min-h-[44px] sm:min-h-0 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             >
               <option value="USD">USD — Dólar Estadounidense ($)</option>
               <option value="GTQ">GTQ — Quetzal Guatemalteco (Q)</option>
@@ -935,7 +935,7 @@ window.dispatchEvent(
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="google-domain-input"
               className="block text-sm font-semibold text-slate-700 dark:text-slate-200"
@@ -955,12 +955,12 @@ window.dispatchEvent(
                   }
                 }}
                 placeholder="Ej. lariojacflsv.site"
-                className="flex-1 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="min-h-[44px] sm:min-h-0 min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-base sm:text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
               <button
                 type="button"
                 onClick={handleAddDomain}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                className="min-h-[44px] sm:min-h-0 shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <Plus size={16} /> Agregar
               </button>
@@ -996,7 +996,7 @@ window.dispatchEvent(
             </div>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="google-consent-mode"
               className="block text-sm font-semibold text-slate-700 dark:text-slate-200"
@@ -1009,7 +1009,7 @@ window.dispatchEvent(
               onChange={(e) =>
                 setConsentMode(e.target.value as GoogleAdsConsentMode)
               }
-              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              className="mt-1.5 min-h-[44px] sm:min-h-0 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 focus:border-emerald-600 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
             >
               <option value="disabled">
                 Disabled — Cargar gtag.js inmediatamente al entrar
@@ -1071,7 +1071,7 @@ window.dispatchEvent(
               type="button"
               onClick={handleTestConversion}
               disabled={testingEvent}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="min-h-[44px] sm:min-h-0 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               {testingEvent ? (
                 <RefreshCw size={16} className="animate-spin" />
@@ -1084,7 +1084,7 @@ window.dispatchEvent(
             <button
               type="button"
               onClick={handleOpenLogs}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="min-h-[44px] sm:min-h-0 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               <FileText size={16} className="text-emerald-600" />
               Ver Logs (Últimos 50)
@@ -1094,7 +1094,7 @@ window.dispatchEvent(
               href="https://tagassistant.google.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="min-h-[44px] sm:min-h-0 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             >
               <ExternalLink size={16} className="text-emerald-600" />
               Tag Assistant
@@ -1103,7 +1103,7 @@ window.dispatchEvent(
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+              className="min-h-[44px] sm:min-h-0 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
             >
               {saving ? (
                 <RefreshCw size={16} className="animate-spin" />
@@ -1140,7 +1140,7 @@ window.dispatchEvent(
                 <button
                   type="button"
                   onClick={handleOpenLogs}
-                  className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center sm:min-h-0 sm:min-w-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                   aria-label="Actualizar lista de logs"
                 >
                   <RefreshCw
@@ -1151,7 +1151,7 @@ window.dispatchEvent(
                 <button
                   type="button"
                   onClick={() => setLogsModalOpen(false)}
-                  className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center sm:min-h-0 sm:min-w-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
                   aria-label="Cerrar modal de logs"
                 >
                   <X size={18} />

@@ -152,7 +152,7 @@ export function MetaPixelProvider() {
         <div
           role="dialog"
           aria-label="Preferencias de privacidad y cookies"
-          className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-2xl rounded-xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
+          className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-2xl rounded-xl border border-slate-200 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-200">
@@ -168,14 +168,14 @@ export function MetaPixelProvider() {
               <button
                 type="button"
                 onClick={() => setMarketingConsent(false)}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="min-h-[44px] sm:min-h-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 Rechazar
               </button>
               <button
                 type="button"
                 onClick={() => setMarketingConsent(true)}
-                className="rounded-lg bg-larioja-azul px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+                className="min-h-[44px] sm:min-h-0 rounded-lg bg-larioja-azul px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
               >
                 Aceptar cookies
               </button>

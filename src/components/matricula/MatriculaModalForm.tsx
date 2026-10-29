@@ -13,10 +13,12 @@ import { metaPixel } from "@/components/tracking/meta-pixel-service";
 import type { SiteContent } from "@/types/cms";
 import type { MatriculaWhatsAppConfig } from "@/lib/validation/matricula";
 
+export type MatriculaModalOrigin = "intro" | "hero" | "proceso" | "cierre" | "sticky_mobile";
+
 export interface MatriculaModalFormProps {
   isOpen: boolean;
   onClose: () => void;
-  originPosition: "intro" | "hero" | "cierre" | "sticky_mobile";
+  originPosition: MatriculaModalOrigin;
   formSection: SiteContent | null;
   whatsappConfig: MatriculaWhatsAppConfig | null;
   admissionYear: number;
@@ -111,13 +113,13 @@ export function MatriculaModalForm({
       errors.name = "Ingresa tu nombre completo (al menos 2 caracteres).";
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim() || !emailRegex.test(formData.email.trim())) {
+    if (formData.email.trim().length > 0 && !emailRegex.test(formData.email.trim())) {
       errors.email = "Ingresa un correo electrónico válido.";
     }
-    if (formData.phone && formData.phone.trim().length > 0) {
-      if (!/^[0-9+\s\-().]{6,25}$/.test(formData.phone.trim())) {
-        errors.phone = "Ingresa un número telefónico válido (ej. 7731-0792).";
-      }
+    if (!formData.phone.trim()) {
+      errors.phone = "Ingresa tu número telefónico.";
+    } else if (!/^[0-9+\s\-().]{6,25}$/.test(formData.phone.trim())) {
+      errors.phone = "Ingresa un número telefónico válido (ej. 7731-0792).";
     }
     if (!formData.message.trim() || formData.message.trim().length < 10) {
       errors.message = "El mensaje debe tener al menos 10 caracteres.";
@@ -141,8 +143,8 @@ export function MatriculaModalForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
+          email: formData.email.trim() || "",
+          phone: formData.phone.trim(),
           type: formData.type,
           message: formData.message,
           idempotency_key: idempotencyKey,
@@ -191,7 +193,7 @@ export function MatriculaModalForm({
       conversionFiredRef.current = true;
 
       const userContact = {
-        email: formData.email.trim(),
+        email: formData.email.trim() || undefined,
         phone: formData.phone.trim() || undefined,
         firstName: formData.name.trim(),
       };
@@ -236,6 +238,13 @@ export function MatriculaModalForm({
     "Hemos registrado tus datos en nuestro sistema. Ahora continúa a WhatsApp para enviar tu mensaje directo a nuestro equipo de admisiones.";
   const waLinkLabel = (meta.whatsapp_link_label as string) || "Abrir WhatsApp";
 
+  const cleanEmailLabel = (labels.email || "Correo Electrónico").replace(/\s*\(opcional\)/i, "");
+  const cleanPhoneLabel = (labels.phone || "Teléfono").replace(/\s*\(opcional\)/i, "");
+  const phoneHelpText =
+    helpTexts.phone && !/^no obligatorio/i.test(helpTexts.phone.trim())
+      ? helpTexts.phone
+      : undefined;
+
   return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-fade-in"
@@ -246,7 +255,7 @@ export function MatriculaModalForm({
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl dark:bg-gray-900 border border-gray-100 dark:border-gray-800 my-8 overflow-hidden animate-scale-in"
+        className="dialog-mobile relative w-full max-w-xl rounded-2xl bg-white shadow-2xl dark:bg-gray-900 border border-gray-100 dark:border-gray-800 my-8 overflow-hidden animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Encabezado con marca institucional */}
@@ -279,7 +288,7 @@ export function MatriculaModalForm({
               onClick={onClose}
               disabled={isSubmitting}
               aria-label="Cerrar formulario de contacto"
-              className="grid h-10 w-10 place-items-center rounded-full text-gray-400 transition-colors hover:bg-gray-200/60 hover:text-gray-700 dark:hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-azul"
+              className="grid h-11 w-11 place-items-center rounded-full text-gray-400 transition-colors hover:bg-gray-200/60 hover:text-gray-700 dark:hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-azul"
             >
               <X size={20} aria-hidden="true" />
             </button>
@@ -331,7 +340,7 @@ export function MatriculaModalForm({
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder={placeholders.name || "Tu nombre y apellido"}
-                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all bg-white dark:bg-gray-950 focus:outline-none focus:ring-2 ${
+                  className={`min-h-[44px] w-full rounded-xl border px-3.5 py-2.5 text-base sm:text-sm transition-all bg-white dark:bg-gray-950 focus:outline-none focus:ring-2 ${
                     fieldErrors.name
                       ? "border-red-400 ring-red-100"
                       : "border-gray-200 dark:border-gray-700 focus:border-larioja-azul focus:ring-blue-100"
@@ -342,23 +351,22 @@ export function MatriculaModalForm({
                 )}
               </div>
 
-              {/* Correo y Teléfono en dos columnas */}
+              {/* Correo (opcional) y Teléfono (obligatorio) en dos columnas */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label
                     htmlFor="mat-email"
                     className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1"
                   >
-                    {labels.email || "Correo Electrónico"} <span className="text-red-500">*</span>
+                    {cleanEmailLabel} (opcional)
                   </label>
                   <input
                     id="mat-email"
                     type="email"
-                    required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder={placeholders.email || "ejemplo@correo.com"}
-                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all bg-white dark:bg-gray-950 focus:outline-none focus:ring-2 ${
+                    className={`min-h-[44px] w-full rounded-xl border px-3.5 py-2.5 text-base sm:text-sm transition-all bg-white dark:bg-gray-950 focus:outline-none focus:ring-2 ${
                       fieldErrors.email
                         ? "border-red-400 ring-red-100"
                         : "border-gray-200 dark:border-gray-700 focus:border-larioja-azul focus:ring-blue-100"
@@ -374,15 +382,16 @@ export function MatriculaModalForm({
                     htmlFor="mat-phone"
                     className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-1"
                   >
-                    {labels.phone || "Teléfono (opcional)"}
+                    {cleanPhoneLabel} <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="mat-phone"
                     type="tel"
+                    required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder={placeholders.phone || "7000-0000"}
-                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all bg-white dark:bg-gray-950 focus:outline-none focus:ring-2 ${
+                    className={`min-h-[44px] w-full rounded-xl border px-3.5 py-2.5 text-base sm:text-sm transition-all bg-white dark:bg-gray-950 focus:outline-none focus:ring-2 ${
                       fieldErrors.phone
                         ? "border-red-400 ring-red-100"
                         : "border-gray-200 dark:border-gray-700 focus:border-larioja-azul focus:ring-blue-100"
@@ -391,8 +400,8 @@ export function MatriculaModalForm({
                   {fieldErrors.phone ? (
                     <p className="mt-1 text-xs text-red-600 dark:text-red-400">{fieldErrors.phone}</p>
                   ) : (
-                    helpTexts.phone && (
-                      <p className="mt-1 text-[11px] text-gray-400">{helpTexts.phone}</p>
+                    phoneHelpText && (
+                      <p className="mt-1 text-[11px] text-gray-400">{phoneHelpText}</p>
                     )
                   )}
                 </div>
@@ -410,7 +419,7 @@ export function MatriculaModalForm({
                   id="mat-type"
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-3.5 py-2.5 text-sm focus:border-larioja-azul focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  className="min-h-[44px] w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 px-3.5 py-2.5 text-base sm:text-sm focus:border-larioja-azul focus:outline-none focus:ring-2 focus:ring-blue-100"
                 >
                   {inquiryOptions.map((opt) => (
                     <option key={opt} value={opt}>
@@ -435,7 +444,7 @@ export function MatriculaModalForm({
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   placeholder={placeholders.message || "Escribe tus dudas sobre requisitos, edad o proceso..."}
-                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm transition-all bg-white dark:bg-gray-950 focus:outline-none focus:ring-2 ${
+                  className={`min-h-[44px] w-full rounded-xl border px-3.5 py-2.5 text-base sm:text-sm transition-all bg-white dark:bg-gray-950 focus:outline-none focus:ring-2 ${
                     fieldErrors.message
                       ? "border-red-400 ring-red-100"
                       : "border-gray-200 dark:border-gray-700 focus:border-larioja-azul focus:ring-blue-100"
@@ -499,6 +508,9 @@ export function MatriculaModalForm({
               <div className="rounded-xl bg-gray-50 dark:bg-gray-800/60 p-4 text-left border border-gray-100 dark:border-gray-800 text-xs space-y-1.5 text-gray-600 dark:text-gray-300">
                 <p>
                   <strong className="text-gray-900 dark:text-white">Solicitante:</strong> {formData.name}
+                </p>
+                <p>
+                  <strong className="text-gray-900 dark:text-white">Teléfono:</strong> {formData.phone}
                 </p>
                 <p>
                   <strong className="text-gray-900 dark:text-white">Consulta:</strong> {formData.type}
