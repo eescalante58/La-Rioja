@@ -239,7 +239,7 @@ export async function updateUser(userId: string, rawInput: unknown) {
 }
 
 async function deleteUserInternal(userId: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Note: This only deletes from our 'users' table, not Supabase Auth
   const { error } = await supabase.from("users").delete().eq("id", userId);
@@ -264,10 +264,21 @@ async function createRoleInternal(rawInput: RoleInput) {
   }
   const data = validation.data;
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
+
+  // Obtener el siguiente role_id disponible para garantizar consistencia y evitar colisiones
+  const { data: maxRole } = await supabase
+    .from("roles")
+    .select("role_id")
+    .order("role_id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextRoleId = ((maxRole?.role_id as number | undefined) || 0) + 1;
+
   const { data: newRole, error } = await supabase
     .from("roles")
-    .insert([data])
+    .insert([{ ...data, role_id: nextRoleId }])
     .select()
     .single();
 
@@ -275,7 +286,7 @@ async function createRoleInternal(rawInput: RoleInput) {
     return { error: error.message };
   }
 
-  await logActivity("CREATE", "roles", newRole.role_id, data);
+  await logActivity("CREATE", "roles", newRole.role_id.toString(), data);
 
   revalidatePath("/admin/settings/users");
   return { success: true };
@@ -291,7 +302,7 @@ async function updateRoleInternal(roleId: number, rawInput: unknown) {
   }
   const data = validation.data;
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { error } = await supabase
     .from("roles")
     .update({
@@ -313,7 +324,7 @@ async function updateRoleInternal(roleId: number, rawInput: unknown) {
 export const updateRole = withRole(10, updateRoleInternal);
 
 async function deleteRoleInternal(roleId: number) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { error } = await supabase.from("roles").delete().eq("role_id", roleId);
 
   if (error) {
