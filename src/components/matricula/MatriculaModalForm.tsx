@@ -8,10 +8,10 @@ import { X, Send, CheckCircle2, AlertCircle, ArrowUpRight } from "lucide-react";
 import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import { getStoredAttribution } from "@/lib/matricula/utm";
 import { resolveWhatsAppUrl } from "@/lib/matricula/whatsapp";
-import { triggerMatriculaConversion } from "./MatriculaGoogleAds";
+import { googleAds } from "@/components/tracking/google-ads-service";
 import { metaPixel } from "@/components/tracking/meta-pixel-service";
 import type { SiteContent } from "@/types/cms";
-import type { MatriculaAdsConfig, MatriculaWhatsAppConfig } from "@/lib/validation/matricula";
+import type { MatriculaWhatsAppConfig } from "@/lib/validation/matricula";
 
 export interface MatriculaModalFormProps {
   isOpen: boolean;
@@ -19,7 +19,6 @@ export interface MatriculaModalFormProps {
   originPosition: "intro" | "hero" | "cierre" | "sticky_mobile";
   formSection: SiteContent | null;
   whatsappConfig: MatriculaWhatsAppConfig | null;
-  adsConfig: MatriculaAdsConfig | null;
   admissionYear: number;
 }
 
@@ -29,7 +28,6 @@ export function MatriculaModalForm({
   originPosition,
   formSection,
   whatsappConfig,
-  adsConfig,
   admissionYear,
 }: MatriculaModalFormProps) {
   const [mounted, setMounted] = useState(false);
@@ -211,14 +209,20 @@ export function MatriculaModalForm({
         }
       );
 
-      triggerMatriculaConversion({
-        config: adsConfig,
-        targetUrl: waUrl,
-        userData: userContact,
-        onNavigate: () => {
-          window.location.href = waUrl;
+      // Si Google Ads está activo en el CMS, disparar Lead con Enhanced Conversions y redirigir
+      void googleAds.track(
+        "Lead",
+        {
+          content_name: `Matrícula ${admissionYear} - ${formData.type}`,
+          origin: originPosition,
         },
-      });
+        {
+          userData: userContact,
+          onComplete: () => {
+            window.location.href = waUrl;
+          },
+        }
+      );
     } else {
       // Si ya se disparó la conversión en este flujo, navegar directamente sin volver a emitir
       window.location.href = waUrl;

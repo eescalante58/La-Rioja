@@ -53,7 +53,6 @@ export interface MatriculaPageData {
   config: SiteContent | null;
   whatsapp: SiteContent | null;
   seo: SiteContent | null;
-  ads: SiteContent | null;
   utm: SiteContent | null;
 }
 
@@ -91,7 +90,6 @@ export async function getMatriculaPageData(): Promise<MatriculaPageData> {
     config: findRow("matricula_config"),
     whatsapp: findRow("matricula_whatsapp"),
     seo: findRow("matricula_seo"),
-    ads: findRow("matricula_ads"),
     utm: findRow("matricula_utm"),
   };
 }

@@ -168,9 +168,10 @@ Al hacer clic en **Editar** sobre las secciones clave de `Matrícula`, el formul
 1. **`pestaña`**: interruptor maestro con indicador de estado («Página Publicada» / «Página Oculta (404)»).
 2. **`matricula_cupos`**: campo numérico para los cupos disponibles (`count`), interruptor para mostrar/ocultar la insignia en el Hero, etiqueta cuando los cupos llegan a `0` (`zero_label`) y texto de actualización (`updated_label`).
 3. **`matricula_whatsapp`**: teléfono destino en formato `E.164` (`+50377310792`), teléfono visible en pantalla (`7731-0792`) y plantilla del mensaje con tokens dinámicos (`{year}`, `{name}`, `{email}`, `{phone}`, `{type}`, `{message}`).
-4. **`matricula_ads`**: interruptor de integración activa de Google Ads, `Tag ID` (ej. `AW-18533492300`), `Conversion Label`, interruptor de disparo de conversión (`Website lead` al abrir WhatsApp tras guardar el formulario) y modo «Solo en Producción».
-5. **`matricula_utm`**: configuración de `utm_source`, `utm_medium`, `utm_campaign`, tiempo de vida en sesión (`ttl_minutes`) y **generador de sufijo de URL con botón «Copiar Sufijo»** listo para pegar en Google Ads.
-6. **`matricula_config`**: selector del año del ciclo de admisión (`admission_year`, p. ej. `2027`), que reemplaza automáticamente el token `{year}` en títulos y mensajes.
+4. **`matricula_utm`**: configuración de `utm_source`, `utm_medium`, `utm_campaign`, tiempo de vida en sesión (`ttl_minutes`) y **generador de sufijo de URL con botón «Copiar Sufijo»** listo para pegar en anuncios.
+5. **`matricula_config`**: selector del año del ciclo de admisión (`admission_year`, p. ej. `2027`), que reemplaza automáticamente el token `{year}` en títulos y mensajes.
+
+> **Medición de Google Ads y Meta Pixel:** la medición de conversiones de `/matricula` y del resto del sitio se administra de forma centralizada desde las pestañas **«Meta Pixel»** (`/admin/cms?tab=meta-pixel`) y **«Google Ads»** (`/admin/cms?tab=google-ads`).
 
 #### Tabla de secciones de «Matrícula»
 
@@ -191,7 +192,6 @@ Al hacer clic en **Editar** sobre las secciones clave de `Matrícula`, el formul
 | `matricula_config` | Año del ciclo escolar y parámetros generales | `admission_year` (`2027`), `route`, `contact_fallback_text` |
 | `matricula_whatsapp` | Teléfono destino y plantilla del mensaje `wa.me` | `phone_e164`, `display_phone`, `message_template`, `enabled` |
 | `matricula_seo` | Metadatos SEO y Open Graph de `/matricula` | `og_image_alt`, `canonical_path`, `robots_index`, `robots_follow` |
-| `matricula_ads` | Medición de Google Ads y evento de conversión | `enabled`, `tag_id`, `conversion_enabled`, `conversion_label`, `production_only` |
 | `matricula_utm` | Reglas de captura UTM y valores por defecto de campaña | `enabled`, `campaign_defaults`, `allowed_keys`, `ttl_minutes`, `persist_to_submission` |
 
 > **Nota sobre prospectos recibidos:** todas las solicitudes enviadas desde el formulario de `/matricula` se guardan en **Configuración → Mensajes de Contacto** (`/admin/settings/contact`) con su atribución de campaña (`utm_source`, `utm_medium`, `utm_campaign`) y pueden filtrarse o exportarse a CSV.

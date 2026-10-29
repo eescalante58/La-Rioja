@@ -9,10 +9,8 @@ import { MatriculaProceso } from "./MatriculaProceso";
 import { MatriculaCierre } from "./MatriculaCierre";
 import { MatriculaStickyMobileCTA } from "./MatriculaStickyMobileCTA";
 import { MatriculaModalForm } from "./MatriculaModalForm";
-import { MatriculaGoogleAds } from "./MatriculaGoogleAds";
 import type { MatriculaPageData } from "@/lib/matricula/matricula-service";
 import type {
-  MatriculaAdsConfig,
   MatriculaWhatsAppConfig,
   MatriculaUtmConfig,
 } from "@/lib/validation/matricula";
@@ -26,7 +24,6 @@ export function MatriculaPageClient({ pageData, admissionYear }: MatriculaPageCl
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalOrigin, setModalOrigin] = useState<"intro" | "hero" | "cierre" | "sticky_mobile">("hero");
 
-  const adsConfig = (pageData.ads?.metadata || null) as MatriculaAdsConfig | null;
   const whatsappConfig = (pageData.whatsapp?.metadata || null) as MatriculaWhatsAppConfig | null;
   const utmConfig = (pageData.utm?.metadata || null) as Partial<MatriculaUtmConfig> | null;
 
@@ -42,9 +39,6 @@ export function MatriculaPageClient({ pageData, admissionYear }: MatriculaPageCl
 
   return (
     <div className="relative pb-16 lg:pb-0">
-      {/* Carga declarativa y aislada de Google Ads */}
-      <MatriculaGoogleAds config={adsConfig} />
-
       {/* Bloque superior intro bajo navbar */}
       <MatriculaIntro
         introSection={pageData.intro}
@@ -92,7 +86,6 @@ export function MatriculaPageClient({ pageData, admissionYear }: MatriculaPageCl
         originPosition={modalOrigin}
         formSection={pageData.formulario}
         whatsappConfig={whatsappConfig}
-        adsConfig={adsConfig}
         admissionYear={admissionYear}
       />
     </div>

@@ -1,29 +1,20 @@
 import { NextResponse } from "next/server";
 import { isMatriculaActive } from "@/lib/matricula/matricula-service";
-import { createStaticClient } from "@/lib/supabase/server";
+import { getCachedPublicGoogleAdsConfig } from "@/lib/tracking/google-ads-config-server";
 
 export async function GET() {
   try {
-    const active = await isMatriculaActive();
+    const [active, googleAdsConfig] = await Promise.all([
+      isMatriculaActive(),
+      getCachedPublicGoogleAdsConfig(),
+    ]);
 
-    let adsEnabled = false;
-    let conversionEnabled = false;
-
-    if (active) {
-      const supabase = createStaticClient();
-      const { data } = await supabase
-        .from("site_content")
-        .select("metadata, is_active")
-        .eq("page", "matricula")
-        .eq("section_key", "matricula_ads")
-        .maybeSingle();
-
-      if (data && data.is_active) {
-        const meta = (data.metadata || {}) as Record<string, unknown>;
-        adsEnabled = meta.enabled === true;
-        conversionEnabled = meta.conversion_enabled === true;
-      }
-    }
+    const adsEnabled = Boolean(active && googleAdsConfig.isEnabled && googleAdsConfig.tagId);
+    const conversionEnabled = Boolean(
+      adsEnabled &&
+        googleAdsConfig.eventsConfig?.Lead?.enabled &&
+        googleAdsConfig.eventsConfig?.Lead?.conversionLabel
+    );
 
     const response = NextResponse.json({
       success: true,
@@ -32,7 +23,6 @@ export async function GET() {
       conversion_enabled: conversionEnabled,
     });
 
-    // Límite estricto de 60 segundos conforme a la especificación v1.7
     response.headers.set("Cache-Control", "public, max-age=60, must-revalidate");
     return response;
   } catch {

@@ -35,6 +35,7 @@ export default async function CMSManager() {
     .neq("section_key", "__meta_tracking_logs__")
     .neq("section_key", "__google_ads_tracking_config__")
     .neq("section_key", "__google_ads_tracking_logs__")
+    .neq("section_key", "matricula_ads")
     .order("page", { ascending: true })
     .order("section_key", { ascending: true })
     .order("content_order", { ascending: true });

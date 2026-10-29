@@ -1,35 +1,6 @@
 import { z } from "zod";
 
 /**
- * Esquema de validación para la configuración de Google Ads (matricula_ads).
- */
-export const matriculaAdsSchema = z.object({
-  schema_version: z.number().int().default(1),
-  enabled: z.boolean().default(false),
-  tag_id: z
-    .string()
-    .trim()
-    .regex(/^AW-[0-9]+$/, "El ID de Google Ads debe tener el formato AW- seguido de números (ej. AW-18533492300)"),
-  page_tag_enabled: z.boolean().default(true),
-  allowed_path: z.string().trim().default("/matricula"),
-  conversion_enabled: z.boolean().default(false),
-  conversion_label: z.string().trim().min(1, "La etiqueta de conversión es requerida"),
-  conversion_action_name: z.string().trim().default("Website lead"),
-  conversion_event: z.literal("conversion").default("conversion"),
-  conversion_value: z.number().nullable().default(null),
-  currency: z.string().trim().default("USD"),
-  cta_positions: z
-    .array(z.enum(["intro", "hero", "cierre", "sticky_mobile"]))
-    .default(["intro", "hero", "cierre", "sticky_mobile"]),
-  allow_ad_personalization_signals: z.boolean().default(false),
-  allow_enhanced_conversions: z.boolean().default(false),
-  restricted_data_processing: z.boolean().default(true),
-  production_only: z.boolean().default(true),
-});
-
-export type MatriculaAdsConfig = z.infer<typeof matriculaAdsSchema>;
-
-/**
  * Esquema de validación para la configuración de WhatsApp (matricula_whatsapp).
  */
 export const matriculaWhatsAppSchema = z.object({
