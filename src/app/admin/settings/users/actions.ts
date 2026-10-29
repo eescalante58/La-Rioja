@@ -10,7 +10,7 @@ import { userSchema, roleSchema, type UserInput, type RoleInput } from "@/lib/va
  * Server action to fetch all users with their roles.
  */
 export async function getUsersWithRoles() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("users")
     .select(
@@ -32,7 +32,7 @@ export async function getUsersWithRoles() {
  * Server action to fetch all available roles.
  */
 export async function getRoles() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("roles")
     .select("*")
@@ -461,7 +461,7 @@ export const updateUserCompanyRole = withRole(8, updateUserCompanyRoleInternal);
  * Server action to fetch user-company relationships.
  */
 export async function getUserCompanies(userId: string) {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("user_companies")
     .select(
