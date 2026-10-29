@@ -9,6 +9,7 @@ import { WhatsAppIcon } from "@/components/layout/WhatsAppIcon";
 import { getStoredAttribution } from "@/lib/matricula/utm";
 import { resolveWhatsAppUrl } from "@/lib/matricula/whatsapp";
 import { triggerMatriculaConversion } from "./MatriculaGoogleAds";
+import { metaPixel } from "@/components/tracking/meta-pixel-service";
 import type { SiteContent } from "@/types/cms";
 import type { MatriculaAdsConfig, MatriculaWhatsAppConfig } from "@/lib/validation/matricula";
 
@@ -190,9 +191,30 @@ export function MatriculaModalForm({
 
     if (!conversionFiredRef.current) {
       conversionFiredRef.current = true;
+
+      const userContact = {
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        firstName: formData.name.trim(),
+      };
+
+      // Si Meta Pixel + CAPI está activo en el CMS, disparar Lead deduplicado
+      void metaPixel.track(
+        "Lead",
+        {
+          content_name: `Matrícula ${admissionYear} - ${formData.type}`,
+          content_category: originPosition,
+        },
+        {
+          sendCAPI: true,
+          userData: userContact,
+        }
+      );
+
       triggerMatriculaConversion({
         config: adsConfig,
         targetUrl: waUrl,
+        userData: userContact,
         onNavigate: () => {
           window.location.href = waUrl;
         },

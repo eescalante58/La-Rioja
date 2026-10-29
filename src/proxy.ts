@@ -5,6 +5,10 @@ import {
   buildFbpCookie,
   FB_COOKIE_OPTIONS,
 } from "@/lib/tracking/fb-cookies";
+import {
+  buildGclCookie,
+  GOOGLE_COOKIE_OPTIONS,
+} from "@/lib/tracking/google-cookies";
 
 /**
  * Proxy to handle canonical domain redirection, session refreshing and route protection.
@@ -119,6 +123,43 @@ export async function proxy(request: NextRequest) {
     if (!existingFbp) {
       const fbpValue = buildFbpCookie();
       response.cookies.set("_fbp", fbpValue, FB_COOKIE_OPTIONS);
+    }
+
+    // Captura automática de cookies Google Ads (_gcl_aw, _gcl_gb, _gcl_ag) por 90 días
+    const gclid = request.nextUrl.searchParams.get("gclid");
+    if (gclid) {
+      const existingGcl = request.cookies.get("_gcl_aw")?.value;
+      if (!existingGcl || !existingGcl.includes(gclid)) {
+        response.cookies.set(
+          "_gcl_aw",
+          buildGclCookie(gclid),
+          GOOGLE_COOKIE_OPTIONS
+        );
+      }
+    }
+
+    const gbraid = request.nextUrl.searchParams.get("gbraid");
+    if (gbraid) {
+      const existingGbraid = request.cookies.get("_gcl_gb")?.value;
+      if (!existingGbraid || !existingGbraid.includes(gbraid)) {
+        response.cookies.set(
+          "_gcl_gb",
+          buildGclCookie(gbraid),
+          GOOGLE_COOKIE_OPTIONS
+        );
+      }
+    }
+
+    const wbraid = request.nextUrl.searchParams.get("wbraid");
+    if (wbraid) {
+      const existingWbraid = request.cookies.get("_gcl_ag")?.value;
+      if (!existingWbraid || !existingWbraid.includes(wbraid)) {
+        response.cookies.set(
+          "_gcl_ag",
+          buildGclCookie(wbraid),
+          GOOGLE_COOKIE_OPTIONS
+        );
+      }
     }
   }
 

@@ -3,30 +3,38 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
-import { List, HelpCircle, Image as ImageIcon, Activity } from "lucide-react";
+import {
+  List,
+  HelpCircle,
+  Image as ImageIcon,
+  Activity,
+  Target,
+} from "lucide-react";
 
 interface CMSTabsContainerProps {
   contentPanel: React.ReactNode;
   faqPanel: React.ReactNode;
   galleryPanel: React.ReactNode;
   metaPixelPanel: React.ReactNode;
+  googleAdsPanel: React.ReactNode;
 }
 
 /**
  * Contenedor de pestañas del CMS con persistencia de pestaña activa.
- * Soporta navegación directa por URL (?tab=contenido, ?tab=faq, ?tab=galeria, ?tab=meta-pixel).
+ * Soporta navegación directa por URL (?tab=contenido, ?tab=faq, ?tab=galeria, ?tab=meta-pixel, ?tab=google-ads).
  */
 export default function CMSTabsContainer({
   contentPanel,
   faqPanel,
   galleryPanel,
   metaPixelPanel,
+  googleAdsPanel,
 }: CMSTabsContainerProps) {
   const searchParams = useSearchParams();
   const [selectedTab, setSelectedTab] = useState(0);
 
   useEffect(() => {
-    // 1. Prioridad: parámetro en URL (?tab=faq, ?tab=galeria, ?tab=contenido, ?tab=meta-pixel)
+    // 1. Prioridad: parámetro en URL (?tab=faq, ?tab=galeria, ?tab=contenido, ?tab=meta-pixel, ?tab=google-ads)
     const tabParam = searchParams.get("tab")?.toLowerCase();
     if (tabParam === "faq" || tabParam === "1") {
       setSelectedTab(1);
@@ -45,6 +53,15 @@ export default function CMSTabsContainer({
       setSelectedTab(3);
       return;
     }
+    if (
+      tabParam === "google-ads" ||
+      tabParam === "googleads" ||
+      tabParam === "gads" ||
+      tabParam === "4"
+    ) {
+      setSelectedTab(4);
+      return;
+    }
     if (tabParam === "content" || tabParam === "contenido" || tabParam === "0") {
       setSelectedTab(0);
       return;
@@ -54,7 +71,7 @@ export default function CMSTabsContainer({
     const saved = sessionStorage.getItem("cms_selected_tab");
     if (saved !== null) {
       const idx = parseInt(saved, 10);
-      if (!isNaN(idx) && idx >= 0 && idx <= 3) {
+      if (!isNaN(idx) && idx >= 0 && idx <= 4) {
         setSelectedTab(idx);
       }
       sessionStorage.removeItem("cms_selected_tab");
@@ -73,6 +90,8 @@ export default function CMSTabsContainer({
           ? "galeria"
           : index === 3
           ? "meta-pixel"
+          : index === 4
+          ? "google-ads"
           : "contenido";
       url.searchParams.set("tab", tabName);
       window.history.replaceState({}, "", url.toString());
@@ -108,6 +127,12 @@ export default function CMSTabsContainer({
             <span>Meta Pixel</span>
           </div>
         </Tab>
+        <Tab className="text-base sm:text-lg">
+          <div className="flex items-center gap-2">
+            <Target size={20} />
+            <span>Google Ads</span>
+          </div>
+        </Tab>
       </TabList>
       <TabPanels>
         <TabPanel>
@@ -121,6 +146,9 @@ export default function CMSTabsContainer({
         </TabPanel>
         <TabPanel>
           <div className="mt-6">{metaPixelPanel}</div>
+        </TabPanel>
+        <TabPanel>
+          <div className="mt-6">{googleAdsPanel}</div>
         </TabPanel>
       </TabPanels>
     </TabGroup>

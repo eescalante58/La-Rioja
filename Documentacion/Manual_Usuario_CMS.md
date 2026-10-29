@@ -1,8 +1,8 @@
 # Manual de Usuario — Gestión de Contenido (CMS)
 
-Manual de uso de la sección **Gestión CMS** del panel de administración (`/admin/cms`). Desde aquí se administra el contenido dinámico del sitio público: textos e imágenes de la landing page, las páginas institucionales, la página de matrícula y campañas, las preguntas frecuentes, la galería de fotos de los eventos y la medición publicitaria con **Meta Pixel + Conversions API (CAPI)**.
+Manual de uso de la sección **Gestión CMS** del panel de administración (`/admin/cms`). Desde aquí se administra el contenido dinámico del sitio público: textos e imágenes de la landing page, las páginas institucionales, la página de matrícula y campañas, las preguntas frecuentes, la galería de fotos de los eventos y la medición publicitaria con **Meta Pixel + Conversions API (CAPI)** y **Google Ads + Conversiones Mejoradas**.
 
-> **Acceso:** menú lateral → **Gestión CMS**. La pantalla se divide en cuatro pestañas: **Contenido General**, **Preguntas Frecuentes (FAQ)**, **Galería de Fotos** y **Meta Pixel**.
+> **Acceso:** menú lateral → **Gestión CMS**. La pantalla se divide en cinco pestañas: **Contenido General**, **Preguntas Frecuentes (FAQ)**, **Galería de Fotos**, **Meta Pixel** y **Google Ads**.
 
 ---
 
@@ -361,6 +361,101 @@ En la parte inferior dispones de cuatro botones de operación y diagnóstico en 
 4. Haz clic en **«Guardar Configuración»**.
 5. Haz clic en **«Probar Evento»** y luego en **«Ver Logs (Últimos 50)»**: verifica que el primer registro aparezca con estado **`OK`**.
 6. Borra el campo **Test Event Code** (déjalo en blanco) y vuelve a hacer clic en **«Guardar Configuración»**. ¡Tu Pixel y CAPI ya están midiendo en producción!
+
+---
+
+## 5. Google Ads (Google Tag `gtag.js` + Conversiones Mejoradas)
+
+Administra de forma centralizada la medición de campañas de **Google Ads** (**Búsqueda, Display, YouTube y Performance Max**) en todo el sitio web, sin necesidad de tocar código ni realizar despliegues.
+
+> **Acceso directo:** `/admin/cms?tab=google-ads` (restringido exclusivamente a usuarios con rol **Admin / SuperAdmin**, `level >= 8`).
+
+### Independencia total respecto a Meta Pixel
+
+Las pestañas **«Google Ads»** y **«Meta Pixel»** son **100% independientes** entre sí; nunca es obligatorio activar las dos al mismo tiempo:
+
+| Escenario de Campaña | Interruptor «Google Ads» | Interruptor «Meta Pixel» | Comportamiento del sitio |
+| :--- | :---: | :---: | :--- |
+| **Solo campañas en Google Ads** | `ACTIVO` | `APAGADO` | Solo carga `gtag.js` y solo envía conversiones a Google Ads. |
+| **Solo campañas en Meta (FB / IG / WA)** | `APAGADO` | `ACTIVO` | Solo carga `fbevents.js` y CAPI. Google Ads no carga nada. |
+| **Campañas simultáneas en Google y Meta** | `ACTIVO` | `ACTIVO` | Ambos miden en paralelo de forma aislada (por ejemplo, al enviar el formulario de `/matricula` se reporta la conversión a ambas plataformas). |
+| **Fuera de temporada de campañas** | `APAGADO` | `APAGADO` | El sitio no descarga ningún script publicitario. |
+
+---
+
+### 5.1 Sección 1: Estado Global de Google Ads (Kill Switch)
+
+| Campo | Cómo funciona | Ejemplo práctico |
+| :---- | :------------ | :--------------- |
+| **Interruptor `Google Ads ACTIVO` / `Google Ads APAGADO`** | - **ACTIVO (verde):** inyecta la etiqueta global `gtag.js` en las páginas públicas y habilita el disparo de las etiquetas de conversión activas.<br>- **APAGADO (gris + alerta roja):** desactiva por completo Google Ads en todo el sitio sin borrar tus identificadores ni tus etiquetas guardadas. | **Ejemplo:** si tu campaña de Google Búsqueda para Matrícula ya cerró inscripciones pero sigues corriendo anuncios en Instagram para el Bingo, apaga el interruptor de **Google Ads** y deja encendido solo el de **Meta Pixel**. |
+
+---
+
+### 5.2 Sección 2: Credenciales e Identificadores de Google Tag
+
+| Campo | Qué es y cómo funciona | Ejemplo y recomendaciones |
+| :---- | :--------------------- | :------------------------ |
+| **Destino de Conversión Principal (Vista Previa)** | Recuadro informativo que muestra en tiempo real cómo queda armado el parámetro `send_to` combinando tu Tag ID y el Conversion Label del evento `Lead`. | **Ejemplo:** `AW-18533492300/-252CIjfxqgdEMzMuoVF`. |
+| **ID de Google Ads (Tag ID)** | Identificador de tu etiqueta de Google Ads. Siempre comienza con `AW-` seguido de números. Viene preconfigurado con el ID institucional de La Rioja. | **Ejemplo:** `AW-18533492300`.<br>*Dónde encontrarlo:* en Google Ads → **Objetivos → Conversiones → Configuración → Etiqueta de Google**. |
+| **ID de Google Analytics 4 (Opcional)** | Identificador opcional de flujo de datos de GA4 (`G-XXXXXXXXXX`). Si lo colocas, el mismo contenedor `gtag.js` enviará métricas a Google Analytics 4 sin descargar un segundo script. | **Ejemplo:** `G-9A8B7C6D5E`. Si no utilizas GA4, déjalo en blanco. |
+| **Modo «Solo en Producción»** *(Badge: Filtro DEV)* | Cuando está marcado, impide que las pruebas realizadas por desarrolladores en `localhost` disparen conversiones hacia Google Ads. | **Recomendación:** mantenerlo **activado** en operación normal; desmárcalo solo si estás probando desde una computadora local con el Modo Depuración activo. |
+
+---
+
+### 5.3 Sección 3: Configuración General, Atribución GCLID y Privacidad
+
+| Campo | Cómo funciona | Ejemplo práctico |
+| :---- | :------------ | :--------------- |
+| **Moneda por Defecto** | Divisa ISO (`USD`, `GTQ`, `MXN`, `EUR`, etc.) que se envía junto con el valor de las conversiones. | **Ejemplo:** `USD — Dólar Estadounidense ($)`. |
+| **Conversiones Mejoradas (Enhanced Conversions)** | Cuando está marcado, al completarse un formulario (como Matrícula), envía a Google Ads el correo y teléfono normalizados/hasheados con **SHA-256** para recuperar conversiones que de otro modo se perderían por restricciones de cookies. | **Recomendación:** mantenerlo **activado** para mejorar la precisión de puja automática (Smart Bidding) en Google Ads. |
+| **Captura Automática GCLID / GBRAID (90 días)** | Cuando un usuario entra desde un anuncio de Google (`?gclid=...`, `?gbraid=...` o `?wbraid=...`), el servidor guarda automáticamente la cookie `_gcl_aw` con **90 días** de duración. | **Ejemplo:** un visitante busca en Google *"formación laboral discapacidad El Salvador"*, hace clic en tu anuncio y se inscribe dos semanas después. Gracias a `_gcl_aw`, Google Ads atribuye la inscripción a la palabra clave exacta. |
+| **Señales de Personalización de Anuncios** | Controla el parámetro `allow_ad_personalization_signals` de Google para habilitar o restringir listas de remarketing. | **Ejemplo:** déjalo **desmarcado** si solo deseas medir conversiones sin crear audiencias de remarketing personalizado. |
+| **Procesamiento Restringido de Datos (RDP)** | Activa `restricted_data_processing: true` en `gtag.js` para máxima protección de privacidad institucional. | **Recomendación:** mantenerlo **activado**. |
+| **Modo Depuración (Debug)** | Imprime en la consola del navegador (`F12 → Console`) cada conversión disparada (`[Google Ads] Lead -> AW-18533492300/...`). | Útil para verificar etiquetas con el equipo técnico antes de lanzar una campaña. |
+
+---
+
+### 5.4 Sección 4: Matriz de Eventos y Etiquetas de Conversión (Conversion Labels)
+
+A diferencia de Meta Pixel (donde todos los eventos usan el mismo Pixel ID), en **Google Ads cada acción de conversión tiene su propio `Conversion Label` alfanumérico**. Esta matriz te permite administrar todas las acciones y ordenarlas con Drag & Drop (`⋮⋮`):
+
+| Columna | Qué controla | Ejemplo práctico |
+| :------ | :----------- | :--------------- |
+| **Prioridad (`⋮⋮`)** | Orden de importancia de la conversión en el embudo. | `#1 Lead`, `#2 Purchase`, `#3 CompleteRegistration`. |
+| **Evento / Acción** | Nombre del evento estándar (`Lead`, `Purchase`, `CompleteRegistration`, `InitiateCheckout`, `Contact`, `ViewContent`, `PageView`). | En `/matricula`, al enviar el formulario y abrir WhatsApp se dispara automáticamente el evento **`Lead`**. |
+| **Activo** | Interruptor individual para encender o apagar esa acción en Google Ads. | Si solo tienes campaña de Matrícula, deja activo `Lead` y `PageView`. |
+| **Conversion Label (`send_to`)** | Etiqueta específica que te entrega Google Ads al crear una acción de conversión. Debajo del campo verás la vista previa exacta `send_to: AW-18533492300/...`. | **Ejemplo para `Lead`:** `-252CIjfxqgdEMzMuoVF`.<br>**Ejemplo si creas otra conversión para Tienda (`Purchase`):** pega aquí su etiqueta (ej. `AbCdEfGhIjKlMnOpQrSt`) y guarda. |
+| **Valor Default** | Valor monetario opcional que se enviará a Google Ads si el evento no trae un monto dinámico. | **Ejemplo:** puedes dejarlo vacío o poner `10` si asignas un valor estimado de `$10 USD` a cada prospecto captado. |
+| **Bitácora Server** | Registra cada conversión disparada en la tabla `cms_google_ads_logs` para que puedas auditarla desde el botón **«Ver Logs»**. | **Recomendación:** mantenerlo marcado en `Lead`, `Purchase` y `CompleteRegistration`. |
+| **¿Es Crítico?** | Marca las conversiones clave del embudo y asegura que siempre queden auditadas en la bitácora del servidor. | Marcado por defecto en `Lead` y `Purchase`. |
+
+---
+
+### 5.5 Sección 5: Dominios Permitidos y Google Consent Mode v2
+
+| Campo | Cómo funciona | Ejemplo práctico |
+| :---- | :------------ | :--------------- |
+| **Dominios Autorizados (Allowed Domains)** | Lista de dominios donde se permite ejecutar `gtag.js`. Si está vacía, funciona en cualquier dominio del sitio. | **Ejemplo:** agrega `lariojacflsv.site` para evitar que copias externas disparen tus etiquetas. |
+| **Google Consent Mode v2** | Configura las señales oficiales de Google (`ad_storage`, `ad_user_data`, `ad_personalization`, `analytics_storage`):<br>- **`Disabled`:** carga y mide de inmediato al entrar.<br>- **`Basic`:** espera a que el visitante acepte el banner de cookies.<br>- **`Advanced`:** actualiza dinámicamente las señales de Google Consent Mode v2 cuando se otorga consentimiento. | **Ejemplo:** en campañas locales selecciona **`Disabled`** para medir el 100% de los clics de tus anuncios desde la primera carga. |
+
+---
+
+### 5.6 Sección 6: Herramientas de Validación y Diagnóstico de Google Ads
+
+1. **Botón «Probar Conversión»:**
+   - Valida tu `Tag ID` y tu `Conversion Label` principal y genera un registro de prueba en la bitácora con un `transaction_id` único (ej. `test_gads_1730...`).
+2. **Botón «Ver Logs (Últimos 50)»:**
+   - Abre el visor con las últimas 50 conversiones registradas en el servidor (`cms_google_ads_logs`), mostrando:
+     - **Fecha y hora**
+     - **Evento** (ej. `Lead`)
+     - **Destino (`send_to`)** (ej. `AW-18533492300/-252CIjfxqgdEMzMuoVF`)
+     - **Transaction ID** (evita que Google cuente dos veces la misma conversión)
+     - **GCLID** capturado del anuncio de Google
+     - **Estado** (`OK`, `SKIPPED`, `ERROR`)
+3. **Botón «Tag Assistant»:**
+   - Abre la herramienta oficial **Google Tag Assistant** (`https://tagassistant.google.com/`) para verificar en vivo las etiquetas de tu dominio.
+4. **Botón «Guardar Configuración»:**
+   - Guarda los cambios en la base de datos e invalida al instante la caché (`revalidateTag: 'google-ads-config'`).
 
 ---
 

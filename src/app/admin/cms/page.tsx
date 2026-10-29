@@ -6,10 +6,15 @@ import FAQManager from "@/components/admin/FAQManager";
 import GalleryManagement from "@/components/admin/cms/GalleryManagement";
 import CMSTabsContainer from "@/components/admin/cms/CMSTabsContainer";
 import MetaPixelConfigManager from "@/components/admin/cms/MetaPixelConfigManager";
+import GoogleAdsConfigManager from "@/components/admin/cms/GoogleAdsConfigManager";
 import {
   getRawMetaTrackingConfig,
   toAdminConfig,
 } from "@/lib/tracking/meta-config-server";
+import {
+  getRawGoogleAdsConfig,
+  toAdminGoogleAdsConfig,
+} from "@/lib/tracking/google-ads-config-server";
 import { requireRoleLevel } from "@/lib/auth/authorization";
 
 // Force dynamic rendering to avoid build-time RLS issues
@@ -28,6 +33,8 @@ export default async function CMSManager() {
     .select("*")
     .neq("section_key", "__meta_tracking_config__")
     .neq("section_key", "__meta_tracking_logs__")
+    .neq("section_key", "__google_ads_tracking_config__")
+    .neq("section_key", "__google_ads_tracking_logs__")
     .order("page", { ascending: true })
     .order("section_key", { ascending: true })
     .order("content_order", { ascending: true });
@@ -52,13 +59,15 @@ export default async function CMSManager() {
     .select("*")
     .order("created_at", { ascending: false });
 
-  const [rawMetaConfig, adminRoleCheck] = await Promise.all([
+  const [rawMetaConfig, rawGoogleConfig, adminRoleCheck] = await Promise.all([
     getRawMetaTrackingConfig(),
+    getRawGoogleAdsConfig(),
     requireRoleLevel(8),
   ]);
 
   const metaAdminConfig = toAdminConfig(rawMetaConfig);
-  const canEditMetaPixel = !adminRoleCheck.error && adminRoleCheck.level >= 8;
+  const googleAdsAdminConfig = toAdminGoogleAdsConfig(rawGoogleConfig);
+  const canEditTracking = !adminRoleCheck.error && adminRoleCheck.level >= 8;
 
   // Si hay errores críticos de conexión, mostrar mensaje simple
   if (contentError && contentError.message.includes("fetch")) {
@@ -104,7 +113,13 @@ export default async function CMSManager() {
         metaPixelPanel={
           <MetaPixelConfigManager
             initialConfig={metaAdminConfig}
-            canEdit={canEditMetaPixel}
+            canEdit={canEditTracking}
+          />
+        }
+        googleAdsPanel={
+          <GoogleAdsConfigManager
+            initialConfig={googleAdsAdminConfig}
+            canEdit={canEditTracking}
           />
         }
       />

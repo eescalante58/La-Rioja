@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { SessionManager } from "@/components/auth/SessionManager";
 import { FloatingContact } from "@/components/layout/FloatingContact";
 import { MetaPixelProvider } from "@/components/tracking/MetaPixelProvider";
+import { GoogleAdsProvider } from "@/components/tracking/GoogleAdsProvider";
 import { Analytics } from "@vercel/analytics/next";
 
 const montserrat = Montserrat({
@@ -116,6 +117,7 @@ export default function RootLayout({
         >
           <SessionManager />
           <MetaPixelProvider />
+          <GoogleAdsProvider />
           {children}
           <FloatingContact />
         </ThemeProvider>

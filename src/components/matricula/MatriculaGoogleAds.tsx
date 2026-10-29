@@ -3,7 +3,9 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
+import { googleAds } from "@/components/tracking/google-ads-service";
 import type { MatriculaAdsConfig } from "@/lib/validation/matricula";
+import type { GoogleAdsUserData } from "@/types/google-ads-tracking";
 
 interface MatriculaGoogleAdsProps {
   config: MatriculaAdsConfig | null;
@@ -15,9 +17,10 @@ let canEmitMatriculaConversion = false;
 export function triggerMatriculaConversion(params: {
   config: MatriculaAdsConfig | null;
   targetUrl: string;
+  userData?: GoogleAdsUserData;
   onNavigate?: () => void;
 }) {
-  const { config, targetUrl, onNavigate } = params;
+  const { config, targetUrl, userData, onNavigate } = params;
 
   let hasNavigated = false;
   const navigate = () => {
@@ -30,7 +33,24 @@ export function triggerMatriculaConversion(params: {
     }
   };
 
-  // Verificaciones de seguridad previas a la conversión
+  // 1. Si el módulo global "Google Ads" del CMS está activo, delegar en él
+  if (googleAds.isGlobalActive()) {
+    void googleAds.track(
+      "Lead",
+      {
+        value: config?.conversion_value ?? undefined,
+        currency: config?.currency || "USD",
+        content_name: "Matrícula Lead",
+      },
+      {
+        userData,
+        onComplete: navigate,
+      }
+    );
+    return;
+  }
+
+  // 2. Fallback a la sección individual matricula_ads si el módulo global está apagado
   if (
     !canEmitMatriculaConversion ||
     !config ||
@@ -72,6 +92,7 @@ export function triggerMatriculaConversion(params: {
 
 /**
  * Componente cliente para la carga aislada y declarativa de Google Ads en /matricula.
+ * Si el proveedor global `GoogleAdsProvider` ya está activo en el CMS, evita inyectar `gtag.js` por duplicado.
  */
 export function MatriculaGoogleAds({ config }: MatriculaGoogleAdsProps) {
   const pathname = usePathname();
@@ -97,7 +118,7 @@ export function MatriculaGoogleAds({ config }: MatriculaGoogleAdsProps) {
     };
   }, [isAllowedPath, config?.enabled]);
 
-  if (!shouldLoad || !config?.tag_id) {
+  if (!shouldLoad || !config?.tag_id || googleAds.isGlobalActive()) {
     return null;
   }
 
