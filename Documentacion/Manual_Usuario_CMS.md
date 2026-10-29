@@ -1,8 +1,8 @@
 # Manual de Usuario — Gestión de Contenido (CMS)
 
-Manual de uso de la sección **Gestión CMS** del panel de administración (`/admin/cms`). Desde aquí se administra el contenido dinámico del sitio público: textos e imágenes de la landing page, las páginas institucionales, la página de matrícula y campañas, las preguntas frecuentes y la galería de fotos de los eventos.
+Manual de uso de la sección **Gestión CMS** del panel de administración (`/admin/cms`). Desde aquí se administra el contenido dinámico del sitio público: textos e imágenes de la landing page, las páginas institucionales, la página de matrícula y campañas, las preguntas frecuentes, la galería de fotos de los eventos y la medición publicitaria con **Meta Pixel + Conversions API (CAPI)**.
 
-> **Acceso:** menú lateral → **Gestión CMS**. La pantalla se divide en tres pestañas: **Contenido General**, **Preguntas Frecuentes (FAQ)** y **Galería de Fotos**.
+> **Acceso:** menú lateral → **Gestión CMS**. La pantalla se divide en cuatro pestañas: **Contenido General**, **Preguntas Frecuentes (FAQ)**, **Galería de Fotos** y **Meta Pixel**.
 
 ---
 
@@ -232,6 +232,135 @@ Administra las fotos de la galería pública de cada evento.
 - **Eliminar**: borra la foto del evento.
 
 > Si un evento no tiene fotos aparece el aviso "No hay fotos en este evento" — basta subir las primeras imágenes.
+
+---
+
+## 4. Meta Pixel (Meta Pixel + Conversions API / CAPI)
+
+Administra de principio a fin la medición de campañas publicitarias del ecosistema **Meta** (**Facebook, Instagram, WhatsApp, Messenger y Threads**) combinando dos canales simultáneos:
+
+1. **Meta Pixel (Navegador):** script que se ejecuta en el navegador del visitante.
+2. **Conversions API — CAPI (Servidor):** conexión directa desde el servidor de La Rioja hacia Meta Graph API v21.0. Permite que las conversiones lleguen a Meta **incluso si el visitante usa bloqueadores de anuncios (AdBlockers) o navegadores con bloqueo de cookies (Safari / iOS)**.
+
+> **Acceso directo:** `/admin/cms?tab=meta-pixel` (restringido exclusivamente a usuarios con rol **Admin / SuperAdmin**).
+> **Cero código y cero deploys:** cualquier cambio que guardes en esta pestaña entra en vigor inmediatamente en producción sin necesidad de que un programador modifique variables de entorno ni despliegue el sitio.
+
+---
+
+### 4.1 Sección 1: Estado Global (Kill Switch)
+
+Es el interruptor maestro de todo el sistema de seguimiento de Meta.
+
+| Campo | Cómo funciona | Ejemplo práctico |
+| :---- | :------------ | :--------------- |
+| **Interruptor `Tracking ACTIVO` / `Tracking APAGADO`** | - **ACTIVO (verde):** el sitio carga el Pixel de Meta en las páginas públicas y el servidor envía los eventos configurados por CAPI.<br>- **APAGADO (gris + alerta roja):** apaga instantáneamente toda la medición. No se descarga `fbevents.js` en el navegador ni se realiza ninguna llamada a Meta desde el servidor. | **Ejemplo:** si finalizaron todas las campañas de recaudación o admisiones y deseas pausar el envío de datos a Meta temporalmente sin borrar tu Pixel ID ni tu Token, simplemente pasa el interruptor a **Tracking APAGADO** y haz clic en **Guardar Configuración**. |
+
+---
+
+### 4.2 Sección 2: Credenciales de Meta Business
+
+Aquí se vincula el sitio web con tu cuenta comercial en **Meta Business Suite → Administrador de Eventos (Events Manager)**.
+
+| Campo | Qué es y cómo funciona | Ejemplo y recomendaciones |
+| :---- | :--------------------- | :------------------------ |
+| **Meta Pixel ID (Navegador)** | Identificador numérico de 15 a 16 dígitos de tu conjunto de datos (Dataset / Pixel) en Meta. Solo acepta números. | **Ejemplo:** `123456789012345`.<br>*Dónde encontrarlo:* en Meta Events Manager → **Orígenes de datos** → selecciona tu Pixel → pestaña **Configuración** → copia el **Identificador del conjunto de datos**. |
+| **CAPI Dataset / Pixel ID (Servidor)** | Identificador numérico del conjunto de datos al que el servidor enviará los eventos por Conversions API. Incluye el botón rápido **«Usar mismo Pixel ID»**. | **Ejemplo:** `123456789012345`.<br>*Importante:* para que Meta pueda **deduplicar** correctamente los eventos del navegador y del servidor, este número debe ser **idéntico** al Meta Pixel ID. |
+| **Conversions API Access Token** | Token secreto de autorización generado en Meta para enviar eventos desde el servidor.<br>- Se guarda cifrado en la base de datos con **AES-256-GCM**.<br>- Nunca viaja ni es visible en el navegador de los visitantes.<br>- Incluye un **icono de ojo** para mostrar/ocultar el texto al pegarlo y el botón **«Borrar token actual»** si deseas revocarlo. | **Ejemplo:** `EAAGm0PX4ZCpsBA...`<br>*Cómo obtenerlo:* en Meta Events Manager → **Configuración** → baja hasta **API de conversiones** → haz clic en **Generar token de acceso** y pégalo aquí.<br>*Nota:* una vez guardado, verás el aviso `Guardado (EAAG••••••••••••9X2A)`. Si cambias otros campos (como la moneda), no necesitas volver a pegar el token. |
+| **Test Event Code** *(Badge: Solo DEV / Staging)* | Código temporal que proporciona Meta para probar que los eventos llegan en tiempo real a la pestaña **«Probar eventos»** de Meta Events Manager. | **Ejemplo en pruebas:** escribe `TEST48291`, guarda y haz clic en **Probar Evento** (o navega por el sitio). Verás llegar los eventos en vivo en tu pantalla de Meta.<br>**Ejemplo en producción (MUY IMPORTANTE):** cuando termines de probar y lances tu campaña real, **borra el contenido de este campo y déjalo completamente vacío**. |
+
+---
+
+### 4.3 Sección 3: Configuración General
+
+Define el comportamiento global de los eventos y la calidad de coincidencia de usuarios.
+
+| Campo | Cómo funciona | Ejemplo práctico |
+| :---- | :------------ | :--------------- |
+| **Moneda por Defecto** | Define el código de divisa ISO (`USD`, `GTQ`, `MXN`, `EUR`, `HNL`, `CRC`, `NIO`, `COP`) que acompañará a todos los eventos con valor económico si el evento no especifica otra moneda. | **Ejemplo:** en El Salvador deja seleccionado **`USD — Dólar Estadounidense ($)`**. Si realizas una campaña regional para Guatemala, cámbialo a **`GTQ`** y guarda; todos los eventos enviarán `currency: "GTQ"` de inmediato. |
+| **Advanced Matching (SHA-256)** | Cuando está marcado, si un usuario llena un formulario (ej. Matrícula, Contacto o Compra) proporcionando su correo o teléfono, el servidor los normaliza y los convierte en una huella criptográfica irreversible (**hash SHA-256**) antes de enviarlos a Meta. | **Beneficio:** eleva la calificación de **Calidad de coincidencias de eventos (Event Match Quality)** en Meta (de ~4/10 a +8/10), reduciendo el costo por resultado (CPA) de tus anuncios sin exponer datos personales en texto plano. **Recomendación:** mantenerlo **activado**. |
+| **Captura Automática `_fbc` / `_fbp`** | Cuando una persona hace clic en un anuncio de Facebook/Instagram, Meta añade `?fbclid=...` al enlace. Este interruptor hace que el servidor capture ese identificador en el primer milisegundo y cree las cookies `_fbc` y `_fbp` con vigencia de **90 días**. | **Ejemplo:** un padre de familia entra hoy desde un anuncio en Instagram (`/?fbclid=IwAR3x...`), revisa la página y regresa 15 días después para inscribirse. Gracias a esta opción, Meta sabe exactamente qué anuncio generó esa inscripción. **Recomendación:** mantenerlo **activado**. |
+| **Modo Depuración (Debug)** | Cuando está marcado, imprime en la consola del navegador (`F12 → Console`) cada evento que se dispara junto con sus parámetros y su `eventId`. | **Ejemplo:** actívalo durante 10 minutos mientras verificas con el equipo técnico qué eventos se están disparando; **desactívalo** para el público general. |
+
+---
+
+### 4.4 Sección 4: Matriz de Eventos y Prioridad AEM (Drag & Drop)
+
+Esta tabla te permite controlar individualmente cada uno de los **9 eventos estándar de Meta** sin pedir cambios de código.
+
+#### Columnas de la Matriz
+
+1. **Prioridad (Drag & Drop `⋮⋮`):**
+   - Puedes arrastrar y soltar cualquier fila hacia arriba o hacia abajo usando el icono `⋮⋮`.
+   - Define el orden de prioridad para **AEM (Aggregated Event Measurement)** de Meta (el evento `#1` es el más importante para el negocio, por ejemplo `Purchase` o `Lead`).
+2. **Evento Estándar:** nombre oficial del evento reconocido por el algoritmo de Meta:
+   - `Purchase`: compra o donación completada.
+   - `InitiateCheckout`: inicio del proceso de pago o donación.
+   - `AddPaymentInfo`: ingreso de información de pago.
+   - `Lead`: prospecto capturado (por ejemplo, envío del formulario de Matrícula o Contacto hacia WhatsApp).
+   - `CompleteRegistration`: registro completado (por ejemplo, registro de cartones de Bingo en `/registro`).
+   - `AddToCart`: producto agregado al carrito en la tienda solidaria.
+   - `ViewContent`: visita al detalle de un programa, taller o producto.
+   - `PageView`: visita a cualquier página pública del sitio.
+   - `Search`: búsqueda realizada en el sitio.
+3. **Activo (Pixel):**
+   - Si está marcado (`✓`), el evento está habilitado.
+   - Si lo desmarcas, el evento queda silenciado por completo (ni navegador ni servidor lo enviarán).
+4. **Enviar a CAPI:**
+   - Si está marcado (`✓`), además de dispararse en el navegador, el evento se enviará desde el servidor mediante Conversions API con el **mismo `event_id`**.
+   - Meta recibirá ambos eventos, reconocerá que tienen el mismo `event_id` y los marcará como **Deduplicados** (si el navegador fue bloqueado por AdBlock, el evento de CAPI asegura que la conversión no se pierda).
+5. **¿Es Crítico?:**
+   - Marca los eventos de mayor valor del embudo (`Purchase`, `Lead`, `InitiateCheckout`). Al marcar un evento como crítico, el sistema fuerza automáticamente que se envíe también por **CAPI**.
+6. **Parámetros Requeridos:**
+   - Etiquetas que indican qué datos debe incluir el evento (por ejemplo, `value` y `content_ids` en `Purchase`).
+   - **Cómo agregar un parámetro:** escribe el nombre en el cuadro `+ param (Enter)` de esa fila y presiona la tecla `Enter`.
+   - **Cómo quitar un parámetro:** haz clic en la `×` junto al nombre del parámetro.
+
+> **Ejemplo práctico:** si notas en Meta Events Manager que el evento `Search` está generando demasiado ruido en una campaña enfocada solo en captar alumnos (`Lead`), simplemente desmarca la casilla **Activo (Pixel)** en la fila `Search` y guarda.
+
+---
+
+### 4.5 Sección 5: Dominios Permitidos y Modo de Consentimiento
+
+Protege tu Pixel para que nadie pueda enviar eventos falsos desde otros sitios web y configura la privacidad de cookies.
+
+| Campo | Cómo funciona | Ejemplo práctico |
+| :---- | :------------ | :--------------- |
+| **Dominios Autorizados (Allowed Domains)** | Lista blanca de dominios autorizados para disparar tu Pixel y enviar eventos a `/api/capi`.<br>- Si la lista está **vacía**, se permite cualquier dominio desde el que opere el sitio.<br>- Si agregas uno o más dominios, cualquier petición originada fuera de esos dominios será rechazada automáticamente. | **Ejemplo:** escribe `lariojacflsv.site` y haz clic en **+ Agregar**. Así garantizas que solo el tráfico real de `lariojacflsv.site` (y subdominios) pueda registrar conversiones en tu Pixel. |
+| **Modo de Consentimiento de Cookies (Consent Mode)** | Controla cuándo se activa el Pixel respecto al aviso de cookies:<br>1. **`Disabled` (Inmediato):** el Pixel se dispara apenas carga la página, sin esperar banner de cookies.<br>2. **`Basic` (Banner integrado):** muestra un banner discreto al visitante (*«Aceptar cookies / Rechazar»*) y solo activa el Pixel cuando el usuario acepta.<br>3. **`Advanced` (Programático):** espera a que un gestor externo de consentimiento ejecute `window.consent = { marketing: true }` (muestra en pantalla el fragmento de código con botón **Copiar**). | **Ejemplo para campañas en El Salvador / Latinoamérica:** si deseas medir el 100% de las visitas de tus anuncios desde el primer segundo, selecciona **`Disabled — Disparar Pixel inmediatamente al cargar`**. Si una campaña exige confirmación explícita previa del visitante, selecciona **`Basic`**. |
+
+---
+
+### 4.6 Sección 6: Herramientas de Validación, Diagnóstico y Guardado
+
+En la parte inferior dispones de cuatro botones de operación y diagnóstico en vivo:
+
+1. **Botón «Probar Evento»:**
+   - Envía en ese mismo instante un evento de prueba desde el servidor hacia Meta Graph API v21.0 usando tus credenciales configuradas.
+   - Si todo es correcto, muestra un mensaje verde con el `event_id` generado (ej. `test_173015...`). Si el token o el Pixel ID son incorrectos, te muestra el mensaje exacto devuelto por Meta para corregirlo al instante.
+2. **Botón «Ver Logs (Últimos 50)»:**
+   - Abre una ventana emergente con la bitácora en tiempo real de los últimos 50 eventos procesados por el servidor (`cms_meta_logs`), mostrando:
+     - **Fecha y hora exacta.**
+     - **Nombre del evento** (ej. `PageView`, `Lead`, `Purchase`).
+     - **Event ID de deduplicación** (ej. `evt_17301582_a91f...`).
+     - **Estado:**
+       - `OK` (verde): recibido y aceptado por Meta (`{"events_received":1}`).
+       - `SKIPPED` (gris): omitido intencionalmente (por ejemplo, si el Kill Switch estaba apagado o el dominio no estaba autorizado).
+       - `ERROR` (rojo): rechazado por Meta (muestra el detalle del motivo en la última columna, como token caducado).
+3. **Botón «Validar con Meta»:**
+   - Abre directamente en una nueva pestaña tu **Administrador de Eventos de Meta Business** apuntando a tu Pixel ID.
+4. **Botón «Guardar Configuración»:**
+   - Guarda todos los cambios en la base de datos, cifra el token CAPI y limpia automáticamente la caché (`revalidateTag: 'meta-config'`).
+
+---
+
+### 4.7 Guía Rápida: Cómo poner en marcha una campaña paso a paso
+
+1. Entra a **Gestión CMS → pestaña Meta Pixel** (`/admin/cms?tab=meta-pixel`).
+2. En **Sección 2 (Credenciales)**, pega tu **Meta Pixel ID**, haz clic en *«Usar mismo Pixel ID»*, pega tu **Access Token** de CAPI y escribe temporalmente tu código de prueba en **Test Event Code** (ej. `TEST12345`).
+3. En **Sección 1 (Estado Global)**, pasa el interruptor a **`Tracking ACTIVO`**.
+4. Haz clic en **«Guardar Configuración»**.
+5. Haz clic en **«Probar Evento»** y luego en **«Ver Logs (Últimos 50)»**: verifica que el primer registro aparezca con estado **`OK`**.
+6. Borra el campo **Test Event Code** (déjalo en blanco) y vuelve a hacer clic en **«Guardar Configuración»**. ¡Tu Pixel y CAPI ya están midiendo en producción!
 
 ---
 
