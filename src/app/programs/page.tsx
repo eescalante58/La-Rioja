@@ -42,6 +42,8 @@ import {
 import { capitalizar, numeroEnPalabras } from "@/lib/talleres";
 import { whatsappDigits } from "@/lib/whatsapp";
 import { getPageContent, getPageTabTitle } from "@/services/cms";
+import { getMatriculaPageData } from "@/lib/matricula/matricula-service";
+import type { MatriculaWhatsAppConfig, MatriculaUtmConfig } from "@/lib/validation/matricula";
 
 const DESCRIPTION =
   "Programas de La Rioja para personas con discapacidad intelectual: Colegio La Rioja (12 a 20 años) y CFL La Rioja (20 a 55 años), ruta de cinco niveles, talleres vocacionales y proceso de admisión.";
@@ -108,14 +110,20 @@ function httpsUrl(value: string | null | undefined): string {
  * filas `cl_*`; ver supabase/migrations/20261023000000_programas_cms_secciones.sql).
  */
 export default async function ProgramsPage() {
-  const [content, socialMedia] = await Promise.all([
+  const [content, socialMedia, matriculaData] = await Promise.all([
     getPageContent("programs") as Promise<CmsSection[]>,
     getPageContent("social media") as Promise<CmsSection[]>,
+    getMatriculaPageData(),
   ]);
   const section = (key: string) => content.find((s) => s.section_key === key);
   const social = (key: string) =>
     socialMedia.find((s) => s.section_key === key)?.description?.trim() ?? "";
   const whatsapp = whatsappDigits(social("whatsapp"));
+
+  const configMeta = (matriculaData.config?.metadata || {}) as Record<string, unknown>;
+  const admissionYear = Number(configMeta.admission_year) || 2027;
+  const whatsappConfig = (matriculaData.whatsapp?.metadata || null) as MatriculaWhatsAppConfig | null;
+  const utmConfig = (matriculaData.utm?.metadata || null) as Partial<MatriculaUtmConfig> | null;
 
   const selector = section("cl_selector");
 
@@ -226,7 +234,17 @@ export default async function ProgramsPage() {
 
       <IntegralTraining intro={section("cl_integral")} subjects={subjects} />
 
-      <AdmissionSteps intro={section("cl_admision")} steps={steps} whatsapp={whatsapp} />
+      <AdmissionSteps
+        intro={section("cl_admision")}
+        steps={steps}
+        whatsapp={whatsapp}
+        modalConfig={{
+          formSection: matriculaData.formulario,
+          whatsappConfig,
+          utmConfig,
+          admissionYear,
+        }}
+      />
 
       <ProgramsCta
         closing={section("cl_cierre")}

@@ -8,7 +8,7 @@ import { MatriculaProgramas } from "./MatriculaProgramas";
 import { MatriculaProceso } from "./MatriculaProceso";
 import { MatriculaCierre } from "./MatriculaCierre";
 import { MatriculaStickyMobileCTA } from "./MatriculaStickyMobileCTA";
-import { MatriculaModalForm } from "./MatriculaModalForm";
+import { MatriculaModalForm, type MatriculaModalOrigin } from "./MatriculaModalForm";
 import type { MatriculaPageData } from "@/lib/matricula/matricula-service";
 import type {
   MatriculaWhatsAppConfig,
@@ -22,7 +22,7 @@ interface MatriculaPageClientProps {
 
 export function MatriculaPageClient({ pageData, admissionYear }: MatriculaPageClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalOrigin, setModalOrigin] = useState<"intro" | "hero" | "cierre" | "sticky_mobile">("hero");
+  const [modalOrigin, setModalOrigin] = useState<MatriculaModalOrigin>("hero");
 
   const whatsappConfig = (pageData.whatsapp?.metadata || null) as MatriculaWhatsAppConfig | null;
   const utmConfig = (pageData.utm?.metadata || null) as Partial<MatriculaUtmConfig> | null;
@@ -32,7 +32,7 @@ export function MatriculaPageClient({ pageData, admissionYear }: MatriculaPageCl
     captureAndStoreUtm(utmConfig || undefined);
   }, [utmConfig]);
 
-  const openModalWithOrigin = (origin: "intro" | "hero" | "cierre" | "sticky_mobile") => {
+  const openModalWithOrigin = (origin: MatriculaModalOrigin) => {
     setModalOrigin(origin);
     setIsModalOpen(true);
   };
@@ -60,10 +60,12 @@ export function MatriculaPageClient({ pageData, admissionYear }: MatriculaPageCl
         cflSection={pageData.programaCfl}
       />
 
-      {/* Sección de Proceso con los 3 pasos */}
+      {/* Sección de Proceso homologada con /programs#admision */}
       <MatriculaProceso
         procesoSection={pageData.proceso}
-        pasos={pageData.pasos}
+        admisionIntro={pageData.admisionIntro}
+        admisionPasos={pageData.admisionPasos}
+        onOpenModal={() => openModalWithOrigin("proceso")}
       />
 
       {/* Bloque de Cierre con CTA antes del Footer global */}

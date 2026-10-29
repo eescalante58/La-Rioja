@@ -91,18 +91,20 @@ export const matriculaContactSubmissionSchema = z.object({
   email: z
     .string()
     .trim()
-    .email("Ingrese un correo electrónico válido")
-    .max(254, "El correo no puede exceder 254 caracteres"),
-  phone: z
-    .string()
-    .trim()
-    .transform((val) => (val === "" ? null : val))
-    .nullable()
-    .optional()
+    .max(254, "El correo no puede exceder 254 caracteres")
     .refine(
-      (val) => val === null || val === undefined || /^[0-9+\s\-().]{6,25}$/.test(val),
-      "El número de teléfono tiene un formato no válido"
-    ),
+      (val) => val === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val),
+      "Ingrese un correo electrónico válido"
+    )
+    .optional()
+    .nullable()
+    .transform((val) => (val ? val.trim() : "")),
+  phone: z
+    .string({ message: "El número de teléfono es obligatorio" })
+    .trim()
+    .min(6, "El número de teléfono es obligatorio")
+    .max(25, "El número de teléfono no puede exceder 25 caracteres")
+    .regex(/^[0-9+\s\-().]{6,25}$/, "El número de teléfono tiene un formato no válido"),
   type: z
     .string()
     .trim()

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { matriculaContactSubmissionSchema } from "@/lib/validation/matricula";
-import { isMatriculaActive, calculatePayloadHash } from "@/lib/matricula/matricula-service";
+import { calculatePayloadHash } from "@/lib/matricula/matricula-service";
 
 // Rate limiting simple en memoria por IP (máximo 5 solicitudes por cada 10 minutos)
 const ipRateLimits = new Map<string, { count: number; resetAt: number }>();
@@ -27,16 +27,7 @@ function checkRateLimit(ip: string): boolean {
 
 export async function POST(request: Request) {
   try {
-    // 1. Verificar si la página de Matrícula está activa públicamente
-    const active = await isMatriculaActive();
-    if (!active) {
-      return NextResponse.json(
-        { success: false, error: "El periodo de recepción de solicitudes no está disponible." },
-        { status: 403 }
-      );
-    }
-
-    // 2. Control de Rate Limiting por IP
+    // 1. Control de Rate Limiting por IP
     const clientIp =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       request.headers.get("x-real-ip") ||
@@ -49,7 +40,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Parsear y validar el cuerpo de la petición
+    // 2. Parsear y validar el cuerpo de la petición
     const rawBody = await request.json().catch(() => null);
     if (!rawBody) {
       return NextResponse.json(
@@ -58,7 +49,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Honeypot check: si un bot llenó el campo oculto hp_field, rechazar silenciosamente con éxito simulado
+    // 3. Honeypot check: si un bot llenó el campo oculto hp_field, rechazar silenciosamente con éxito simulado
     if (rawBody.hp_field) {
       return NextResponse.json({
         success: true,
@@ -86,7 +77,7 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient();
 
-    // 5. Control de Idempotencia Completa
+    // 4. Control de Idempotencia Completa
     if (data.idempotency_key) {
       const { data: existing } = await supabase
         .from("contact_submissions")
@@ -114,13 +105,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // 6. Inserción directa en public.contact_submissions (cero correos, target_email null)
+    // 5. Inserción directa en public.contact_submissions (cero correos, target_email null)
     const { data: inserted, error: insertError } = await supabase
       .from("contact_submissions")
       .insert({
         name: data.name,
-        email: data.email,
-        phone: data.phone || null,
+        email: data.email || "",
+        phone: data.phone,
         type: data.type,
         message: data.message,
         attribution: data.attribution as Record<string, unknown> | null,

@@ -11,7 +11,7 @@ export function resolveWhatsAppUrl(params: {
   phoneE164: string;
   year: number | string;
   name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   type: string;
   message: string;
@@ -21,7 +21,7 @@ export function resolveWhatsAppUrl(params: {
   const resolved = template
     .replace(/\{year\}/g, String(year))
     .replace(/\{name\}/g, name.trim())
-    .replace(/\{email\}/g, email.trim())
+    .replace(/\{email\}/g, (email && email.trim()) || "No indicado")
     .replace(/\{phone\}/g, (phone && phone.trim()) || "No indicado")
     .replace(/\{type\}/g, type.trim())
     .replace(/\{message\}/g, message.trim());

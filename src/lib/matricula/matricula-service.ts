@@ -47,6 +47,10 @@ export interface MatriculaPageData {
   programaCfl: SiteContent | null;
   proceso: SiteContent | null;
   pasos: SiteContent[];
+  /** Fila `cl_admision` de la página `programs` (fuente única homologada). */
+  admisionIntro: SiteContent | null;
+  /** Filas `cl_paso_*` activas de la página `programs` (fuente única homologada). */
+  admisionPasos: SiteContent[];
   cierre: SiteContent | null;
   ctaMovil: SiteContent | null;
   formulario: SiteContent | null;
@@ -57,21 +61,37 @@ export interface MatriculaPageData {
 }
 
 /**
- * Obtiene y agrupa todas las secciones de Matrícula desde public.site_content.
+ * Obtiene y agrupa todas las secciones de Matrícula desde public.site_content,
+ * incluyendo las filas homologadas de admisión (`cl_admision` y `cl_paso_*`) de `programs`.
  */
 export async function getMatriculaPageData(): Promise<MatriculaPageData> {
   const supabase = createStaticClient();
-  const { data } = await supabase
-    .from("site_content")
-    .select("*")
-    .eq("page", "matricula")
-    .order("content_order", { ascending: true });
+  const [{ data: matriculaData }, { data: programsData }] = await Promise.all([
+    supabase
+      .from("site_content")
+      .select("*")
+      .eq("page", "matricula")
+      .order("content_order", { ascending: true }),
+    supabase
+      .from("site_content")
+      .select("*")
+      .eq("page", "programs")
+      .or("section_key.eq.cl_admision,section_key.like.cl_paso_%")
+      .eq("is_active", true)
+      .order("content_order", { ascending: true }),
+  ]);
 
-  const rows = (data || []) as SiteContent[];
+  const rows = (matriculaData || []) as SiteContent[];
   const findRow = (key: string) => rows.find((r) => r.section_key === key) || null;
 
   const pasos = rows.filter(
     (r) => r.section_key.startsWith("matricula_paso_") && r.is_active === true
+  );
+
+  const progRows = (programsData || []) as SiteContent[];
+  const admisionIntro = progRows.find((r) => r.section_key === "cl_admision") || null;
+  const admisionPasos = progRows.filter(
+    (r) => r.section_key.startsWith("cl_paso_") && Boolean(r.title?.trim())
   );
 
   return {
@@ -84,6 +104,8 @@ export async function getMatriculaPageData(): Promise<MatriculaPageData> {
     programaCfl: findRow("matricula_programa_cfl"),
     proceso: findRow("matricula_proceso"),
     pasos,
+    admisionIntro,
+    admisionPasos,
     cierre: findRow("matricula_cierre"),
     ctaMovil: findRow("matricula_cta_movil"),
     formulario: findRow("matricula_formulario"),
@@ -99,14 +121,14 @@ export async function getMatriculaPageData(): Promise<MatriculaPageData> {
  */
 export function calculatePayloadHash(payload: {
   name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   type: string;
   message: string;
 }): string {
   const normalized = [
     payload.name.trim().toLowerCase(),
-    payload.email.trim().toLowerCase(),
+    (payload.email || "").trim().toLowerCase(),
     (payload.phone || "").trim(),
     payload.type.trim(),
     payload.message.trim(),

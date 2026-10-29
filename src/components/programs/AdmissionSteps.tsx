@@ -1,6 +1,11 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
+import { MatriculaModalForm } from "@/components/matricula/MatriculaModalForm";
+import { captureAndStoreUtm } from "@/lib/matricula/utm";
 import { metaHref, metaText, textOr, type CmsSection } from "@/lib/cms-content";
 import { waLink } from "@/lib/whatsapp";
 import {
@@ -12,14 +17,29 @@ import {
   SECTION_PLAIN,
   SECTION_Y,
 } from "@/components/site/section-ui";
+import type { SiteContent } from "@/types/cms";
+import type { MatriculaWhatsAppConfig, MatriculaUtmConfig } from "@/lib/validation/matricula";
 import type { AdmissionFact, AdmissionStep } from "./types";
+
+export interface AdmissionModalConfig {
+  formSection: SiteContent | null;
+  whatsappConfig: MatriculaWhatsAppConfig | null;
+  utmConfig?: Partial<MatriculaUtmConfig> | null;
+  admissionYear: number;
+}
 
 interface AdmissionStepsProps {
   /** Fila `cl_admision` (H2, subtítulo, datos útiles, botón y enlace a FAQ). */
   intro: CmsSection | undefined;
   steps: AdmissionStep[];
-  /** Dígitos del WhatsApp institucional. */
-  whatsapp: string;
+  /** Dígitos del WhatsApp institucional (usado como fallback si no hay modal ni callback). */
+  whatsapp?: string;
+  /** ID del elemento `<section>` para navegación por ancla (por defecto `"admision"`). */
+  sectionId?: string;
+  /** Callback externo para abrir el modal de matrícula (usado en `/matricula`). */
+  onCtaClick?: () => void;
+  /** Configuración del modal de matrícula para abrirlo directamente desde `/programs#admision`. */
+  modalConfig?: AdmissionModalConfig;
 }
 
 /** Datos útiles con valor; los vacíos (por confirmar) no se publican. */
@@ -33,20 +53,38 @@ function admissionFacts(intro: CmsSection | undefined): AdmissionFact[] {
 }
 
 /**
- * «Cómo inscribir a tu familiar» (#admision): cuatro pasos numerados y un
- * bloque con datos útiles, botón para agendar la visita por WhatsApp y enlace
- * a preguntas frecuentes (al lado en escritorio, debajo en celular).
+ * «Cómo inscribir a tu familiar» (#admision / #proceso): cuatro pasos numerados y un
+ * bloque con datos útiles, botón para agendar la visita (abre el modal de matrícula
+ * con origen "proceso") y enlace a preguntas frecuentes.
  */
-export function AdmissionSteps({ intro, steps, whatsapp }: AdmissionStepsProps) {
+export function AdmissionSteps({
+  intro,
+  steps,
+  whatsapp = "",
+  sectionId = "admision",
+  onCtaClick,
+  modalConfig,
+}: AdmissionStepsProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (modalConfig) {
+      captureAndStoreUtm(modalConfig.utmConfig || undefined);
+    }
+  }, [modalConfig]);
+
   const facts = admissionFacts(intro);
   const faqText = metaText(
     intro,
     "enlace_faq_texto",
     "¿Tienes más preguntas? Visita nuestras preguntas frecuentes",
   );
+  const buttonLabel = metaText(intro, "boton", "Agendar una visita");
+
+  const handleOpenModal = onCtaClick || (modalConfig ? () => setIsModalOpen(true) : undefined);
 
   return (
-    <section id="admision" className={`${SECTION_PLAIN} ${SECTION_ANCHOR}`}>
+    <section id={sectionId} className={`${SECTION_PLAIN} ${SECTION_ANCHOR}`}>
       <div className={`${CONTAINER} ${SECTION_Y} flex flex-col gap-8`}>
         <div className="flex max-w-[780px] flex-col gap-2.5">
           <h2 className={`${H2} m-0`}>{textOr(intro?.title, "Cómo inscribir a tu familiar")}</h2>
@@ -95,22 +133,33 @@ export function AdmissionSteps({ intro, steps, whatsapp }: AdmissionStepsProps) 
                 </dl>
               </>
             )}
-            <a
-              href={waLink(
-                whatsapp,
-                metaText(
-                  intro,
-                  "mensaje_whatsapp",
-                  "Hola, quiero información para inscribir a un familiar en La Rioja",
-                ),
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${BTN_WHATSAPP} rounded-[14px]`}
-            >
-              <MessageCircle size={20} aria-hidden="true" />
-              {metaText(intro, "boton", "Agendar una visita")}
-            </a>
+            {handleOpenModal ? (
+              <button
+                type="button"
+                onClick={handleOpenModal}
+                className={`${BTN_WHATSAPP} rounded-[14px] cursor-pointer`}
+              >
+                <MessageCircle size={20} aria-hidden="true" />
+                {buttonLabel}
+              </button>
+            ) : (
+              <a
+                href={waLink(
+                  whatsapp,
+                  metaText(
+                    intro,
+                    "mensaje_whatsapp",
+                    "Hola, quiero información para inscribir a un familiar en La Rioja",
+                  ),
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${BTN_WHATSAPP} rounded-[14px]`}
+              >
+                <MessageCircle size={20} aria-hidden="true" />
+                {buttonLabel}
+              </a>
+            )}
             <PrivacyNotice variant="whatsapp" className="text-center" />
             {faqText && (
               <Link
@@ -123,6 +172,17 @@ export function AdmissionSteps({ intro, steps, whatsapp }: AdmissionStepsProps) 
           </aside>
         </div>
       </div>
+
+      {modalConfig && (
+        <MatriculaModalForm
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          originPosition="proceso"
+          formSection={modalConfig.formSection}
+          whatsappConfig={modalConfig.whatsappConfig}
+          admissionYear={modalConfig.admissionYear}
+        />
+      )}
     </section>
   );
 }

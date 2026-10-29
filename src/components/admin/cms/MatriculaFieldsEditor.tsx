@@ -336,5 +336,18 @@ export function MatriculaFieldsEditor({
     );
   }
 
+  // 7. Proceso de Inscripción (Homologado con /programs#admision)
+  if (sectionKey === "matricula_proceso" || sectionKey.startsWith("matricula_paso_")) {
+    return (
+      <Callout
+        title="Sección homologada con /programs#admision"
+        color="blue"
+        icon={Sparkles}
+      >
+        El título, la descripción, los pasos numerados y el bloque lateral de esta sección se sincronizan automáticamente desde las filas <code>cl_admision</code> y <code>cl_paso_1..4</code> de la página <strong>Programs</strong> para mantener una fuente única de verdad. El estado Activo/Inactivo de <code>matricula_proceso</code> controla si la sección se muestra u oculta en <code>/matricula</code>.
+      </Callout>
+    );
+  }
+
   return null;
 }

@@ -322,10 +322,12 @@ export default function ContactSubmissionsClient() {
                             <User size={14} />
                             {item.name}
                           </Text>
-                          <Text className="text-xs flex items-center gap-1 text-gray-400">
-                            <Mail size={12} />
-                            {item.email}
-                          </Text>
+                          {item.email && (
+                            <Text className="text-xs flex items-center gap-1 text-gray-400">
+                              <Mail size={12} />
+                              {item.email}
+                            </Text>
+                          )}
                           {item.phone && (
                             <Text className="text-xs text-gray-400">
                               Tel: {item.phone}
