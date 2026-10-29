@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { SessionManager } from "@/components/auth/SessionManager";
 import { FloatingContact } from "@/components/layout/FloatingContact";
+import { MetaPixelProvider } from "@/components/tracking/MetaPixelProvider";
 import { Analytics } from "@vercel/analytics/next";
 
 const montserrat = Montserrat({
@@ -114,6 +115,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SessionManager />
+          <MetaPixelProvider />
           {children}
           <FloatingContact />
         </ThemeProvider>

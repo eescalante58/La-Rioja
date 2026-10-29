@@ -3,29 +3,30 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
-import { List, HelpCircle, Image as ImageIcon } from "lucide-react";
+import { List, HelpCircle, Image as ImageIcon, Activity } from "lucide-react";
 
 interface CMSTabsContainerProps {
   contentPanel: React.ReactNode;
   faqPanel: React.ReactNode;
   galleryPanel: React.ReactNode;
+  metaPixelPanel: React.ReactNode;
 }
 
 /**
  * Contenedor de pestañas del CMS con persistencia de pestaña activa.
- * Permite recordar la pestaña seleccionada tras editar o recargar,
- * evitando que el usuario sea devuelto a "Contenido General" cuando está en "FAQ" o "Galería".
+ * Soporta navegación directa por URL (?tab=contenido, ?tab=faq, ?tab=galeria, ?tab=meta-pixel).
  */
 export default function CMSTabsContainer({
   contentPanel,
   faqPanel,
   galleryPanel,
+  metaPixelPanel,
 }: CMSTabsContainerProps) {
   const searchParams = useSearchParams();
   const [selectedTab, setSelectedTab] = useState(0);
 
   useEffect(() => {
-    // 1. Prioridad: parámetro en URL (?tab=faq, ?tab=galeria, ?tab=contenido)
+    // 1. Prioridad: parámetro en URL (?tab=faq, ?tab=galeria, ?tab=contenido, ?tab=meta-pixel)
     const tabParam = searchParams.get("tab")?.toLowerCase();
     if (tabParam === "faq" || tabParam === "1") {
       setSelectedTab(1);
@@ -33,6 +34,15 @@ export default function CMSTabsContainer({
     }
     if (tabParam === "gallery" || tabParam === "galeria" || tabParam === "2") {
       setSelectedTab(2);
+      return;
+    }
+    if (
+      tabParam === "meta-pixel" ||
+      tabParam === "metapixel" ||
+      tabParam === "pixel" ||
+      tabParam === "3"
+    ) {
+      setSelectedTab(3);
       return;
     }
     if (tabParam === "content" || tabParam === "contenido" || tabParam === "0") {
@@ -44,7 +54,7 @@ export default function CMSTabsContainer({
     const saved = sessionStorage.getItem("cms_selected_tab");
     if (saved !== null) {
       const idx = parseInt(saved, 10);
-      if (!isNaN(idx) && idx >= 0 && idx <= 2) {
+      if (!isNaN(idx) && idx >= 0 && idx <= 3) {
         setSelectedTab(idx);
       }
       sessionStorage.removeItem("cms_selected_tab");
@@ -56,7 +66,14 @@ export default function CMSTabsContainer({
     sessionStorage.setItem("cms_selected_tab", String(index));
     try {
       const url = new URL(window.location.href);
-      const tabName = index === 1 ? "faq" : index === 2 ? "galeria" : "contenido";
+      const tabName =
+        index === 1
+          ? "faq"
+          : index === 2
+          ? "galeria"
+          : index === 3
+          ? "meta-pixel"
+          : "contenido";
       url.searchParams.set("tab", tabName);
       window.history.replaceState({}, "", url.toString());
     } catch {
@@ -66,7 +83,7 @@ export default function CMSTabsContainer({
 
   return (
     <TabGroup index={selectedTab} onIndexChange={handleTabChange}>
-      <TabList className="mt-2">
+      <TabList className="mt-2 flex-wrap">
         <Tab className="text-base sm:text-lg">
           <div className="flex items-center gap-2">
             <List size={20} />
@@ -85,6 +102,12 @@ export default function CMSTabsContainer({
             <span>Galería de Fotos</span>
           </div>
         </Tab>
+        <Tab className="text-base sm:text-lg">
+          <div className="flex items-center gap-2">
+            <Activity size={20} />
+            <span>Meta Pixel</span>
+          </div>
+        </Tab>
       </TabList>
       <TabPanels>
         <TabPanel>
@@ -95,6 +118,9 @@ export default function CMSTabsContainer({
         </TabPanel>
         <TabPanel>
           <div className="mt-6">{galleryPanel}</div>
+        </TabPanel>
+        <TabPanel>
+          <div className="mt-6">{metaPixelPanel}</div>
         </TabPanel>
       </TabPanels>
     </TabGroup>

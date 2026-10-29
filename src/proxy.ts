@@ -1,5 +1,10 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  buildFbcCookie,
+  buildFbpCookie,
+  FB_COOKIE_OPTIONS,
+} from "@/lib/tracking/fb-cookies";
 
 /**
  * Proxy to handle canonical domain redirection, session refreshing and route protection.
@@ -99,6 +104,24 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
 
+  // Captura automática de cookies Meta (_fbc y _fbp) para rutas públicas
+  if (!request.nextUrl.pathname.startsWith("/api")) {
+    const fbclid = request.nextUrl.searchParams.get("fbclid");
+    if (fbclid) {
+      const existingFbc = request.cookies.get("_fbc")?.value;
+      if (!existingFbc || !existingFbc.includes(fbclid)) {
+        const fbcValue = buildFbcCookie(fbclid);
+        response.cookies.set("_fbc", fbcValue, FB_COOKIE_OPTIONS);
+      }
+    }
+
+    const existingFbp = request.cookies.get("_fbp")?.value;
+    if (!existingFbp) {
+      const fbpValue = buildFbpCookie();
+      response.cookies.set("_fbp", fbpValue, FB_COOKIE_OPTIONS);
+    }
+  }
+
   return response;
 }
 
@@ -106,11 +129,12 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
