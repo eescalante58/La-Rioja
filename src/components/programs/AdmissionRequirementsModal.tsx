@@ -100,7 +100,7 @@ export function AdmissionRequirementsModal({
 
   const content = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm transition-opacity"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 pt-20 sm:pt-24 pb-6 overflow-y-auto bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm transition-opacity"
       role="dialog"
       aria-modal="true"
       aria-labelledby="admission-requirements-title"
@@ -110,7 +110,7 @@ export function AdmissionRequirementsModal({
     >
       <div
         ref={modalRef}
-        className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150"
+        className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[85vh] my-auto flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150"
       >
         {/* Cabecera */}
         <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4 bg-gradient-to-b from-blue-50/60 dark:from-blue-950/20 to-white dark:to-slate-900 rounded-t-3xl">
