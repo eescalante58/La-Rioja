@@ -18,6 +18,7 @@ import { compressImage } from "@/lib/compress-image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getErrorMessage, formatFriendlyError } from "@/lib/utils";
 import { MatriculaFieldsEditor } from "@/components/admin/cms/MatriculaFieldsEditor";
+import { AdmissionFieldsEditor } from "@/components/admin/cms/AdmissionFieldsEditor";
 import type { SiteContent } from "@/types/cms";
 
 /**
@@ -422,6 +423,27 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
               autoComplete="off"
             />
           </div>
+
+          {item.section_key === "cl_admision" && (
+            <div className="space-y-4">
+              <AdmissionFieldsEditor
+                metadata={formData.metadata}
+                onChange={(updatedMeta) => {
+                  setFormData({ ...formData, metadata: updatedMeta });
+                  setJsonString(JSON.stringify(updatedMeta, null, 2));
+                }}
+              />
+              <div className="flex justify-end">
+                <Link
+                  href="/programs#admision"
+                  target="_blank"
+                  className="text-xs text-larioja-azul hover:underline dark:text-larioja-amarillo font-semibold inline-flex items-center gap-1"
+                >
+                  Abrir vista previa de /programs#admision ↗
+                </Link>
+              </div>
+            </div>
+          )}
 
           {item.page === "matricula" && (
             <div className="space-y-4">

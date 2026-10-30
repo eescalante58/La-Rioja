@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, FileText, ArrowUpRight } from "lucide-react";
 import { PrivacyNotice } from "@/components/layout/PrivacyNotice";
 import { MatriculaModalForm } from "@/components/matricula/MatriculaModalForm";
+import { AdmissionRequirementsModal } from "@/components/programs/AdmissionRequirementsModal";
+import { getAdmissionRequirementsConfig } from "@/lib/validation/admission";
 import { captureAndStoreUtm } from "@/lib/matricula/utm";
 import { metaHref, metaText, textOr, type CmsSection } from "@/lib/cms-content";
 import { waLink } from "@/lib/whatsapp";
@@ -45,7 +47,6 @@ interface AdmissionStepsProps {
 /** Datos útiles con valor; los vacíos (por confirmar) no se publican. */
 function admissionFacts(intro: CmsSection | undefined): AdmissionFact[] {
   return [
-    { label: "Documentos requeridos", value: metaText(intro, "documentos", "") },
     { label: "Periodo de inscripción", value: metaText(intro, "periodo", "") },
     { label: "Duración del proceso", value: metaText(intro, "duracion", "") },
     { label: "Horario de visitas", value: metaText(intro, "horario", "") },
@@ -66,6 +67,7 @@ export function AdmissionSteps({
   modalConfig,
 }: AdmissionStepsProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRequirementsOpen, setIsRequirementsOpen] = useState(false);
 
   useEffect(() => {
     if (modalConfig) {
@@ -73,6 +75,7 @@ export function AdmissionSteps({
     }
   }, [modalConfig]);
 
+  const requirementsConfig = getAdmissionRequirementsConfig(intro);
   const facts = admissionFacts(intro);
   const faqText = metaText(
     intro,
@@ -112,27 +115,56 @@ export function AdmissionSteps({
                     {s.title}
                   </h3>
                   {s.text && <p className={`m-0 text-[15px] leading-relaxed ${MUTED}`}>{s.text}</p>}
+                  {i === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsRequirementsOpen(true)}
+                      className="mt-1 text-xs font-semibold text-larioja-azul hover:text-blue-800 dark:text-larioja-amarillo dark:hover:text-yellow-400 underline underline-offset-2 flex items-center gap-1 cursor-pointer w-fit"
+                    >
+                      <span>Consultar requisitos y documentos de ingreso</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </li>
               ))}
             </ol>
           )}
 
           <aside className="flex min-w-0 flex-1 flex-col gap-3.5 rounded-[20px] border-2 border-larioja-azul p-6 lg:max-w-[360px] dark:border-larioja-amarillo">
-            {facts.length > 0 && (
-              <>
-                <h3 className="m-0 font-montserrat text-lg font-bold text-larioja-azul dark:text-white">
-                  {metaText(intro, "titulo_datos", "Datos útiles")}
-                </h3>
-                <dl className="m-0 flex flex-col gap-3 text-sm">
-                  {facts.map((f) => (
-                    <div key={f.label}>
-                      <dt className="font-bold text-larioja-azul dark:text-white">{f.label}</dt>
-                      <dd className={`m-0 mt-0.5 whitespace-pre-line ${MUTED}`}>{f.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </>
-            )}
+            <h3 className="m-0 font-montserrat text-lg font-bold text-larioja-azul dark:text-white">
+              {metaText(intro, "titulo_datos", "Datos útiles")}
+            </h3>
+            <dl className="m-0 flex flex-col gap-3 text-sm">
+              {/* Documentos requeridos interactivo */}
+              <div>
+                <dt className="font-bold text-larioja-azul dark:text-white flex items-center justify-between">
+                  <span>Documentos requeridos</span>
+                  <span className="text-[11px] font-bold text-larioja-azul dark:text-larioja-amarillo bg-blue-100/80 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">
+                    {requirementsConfig.items.length} docs
+                  </span>
+                </dt>
+                <dd className="m-0 mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsRequirementsOpen(true)}
+                    className="w-full text-left bg-blue-50/80 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 border border-larioja-azul/30 dark:border-larioja-amarillo/40 rounded-xl p-3 text-xs font-semibold text-larioja-azul dark:text-larioja-amarillo transition-all flex items-center justify-between group cursor-pointer shadow-xs"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 shrink-0 text-larioja-azul dark:text-larioja-amarillo" />
+                      <span>{requirementsConfig.boton}</span>
+                    </span>
+                    <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </button>
+                </dd>
+              </div>
+
+              {facts.map((f) => (
+                <div key={f.label}>
+                  <dt className="font-bold text-larioja-azul dark:text-white">{f.label}</dt>
+                  <dd className={`m-0 mt-0.5 whitespace-pre-line ${MUTED}`}>{f.value}</dd>
+                </div>
+              ))}
+            </dl>
             {handleOpenModal ? (
               <button
                 type="button"
@@ -172,6 +204,14 @@ export function AdmissionSteps({
           </aside>
         </div>
       </div>
+
+      <AdmissionRequirementsModal
+        isOpen={isRequirementsOpen}
+        onClose={() => setIsRequirementsOpen(false)}
+        config={requirementsConfig}
+        whatsapp={whatsapp}
+        onOpenContactModal={handleOpenModal}
+      />
 
       {modalConfig && (
         <MatriculaModalForm
