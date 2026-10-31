@@ -137,5 +137,5 @@ SELECT
 WHERE NOT EXISTS (
   SELECT 1 FROM public.site_content
    WHERE section_key = 'cl_instalaciones'
-     AND (page = 'quienes somos'::public.site_page_type OR page = 'about'::public.site_page_type)
+     AND page::text IN ('quienes somos', 'about')
 );
