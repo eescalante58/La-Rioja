@@ -22,23 +22,28 @@ export function SectionNav({ links }: SectionNavProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<string | null>(null);
 
-  // Sección activa: la más alta de las que cruzan la franja superior de la ventana.
+  // Sección activa: la última sección en el orden del documento que cruza la franja de lectura.
   useEffect(() => {
     const sections = links
       .map((l) => document.getElementById(l.id))
       .filter((el): el is HTMLElement => el !== null);
-    const visible = new Map<string, number>();
+    const visible = new Set<string>();
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           const id = (entry.target as HTMLElement).id;
-          if (entry.isIntersecting) visible.set(id, entry.boundingClientRect.top);
+          if (entry.isIntersecting) visible.add(id);
           else visible.delete(id);
         }
-        const top = [...visible.entries()].sort((a, b) => a[1] - b[1])[0];
-        setActive(top ? top[0] : null);
+        // Selecciona la última sección activa según el orden del recorrido
+        const activeId = links
+          .map((l) => l.id)
+          .reverse()
+          .find((id) => visible.has(id));
+
+        setActive(activeId || null);
       },
-      { rootMargin: "-140px 0px -55% 0px" },
+      { rootMargin: "-130px 0px -60% 0px" },
     );
     sections.forEach((s) => observer.observe(s));
     return () => observer.disconnect();
