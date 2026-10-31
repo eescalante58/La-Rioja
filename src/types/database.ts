@@ -975,6 +975,67 @@ export type Database = {
         }
         Relationships: []
       }
+      site_gallery_media: {
+        Row: {
+          alt_text: string
+          caption: string | null
+          content_order: number
+          created_at: string
+          created_by: string | null
+          duration_seconds: number | null
+          gallery_key: string
+          id: string
+          is_active: boolean
+          media_type: "image" | "video" | "youtube"
+          media_url: string
+          page: Database["public"]["Enums"]["site_page_type"]
+          poster_storage_path: string | null
+          poster_url: string | null
+          storage_path: string | null
+          updated_at: string
+          youtube_id: string | null
+        }
+        Insert: {
+          alt_text: string
+          caption?: string | null
+          content_order: number
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          gallery_key: string
+          id?: string
+          is_active?: boolean
+          media_type: "image" | "video" | "youtube"
+          media_url: string
+          page: Database["public"]["Enums"]["site_page_type"]
+          poster_storage_path?: string | null
+          poster_url?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          youtube_id?: string | null
+        }
+        Update: {
+          alt_text?: string
+          caption?: string | null
+          content_order?: number
+          created_at?: string
+          created_by?: string | null
+          duration_seconds?: number | null
+          gallery_key?: string
+          id?: string
+          is_active?: boolean
+          media_type?: "image" | "video" | "youtube"
+          media_url?: string
+          page?: Database["public"]["Enums"]["site_page_type"]
+          poster_storage_path?: string | null
+          poster_url?: string | null
+          storage_path?: string | null
+          updated_at?: string
+          youtube_id?: string | null
+        }
+        Relationships: []
+      }
+
       students: {
         Row: {
           company_id: number
@@ -1782,6 +1843,14 @@ export type Database = {
       }
     }
     Functions: {
+      reorder_site_gallery: {
+        Args: {
+          p_gallery_key: string
+          p_ids: string[]
+          p_page: Database["public"]["Enums"]["site_page_type"]
+        }
+        Returns: undefined
+      }
       busqueda_universal: {
         Args: { p_company_id: number; p_event_id: string; p_termino: string }
         Returns: {
