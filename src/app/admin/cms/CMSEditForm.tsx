@@ -19,6 +19,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getErrorMessage, formatFriendlyError } from "@/lib/utils";
 import { MatriculaFieldsEditor } from "@/components/admin/cms/MatriculaFieldsEditor";
 import { AdmissionFieldsEditor } from "@/components/admin/cms/AdmissionFieldsEditor";
+import { InstalacionesFieldsEditor } from "@/components/admin/cms/InstalacionesFieldsEditor";
+import dynamic from "next/dynamic";
+
+const SiteGalleryManager = dynamic(
+  () =>
+    import("@/components/admin/cms/SiteGalleryManager").then(
+      (mod) => mod.SiteGalleryManager,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <p className="text-xs text-gray-500 py-4">Cargando gestor de galería…</p>
+    ),
+  },
+);
 import type { SiteContent } from "@/types/cms";
 
 /**
@@ -440,6 +455,31 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
                   className="text-xs text-larioja-azul hover:underline dark:text-larioja-amarillo font-semibold inline-flex items-center gap-1"
                 >
                   Abrir vista previa de /programs#admision ↗
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {(item.page === "quienes somos" || item.page === "about") && item.section_key === "cl_instalaciones" && (
+            <div className="space-y-6">
+              <InstalacionesFieldsEditor
+                metadata={formData.metadata}
+                onChange={(updatedMeta) => {
+                  setFormData({ ...formData, metadata: updatedMeta });
+                  setJsonString(JSON.stringify(updatedMeta, null, 2));
+                }}
+              />
+              <SiteGalleryManager
+                page={item.page}
+                galleryKey={item.section_key}
+              />
+              <div className="flex justify-end">
+                <Link
+                  href="/about#instalaciones"
+                  target="_blank"
+                  className="text-xs text-larioja-azul hover:underline dark:text-larioja-amarillo font-semibold inline-flex items-center gap-1"
+                >
+                  Abrir vista previa de /about#instalaciones ↗
                 </Link>
               </div>
             </div>
