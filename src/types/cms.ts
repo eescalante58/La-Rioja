@@ -65,3 +65,22 @@ export interface CmsCard {
 
 /** Contenido del hero principal (`home/hero_main`). */
 export type HeroContent = Pick<SiteContent, "title" | "description" | "image_url">;
+
+export type SiteGalleryMediaType = "image" | "video" | "youtube";
+
+/**
+ * Elemento de una galería del sitio (foto, video o enlace de YouTube)
+ * consumible en vistas públicas y el CMS.
+ */
+export interface SiteGalleryItem {
+  id: string;
+  media_type: SiteGalleryMediaType;
+  media_url: string;
+  poster_url: string | null;
+  youtube_id: string | null;
+  duration_seconds: number | null;
+  alt_text: string;
+  caption: string | null;
+  content_order?: number;
+  is_active?: boolean;
+}

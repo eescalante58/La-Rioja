@@ -1,5 +1,6 @@
 import { createStaticClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
+import type { SiteGalleryItem } from "@/types/cms";
 
 type SitePageType = Database["public"]["Enums"]["site_page_type"];
 
@@ -127,4 +128,49 @@ export async function getPageTabTitle(page: string, fallback: string): Promise<s
   } catch {
     return fallback;
   }
+}
+
+/**
+ * Obtiene los elementos activos de una galería institucional (fotos, videos y enlaces de YouTube)
+ * en orden de presentación (content_order).
+ * Utiliza createStaticClient para soportar ISR sin cookies.
+ *
+ * @param page Página del sitio ('quienes somos', 'about', etc.)
+ * @param galleryKey Clave de sección que posee la galería (ej. 'cl_instalaciones')
+ */
+export async function getSiteGallery(
+  page: string,
+  galleryKey: string,
+): Promise<SiteGalleryItem[]> {
+  const supabase = createStaticClient();
+
+  const query = (targetPage: SitePageType) =>
+    supabase
+      .from("site_gallery_media")
+      .select("id, media_type, media_url, poster_url, youtube_id, duration_seconds, alt_text, caption")
+      .eq("page", targetPage)
+      .eq("gallery_key", galleryKey)
+      .eq("is_active", true)
+      .order("content_order", { ascending: true });
+
+  const { data, error } = await query(page as SitePageType);
+
+  if (!error && data && data.length > 0) {
+    return data as SiteGalleryItem[];
+  }
+
+  const altPage = getAlternatePage(page);
+  if (altPage) {
+    const { data: altData, error: altError } = await query(altPage);
+    if (!altError && altData && altData.length > 0) {
+      return altData as SiteGalleryItem[];
+    }
+  }
+
+  // Si la tabla aún no existe o hay error, degradar silenciosamente a lista vacía
+  if (error && !altPage) {
+    console.warn(`[getSiteGallery] No se pudieron cargar los elementos para ${page}/${galleryKey}:`, error.message);
+  }
+
+  return (data as SiteGalleryItem[]) || [];
 }

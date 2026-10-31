@@ -109,6 +109,17 @@ import {
 } from "@/app/admin/cms/gallery-actions";
 
 import {
+  listSiteGalleryItems,
+  prepareSiteGalleryUpload,
+  confirmSiteGalleryUpload,
+  discardSiteGalleryUpload,
+  addSiteGalleryYouTube,
+  updateSiteGalleryItem,
+  reorderSiteGalleryItems,
+  deleteSiteGalleryItem,
+} from "@/app/admin/cms/site-gallery-actions";
+
+import {
   listShop,
   createProduct,
   updateProduct,
@@ -244,6 +255,14 @@ const REGISTRY: Record<string, ActionFn> = {
   "cms.bulkUploadGalleryImages": bulkUploadGalleryImages,
   "cms.deleteGalleryImage": deleteGalleryImage,
   "cms.updateGalleryImagesOrder": updateGalleryImagesOrder,
+  "cms.listSiteGalleryItems": listSiteGalleryItems,
+  "cms.prepareSiteGalleryUpload": prepareSiteGalleryUpload,
+  "cms.confirmSiteGalleryUpload": confirmSiteGalleryUpload,
+  "cms.discardSiteGalleryUpload": discardSiteGalleryUpload,
+  "cms.addSiteGalleryYouTube": addSiteGalleryYouTube,
+  "cms.updateSiteGalleryItem": updateSiteGalleryItem,
+  "cms.reorderSiteGalleryItems": reorderSiteGalleryItems,
+  "cms.deleteSiteGalleryItem": deleteSiteGalleryItem,
 
   // Catálogo de productos
   "productos.listShop": listShop,

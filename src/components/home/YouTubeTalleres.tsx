@@ -2,6 +2,9 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { extractYouTubeId, isDirectVideoUrl } from "@/lib/video-url";
+
+export { extractYouTubeId, isDirectVideoUrl };
 
 export const VIDEO_TALLERES_ID = "0rCP5NMMasY";
 
@@ -24,30 +27,6 @@ export interface YouTubeTalleresProps {
   duracion?: string;
 }
 
-/**
- * Extrae el ID de 11 caracteres de un enlace de YouTube.
- */
-export function extractYouTubeId(url: string): string | null {
-  if (!url) return null;
-  const match = url.trim().match(
-    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/,
-  );
-  return match ? match[1] : null;
-}
-
-/**
- * Determina si una URL apunta a un archivo de video directo (Supabase Storage o ruta local).
- */
-export function isDirectVideoUrl(url: string): boolean {
-  if (!url) return false;
-  const clean = url.trim().split("?")[0].toLowerCase();
-  return (
-    clean.endsWith(".mp4") ||
-    clean.endsWith(".webm") ||
-    clean.endsWith(".mov") ||
-    clean.includes("/storage/v1/object/public/")
-  );
-}
 
 /**
  * Componente interactivo para incrustar videos institucionales tanto desde
