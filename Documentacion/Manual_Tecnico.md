@@ -525,6 +525,35 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 | `created_at` | `timestamp with time zone` | Fecha de creación. |
 | `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
 
+##### Tabla: `public.site_gallery_media`
+
+**Descripción:** Elementos multimedia (fotografías, videos subidos y videos de YouTube) de las galerías institucionales del sitio web, asociadas a una clave de sección (`cl_instalaciones`).
+
+| Columna | Tipo de Datos | Comentario |
+| :------ | :------------ | :--------- |
+| `id` | `uuid` | Identificador único del registro (PK). |
+| `page` | `site_page_type` | Página a la que pertenece la galería (`quienes somos`, etc.). |
+| `gallery_key` | `text` | Clave de sección poseedora de la galería (ej: `cl_instalaciones`). |
+| `media_type` | `text` | Tipo de medio: `'image'`, `'video'` o `'youtube'`. |
+| `media_url` | `text` | URL pública de la imagen/video o enlace canónico de YouTube. |
+| `storage_path` | `text` | Ruta interna en el bucket `site_gallery` (NULL en YouTube). |
+| `poster_url` | `text` | Portada para previsualización (fotograma generado o `i.ytimg.com`). |
+| `poster_storage_path` | `text` | Ruta interna de la portada generada en Storage (solo videos subidos). |
+| `youtube_id` | `text` | Identificador de 11 caracteres del video de YouTube (NULL si no es YouTube). |
+| `duration_seconds` | `integer` | Duración del video en segundos (NULL en fotos y YouTube). |
+| `alt_text` | `text` | Texto descriptivo accesible obligatorio (5 a 150 caracteres). |
+| `caption` | `text` | Leyenda visible opcional sobre la casilla (hasta 60 caracteres). |
+| `content_order` | `integer` | Orden de despliegue dentro de la galería (la posición 1 es la portada). |
+| `is_active` | `boolean` | Indica si el elemento está visible en la página pública. |
+| `created_by` | `uuid` | Usuario que registró o subió el elemento. |
+| `created_at` | `timestamp with time zone` | Fecha de creación. |
+| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+
+**Notas adicionales:**
+- **Constraints:** UNIQUE (`page`, `gallery_key`, `content_order`) `DEFERRABLE INITIALLY DEFERRED` para reordenamiento transaccional atómico; `CHECK` de coherencia según `media_type`.
+- **Lectura pública:** Solo filas con `is_active = true`.
+- **Triggers:** `trg_site_gallery_media_updated_at` actualiza automáticamente `updated_at = now()`.
+
 ##### Tabla: `public.contact_submissions`
 
 **Descripción:** Mensajes recibidos desde el formulario de contacto del sitio público y prospectos del formulario modal de `/matricula`.
@@ -940,6 +969,7 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `fn_sync_cards_with_invoice()` | Trigger en `invoices`: sincroniza cartones con la factura (asociación de cartones) |
 | `fn_update_event_total_sales()` | Trigger en `invoices`: mantiene `events.total_amount_solded` acumulado |
 | `fn_log_site_content_activity()` | SECURITY DEFINER — trigger en `site_content`: registra cambios del CMS en la bitácora |
+| `reorder_site_gallery(page, gallery_key, ids[])` | Reordena atómicamente todos los elementos de una galería en una sola transacción validando cardinalidad y unicidad |
 | `sync_customers_from_cards()` | SECURITY DEFINER — sincroniza `customer_phone_number` desde `cards` (directorio de clientes) |
 
 **Sorteos (tómbola / ruleta):**
@@ -996,6 +1026,7 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `event_gallery_images` | Fotos de la galería del evento | Público |
 | `user_avatar` | Avatares de usuarios | Público |
 | `product_images` | Fotos de productos (máx. 5 MB; jpeg/png/webp/gif) | Público; escritura solo con service role desde Server Actions |
+| `site_gallery` | Assets de galerías institucionales (fotos optimizadas a WebP 1920px y videos MP4/WebM hasta 50 MB con portadas generadas) | Público; subida directa con URL firmada (`createSignedUploadUrl`) |
 | `product_catalog_pdfs` | Catálogos en PDF por empresa (`{companyId}/…`, máx. 50 MB, solo PDF) | Público; sin políticas de escritura: se sube con URL firmada (`createSignedUploadUrl`) |
 
 ### 4.8 Políticas RLS (patrones)

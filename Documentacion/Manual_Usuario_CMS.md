@@ -124,9 +124,30 @@ Los enlaces (`enlace`, `enlace_1`, `enlace_2`) solo aceptan rutas del sitio (`/p
 | `cl_equipo`, `cl_rol_1..4` | «Nuestro equipo» y tarjetas por rol | — |
 | `cl_solidario` | Modelo solidario (#sostenibilidad) | `dato` («7 de 10»), `dato_texto` |
 | `cl_fuente_1..4` | Fuentes de ingreso | `enlace_texto`, `enlace` (vacíos = sin enlace) |
+| `cl_instalaciones` | Galería «Conoce nuestras instalaciones» (#instalaciones) | `chip` (nombre del enlace), `fotos_visibles` (5 o 9), `mostrar_leyendas`, `boton`, `enlace`. Las fotos y videos se administran en su propio panel interactivo debajo del formulario |
 | `cl_cierre` | Banner final | `resaltado`, `boton_1`, `enlace_1`, `boton_2`, `enlace_2`, `foto` |
 
 > **Fotos:** solo se publican fotos de estudiantes y del equipo que hayan dado su autorización.
+
+
+### Cómo administrar la galería de instalaciones (`cl_instalaciones`)
+
+Al editar la sección `cl_instalaciones` en **Contenido General → Quienes Somos**, aparece el panel interactivo **Fotos y Videos de la Galería**:
+
+1. **Guardado automático e instantáneo:** A diferencia de los textos de la sección (que requieren pulsar «Guardar cambios»), las fotos, videos, leyendas y el orden **se guardan al instante** en la base de datos al realizar cualquier cambio.
+2. **Subida de fotos:** Arrastra archivos al recuadro o presiona **Subir fotos o videos**. Las imágenes (JPG, PNG o WebP) se comprimen automáticamente a WebP de 1920 px antes de subirse directamente a Supabase Storage.
+3. **Subida de videos:** Acepta videos directos MP4 o WebM de hasta 50 MB. El navegador extrae automáticamente un fotograma de portada en alta calidad (WebP) y la duración en segundos antes de subirlos.
+4. **Videos de YouTube:** En el recuadro lateral, pega cualquier enlace de YouTube (`https://youtu.be/...` o `youtube.com/watch?v=...`) y pulsa **Agregar enlace**. Se incrustará en el visor sin consumir almacenamiento ni ancho de banda.
+5. **Reordenar con arrastrar y soltar:**
+   - **Con mouse o pantalla táctil:** Arrastra desde el icono de seis puntos (**⠿**) situado en la esquina superior izquierda de cada tarjeta.
+   - **Con teclado:** Enfoca el icono (**⠿**), pulsa la tecla **Espacio** para tomar la tarjeta, muévela con las **flechas** del teclado y vuelve a pulsar **Espacio** para soltarla (**Escape** cancela el movimiento).
+6. **Portada principal:** La foto o video en la **posición #1** se convierte automáticamente en la portada grande destacada del mosaico en `/about`. También puedes pulsar **«Hacer portada»** en cualquier tarjeta para moverla al primer puesto de inmediato.
+7. **Textos accesibles (alt text) y leyendas:**
+   - **Texto alternativo / Descripción:** Obligatorio (entre 5 y 150 caracteres). Es indispensable para lectores de pantalla y posicionamiento SEO.
+   - **Leyenda:** Opcional (hasta 60 caracteres). Se muestra sobre un degradado oscuro en la parte inferior de la casilla del mosaico (si la opción «Mostrar leyendas» está activada).
+8. **Visibilidad y eliminación:**
+   - Interruptor **Visible**: oculta o muestra el elemento en la página pública sin borrarlo.
+   - Botón **Eliminar** (ícono de papelera): solicita confirmación en un diálogo seguro y elimina tanto la fila de la base de datos como los archivos físicos correspondientes en Storage, renumerando los elementos restantes de forma consecutiva (1..N).
 
 ### Página «Programas» (`/programs`)
 
