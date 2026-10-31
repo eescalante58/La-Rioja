@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, Play, Video, Youtube } from "lucide-react";
-import { formatDuration, youTubeEmbedUrl } from "@/lib/video-url";
+import { youTubeEmbedUrl } from "@/lib/video-url";
 import type { SiteGalleryItem } from "@/types/cms";
 
 interface FacilitiesLightboxProps {
@@ -17,6 +18,7 @@ export default function FacilitiesLightbox({
   initialIndex,
   onClose,
 }: FacilitiesLightboxProps) {
+  const [mounted, setMounted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(
     Math.max(0, Math.min(items.length - 1, initialIndex)),
   );
@@ -28,6 +30,10 @@ export default function FacilitiesLightbox({
 
   const currentItem = items[currentIndex];
   const total = items.length;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navigate = useCallback(
     (delta: number) => {
@@ -41,7 +47,7 @@ export default function FacilitiesLightbox({
     [total],
   );
 
-  // Bloqueo de scroll en body
+  // Bloqueo de scroll en body mientras el visor está abierto
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -106,20 +112,20 @@ export default function FacilitiesLightbox({
     }
   };
 
-  if (!currentItem) return null;
+  if (!mounted || !currentItem) return null;
 
-  return (
+  const content = (
     <div
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label="Galería de instalaciones"
-      className="fixed inset-0 z-[100] bg-[#0A0C14]/96 text-white flex flex-col justify-between select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[9999] bg-[#0A0C14]/96 text-white flex flex-col justify-between select-none animate-in fade-in duration-200"
     >
       {/* Barra superior */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/10 z-20">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 z-30">
         <span
-          className="text-xs sm:text-sm font-montserrat font-bold px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md"
+          className="text-xs sm:text-sm font-montserrat font-bold px-3.5 py-1.5 rounded-full bg-white/15 text-white backdrop-blur-md shadow-sm"
           aria-live="polite"
         >
           {currentIndex + 1} / {total}
@@ -129,7 +135,7 @@ export default function FacilitiesLightbox({
           type="button"
           onClick={onClose}
           aria-label="Cerrar visor de instalaciones"
-          className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-amarillo cursor-pointer"
+          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white/15 hover:bg-white/25 active:bg-white/35 flex items-center justify-center transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-amarillo cursor-pointer"
         >
           <X size={24} />
         </button>
@@ -137,24 +143,25 @@ export default function FacilitiesLightbox({
 
       {/* Área principal multimedia */}
       <div
-        className="flex-1 flex items-center justify-between px-2 sm:px-6 relative min-h-0 overflow-hidden"
+        className="flex-1 flex items-center justify-between px-3 sm:px-8 relative min-h-0 w-full"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Botón Anterior */}
+        {/* Botón Anterior (Desplazar hacia atrás) */}
         <button
           type="button"
           onClick={() => navigate(-1)}
           aria-label="Elemento anterior"
-          className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center transition-all z-20 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-amarillo cursor-pointer"
+          className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-all z-30 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-amarillo cursor-pointer shadow-lg border border-white/10"
         >
-          <ChevronLeft size={28} />
+          <ChevronLeft size={30} />
         </button>
 
         {/* Contenedor central del medio activo */}
-        <div className="flex-1 h-full max-h-[75vh] flex flex-col items-center justify-center px-2 sm:px-4 relative min-w-0">
-          <figure className="m-0 w-full h-full flex flex-col items-center justify-center relative">
-            <div className="relative w-full h-full flex items-center justify-center overflow-hidden rounded-xl">
+        <div className="flex-1 h-full flex flex-col items-center justify-center px-2 sm:px-6 min-w-0">
+          <figure className="m-0 w-full h-full flex flex-col items-center justify-center">
+            {/* Marco de imagen/video */}
+            <div className="relative w-full max-w-4xl h-[56vh] sm:h-[64vh] flex items-center justify-center rounded-xl overflow-hidden shadow-2xl bg-black/30">
               {/* Imagen */}
               {currentItem.media_type === "image" && (
                 <div className="relative w-full h-full">
@@ -162,36 +169,34 @@ export default function FacilitiesLightbox({
                     src={currentItem.media_url}
                     alt={currentItem.alt_text}
                     fill
-                    sizes="100vw"
+                    sizes="(max-width: 1200px) 100vw, 1200px"
                     quality={85}
                     priority
-                    className="object-contain"
+                    className="object-contain rounded-xl"
                   />
                 </div>
               )}
 
               {/* Video HTML5 */}
               {currentItem.media_type === "video" && (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <video
-                    ref={videoRef}
-                    key={currentItem.id}
-                    src={currentItem.media_url}
-                    controls
-                    playsInline
-                    preload="metadata"
-                    poster={currentItem.poster_url || undefined}
-                    className="max-h-[68vh] max-w-full rounded-xl shadow-2xl"
-                    aria-label={currentItem.alt_text}
-                  >
-                    Tu navegador no soporta la reproducción de video.
-                  </video>
-                </div>
+                <video
+                  ref={videoRef}
+                  key={currentItem.id}
+                  src={currentItem.media_url}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  poster={currentItem.poster_url || undefined}
+                  className="max-h-full max-w-full rounded-xl object-contain shadow-2xl"
+                  aria-label={currentItem.alt_text}
+                >
+                  Tu navegador no soporta la reproducción de video.
+                </video>
               )}
 
               {/* Video de YouTube con Facade */}
               {currentItem.media_type === "youtube" && currentItem.youtube_id && (
-                <div className="relative w-full max-w-4xl aspect-video rounded-xl overflow-hidden bg-black shadow-2xl flex items-center justify-center">
+                <div className="relative w-full h-full aspect-video flex items-center justify-center bg-black">
                   {isPlayingYouTube ? (
                     <iframe
                       src={youTubeEmbedUrl(currentItem.youtube_id, true)}
@@ -201,9 +206,15 @@ export default function FacilitiesLightbox({
                       allowFullScreen
                     />
                   ) : (
-                    <div className="relative w-full h-full group cursor-pointer" onClick={() => setIsPlayingYouTube(true)}>
+                    <div
+                      className="relative w-full h-full group cursor-pointer"
+                      onClick={() => setIsPlayingYouTube(true)}
+                    >
                       <Image
-                        src={currentItem.poster_url || `https://i.ytimg.com/vi/${currentItem.youtube_id}/hqdefault.jpg`}
+                        src={
+                          currentItem.poster_url ||
+                          `https://i.ytimg.com/vi/${currentItem.youtube_id}/hqdefault.jpg`
+                        }
                         alt={currentItem.alt_text}
                         fill
                         className="object-cover brightness-90 group-hover:brightness-100 transition-all"
@@ -236,25 +247,34 @@ export default function FacilitiesLightbox({
           </figure>
         </div>
 
-        {/* Botón Siguiente */}
+        {/* Botón Siguiente (Desplazar hacia adelante) */}
         <button
           type="button"
           onClick={() => navigate(1)}
           aria-label="Elemento siguiente"
-          className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center transition-all z-20 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-amarillo cursor-pointer"
+          className="w-12 h-12 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-all z-30 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-amarillo cursor-pointer shadow-lg border border-white/10"
         >
-          <ChevronRight size={28} />
+          <ChevronRight size={30} />
         </button>
       </div>
 
-      {/* Tira inferior de miniaturas (solo en pantallas medianas y grandes) */}
-      <div className="hidden md:flex items-center justify-center gap-2 px-6 py-3 border-t border-white/10 overflow-x-auto z-20 [scrollbar-width:none]">
+      {/* Tira inferior de miniaturas navegable */}
+      <div className="flex items-center justify-start sm:justify-center gap-2 px-4 sm:px-6 py-3 border-t border-white/10 overflow-x-auto z-30 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((it, idx) => {
           const isSelected = idx === currentIndex;
           const thumb = it.poster_url || it.media_url;
           return (
             <button
               key={it.id}
+              ref={(node) => {
+                if (isSelected && node) {
+                  node.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center",
+                  });
+                }
+              }}
               type="button"
               onClick={() => {
                 if (videoRef.current) videoRef.current.pause();
@@ -263,9 +283,9 @@ export default function FacilitiesLightbox({
               }}
               aria-current={isSelected ? "true" : undefined}
               aria-label={`Ir al elemento ${idx + 1}: ${it.caption || it.alt_text}`}
-              className={`relative flex-shrink-0 w-20 h-12 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+              className={`relative flex-shrink-0 w-20 sm:w-21 h-12 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
                 isSelected
-                  ? "border-larioja-amarillo opacity-100 scale-105"
+                  ? "border-larioja-amarillo opacity-100 scale-105 shadow-md"
                   : "border-transparent opacity-50 hover:opacity-80"
               }`}
             >
@@ -274,7 +294,7 @@ export default function FacilitiesLightbox({
                   src={thumb}
                   alt=""
                   fill
-                  sizes="80px"
+                  sizes="84px"
                   className="object-cover"
                 />
               ) : null}
@@ -294,4 +314,6 @@ export default function FacilitiesLightbox({
       </div>
     </div>
   );
+
+  return createPortal(content, document.body);
 }
