@@ -36,6 +36,9 @@ const config: Config = {
          * px). Solo coincide por debajo de `sm`, así que no compite con él.
          */
         short: { raw: "(max-width: 639px) and (max-height: 600px)" },
+        "landscape-phone": {
+          raw: "(orientation: landscape) and (max-height: 500px)",
+        },
       },
       boxShadow: {
         // light
