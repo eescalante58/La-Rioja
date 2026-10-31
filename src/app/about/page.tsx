@@ -11,6 +11,7 @@ import { StatCounters, type Stat } from "@/components/about/StatCounters";
 import { OrgChart } from "@/components/about/OrgChart";
 import { TeamGrid } from "@/components/about/TeamGrid";
 import { SolidarityModel } from "@/components/about/SolidarityModel";
+import { FacilitiesGallery } from "@/components/about/FacilitiesGallery";
 import { AboutCta } from "@/components/about/AboutCta";
 import { AuroraBackground } from "@/components/ui/AuroraBackground";
 import { CONTAINER, SECTION_ANCHOR } from "@/components/site/section-ui";
@@ -23,7 +24,7 @@ import {
   type CmsSection,
 } from "@/lib/cms-content";
 import { statValueSchema } from "@/lib/validation/cms";
-import { getPageContent, getPageTabTitle } from "@/services/cms";
+import { getPageContent, getPageTabTitle, getSiteGallery } from "@/services/cms";
 
 const DESCRIPTION =
   "Conoce a La Rioja: ASPAPREM desde 1993 y el Centro de Formación Laboral para personas con discapacidad intelectual en El Salvador. Historia, modelo de atención, talleres y cómo nos sostenemos.";
@@ -91,12 +92,30 @@ function toStats(rows: CmsSection[]): Stat[] {
  * Nosotros. Recorrido: hero (#inicio), historia (#historia), propósito
  * (#proposito), modelo de atención (#modelo), talleres (#talleres),
  * transparencia, estructura y equipo (#equipo), modelo solidario
- * (#sostenibilidad) y banner final. Todo se edita en el CMS (página «Nosotros»,
- * filas `cl_*`; ver supabase/migrations/20261022000000_nosotros_cms_secciones.sql).
+ * (#sostenibilidad), instalaciones (#instalaciones) y banner final.
+ * Todo se edita en el CMS (página «Nosotros», filas `cl_*`; ver
+ * supabase/migrations/20261022000000_nosotros_cms_secciones.sql y
+ * supabase/migrations/20261107000000_quienes_somos_galeria_instalaciones.sql).
  */
 export default async function AboutPage() {
   const content = (await getPageContent("quienes somos")) as CmsSection[];
   const section = (key: string) => content.find((s) => s.section_key === key);
+
+  const facilities = section("cl_instalaciones");
+  const facilityItems = facilities
+    ? await getSiteGallery("quienes somos", "cl_instalaciones")
+    : [];
+  const showFacilities = facilityItems.length > 0;
+
+  const links: SectionLink[] = showFacilities
+    ? [
+        ...SECTION_LINKS,
+        {
+          id: "instalaciones",
+          label: metaText(facilities, "chip", "Instalaciones"),
+        },
+      ]
+    : SECTION_LINKS;
 
   const programs = [
     toProgram(section("cl_programa_colegio"), false, "/programs#colegio"),
@@ -120,7 +139,7 @@ export default async function AboutPage() {
       <Navbar />
 
       <AboutHero hero={section("cl_hero")} />
-      <SectionNav links={SECTION_LINKS} />
+      <SectionNav links={links} />
 
       <Timeline
         intro={section("cl_historia")}
@@ -171,6 +190,10 @@ export default async function AboutPage() {
         intro={section("cl_solidario")}
         sources={sectionsWithPrefix(content, "cl_fuente_")}
       />
+
+      {showFacilities && (
+        <FacilitiesGallery intro={facilities} items={facilityItems} />
+      )}
 
       <AboutCta closing={section("cl_cierre")} />
 
