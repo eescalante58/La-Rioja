@@ -13,7 +13,13 @@ import { metaPixel } from "@/components/tracking/meta-pixel-service";
 import type { SiteContent } from "@/types/cms";
 import type { MatriculaWhatsAppConfig } from "@/lib/validation/matricula";
 
-export type MatriculaModalOrigin = "intro" | "hero" | "proceso" | "cierre" | "sticky_mobile";
+export type MatriculaModalOrigin =
+  | "intro"
+  | "hero"
+  | "proceso"
+  | "cierre"
+  | "sticky_mobile"
+  | "instalaciones";
 
 export interface MatriculaModalFormProps {
   isOpen: boolean;

@@ -25,6 +25,9 @@ import {
 } from "@/lib/cms-content";
 import { statValueSchema } from "@/lib/validation/cms";
 import { getPageContent, getPageTabTitle, getSiteGallery } from "@/services/cms";
+import { getMatriculaPageData } from "@/lib/matricula/matricula-service";
+import type { AdmissionModalConfig } from "@/components/programs/AdmissionSteps";
+import type { MatriculaWhatsAppConfig, MatriculaUtmConfig } from "@/lib/validation/matricula";
 
 const DESCRIPTION =
   "Conoce a La Rioja: ASPAPREM desde 1993 y el Centro de Formación Laboral para personas con discapacidad intelectual en El Salvador. Historia, modelo de atención, talleres y cómo nos sostenemos.";
@@ -98,8 +101,19 @@ function toStats(rows: CmsSection[]): Stat[] {
  * supabase/migrations/20261107000000_quienes_somos_galeria_instalaciones.sql).
  */
 export default async function AboutPage() {
-  const content = (await getPageContent("quienes somos")) as CmsSection[];
+  const [content, matriculaData] = await Promise.all([
+    getPageContent("quienes somos") as Promise<CmsSection[]>,
+    getMatriculaPageData(),
+  ]);
   const section = (key: string) => content.find((s) => s.section_key === key);
+
+  const configMeta = (matriculaData.config?.metadata || {}) as Record<string, unknown>;
+  const modalConfig: AdmissionModalConfig = {
+    formSection: matriculaData.formulario,
+    whatsappConfig: (matriculaData.whatsapp?.metadata || null) as MatriculaWhatsAppConfig | null,
+    utmConfig: (matriculaData.utm?.metadata || null) as Partial<MatriculaUtmConfig> | null,
+    admissionYear: Number(configMeta.admission_year) || 2027,
+  };
 
   const facilities = section("cl_instalaciones");
   const facilityItems = facilities
@@ -192,7 +206,11 @@ export default async function AboutPage() {
       />
 
       {showFacilities && (
-        <FacilitiesGallery intro={facilities} items={facilityItems} />
+        <FacilitiesGallery
+          intro={facilities}
+          items={facilityItems}
+          modalConfig={modalConfig}
+        />
       )}
 
       <AboutCta closing={section("cl_cierre")} />

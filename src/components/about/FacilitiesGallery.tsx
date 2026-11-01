@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { textOr, metaHref, type CmsSection } from "@/lib/cms-content";
+import { textOr, type CmsSection } from "@/lib/cms-content";
 import {
   CONTAINER,
   SECTION_ANCHOR,
@@ -12,14 +12,18 @@ import {
   BTN_NAVY,
 } from "@/components/site/section-ui";
 import { FacilitiesMosaic } from "./FacilitiesMosaic";
+import { FacilitiesVisitCta } from "./FacilitiesVisitCta";
 import { instalacionesMetaSchema } from "@/lib/validation/site-gallery";
 import type { SiteGalleryItem } from "@/types/cms";
+import type { AdmissionModalConfig } from "@/components/programs/AdmissionSteps";
 
 interface FacilitiesGalleryProps {
   /** Fila de site_content con section_key = 'cl_instalaciones'. */
   intro: CmsSection | undefined;
   /** Elementos activos de la galería (fotos, videos y YouTube). */
   items: SiteGalleryItem[];
+  /** Configuración del modal de matrícula para el botón «Agendar una visita». */
+  modalConfig?: AdmissionModalConfig;
 }
 
 /**
@@ -27,7 +31,7 @@ interface FacilitiesGalleryProps {
  * Server Component con alternancia de fondo blanco (SECTION_PLAIN)
  * entre el modelo solidario (gris) y el cierre (oscuro).
  */
-export function FacilitiesGallery({ intro, items }: FacilitiesGalleryProps) {
+export function FacilitiesGallery({ intro, items, modalConfig }: FacilitiesGalleryProps) {
   if (items.length === 0) return null;
 
   const parsedMeta = instalacionesMetaSchema.safeParse(intro?.metadata || {});
@@ -39,6 +43,7 @@ export function FacilitiesGallery({ intro, items }: FacilitiesGalleryProps) {
         mostrar_leyendas: true,
         boton: "",
         enlace: "",
+        boton_visita: "Agendar una visita",
       };
 
   const title = textOr(intro?.title, "Conoce nuestras instalaciones");
@@ -46,6 +51,9 @@ export function FacilitiesGallery({ intro, items }: FacilitiesGalleryProps) {
   const buttonText = meta.boton.trim();
   const buttonHref = meta.enlace.trim();
   const hasButton = Boolean(buttonText && buttonHref);
+
+  const visitLabel = meta.boton_visita.trim();
+  const hasVisit = Boolean(visitLabel && modalConfig);
 
   return (
     <section
@@ -85,6 +93,11 @@ export function FacilitiesGallery({ intro, items }: FacilitiesGalleryProps) {
           items={items}
           visibleCount={meta.fotos_visibles}
           showCaptions={meta.mostrar_leyendas}
+          footerSlot={
+            hasVisit && modalConfig ? (
+              <FacilitiesVisitCta label={visitLabel} modalConfig={modalConfig} />
+            ) : undefined
+          }
         />
       </div>
     </section>
