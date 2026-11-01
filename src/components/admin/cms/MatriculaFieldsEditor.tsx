@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { TextInput, NumberInput, Switch, Text, Callout, Button } from "@tremor/react";
-import { AlertCircle, CheckCircle2, Copy, Sparkles, Target, MessageSquare } from "lucide-react";
+import { TextInput, Switch, Text, Callout, Button } from "@tremor/react";
+import { AlertCircle, CheckCircle2, Copy, Sparkles, MessageSquare, Images, Link as LinkIcon } from "lucide-react";
+import { cmsInternalHrefSchema } from "@/lib/validation/cms";
 
 interface MatriculaFieldsEditorProps {
   sectionKey: string;
@@ -300,6 +301,121 @@ export function MatriculaFieldsEditor({
               value={ttlMinutes}
               onChange={(e) => updateMetaField("ttl_minutes", parseInt(e.target.value) || 30)}
               className="w-full rounded-xl border border-gray-300 dark:border-gray-700 px-3.5 py-2 text-sm bg-white dark:bg-gray-950 focus:ring-2 focus:ring-larioja-azul"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 5. Bloque "Conoce nuestras instalaciones" en /matricula
+  if (sectionKey === "matricula_instalaciones") {
+    const antetitulo =
+      typeof metadata.antetitulo === "string"
+        ? metadata.antetitulo
+        : "Instalaciones";
+    const boton =
+      typeof metadata.boton === "string"
+        ? metadata.boton
+        : "Ver instalaciones";
+    const enlaceTexto =
+      typeof metadata.enlace_texto === "string"
+        ? metadata.enlace_texto
+        : "Ver sección en Quiénes Somos";
+    const enlace =
+      typeof metadata.enlace === "string"
+        ? metadata.enlace
+        : "/about#instalaciones";
+    const isEnlaceValid =
+      enlace === "" || cmsInternalHrefSchema.safeParse(enlace).success;
+
+    return (
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 p-6 space-y-5">
+        <div className="flex items-center gap-2">
+          <Images className="text-larioja-azul dark:text-larioja-amarillo h-5 w-5" />
+          <h4 className="font-montserrat text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+            Bloque «Conoce nuestras instalaciones» en /matricula
+          </h4>
+        </div>
+
+        <Callout
+          title="Galería sincronizada con Quiénes Somos"
+          color="blue"
+          icon={Sparkles}
+        >
+          Las fotos y su orden se administran en{" "}
+          <strong>Quiénes Somos › Conoce nuestras instalaciones</strong>{" "}
+          (<code>cl_instalaciones</code>).
+        </Callout>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Antetítulo (pastilla amarilla)
+              </label>
+              <span className="text-[11px] text-gray-400">
+                {antetitulo.length}/30
+              </span>
+            </div>
+            <TextInput
+              value={antetitulo}
+              maxLength={30}
+              onValueChange={(val) => updateMetaField("antetitulo", val)}
+              placeholder="Instalaciones"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Texto del botón que abre el visor
+              </label>
+              <span className="text-[11px] text-gray-400">
+                {boton.length}/40
+              </span>
+            </div>
+            <TextInput
+              value={boton}
+              maxLength={40}
+              onValueChange={(val) => updateMetaField("boton", val)}
+              placeholder="Ver instalaciones"
+            />
+            <Text className="text-[11px] text-gray-400 mt-1">
+              El conteo de fotos activas se añade automáticamente como (N).
+            </Text>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Texto del enlace secundario
+              </label>
+              <span className="text-[11px] text-gray-400">
+                {enlaceTexto.length}/60
+              </span>
+            </div>
+            <TextInput
+              value={enlaceTexto}
+              maxLength={60}
+              onValueChange={(val) => updateMetaField("enlace_texto", val)}
+              placeholder="Ver sección en Quiénes Somos"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Destino del enlace secundario
+              </label>
+              <LinkIcon size={13} className="text-gray-400" />
+            </div>
+            <TextInput
+              value={enlace}
+              error={!isEnlaceValid}
+              errorMessage="Debe ser una ruta interna del sitio (/about#instalaciones) o un ancla (#instalaciones)"
+              onValueChange={(val) => updateMetaField("enlace", val)}
+              placeholder="/about#instalaciones"
             />
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Card, Title, Text, TextInput, Switch, Select, SelectItem } from "@tremor/react";
-import { Sliders, HelpCircle, Link as LinkIcon } from "lucide-react";
+import { Sliders, Link as LinkIcon, MessageCircle } from "lucide-react";
 import { cmsInternalHrefSchema } from "@/lib/validation/cms";
 
 interface InstalacionesFieldsEditorProps {
@@ -23,6 +23,10 @@ export function InstalacionesFieldsEditor({
       : true;
   const boton = typeof metadata.boton === "string" ? metadata.boton : "";
   const enlace = typeof metadata.enlace === "string" ? metadata.enlace : "";
+  const botonVisita =
+    typeof metadata.boton_visita === "string"
+      ? metadata.boton_visita
+      : "Agendar una visita";
 
   const update = (patch: Record<string, unknown>) => {
     onChange({
@@ -101,11 +105,31 @@ export function InstalacionesFieldsEditor({
           />
         </div>
 
-        {/* Botón opcional */}
+        {/* Botón Agendar una visita (WhatsApp en pie del mosaico) */}
+        <div className="space-y-1.5 md:col-span-2">
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+              <MessageCircle size={15} className="text-emerald-600 dark:text-emerald-400" />
+              Texto del botón «Agendar una visita» (vacío = ocultar)
+            </label>
+            <span className="text-xs text-gray-400">{botonVisita.length}/40</span>
+          </div>
+          <TextInput
+            value={botonVisita}
+            maxLength={40}
+            onChange={(e) => update({ boton_visita: e.target.value })}
+            placeholder="Agendar una visita"
+          />
+          <p className="text-xs text-gray-500">
+            Botón verde en el pie del mosaico que abre el formulario modal de admisión hacia WhatsApp. Si se deja en blanco, se oculta.
+          </p>
+        </div>
+
+        {/* Botón opcional en cabecera */}
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Texto del botón de acción (opcional)
+              Texto del botón de acción en cabecera (opcional)
             </label>
             <span className="text-xs text-gray-400">{boton.length}/40</span>
           </div>
