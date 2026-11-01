@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { MatriculaPageClient } from "@/components/matricula/MatriculaPageClient";
 import { isMatriculaActive, getMatriculaPageData } from "@/lib/matricula/matricula-service";
+import { getSiteGallery, getSectionContent } from "@/services/cms";
 import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 60;
@@ -58,15 +59,25 @@ export default async function MatriculaPage() {
     notFound();
   }
 
-  const pageData = await getMatriculaPageData();
+  const [pageData, facilityItems, aboutFacilities] = await Promise.all([
+    getMatriculaPageData(),
+    getSiteGallery("quienes somos", "cl_instalaciones"),
+    getSectionContent("quienes somos", "cl_instalaciones"),
+  ]);
   const configMeta = (pageData.config?.metadata || {}) as Record<string, unknown>;
   const admissionYear = Number(configMeta.admission_year) || 2027;
+  const aboutFacilitiesActive = Boolean(aboutFacilities);
 
   return (
     <div className="flex min-h-screen flex-col bg-white dark:bg-gray-950">
       <Navbar />
       <main id="contenido" className="flex-1">
-        <MatriculaPageClient pageData={pageData} admissionYear={admissionYear} />
+        <MatriculaPageClient
+          pageData={pageData}
+          admissionYear={admissionYear}
+          facilityItems={facilityItems}
+          aboutFacilitiesActive={aboutFacilitiesActive}
+        />
       </main>
       <Footer />
     </div>

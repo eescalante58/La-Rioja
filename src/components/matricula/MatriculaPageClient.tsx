@@ -5,11 +5,13 @@ import { captureAndStoreUtm } from "@/lib/matricula/utm";
 import { MatriculaIntro } from "./MatriculaIntro";
 import { MatriculaHero } from "./MatriculaHero";
 import { MatriculaProgramas } from "./MatriculaProgramas";
+import { MatriculaInstalaciones } from "./MatriculaInstalaciones";
 import { MatriculaProceso } from "./MatriculaProceso";
 import { MatriculaCierre } from "./MatriculaCierre";
 import { MatriculaStickyMobileCTA } from "./MatriculaStickyMobileCTA";
 import { MatriculaModalForm, type MatriculaModalOrigin } from "./MatriculaModalForm";
 import type { MatriculaPageData } from "@/lib/matricula/matricula-service";
+import type { SiteGalleryItem } from "@/types/cms";
 import type {
   MatriculaWhatsAppConfig,
   MatriculaUtmConfig,
@@ -18,9 +20,16 @@ import type {
 interface MatriculaPageClientProps {
   pageData: MatriculaPageData;
   admissionYear: number;
+  facilityItems?: SiteGalleryItem[];
+  aboutFacilitiesActive?: boolean;
 }
 
-export function MatriculaPageClient({ pageData, admissionYear }: MatriculaPageClientProps) {
+export function MatriculaPageClient({
+  pageData,
+  admissionYear,
+  facilityItems = [],
+  aboutFacilitiesActive = false,
+}: MatriculaPageClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalOrigin, setModalOrigin] = useState<MatriculaModalOrigin>("hero");
 
@@ -58,6 +67,13 @@ export function MatriculaPageClient({ pageData, admissionYear }: MatriculaPageCl
         programasSection={pageData.programas}
         colegioSection={pageData.programaColegio}
         cflSection={pageData.programaCfl}
+      />
+
+      {/* Bloque de acceso a instalaciones con vista previa y visor */}
+      <MatriculaInstalaciones
+        section={pageData.instalaciones}
+        items={facilityItems}
+        aboutActive={aboutFacilitiesActive}
       />
 
       {/* Sección de Proceso homologada con /programs#admision */}
