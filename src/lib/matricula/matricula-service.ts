@@ -45,6 +45,7 @@ export interface MatriculaPageData {
   programas: SiteContent | null;
   programaColegio: SiteContent | null;
   programaCfl: SiteContent | null;
+  instalaciones: SiteContent | null;
   proceso: SiteContent | null;
   pasos: SiteContent[];
   /** Fila `cl_admision` de la página `programs` (fuente única homologada). */
@@ -102,6 +103,7 @@ export async function getMatriculaPageData(): Promise<MatriculaPageData> {
     programas: findRow("matricula_programas"),
     programaColegio: findRow("matricula_programa_colegio"),
     programaCfl: findRow("matricula_programa_cfl"),
+    instalaciones: findRow("matricula_instalaciones"),
     proceso: findRow("matricula_proceso"),
     pasos,
     admisionIntro,

@@ -1,4 +1,18 @@
 import { z } from "zod";
+import { cmsInternalHrefSchema } from "./cms";
+
+/**
+ * Esquema de validación para los metadatos del bloque matricula_instalaciones.
+ */
+export const matriculaInstalacionesMetaSchema = z.object({
+  antetitulo: z.string().trim().max(30, "El antetítulo no puede exceder 30 caracteres").catch("Instalaciones"),
+  boton: z.string().trim().max(40, "El texto del botón no puede exceder 40 caracteres").catch("Ver instalaciones"),
+  enlace_texto: z.string().trim().max(60, "El texto del enlace no puede exceder 60 caracteres").catch("Ver la sección completa en Quiénes Somos"),
+  enlace: cmsInternalHrefSchema.catch("/about#instalaciones"),
+  fotos: z.literal(4).catch(4),
+});
+
+export type MatriculaInstalacionesMeta = z.infer<typeof matriculaInstalacionesMetaSchema>;
 
 /**
  * Esquema de validación para la configuración de WhatsApp (matricula_whatsapp).

@@ -160,6 +160,11 @@ export const instalacionesMetaSchema = z.object({
       },
     )
     .catch(""),
+  boton_visita: z
+    .string()
+    .trim()
+    .max(40, "El texto del botón de visita no puede exceder 40 caracteres")
+    .catch("Agendar una visita"),
 });
 
 export type InstalacionesMeta = z.infer<typeof instalacionesMetaSchema>;
