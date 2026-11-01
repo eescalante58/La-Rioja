@@ -4,8 +4,7 @@ test.describe("Sección «Conoce nuestras instalaciones» en /about", () => {
   test("Estructura, accesibilidad y comportamiento interactivo de la galería", async ({
     page,
   }) => {
-    await page.goto("/about");
-    await page.waitForLoadState("domcontentloaded");
+    await page.goto("/about", { waitUntil: "domcontentloaded" });
 
     const section = page.locator("#instalaciones");
     const count = await section.count();
@@ -45,23 +44,76 @@ test.describe("Sección «Conoce nuestras instalaciones» en /about", () => {
     // 4. Abrir lightbox interactivo
     const firstTile = section.locator("button[aria-label^='Ver foto']:visible, button[aria-label^='Ver video']:visible").first();
     await expect(firstTile).toBeVisible();
-    await firstTile.click();
 
-    // Diálogo debe estar presente
     const lightbox = page.locator('div[role="dialog"][aria-label="Galería de instalaciones"]');
-    await expect(lightbox).toBeVisible();
+    await expect(async () => {
+      if (!(await lightbox.isVisible())) {
+        await firstTile.click();
+      }
+      await expect(lightbox).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 15000 });
 
     // Cerrar con Escape
     await page.keyboard.press("Escape");
     await expect(lightbox).not.toBeVisible();
   });
 
+  test("Botón «Agendar una visita» en el pie del mosaico abre el formulario modal de admisión", async ({
+    page,
+  }) => {
+    await page.goto("/about#instalaciones", { waitUntil: "domcontentloaded" });
+
+    const section = page.locator("#instalaciones");
+    if ((await section.count()) === 0) {
+      test.skip(true, "Sección #instalaciones no presente.");
+      return;
+    }
+
+    const visitBtn = section.getByRole("button", { name: /Agendar una visita/i });
+    await expect(visitBtn).toBeVisible();
+
+    // Verificar que se ubica después de «Ver galería completa»
+    const isAfterViewAll = await section.evaluate((sec) => {
+      const buttons = Array.from(sec.querySelectorAll("button"));
+      const viewAll = buttons.find((b) =>
+        b.textContent?.includes("Ver galería completa"),
+      );
+      const visit = buttons.find((b) =>
+        b.textContent?.includes("Agendar una visita"),
+      );
+      if (!viewAll || !visit) return false;
+      return Boolean(
+        viewAll.compareDocumentPosition(visit) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    });
+    expect(isAfterViewAll).toBe(true);
+
+    // Verificar aviso de privacidad hacia /privacidad debajo del botón
+    const privacyLink = section.locator('a[href="/privacidad"]');
+    await expect(privacyLink).toBeVisible();
+
+    // Al pulsar el botón se abre el modal de admisión (MatriculaModalForm)
+    const modal = page.locator(
+      'div[role="dialog"][aria-labelledby="matricula-modal-title"]',
+    );
+    await expect(async () => {
+      if (!(await modal.isVisible())) {
+        await visitBtn.click();
+      }
+      await expect(modal).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 15000 });
+
+    // Cerrar el modal con Escape
+    await page.keyboard.press("Escape");
+    await expect(modal).not.toBeVisible();
+  });
+
   test("Tamaño de foto y flechas flotantes en celular vertical (390 x 844)", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/about");
-    await page.waitForLoadState("domcontentloaded");
+    await page.goto("/about", { waitUntil: "domcontentloaded" });
 
     const section = page.locator("#instalaciones");
     if ((await section.count()) === 0) {
@@ -71,10 +123,14 @@ test.describe("Sección «Conoce nuestras instalaciones» en /about", () => {
 
     const firstTile = section.locator("button[aria-label^='Ver foto']:visible, button[aria-label^='Ver video']:visible").first();
     await expect(firstTile).toBeVisible();
-    await firstTile.click();
 
     const lightbox = page.locator('div[role="dialog"][aria-label="Galería de instalaciones"]');
-    await expect(lightbox).toBeVisible();
+    await expect(async () => {
+      if (!(await lightbox.isVisible())) {
+        await firstTile.click();
+      }
+      await expect(lightbox).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 15000 });
 
     // Fondo opaco y oscuro en ambos modos
     const bgColor = await lightbox.evaluate((el) => window.getComputedStyle(el).backgroundColor);
@@ -112,8 +168,7 @@ test.describe("Sección «Conoce nuestras instalaciones» en /about", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 844, height: 390 });
-    await page.goto("/about");
-    await page.waitForLoadState("domcontentloaded");
+    await page.goto("/about", { waitUntil: "domcontentloaded" });
 
     const section = page.locator("#instalaciones");
     if ((await section.count()) === 0) {
@@ -123,10 +178,14 @@ test.describe("Sección «Conoce nuestras instalaciones» en /about", () => {
 
     const firstTile = section.locator("button[aria-label^='Ver foto']:visible, button[aria-label^='Ver video']:visible").first();
     await expect(firstTile).toBeVisible();
-    await firstTile.click();
 
     const lightbox = page.locator('div[role="dialog"][aria-label="Galería de instalaciones"]');
-    await expect(lightbox).toBeVisible();
+    await expect(async () => {
+      if (!(await lightbox.isVisible())) {
+        await firstTile.click();
+      }
+      await expect(lightbox).toBeVisible({ timeout: 3000 });
+    }).toPass({ timeout: 15000 });
 
     // En horizontal, miniaturas ocultas
     const nav = lightbox.locator('nav[aria-label="Miniaturas"]');

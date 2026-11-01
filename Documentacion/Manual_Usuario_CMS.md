@@ -124,7 +124,7 @@ Los enlaces (`enlace`, `enlace_1`, `enlace_2`) solo aceptan rutas del sitio (`/p
 | `cl_equipo`, `cl_rol_1..4` | «Nuestro equipo» y tarjetas por rol | — |
 | `cl_solidario` | Modelo solidario (#sostenibilidad) | `dato` («7 de 10»), `dato_texto` |
 | `cl_fuente_1..4` | Fuentes de ingreso | `enlace_texto`, `enlace` (vacíos = sin enlace) |
-| `cl_instalaciones` | Galería «Conoce nuestras instalaciones» (#instalaciones) | `chip` (nombre del enlace), `fotos_visibles` (5 o 9), `mostrar_leyendas`, `boton`, `enlace`. Las fotos y videos se administran en su propio panel interactivo debajo del formulario |
+| `cl_instalaciones` | Galería «Conoce nuestras instalaciones» (#instalaciones) | `chip` (nombre del enlace), `fotos_visibles` (5 o 9), `mostrar_leyendas`, `boton_visita` (texto del botón verde «Agendar una visita» en el pie del mosaico; vacío = ocultar), `boton`, `enlace`. Las fotos y videos se administran en su propio panel interactivo debajo del formulario |
 | `cl_cierre` | Banner final | `resaltado`, `boton_1`, `enlace_1`, `boton_2`, `enlace_2`, `foto` |
 
 > **Fotos:** solo se publican fotos de estudiantes y del equipo que hayan dado su autorización.
@@ -190,7 +190,8 @@ Al hacer clic en **Editar** sobre las secciones clave de `Matrícula`, el formul
 2. **`matricula_cupos`**: campo numérico para los cupos disponibles (`count`), interruptor para mostrar/ocultar la insignia en el Hero, etiqueta cuando los cupos llegan a `0` (`zero_label`) y texto de actualización (`updated_label`).
 3. **`matricula_whatsapp`**: teléfono destino en formato `E.164` (`+50377310792`), teléfono visible en pantalla (`7731-0792`) y plantilla del mensaje con tokens dinámicos (`{year}`, `{name}`, `{email}`, `{phone}`, `{type}`, `{message}`).
 4. **`matricula_utm`**: configuración de `utm_source`, `utm_medium`, `utm_campaign`, tiempo de vida en sesión (`ttl_minutes`) y **generador de sufijo de URL con botón «Copiar Sufijo»** listo para pegar en anuncios.
-5. **`matricula_config`**: selector del año del ciclo de admisión (`admission_year`, p. ej. `2027`), que reemplaza automáticamente el token `{year}` en títulos y mensajes.
+5. **`matricula_instalaciones`**: antetítulo (`antetitulo`), texto del botón que abre el visor de fotos sin salir de `/matricula` (`boton`), texto del enlace secundario (`enlace_texto`) y su ruta interna (`enlace`). Las fotos se sincronizan automáticamente desde `cl_instalaciones` (Quiénes Somos).
+6. **`matricula_config`**: selector del año del ciclo de admisión (`admission_year`, p. ej. `2027`), que reemplaza automáticamente el token `{year}` en títulos y mensajes.
 
 > **Medición de Google Ads y Meta Pixel:** la medición de conversiones de `/matricula` y del resto del sitio se administra de forma centralizada desde las pestañas **«Meta Pixel»** (`/admin/cms?tab=meta-pixel`) y **«Google Ads»** (`/admin/cms?tab=google-ads`).
 
@@ -205,6 +206,7 @@ Al hacer clic en **Editar** sobre las secciones clave de `Matrícula`, el formul
 | `matricula_programas` | Encabezado del bloque de programas (Colegio y CFL) | `layout_variant`, `show_intro` |
 | `matricula_programa_colegio` | Tarjeta informativa de Colegio (12 a 20 años) | `icon`, `image_alt`, `link_label`, `link_href`, `show_link` |
 | `matricula_programa_cfl` | Tarjeta informativa del CFL (20 a 55 años) | `icon`, `image_alt`, `link_label`, `link_href`, `show_link` |
+| `matricula_instalaciones` | Bloque compacto «Conoce nuestras instalaciones» (`#instalaciones`, orden 45) con 4 miniaturas y visor de fotos in-situ | `antetitulo`, `boton`, `enlace_texto`, `enlace` (las fotos se administran en `cl_instalaciones` de Quiénes Somos) |
 | `matricula_proceso` | Encabezado de los pasos de admisión (`#proceso`) | `layout_variant`, `anchor` |
 | `matricula_paso_01..03` | Pasos 1, 2 y 3 del proceso («Escríbenos», «Consulta requisitos», «Coordina una visita») | `icon`, `step_number` |
 | `matricula_cierre` | Bloque final de llamado a la acción | `image_alt`, `cta_label`, `cta_aria_label`, `show_phone` |
