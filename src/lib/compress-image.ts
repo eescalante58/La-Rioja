@@ -5,6 +5,7 @@
  * Si la compresión falla o no reduce el tamaño, devuelve el archivo original.
  */
 export async function compressImage(file: File, maxSide = 1920): Promise<File> {
+  if (!file || file.size === 0) return file;
   try {
     const bitmap = await createImageBitmap(file);
     const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));

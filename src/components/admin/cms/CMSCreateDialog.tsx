@@ -86,10 +86,15 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
     setCreateStatus(null);
     try {
       // Validar tamaño de archivo en el cliente (límite de Vercel/Next.js es ~4.5MB)
-      if (newSelectedFile && newSelectedFile.size > 4 * 1024 * 1024) {
-        throw new Error(
-          `El archivo es demasiado grande (${(newSelectedFile.size / (1024 * 1024)).toFixed(2)}MB). El límite máximo permitido es 4MB. Por favor use la "URL Directa" para archivos más grandes o comprima el video.`,
-        );
+      if (newSelectedFile) {
+        if (newSelectedFile.size === 0) {
+          throw new Error(`El archivo "${newSelectedFile.name}" está vacío (0 bytes).`);
+        }
+        if (newSelectedFile.size > 4 * 1024 * 1024) {
+          throw new Error(
+            `El archivo es demasiado grande (${(newSelectedFile.size / (1024 * 1024)).toFixed(2)}MB). El límite máximo permitido es 4MB. Por favor use la "URL Directa" para archivos más grandes o comprima el video.`,
+          );
+        }
       }
 
       const submitData = new FormData();
@@ -183,7 +188,27 @@ export default function CMSCreateDialog({ isOpen, onClose, CMS_PAGES }: CMSCreat
                 </button>
                 {newPreviewUrl && <button type="button" onClick={() => { setNewSelectedFile(null); setNewPreviewUrl(null); }} className="text-rose-500 text-xs font-bold hover:underline">Eliminar</button>}
               </div>
-              <input type="file" ref={newFileInputRef} className="hidden" accept="image/*,video/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setNewSelectedFile(f); setNewPreviewUrl(URL.createObjectURL(f)); } }} />
+              <input
+                type="file"
+                ref={newFileInputRef}
+                className="hidden"
+                accept="image/*,video/*"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  if (f.size === 0) {
+                    setCreateStatus({
+                      type: "error",
+                      message: `El archivo "${f.name}" está vacío (0 bytes). Verifica el archivo en tu equipo.`,
+                    });
+                    if (newFileInputRef.current) newFileInputRef.current.value = "";
+                    return;
+                  }
+                  setCreateStatus(null);
+                  setNewSelectedFile(f);
+                  setNewPreviewUrl(URL.createObjectURL(f));
+                }}
+              />
               {newPreviewUrl && (
                 <div className="mt-2 relative aspect-video w-48 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-black flex items-center justify-center">
                   {isVideo(newPreviewUrl) ? (

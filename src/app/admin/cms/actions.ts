@@ -11,6 +11,17 @@ import { getErrorMessage, formatFriendlyError } from "@/lib/utils";
  * Sanitizes string input to prevent basic HTML injection.
  * In a real production app, consider using a library like DOMPurify for complex HTML.
  */
+function isUploadedFile(value: unknown): value is File {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "size" in value &&
+      typeof (value as { size: unknown }).size === "number" &&
+      "arrayBuffer" in value &&
+      typeof (value as { arrayBuffer: unknown }).arrayBuffer === "function",
+  );
+}
+
 function sanitizeInput(str: string): string {
   if (!str) return "";
   return str
@@ -107,8 +118,16 @@ async function updateCMSContentInternal(id: string, formData: FormData, context:
       : old_image_url || null;
 
   // 1. Handle File Upload if present
-  if (file && file instanceof File && file.size > 0) {
-    const fileExt = file.name.split(".").pop();
+  if (file && isUploadedFile(file)) {
+    if (file.size === 0) {
+      return {
+        success: false,
+        error:
+          "El archivo seleccionado está vacío (0 bytes). Por favor verifica el archivo en tu dispositivo e intenta de nuevo.",
+      };
+    }
+    const rawExt = file.name ? file.name.split(".").pop() : "";
+    const fileExt = (rawExt || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
     const fileName = `${section_key || id}_${Date.now()}.${fileExt}`;
     const storagePath = `cms/${fileName}`;
 
@@ -623,8 +642,16 @@ async function createCMSContentInternal(formData: FormData, context: RoleContext
   let image_url = manual_image_url ? transformSupabaseUrl(manual_image_url) : "";
 
   // 1. Handle File Upload if present
-  if (file && file instanceof File && file.size > 0) {
-    const fileExt = file.name.split(".").pop();
+  if (file && isUploadedFile(file)) {
+    if (file.size === 0) {
+      return {
+        success: false,
+        error:
+          "El archivo seleccionado está vacío (0 bytes). Por favor verifica el archivo en tu dispositivo e intenta de nuevo.",
+      };
+    }
+    const rawExt = file.name ? file.name.split(".").pop() : "";
+    const fileExt = (rawExt || "png").toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
     const fileName = `${section_key}_${Date.now()}.${fileExt}`;
     const storagePath = `cms/${fileName}`;
 

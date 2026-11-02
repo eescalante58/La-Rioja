@@ -63,6 +63,15 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(item.image_url || null);
   const [clearImage, setClearImage] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
@@ -75,6 +84,7 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
   // Update preview when manual URL changes
   const handleUrlChange = (url: string) => {
     setFormData({ ...formData, image_url: url });
+    setPreviewError(false);
     if (!selectedFile) {
       setPreviewUrl(url || item.image_url || null);
     }
@@ -102,10 +112,17 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
 
     try {
       // Validar tamaño de archivo en el cliente (límite de Vercel/Next.js es ~4.5MB)
-      if (selectedFile && selectedFile.size > 4 * 1024 * 1024) {
-        throw new Error(
-          `El archivo es demasiado grande (${(selectedFile.size / (1024 * 1024)).toFixed(2)}MB). El límite máximo permitido es 4MB. Por favor use la "URL Directa" para archivos más grandes o comprima el video.`,
-        );
+      if (selectedFile) {
+        if (selectedFile.size === 0) {
+          throw new Error(
+            `El archivo "${selectedFile.name}" está vacío (0 bytes). Por favor selecciona un archivo válido.`,
+          );
+        }
+        if (selectedFile.size > 4 * 1024 * 1024) {
+          throw new Error(
+            `El archivo es demasiado grande (${(selectedFile.size / (1024 * 1024)).toFixed(2)}MB). El límite máximo permitido es 4MB. Por favor use la "URL Directa" para archivos más grandes o comprima el video.`,
+          );
+        }
       }
 
       const submitData = new FormData();
@@ -176,21 +193,58 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const compressed = await compressImage(file);
-      setSelectedFile(compressed);
-      const url = URL.createObjectURL(compressed);
-      setPreviewUrl(url);
-      setClearImage(false);
+    if (!file) return;
+
+    if (file.size === 0) {
+      setStatus({
+        type: "error",
+        message: `El archivo "${file.name}" está vacío (0 bytes). Verifica el archivo en tu equipo e intenta de nuevo.`,
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
+
+    if (file.size > 4 * 1024 * 1024) {
+      setStatus({
+        type: "error",
+        message: `El archivo es demasiado grande (${(file.size / (1024 * 1024)).toFixed(2)}MB). El límite máximo permitido es 4MB. Por favor use la "URL Directa" para archivos más grandes o comprima el video.`,
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setStatus(null);
+    setPreviewError(false);
+
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    let fileToUse: File = file;
+    if (file.type.startsWith("image/")) {
+      try {
+        fileToUse = await compressImage(file);
+      } catch (err) {
+        console.warn("No se pudo comprimir la imagen, usando original:", err);
+      }
+    }
+
+    setSelectedFile(fileToUse);
+    const url = URL.createObjectURL(fileToUse);
+    setPreviewUrl(url);
+    setClearImage(false);
   };
 
   const handleClearImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setClearImage(true);
     setSelectedFile(null);
     setPreviewUrl(null);
+    setPreviewError(false);
     setFormData({ ...formData, image_url: "" });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -199,6 +253,7 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
     e.preventDefault();
     setClearImage(false);
     setPreviewUrl(item.image_url || null);
+    setPreviewError(false);
     setFormData({ ...formData, image_url: item.image_url || "" });
   };
 
@@ -241,9 +296,13 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
   const removeFile = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setSelectedFile(null);
-    setPreviewUrl(item.image_url || null);
+    setPreviewUrl(formData.image_url || item.image_url || null);
     setClearImage(false);
+    setPreviewError(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -323,11 +382,20 @@ export default function CMSEditForm({ item }: { item: SiteContent }) {
                       <source src={previewUrl} type="video/mp4" />
                       Tu navegador no soporta la reproducción de videos.
                     </video>
+                  ) : previewError ? (
+                    <div className="flex flex-col items-center justify-center p-6 text-center text-rose-500 gap-2">
+                      <AlertCircle size={32} />
+                      <p className="text-sm font-semibold">No se pudo cargar la vista previa</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs">
+                        El archivo seleccionado no es una imagen válida o está dañado (0 bytes).
+                      </p>
+                    </div>
                   ) : (
                     <img
                       src={previewUrl}
                       alt="Vista previa"
                       className="w-full h-full object-contain"
+                      onError={() => setPreviewError(true)}
                     />
                   )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
