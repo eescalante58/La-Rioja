@@ -65,6 +65,7 @@ function ShopCartButton() {
  */
 export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNavProps) {
   const navRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
   const [activeLine, setActiveLine] = useState<number | null>(lines[0]?.id ?? null);
   const showLines = lines.length > 1;
@@ -114,6 +115,15 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
     return () => observer.disconnect();
   }, [lines, showLines]);
 
+  // Centra la pestaña del taller activo dentro de la barra en celular.
+  useEffect(() => {
+    const bar = tabsRef.current;
+    const tab = bar?.querySelector<HTMLElement>(`[data-catalog-tab="${activeSlug}"]`);
+    if (!bar || !tab) return;
+    const left = tab.offsetLeft - (bar.clientWidth - tab.clientWidth) / 2;
+    bar.scrollTo({ left, behavior: "smooth" });
+  }, [activeSlug]);
+
   // Centra el chip activo dentro de la barra (sin mover la página).
   useEffect(() => {
     const bar = chipsRef.current;
@@ -143,10 +153,9 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
       <div className="flex items-center gap-2">
         <ShopCartButton />
         {catalogs.length > 1 && (
-          // En celular los talleres se reparten el ancho y el nombre puede ir en
-          // dos líneas (con el zoom de Safari no cabe en una).
           <div
-            className="flex min-w-0 flex-1 gap-2 overflow-x-auto [scrollbar-width:none] sm:flex-none [&::-webkit-scrollbar]:hidden"
+            ref={tabsRef}
+            className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto [scrollbar-width:none] sm:flex-none sm:gap-2 [&::-webkit-scrollbar]:hidden"
             role="tablist"
             aria-label="Talleres"
           >
@@ -158,9 +167,10 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
                   key={c.slug}
                   type="button"
                   role="tab"
+                  data-catalog-tab={c.slug}
                   aria-selected={active}
                   onClick={() => onSelectCatalog(c.slug)}
-                  className={`inline-flex h-11 min-w-[6.5rem] flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-medium leading-tight [text-wrap:balance] sm:flex-none sm:shrink-0 sm:whitespace-nowrap sm:px-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] sm:text-sm ${
+                  className={`inline-flex h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] sm:px-4 sm:text-sm ${
                     active
                       ? "bg-[var(--shop-chip-active)] text-[var(--shop-chip-active-text)]"
                       : "border border-[var(--shop-chip-line)] text-[var(--shop-text)] hover:bg-[var(--shop-chip-line)]"

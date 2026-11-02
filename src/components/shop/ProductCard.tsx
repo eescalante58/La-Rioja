@@ -82,13 +82,17 @@ export function ProductCard({ product, priority, onOpen }: ProductCardProps) {
       </div>
 
       {/* Barra inferior: precio en #184F95 y botón Ver detalle */}
-      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2.5 dark:border-slate-800">
-        <div>
+      <div className="mt-3 flex items-end justify-between gap-2 border-t border-slate-100 pt-2.5 dark:border-slate-800">
+        <div className="min-w-0">
           <p className="font-montserrat text-xs sm:text-sm font-extrabold text-[#184F95] dark:text-larioja-amarillo">
             {hasVariants && <span className="text-[11px] font-normal text-slate-500">Desde </span>}
             {minPrice > 0 ? `$${minPrice.toFixed(2)}` : "Consultar"}
-            {unit && <span className="text-[11px] font-normal text-slate-400 ml-0.5">/{unit}</span>}
           </p>
+          {unit && (
+            <p className="truncate text-[11px] text-slate-400 dark:text-slate-500">
+              {unit}
+            </p>
+          )}
           {hasVariants && (
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
               {product.variants.length} tamaños
@@ -96,8 +100,8 @@ export function ProductCard({ product, priority, onOpen }: ProductCardProps) {
           )}
         </div>
 
-        <span className="inline-flex items-center gap-0.5 text-xs font-bold text-sky-600 transition-all group-hover:translate-x-1 dark:text-sky-400">
-          Ver detalle →
+        <span className="inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap text-xs font-bold text-sky-600 transition-all group-hover:translate-x-1 dark:text-sky-400">
+          Ver <span className="hidden sm:inline">detalle </span>→
         </span>
       </div>
 
