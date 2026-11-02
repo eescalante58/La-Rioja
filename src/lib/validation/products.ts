@@ -26,12 +26,14 @@ export function slugify(name: string): string {
   return slug || "producto";
 }
 
-/** Catálogo de un taller (Arte y Costura, Panadería). */
+/** Catálogo de un taller (Arte y Costura, Panadería, Navidad 2026). */
 export interface ProductCatalog {
   id: number;
   company_id: number;
   slug: string;
   name: string;
+  /** Etiqueta corta opcional en la píldora del taller (p. ej. «Temporada»). */
+  badge?: string | null;
   tagline: string | null;
   description: string | null;
   cover_image_url: string | null;
@@ -155,6 +157,7 @@ export const catalogSchema = z.object({
   company_id: z.number().int().positive(),
   slug: z.string().trim().regex(SLUG_PATTERN, "Identificador: minúsculas, números y guiones"),
   name: z.string().trim().min(2, "Nombre requerido").max(80),
+  badge: z.string().trim().max(24).nullable().optional(),
   tagline: z.string().trim().max(160).nullable(),
   description: z.string().trim().max(2000).nullable(),
   content_order: z.number().int().min(0),

@@ -77,10 +77,24 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // Permite enlazar un catálogo: /productos#panaderia
+  // Permite enlazar un catálogo desde otras áreas del sitio: /productos#navidad-2026
   useEffect(() => {
-    const fromHash = decodeURIComponent(window.location.hash.slice(1));
-    if (catalogs.some((c) => c.slug === fromHash)) setActiveSlug(fromHash);
+    const syncFromHash = (scroll: boolean) => {
+      const fromHash = decodeURIComponent(window.location.hash.slice(1));
+      if (!fromHash || !catalogs.some((c) => c.slug === fromHash)) return;
+      setActiveSlug(fromHash);
+      if (scroll) {
+        const target = document.getElementById(fromHash) ?? document.getElementById("catalogo");
+        if (target) {
+          const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+        }
+      }
+    };
+    syncFromHash(true);
+    const onHashChange = () => syncFromHash(true);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, [catalogs]);
 
   const selectCatalog = useCallback((slug: string) => {
@@ -166,6 +180,13 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
 
   return (
     <CartProvider available={available}>
+      {/* Anclas DOM por cada catálogo activo para permitir enlaces directos (#navidad-2026, #arte-y-costura, etc.) desde cualquier área del sitio */}
+      <div aria-hidden="true" className="relative">
+        {catalogs.map((c) => (
+          <span key={c.slug} id={c.slug} className="block scroll-mt-nav" />
+        ))}
+      </div>
+
       <ShopNav
         catalogs={catalogs}
         activeSlug={active.slug}

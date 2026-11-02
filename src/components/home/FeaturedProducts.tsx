@@ -9,12 +9,20 @@ interface Product {
   slug: string | null;
 }
 
-interface Props {
-  products: Product[];
+interface SeasonalCatalogLink {
+  slug: string;
+  name: string;
+  tagline: string | null;
 }
 
-/** Sección — Tienda La Rioja: productos destacados (featured = true). */
-export function FeaturedProducts({ products }: Props) {
+interface Props {
+  products: Product[];
+  /** Catálogo de temporada activo (p. ej. «Navidad 2026») para enlazar con ancla `/productos#<slug>`. */
+  seasonalCatalog?: SeasonalCatalogLink | null;
+}
+
+/** Sección — Tienda La Rioja: productos destacados (featured = true) y acceso directo al catálogo de temporada. */
+export function FeaturedProducts({ products, seasonalCatalog }: Props) {
   if (products.length === 0) return null;
 
   return (
@@ -39,12 +47,25 @@ export function FeaturedProducts({ products }: Props) {
               Artículos elaborados en los talleres de oficio. Cada compra apoya directamente la formación y continuidad de nuestros estudiantes.
             </p>
           </div>
-          <Link
-            href="/productos"
-            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-2 border-larioja-azul px-5 py-2.5 text-xs font-bold text-larioja-azul transition-colors hover:bg-larioja-azul hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul"
-          >
-            Ver tienda completa →
-          </Link>
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {seasonalCatalog && (
+              <Link
+                href={`/productos#${seasonalCatalog.slug}`}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#9b1c2e] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#7f1625] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9b1c2e] focus-visible:ring-offset-2"
+              >
+                <span>Catálogo {seasonalCatalog.name}</span>
+                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white">
+                  Temporada
+                </span>
+              </Link>
+            )}
+            <Link
+              href="/productos"
+              className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-2 border-larioja-azul px-5 py-2.5 text-xs font-bold text-larioja-azul transition-colors hover:bg-larioja-azul hover:text-white dark:border-larioja-amarillo dark:text-larioja-amarillo dark:hover:bg-larioja-amarillo dark:hover:text-larioja-azul"
+            >
+              Ver tienda completa →
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

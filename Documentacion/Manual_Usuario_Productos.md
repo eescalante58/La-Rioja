@@ -86,14 +86,26 @@ Cada catálogo muestra su estado (**Publicado** / **Oculto**), sus líneas y las
 
 | Campo | Descripción |
 | :---- | :---------- |
-| **Nombre** (obligatorio) | Nombre del taller (ej.: Arte y Costura). |
-| **Identificador en la URL** (obligatorio) | Versión corta del nombre en minúsculas y con guiones, sin tildes ni espacios (ej.: `arte-y-costura`). No puede repetirse. |
+| **Nombre** (obligatorio) | Nombre del taller o colección (ej.: Arte y Costura, Navidad 2026). |
+| **Identificador en la URL** (obligatorio) | Versión corta del nombre en minúsculas y con guiones, sin tildes ni espacios (ej.: `arte-y-costura`, `navidad-2026`). No puede repetirse. Define el enlace directo con ancla `/productos#<identificador>`. |
+| **Insignia opcional** | Etiqueta corta destacada dentro del botón del catálogo en la tienda (ej.: `Temporada`). |
 | **Lema** | Frase corta del taller (ej.: «Arte y costura en cada creación.»). |
 | **Quiénes somos** | Texto de presentación del taller. |
 | **Orden** | Posición del catálogo en la tienda (menor = primero). |
 | **Publicado en la tienda** | Marcado = visible. Al ocultarlo se ocultan también sus líneas y productos. |
 
 **Eliminar un catálogo** borra el catálogo y sus líneas **vacías**. Si alguna de sus líneas tiene productos, el sistema no lo permite: primero mueve o elimina esos productos.
+
+### Catálogos de temporada (ocultar / mostrar y enlaces con ancla)
+
+Un catálogo de temporada (por ejemplo, **Navidad 2026**) convive con los catálogos permanentes sin reemplazarlos y se puede publicar u ocultar en cualquier momento:
+
+- **Ocultar fuera de temporada:** en la tarjeta del catálogo, pulsa el botón **Publicado** (pasa a **Oculto**). En menos de un minuto desaparece la pestaña de `/productos`, sus productos dejan de aceptarse en nuevos pedidos y el enlace de temporada de la página de inicio se oculta automáticamente, **conservando intactos sus productos, fotos, precios y PDF** para la siguiente temporada.
+- **Volver a publicar:** pulsa **Oculto** (pasa a **Publicado**) y el catálogo reaparece de inmediato con todo su contenido.
+- **Enlace directo con ancla (`/productos#<identificador>`):** cada catálogo cuenta con un botón `/productos#<slug>` junto a su nombre para copiar su enlace directo (por ejemplo, `/productos#navidad-2026`). Puedes usar ese enlace en campañas del inicio, banners o redes sociales para llevar al visitante directamente a ese catálogo desplegado.
+- **Notas importantes:**
+  - Mientras el catálogo tenga un PDF cargado, quien conserve el enlace directo del archivo PDF podrá seguir abriéndolo aunque el catálogo esté oculto. Si deseas retirar también el PDF de internet, usa el botón **Quitar** (basurero) en la fila del PDF.
+  - Evita marcar productos de temporada como **Destacado en el inicio**, o recuerda que al ocultar su catálogo dejarán de mostrarse en la portada.
 
 ### Catálogo en PDF
 

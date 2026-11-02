@@ -599,14 +599,24 @@ async function saveCatalogInternal(
   }
 
   const supabase = createAdminClient();
-  const { data, error } = id
-    ? await supabase.from("product_catalogs").update(fields).eq("id", id).select().single()
-    : await supabase.from("product_catalogs").insert(fields).select().single();
-  if (error) {
+  const runSave = (payload: typeof fields) =>
+    id
+      ? supabase.from("product_catalogs").update(payload).eq("id", id).select().single()
+      : supabase.from("product_catalogs").insert(payload).select().single();
+
+  let { data, error } = await runSave(fields);
+  // Respaldo si la migración `badge` aún no se ha aplicado en la base remota.
+  if (error && error.message.includes("badge")) {
+    const { badge: _badge, ...withoutBadge } = fields;
+    ({ data, error } = await runSave(withoutBadge));
+  }
+  if (error || !data) {
     return {
       success: false,
       error:
-        error.code === "23505" ? "Ya existe un catálogo con ese identificador." : error.message,
+        error?.code === "23505"
+          ? "Ya existe un catálogo con ese identificador."
+          : (error?.message ?? "No se pudo guardar el catálogo."),
     };
   }
 

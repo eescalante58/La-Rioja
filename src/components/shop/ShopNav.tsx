@@ -152,6 +152,7 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
           >
             {catalogs.map((c) => {
               const active = c.slug === activeSlug;
+              const badge = c.badge ?? (c.slug.startsWith("navidad") ? "Temporada" : null);
               return (
                 <button
                   key={c.slug}
@@ -159,13 +160,18 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
                   role="tab"
                   aria-selected={active}
                   onClick={() => onSelectCatalog(c.slug)}
-                  className={`h-11 min-w-[6.5rem] flex-1 rounded-full px-3 text-[13px] font-medium leading-tight [text-wrap:balance] sm:flex-none sm:shrink-0 sm:whitespace-nowrap sm:px-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] sm:text-sm ${
+                  className={`inline-flex h-11 min-w-[6.5rem] flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-medium leading-tight [text-wrap:balance] sm:flex-none sm:shrink-0 sm:whitespace-nowrap sm:px-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] sm:text-sm ${
                     active
                       ? "bg-[var(--shop-chip-active)] text-[var(--shop-chip-active-text)]"
                       : "border border-[var(--shop-chip-line)] text-[var(--shop-text)] hover:bg-[var(--shop-chip-line)]"
                   }`}
                 >
-                  {c.name}
+                  <span>{c.name}</span>
+                  {badge && (
+                    <span className="rounded-full bg-[#9b1c2e] px-1.5 py-0.5 text-[9.5px] font-bold leading-none text-white">
+                      {badge}
+                    </span>
+                  )}
                 </button>
               );
             })}

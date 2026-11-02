@@ -757,18 +757,19 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 
 #### Dominio La Rioja Shop (catálogo y pedidos)
 
-Estructura: `product_catalogs` (taller) → `product_lines` → `products` → `product_variants` (precio/presentación). Migraciones `20261016000000_products.sql` a `20261019000000_catalog_pdf.sql` (expandir/contraer: `20261017000003_shop_drop_legacy.sql` ya eliminó `products.category/price/unit/is_available`).
+Estructura: `product_catalogs` (taller o colección de temporada) → `product_lines` → `products` → `product_variants` (precio/presentación). Migraciones `20261016000000_products.sql` a `20261109000000_navidad_2026_catalog.sql` (expandir/contraer: `20261017000003_shop_drop_legacy.sql` ya eliminó `products.category/price/unit/is_available`).
 
 ##### Tabla: `public.product_catalogs`
 
-**Descripción:** Catálogos de la tienda, uno por taller (Arte y Costura, Panadería La Rioja).
+**Descripción:** Catálogos de la tienda, uno por taller o colección de temporada (Arte y Costura, Panadería La Rioja, Navidad 2026).
 
 | Columna                     | Tipo de Datos | Comentario                                                                            |
 | :-------------------------- | :------------ | :------------------------------------------------------------------------------------ |
 | `id`                        | `bigint`      | Identificador (PK, identity).                                                         |
 | `company_id`                | `bigint`      | Empresa (FK `companies`).                                                             |
-| `slug`                      | `text`        | Identificador en la URL; CHECK `^[a-z0-9]+(-[a-z0-9]+)*$`; UNIQUE (company_id, slug). |
+| `slug`                      | `text`        | Identificador en la URL y ancla DOM (`/productos#<slug>`); CHECK `^[a-z0-9]+(-[a-z0-9]+)*$`; UNIQUE (company_id, slug). |
 | `name`                      | `text`        | Nombre del catálogo.                                                                  |
+| `badge`                     | `text`        | Etiqueta corta opcional en la píldora del catálogo (ej.: `Temporada`).                |
 | `tagline`                   | `text`        | Lema.                                                                                 |
 | `description`               | `text`        | Texto «Quiénes somos».                                                                |
 | `cover_image_url`           | `text`        | Portada (reservado).                                                                  |
@@ -804,9 +805,11 @@ Estructura: `product_catalogs` (taller) → `product_lines` → `products` → `
 | `company_id`                | `bigint`      | Empresa.                                                                               |
 | `line_id`                   | `bigint`      | Línea (FK `ON DELETE RESTRICT`, NOT NULL): una línea con productos no se puede borrar. |
 | `name`                      | `text`        | Nombre.                                                                                |
+| `slug`                      | `text`        | Identificador en URL (`/productos?producto=<slug>`); UNIQUE (`company_id`, `slug`).    |
 | `description`               | `text`        | Descripción.                                                                           |
 | `image_url`                 | `text`        | Foto (bucket `product_images`, máx. 5 MB).                                             |
 | `is_active`                 | `boolean`     | Publicado en la tienda.                                                                |
+| `featured`                  | `boolean`     | Destacado en la página de inicio (`FeaturedProducts`, requiere línea y catálogo activos). |
 | `content_order`             | `integer`     | Orden dentro de la línea (reordenable con arrastrar y soltar).                         |
 | `created_at` / `updated_at` | `timestamptz` | Auditoría.                                                                             |
 

@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 import { Dialog, DialogPanel, Select, SelectItem } from "@tremor/react";
-import { Eye, EyeOff, Layers, Loader2, Pencil, Plus, Trash2, X as XIcon } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Eye,
+  EyeOff,
+  Layers,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  X as XIcon,
+} from "lucide-react";
 import { callAction } from "@/lib/action-client";
 import type {
   CatalogInput,
@@ -41,10 +52,22 @@ export default function CatalogsTab({ companyId, data, setData }: ShopTabProps) 
   const [editing, setEditing] = useState<Editing>(null);
   const [saving, setSaving] = useState(false);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const productCount = (lineId: number) => data.products.filter((p) => p.line_id === lineId).length;
+
+  const copyAnchorLink = async (slug: string) => {
+    const relative = `/productos#${slug}`;
+    try {
+      await navigator.clipboard.writeText(relative);
+      setCopiedSlug(slug);
+      setTimeout(() => setCopiedSlug((cur) => (cur === slug ? null : cur)), 2000);
+    } catch {
+      // Ignorar si clipboard no está disponible
+    }
+  };
 
   const openCatalog = (c?: ProductCatalog) => {
     setFormError(null);
@@ -56,6 +79,7 @@ export default function CatalogsTab({ companyId, data, setData }: ShopTabProps) 
             company_id: c.company_id,
             slug: c.slug,
             name: c.name,
+            badge: c.badge ?? (c.slug.startsWith("navidad") ? "Temporada" : null),
             tagline: c.tagline,
             description: c.description,
             content_order: c.content_order,
@@ -65,6 +89,7 @@ export default function CatalogsTab({ companyId, data, setData }: ShopTabProps) 
             company_id: companyId,
             slug: "",
             name: "",
+            badge: null,
             tagline: null,
             description: null,
             content_order: data.catalogs.length + 1,
@@ -247,6 +272,7 @@ export default function CatalogsTab({ companyId, data, setData }: ShopTabProps) 
       {data.catalogs.map((c) => {
         const lines = data.lines.filter((l) => l.catalog_id === c.id);
         const busy = busyKey === `catalog-${c.id}`;
+        const badge = c.badge ?? (c.slug.startsWith("navidad") ? "Temporada" : null);
         return (
           <section
             key={c.id}
@@ -258,9 +284,29 @@ export default function CatalogsTab({ companyId, data, setData }: ShopTabProps) 
           >
             <header className="flex flex-wrap items-start gap-3 border-b border-gray-100 dark:border-gray-800 p-4">
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                  {c.name} <span className="text-xs font-normal text-gray-400">/{c.slug}</span>
-                </h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {c.name}
+                  </h2>
+                  {badge && (
+                    <span className="rounded-full bg-[#9b1c2e] px-2 py-0.5 text-[10px] font-bold text-white">
+                      {badge}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => copyAnchorLink(c.slug)}
+                    title="Copiar enlace directo al catálogo para usar en otras secciones del sitio"
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <code>/productos#{c.slug}</code>
+                    {copiedSlug === c.slug ? (
+                      <Check size={12} className="text-green-600" />
+                    ) : (
+                      <Copy size={12} />
+                    )}
+                  </button>
+                </div>
                 {c.tagline && <p className="text-sm italic text-larioja-verde">“{c.tagline}”</p>}
                 {c.description && (
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
@@ -466,18 +512,30 @@ function CatalogFields({
           placeholder="Arte y Costura"
         />
       </label>
-      <label className="block">
-        <FieldLabel>Identificador en la URL *</FieldLabel>
-        <input
-          required
-          pattern="[a-z0-9]+(-[a-z0-9]+)*"
-          maxLength={60}
-          value={value.slug}
-          onChange={(e) => onChange({ ...value, slug: e.target.value })}
-          className={inputClass}
-          placeholder="arte-y-costura"
-        />
-      </label>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label className="block">
+          <FieldLabel>Identificador en la URL *</FieldLabel>
+          <input
+            required
+            pattern="[a-z0-9]+(-[a-z0-9]+)*"
+            maxLength={60}
+            value={value.slug}
+            onChange={(e) => onChange({ ...value, slug: e.target.value })}
+            className={inputClass}
+            placeholder="arte-y-costura"
+          />
+        </label>
+        <label className="block">
+          <FieldLabel>Insignia opcional</FieldLabel>
+          <input
+            maxLength={24}
+            value={value.badge ?? ""}
+            onChange={(e) => onChange({ ...value, badge: e.target.value || null })}
+            className={inputClass}
+            placeholder="Temporada"
+          />
+        </label>
+      </div>
       <label className="block">
         <FieldLabel>Lema</FieldLabel>
         <input

@@ -34,18 +34,28 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [homeRows, productsResult, talleresResult, socialMediaResult] = await Promise.allSettled([
-    getPageContent("home"),
-    createStaticClient()
-      .from("products")
-      .select("id, name, image_url, slug, variants:product_variants(price, is_available)")
-      .eq("featured", true)
-      .eq("is_active", true)
-      .order("content_order", { ascending: true })
-      .limit(4),
-    getTalleres(),
-    getPageContent("social media"),
-  ]);
+  const [homeRows, productsResult, seasonalCatalogsResult, talleresResult, socialMediaResult] =
+    await Promise.allSettled([
+      getPageContent("home"),
+      createStaticClient()
+        .from("products")
+        .select(
+          "id, name, image_url, slug, variants:product_variants(price, is_available), line:product_lines!inner(is_active, catalog:product_catalogs!inner(is_active))",
+        )
+        .eq("featured", true)
+        .eq("is_active", true)
+        .eq("line.is_active", true)
+        .eq("line.catalog.is_active", true)
+        .order("content_order", { ascending: true })
+        .limit(4),
+      createStaticClient()
+        .from("product_catalogs")
+        .select("slug, name, tagline")
+        .eq("is_active", true)
+        .order("content_order", { ascending: true }),
+      getTalleres(),
+      getPageContent("social media"),
+    ]);
 
   const rows = homeRows.status === "fulfilled" ? homeRows.value : [];
   const socialRows = socialMediaResult.status === "fulfilled" ? socialMediaResult.value : [];
@@ -68,6 +78,15 @@ export default async function Home() {
     slug: p.slug,
     price: p.variants.length > 0 ? Math.min(...p.variants.map((v) => Number(v.price))) : 0,
   }));
+  type SeasonalRow = { slug: string; name: string; tagline: string | null };
+  const activeCatalogs =
+    seasonalCatalogsResult.status === "fulfilled" && !seasonalCatalogsResult.value.error
+      ? ((seasonalCatalogsResult.value.data ?? []) as SeasonalRow[])
+      : [];
+  const seasonalCatalog =
+    activeCatalogs.find(
+      (c) => c.slug !== "arte-y-costura" && c.slug !== "panaderia",
+    ) ?? null;
   const talleresCount = talleresResult.status === "fulfilled" ? talleresResult.value.length : 0;
   const talleresLabel =
     talleresCount > 0 ? `Ver los ${numeroEnPalabras(talleresCount)} talleres` : undefined;
@@ -117,7 +136,7 @@ export default async function Home() {
       />
 
       {/* 6 — La Rioja Shop */}
-      <FeaturedProducts products={products} />
+      <FeaturedProducts products={products} seasonalCatalog={seasonalCatalog} />
 
       {/* 7 — Videos institucionales (solo si visible = true en metadata) */}
       <VideoSection video={byKey["cl_video"] ?? null} />
