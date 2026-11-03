@@ -41,11 +41,19 @@ test.describe("Sección «Conoce nuestras instalaciones» en /about", () => {
     });
     expect(hasHorizontalOverflow).toBe(false);
 
-    // 4. Abrir lightbox interactivo
-    const firstTile = section.locator("button[aria-label^='Ver foto']:visible, button[aria-label^='Ver video']:visible").first();
+    // 4. Abrir lightbox interactivo con clic, foco inicial en Cerrar y cierre con Enter
+    const visibleTiles = section.locator(
+      "button[aria-label^='Ver foto']:visible, button[aria-label^='Ver video']:visible",
+    );
+    const tileCount = await visibleTiles.count();
+    expect(tileCount).toBeGreaterThanOrEqual(1);
+
+    const firstTile = visibleTiles.first();
     await expect(firstTile).toBeVisible();
 
     const lightbox = page.locator('div[role="dialog"][aria-label="Galería de instalaciones"]');
+    const closeBtn = lightbox.locator('button[aria-label="Cerrar visor de instalaciones"]');
+
     await expect(async () => {
       if (!(await lightbox.isVisible())) {
         await firstTile.click();
@@ -53,9 +61,122 @@ test.describe("Sección «Conoce nuestras instalaciones» en /about", () => {
       await expect(lightbox).toBeVisible({ timeout: 3000 });
     }).toPass({ timeout: 15000 });
 
-    // Cerrar con Escape
+    await expect(closeBtn).toBeFocused();
+
+    // Cerrar con Enter sobre el botón Cerrar y verificar retorno de foco al control exacto
+    await page.keyboard.press("Enter");
+    await expect(lightbox).not.toBeVisible();
+    await expect(firstTile).toBeFocused();
+
+    // 5. Abrir desde otra miniatura (o la primera si solo hay 1) con Enter y cerrar con Espacio
+    const secondTrigger = tileCount > 1 ? visibleTiles.nth(1) : firstTile;
+    await secondTrigger.focus();
+    await expect(secondTrigger).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(lightbox).toBeVisible();
+    await expect(closeBtn).toBeFocused();
+
+    await page.keyboard.press("Space");
+    await expect(lightbox).not.toBeVisible();
+    await expect(secondTrigger).toBeFocused();
+
+    // 6. Abrir desde «Ver galería completa» con Espacio, recorrer con Tab/Shift+Tab (varios y un solo elemento) y cerrar con Escape
+    const viewAllBtn = section.getByRole("button", { name: /Ver galería completa/i });
+    await expect(viewAllBtn).toBeVisible();
+    await viewAllBtn.focus();
+    await expect(viewAllBtn).toBeFocused();
+    await page.keyboard.press("Space");
+    await expect(lightbox).toBeVisible();
+    await expect(closeBtn).toBeFocused();
+
+    const verifyTabCycleInDialog = async () => {
+      const visibleControlsCount = await lightbox.evaluate((dialog) => {
+        const nodes = Array.from(
+          dialog.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        return nodes.filter(
+          (el) =>
+            el.getClientRects().length > 0 &&
+            window.getComputedStyle(el).visibility !== "hidden",
+        ).length;
+      });
+      expect(visibleControlsCount).toBeGreaterThanOrEqual(1);
+
+      // Recorrer ciclo completo hacia adelante (Tab) y hacia atrás (Shift+Tab) sin orden fijo
+      for (const key of ["Tab", "Shift+Tab"] as const) {
+        const visitedLabels = new Set<string>();
+        for (let i = 0; i < visibleControlsCount + 1; i++) {
+          await page.keyboard.press(key);
+          const focusState = await lightbox.evaluate((dialog) => {
+            const active = document.activeElement as HTMLElement | null;
+            if (!active) return { inside: false, visible: false, id: "" };
+            const inside = dialog.contains(active);
+            const visible =
+              active.getClientRects().length > 0 &&
+              window.getComputedStyle(active).visibility !== "hidden";
+            const id =
+              active.getAttribute("aria-label") ||
+              active.textContent?.trim() ||
+              active.tagName;
+            return { inside, visible, id };
+          });
+          expect(focusState.inside).toBe(true);
+          expect(focusState.visible).toBe(true);
+          visitedLabels.add(focusState.id);
+        }
+        expect(visitedLabels.size).toBe(visibleControlsCount);
+      }
+    };
+
+    // Caso A: galería con los elementos visibles actuales (varios elementos)
+    await verifyTabCycleInDialog();
+
+    // Caso B: galería con un solo elemento (ocultando miniaturas adicionales y probando también un único control visible)
+    await lightbox.evaluate((dialog) => {
+      const thumbs = Array.from(
+        dialog.querySelectorAll<HTMLElement>('nav[aria-label="Miniaturas"] button'),
+      );
+      thumbs.slice(1).forEach((btn) => {
+        btn.dataset.testHidden = "true";
+        btn.style.display = "none";
+      });
+    });
+    await verifyTabCycleInDialog();
+
+    // Caso límite de un único control enfocable visible dentro del visor
+    await lightbox.evaluate((dialog) => {
+      const buttons = Array.from(dialog.querySelectorAll<HTMLElement>("button"));
+      buttons.slice(1).forEach((btn) => {
+        btn.dataset.testSingleControl = "true";
+        btn.style.display = "none";
+      });
+    });
+    await closeBtn.focus();
+    await verifyTabCycleInDialog();
+
+    // Restaurar visibilidad de controles antes de probar Escape desde otro control del diálogo
+    await lightbox.evaluate((dialog) => {
+      dialog
+        .querySelectorAll<HTMLElement>("[data-test-hidden], [data-test-single-control]")
+        .forEach((btn) => {
+          btn.style.display = "";
+          delete btn.dataset.testHidden;
+          delete btn.dataset.testSingleControl;
+        });
+    });
+
+    await page.keyboard.press("Tab");
+    const focusedInsideBeforeEsc = await lightbox.evaluate((dialog) =>
+      dialog.contains(document.activeElement),
+    );
+    expect(focusedInsideBeforeEsc).toBe(true);
+
+    // Cerrar con Escape cuando el foco está en los controles del propio diálogo
     await page.keyboard.press("Escape");
     await expect(lightbox).not.toBeVisible();
+    await expect(viewAllBtn).toBeFocused();
   });
 
   test("Botón «Agendar una visita» en el pie del mosaico abre el formulario modal de admisión", async ({

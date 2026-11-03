@@ -62,6 +62,10 @@ test.describe("Bloque «Conoce nuestras instalaciones» en /matricula", () => {
     const lightbox = page.locator(
       'div[role="dialog"][aria-label="Galería de instalaciones"]',
     );
+    const closeBtn = lightbox.locator(
+      'button[aria-label="Cerrar visor de instalaciones"]',
+    );
+
     await expect(async () => {
       if (!(await lightbox.isVisible())) {
         await openBtn.click();
@@ -70,14 +74,121 @@ test.describe("Bloque «Conoce nuestras instalaciones» en /matricula", () => {
     }).toPass({ timeout: 15000 });
 
     await expect(page).toHaveURL(/\/matricula$/);
+    await expect(closeBtn).toBeFocused();
 
     // Contador en "1 / N"
     await expect(lightbox.locator("header")).toContainText(/1\s*\/\s*\d+/);
 
-    // Cerrar con Escape y verificar retorno de foco al botón
-    await page.keyboard.press("Escape");
+    // Cerrar con Enter sobre Cerrar y verificar retorno de foco al botón que lo abrió
+    await page.keyboard.press("Enter");
     await expect(lightbox).not.toBeVisible();
     await expect(openBtn).toBeFocused();
+
+    // Abrir desde la primera miniatura con Enter y cerrar con Espacio sobre Cerrar
+    const firstThumb = thumbs.first();
+    await firstThumb.focus();
+    await expect(firstThumb).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(lightbox).toBeVisible();
+    await expect(closeBtn).toBeFocused();
+
+    await page.keyboard.press("Space");
+    await expect(lightbox).not.toBeVisible();
+    await expect(firstThumb).toBeFocused();
+
+    // Abrir desde otra miniatura (o la primera si solo hay 1) con Espacio, validar Tab/Shift+Tab y cerrar con Escape
+    const targetThumb = thumbCount > 1 ? thumbs.nth(1) : firstThumb;
+    await targetThumb.focus();
+    await expect(targetThumb).toBeFocused();
+    await page.keyboard.press("Space");
+    await expect(lightbox).toBeVisible();
+    await expect(closeBtn).toBeFocused();
+
+    const verifyTabCycleInDialog = async () => {
+      const visibleControlsCount = await lightbox.evaluate((dialog) => {
+        const nodes = Array.from(
+          dialog.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        return nodes.filter(
+          (el) =>
+            el.getClientRects().length > 0 &&
+            window.getComputedStyle(el).visibility !== "hidden",
+        ).length;
+      });
+      expect(visibleControlsCount).toBeGreaterThanOrEqual(1);
+
+      for (const key of ["Tab", "Shift+Tab"] as const) {
+        const visitedLabels = new Set<string>();
+        for (let i = 0; i < visibleControlsCount + 1; i++) {
+          await page.keyboard.press(key);
+          const focusState = await lightbox.evaluate((dialog) => {
+            const active = document.activeElement as HTMLElement | null;
+            if (!active) return { inside: false, visible: false, id: "" };
+            const inside = dialog.contains(active);
+            const visible =
+              active.getClientRects().length > 0 &&
+              window.getComputedStyle(active).visibility !== "hidden";
+            const id =
+              active.getAttribute("aria-label") ||
+              active.textContent?.trim() ||
+              active.tagName;
+            return { inside, visible, id };
+          });
+          expect(focusState.inside).toBe(true);
+          expect(focusState.visible).toBe(true);
+          visitedLabels.add(focusState.id);
+        }
+        expect(visitedLabels.size).toBe(visibleControlsCount);
+      }
+    };
+
+    // Caso A: galería con varios elementos
+    await verifyTabCycleInDialog();
+
+    // Caso B: galería con un solo elemento (y caso límite de un único control visible)
+    await lightbox.evaluate((dialog) => {
+      const navThumbs = Array.from(
+        dialog.querySelectorAll<HTMLElement>('nav[aria-label="Miniaturas"] button'),
+      );
+      navThumbs.slice(1).forEach((btn) => {
+        btn.dataset.testHidden = "true";
+        btn.style.display = "none";
+      });
+    });
+    await verifyTabCycleInDialog();
+
+    await lightbox.evaluate((dialog) => {
+      const buttons = Array.from(dialog.querySelectorAll<HTMLElement>("button"));
+      buttons.slice(1).forEach((btn) => {
+        btn.dataset.testSingleControl = "true";
+        btn.style.display = "none";
+      });
+    });
+    await closeBtn.focus();
+    await verifyTabCycleInDialog();
+
+    await lightbox.evaluate((dialog) => {
+      dialog
+        .querySelectorAll<HTMLElement>("[data-test-hidden], [data-test-single-control]")
+        .forEach((btn) => {
+          btn.style.display = "";
+          delete btn.dataset.testHidden;
+          delete btn.dataset.testSingleControl;
+        });
+    });
+
+    await page.keyboard.press("Tab");
+    const focusedInsideBeforeEsc = await lightbox.evaluate((dialog) =>
+      dialog.contains(document.activeElement),
+    );
+    expect(focusedInsideBeforeEsc).toBe(true);
+
+    // Cerrar con Escape desde un control del diálogo y verificar retorno de foco al control exacto
+    await page.keyboard.press("Escape");
+    await expect(lightbox).not.toBeVisible();
+    await expect(targetThumb).toBeFocused();
 
     // 5. Enlace secundario hacia /about#instalaciones (si está activo)
     const secondaryLink = section.locator('a[href="/about#instalaciones"]');

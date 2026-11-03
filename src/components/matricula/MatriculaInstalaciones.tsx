@@ -73,9 +73,9 @@ export function MatriculaInstalaciones({
     const triggerEl = lastTriggerElRef.current;
     setOpenIndex(null);
     if (triggerEl) {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         triggerEl.focus();
-      }, 50);
+      });
     }
   };
 

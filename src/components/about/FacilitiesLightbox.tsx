@@ -41,6 +41,7 @@ export default function FacilitiesLightbox({
   const [showRotateNotice, setShowRotateNotice] = useState(false);
 
   const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const thumbnailsNavRef = useRef<HTMLElement>(null);
   const thumbBtnRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -57,6 +58,12 @@ export default function FacilitiesLightbox({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Trasladar el foco inicial al botón Cerrar en cuanto el diálogo esté montado
+  useEffect(() => {
+    if (!mounted) return;
+    closeBtnRef.current?.focus();
+  }, [mounted]);
 
   const navigate = useCallback(
     (delta: number) => {
@@ -99,18 +106,34 @@ export default function FacilitiesLightbox({
         e.preventDefault();
         navigate(1);
       } else if (e.key === "Tab" && dialogRef.current) {
-        // Trampa de foco accesible
-        const focusableElements = dialogRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        // Trampa de foco accesible restringida a controles visibles
+        const focusableElements = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter(
+          (el) =>
+            el.getClientRects().length > 0 &&
+            window.getComputedStyle(el).visibility !== "hidden",
         );
-        if (focusableElements.length === 0) return;
+        if (focusableElements.length === 0) {
+          e.preventDefault();
+          return;
+        }
         const first = focusableElements[0];
         const last = focusableElements[focusableElements.length - 1];
+        const activeIndex =
+          activeEl instanceof HTMLElement ? focusableElements.indexOf(activeEl) : -1;
 
-        if (e.shiftKey && activeEl === first) {
+        if (focusableElements.length === 1) {
           e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && activeEl === last) {
+          first.focus();
+        } else if (e.shiftKey) {
+          if (activeIndex <= 0) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else if (activeIndex === -1 || activeIndex === focusableElements.length - 1) {
           e.preventDefault();
           first.focus();
         }
@@ -201,6 +224,7 @@ export default function FacilitiesLightbox({
         </span>
 
         <button
+          ref={closeBtnRef}
           type="button"
           onClick={onClose}
           aria-label="Cerrar visor de instalaciones"

@@ -43,13 +43,15 @@ export function FacilitiesMosaic({
     const triggerEl = lastTriggerElRef.current;
     const idx = openIndex;
     setOpenIndex(null);
-    setTimeout(() => {
-      if (triggerEl) {
+    requestAnimationFrame(() => {
+      if (triggerEl && triggerEl.getClientRects().length > 0) {
         triggerEl.focus();
       } else if (idx !== null && triggerButtonRefs.current.has(idx)) {
         triggerButtonRefs.current.get(idx)?.focus();
+      } else {
+        triggerEl?.focus();
       }
-    }, 50);
+    });
   };
 
   // Cálculo del índice visible en el carrusel móvil mediante scroll pasivo
