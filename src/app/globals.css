@@ -51,6 +51,13 @@
     }
   }
 
+  /* Pantallas ultra-compactas (≤ 340 px): pestañas de talleres a 11 px para caber en 2 líneas sin desborde. */
+  @media (max-width: 340px) {
+    .shop-tab-label {
+      font-size: 11px;
+    }
+  }
+
   body {
     @apply text-larioja-azul dark:text-slate-100 font-inter bg-white dark:bg-black transition-colors duration-300;
   }

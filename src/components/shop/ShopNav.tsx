@@ -68,6 +68,10 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
   const tabsRef = useRef<HTMLDivElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
   const [activeLine, setActiveLine] = useState<number | null>(lines[0]?.id ?? null);
+  const [tabEdges, setTabEdges] = useState<{ left: boolean; right: boolean }>({
+    left: false,
+    right: false,
+  });
   const showLines = lines.length > 1;
 
   // Borde inferior de la barra → scroll-margin-top de las líneas.
@@ -115,14 +119,41 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
     return () => observer.disconnect();
   }, [lines, showLines]);
 
-  // Centra la pestaña del taller activo dentro de la barra en celular.
+  // Centra la pestaña del taller activo dentro de la barra si hubiese desborde (4+ talleres).
   useEffect(() => {
     const bar = tabsRef.current;
     const tab = bar?.querySelector<HTMLElement>(`[data-catalog-tab="${activeSlug}"]`);
     if (!bar || !tab) return;
-    const left = tab.offsetLeft - (bar.clientWidth - tab.clientWidth) / 2;
-    bar.scrollTo({ left, behavior: "smooth" });
+    if (bar.scrollWidth > bar.clientWidth + 1) {
+      const left = tab.offsetLeft - (bar.clientWidth - tab.clientWidth) / 2;
+      bar.scrollTo({ left, behavior: "smooth" });
+    } else if (bar.scrollLeft !== 0) {
+      bar.scrollTo({ left: 0, behavior: "auto" });
+    }
   }, [activeSlug]);
+
+  // Detecta desborde horizontal en la barra de talleres para mostrar degradados laterales (4+ talleres).
+  useEffect(() => {
+    const bar = tabsRef.current;
+    if (!bar) return;
+    const updateEdges = () => {
+      const overflows = bar.scrollWidth > bar.clientWidth + 1;
+      setTabEdges({
+        left: overflows && bar.scrollLeft > 1,
+        right: overflows && bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 1,
+      });
+    };
+    updateEdges();
+    const observer = new ResizeObserver(updateEdges);
+    observer.observe(bar);
+    bar.addEventListener("scroll", updateEdges, { passive: true });
+    window.addEventListener("resize", updateEdges);
+    return () => {
+      observer.disconnect();
+      bar.removeEventListener("scroll", updateEdges);
+      window.removeEventListener("resize", updateEdges);
+    };
+  }, [catalogs.length]);
 
   // Centra el chip activo dentro de la barra (sin mover la página).
   useEffect(() => {
@@ -153,38 +184,52 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
       <div className="flex items-center gap-2">
         <ShopCartButton />
         {catalogs.length > 1 && (
-          <div
-            ref={tabsRef}
-            className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto [scrollbar-width:none] sm:flex-none sm:gap-2 [&::-webkit-scrollbar]:hidden"
-            role="tablist"
-            aria-label="Talleres"
-          >
-            {catalogs.map((c) => {
-              const active = c.slug === activeSlug;
-              const badge = c.badge ?? (c.slug.startsWith("navidad") ? "Temporada" : null);
-              return (
-                <button
-                  key={c.slug}
-                  type="button"
-                  role="tab"
-                  data-catalog-tab={c.slug}
-                  aria-selected={active}
-                  onClick={() => onSelectCatalog(c.slug)}
-                  className={`inline-flex h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] sm:px-4 sm:text-sm ${
-                    active
-                      ? "bg-[var(--shop-chip-active)] text-[var(--shop-chip-active-text)]"
-                      : "border border-[var(--shop-chip-line)] text-[var(--shop-text)] hover:bg-[var(--shop-chip-line)]"
-                  }`}
-                >
-                  <span>{c.name}</span>
-                  {badge && (
-                    <span className="rounded-full bg-[#9b1c2e] px-1.5 py-0.5 text-[9.5px] font-bold leading-none text-white">
-                      {badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="relative flex min-w-0 flex-1 sm:flex-none">
+            <div
+              ref={tabsRef}
+              className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto snap-x snap-proximity [scrollbar-width:none] sm:flex-none sm:gap-2 [&::-webkit-scrollbar]:hidden"
+              role="tablist"
+              aria-label="Talleres"
+            >
+              {catalogs.map((c) => {
+                const active = c.slug === activeSlug;
+                const badge = c.badge ?? (c.slug.startsWith("navidad") ? "Temporada" : null);
+                return (
+                  <button
+                    key={c.slug}
+                    type="button"
+                    role="tab"
+                    data-catalog-tab={c.slug}
+                    aria-selected={active}
+                    onClick={() => onSelectCatalog(c.slug)}
+                    className={`shop-tab-label flex h-11 min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 rounded-full px-1.5 text-center text-[12px] leading-tight [text-wrap:balance] snap-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] sm:inline-flex sm:flex-none sm:shrink-0 sm:flex-row sm:gap-1.5 sm:whitespace-nowrap sm:px-4 sm:text-sm ${
+                      active
+                        ? "bg-[#0056b3] font-semibold text-white dark:bg-[#ffff00] dark:text-[#012060]"
+                        : "border border-[var(--shop-chip-line)] font-medium text-[var(--shop-text)] transition-colors hover:bg-[var(--shop-chip-line)]"
+                    }`}
+                  >
+                    <span className="max-w-full [text-wrap:balance]">{c.name}</span>
+                    {badge && (
+                      <span className="rounded-full bg-[#9b1c2e] px-1.5 py-[1px] text-[8.5px] font-bold leading-none text-white sm:py-0.5 sm:text-[9.5px]">
+                        {badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {tabEdges.left && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-[var(--shop-bg)] to-transparent"
+              />
+            )}
+            {tabEdges.right && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 right-0 w-4 bg-gradient-to-l from-[var(--shop-bg)] to-transparent"
+              />
+            )}
           </div>
         )}
       </div>

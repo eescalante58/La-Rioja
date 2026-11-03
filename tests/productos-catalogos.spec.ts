@@ -1,7 +1,75 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+/**
+ * Verifica que la barra de talleres ("Talleres") no desborde, que cada pestaña
+ * esté completamente dentro del contenedor y que la página no tenga scroll horizontal.
+ */
+async function assertTabsFitInsideBar(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const docScrollWidth = document.documentElement.scrollWidth;
+    const innerWidth = window.innerWidth;
+    const bar = document.querySelector<HTMLElement>('[role="tablist"][aria-label="Talleres"]');
+    if (!bar) return null;
+    const barRect = bar.getBoundingClientRect();
+    const tabs = Array.from(bar.querySelectorAll<HTMLElement>('[role="tab"]')).map((t) => {
+      const r = t.getBoundingClientRect();
+      const style = getComputedStyle(t);
+      return {
+        slug: t.dataset.catalogTab ?? "",
+        left: r.left,
+        right: r.right,
+        top: r.top,
+        bottom: r.bottom,
+        clientWidth: t.clientWidth,
+        scrollWidth: t.scrollWidth,
+        clientHeight: t.clientHeight,
+        scrollHeight: t.scrollHeight,
+        active: t.getAttribute("aria-selected") === "true",
+        color: style.color,
+        backgroundColor: style.backgroundColor,
+        fontWeight: style.fontWeight,
+      };
+    });
+    return {
+      docScrollWidth,
+      innerWidth,
+      barLeft: barRect.left,
+      barRight: barRect.right,
+      barClientWidth: bar.clientWidth,
+      barScrollWidth: bar.scrollWidth,
+      tabs,
+    };
+  });
+
+  expect(metrics).not.toBeNull();
+  if (!metrics) return;
+
+  // Sin scroll horizontal de la página
+  expect(metrics.docScrollWidth).toBeLessThanOrEqual(metrics.innerWidth);
+
+  // La barra de talleres no desborda (las 3 pestañas caben completas)
+  expect(metrics.barScrollWidth).toBeLessThanOrEqual(metrics.barClientWidth + 1);
+
+  for (const tab of metrics.tabs) {
+    // Cada pestaña completamente dentro de los bordes izquierdo y derecho de la barra
+    expect(tab.left, `tab ${tab.slug} left >= bar.left`).toBeGreaterThanOrEqual(
+      metrics.barLeft - 1,
+    );
+    expect(tab.right, `tab ${tab.slug} right <= bar.right`).toBeLessThanOrEqual(
+      metrics.barRight + 1,
+    );
+    // Sin texto cortado horizontal ni verticalmente dentro de la pestaña
+    expect(tab.scrollWidth, `tab ${tab.slug} scrollWidth <= clientWidth`).toBeLessThanOrEqual(
+      tab.clientWidth + 1,
+    );
+    expect(tab.scrollHeight, `tab ${tab.slug} scrollHeight <= clientHeight`).toBeLessThanOrEqual(
+      tab.clientHeight + 2,
+    );
+  }
+}
 
 test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 2026)", () => {
-  test("Carga por defecto con Arte y Costura activo, píldora de Navidad 2026 e insignia Temporada", async ({
+  test("Carga por defecto con Arte y Costura activo, píldora de Navidad 2026 e insignia Temporada sin recorte en claro y oscuro", async ({
     page,
   }) => {
     await page.goto("/productos", { waitUntil: "domcontentloaded" });
@@ -25,14 +93,24 @@ test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 20
     await expect(page.locator("#navidad-2026")).toHaveCount(1);
     await expect(navidadTab).toContainText("Temporada");
 
-    // Sin desbordamiento horizontal en ningún viewport
-    const hasOverflow = await page.evaluate(
-      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-    );
-    expect(hasOverflow).toBe(false);
+    // Verificar todas las pestañas completas dentro de la barra en modo claro
+    await assertTabsFitInsideBar(page);
+
+    // Verificar también en 412 px (Android grande) cuando estamos en el proyecto Mobile-L (390 px)
+    const initialViewport = page.viewportSize();
+    if (initialViewport?.width === 390) {
+      await page.setViewportSize({ width: 412, height: 915 });
+      await assertTabsFitInsideBar(page);
+      await page.setViewportSize(initialViewport);
+    }
+
+    // Verificar en modo oscuro y comprobar contraste de la pestaña activa
+    await page.evaluate(() => document.documentElement.classList.add("dark"));
+    await assertTabsFitInsideBar(page);
+    await page.evaluate(() => document.documentElement.classList.remove("dark"));
   });
 
-  test("Enlace directo con ancla /productos#navidad-2026 activa el catálogo navideño, muestra sus 3 líneas, productos y PDF propio", async ({
+  test("Enlace directo con ancla /productos#navidad-2026 activa el catálogo navideño, muestra las 3 pestañas sin recorte, sus 3 líneas, productos y PDF propio", async ({
     page,
   }) => {
     await page.goto("/productos#navidad-2026", { waitUntil: "domcontentloaded" });
@@ -46,9 +124,21 @@ test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 20
 
     await expect(navidadTab).toHaveAttribute("aria-selected", "true", { timeout: 10000 });
 
-    // Verificar que la píldora activa no tenga texto interno cortado (scrollWidth <= clientWidth)
-    const tabOverflow = await navidadTab.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
-    expect(tabOverflow).toBe(false);
+    // Verificar que las 3 pestañas estén completas dentro de la barra en modo claro
+    await assertTabsFitInsideBar(page);
+
+    // Verificar en modo oscuro: fondo amarillo (#ffff00) y texto navy (#012060) de alto contraste
+    await page.evaluate(() => document.documentElement.classList.add("dark"));
+    await assertTabsFitInsideBar(page);
+    await expect
+      .poll(async () =>
+        navidadTab.evaluate((el) => {
+          const s = getComputedStyle(el);
+          return { bg: s.backgroundColor, color: s.color };
+        }),
+      )
+      .toEqual({ bg: "rgb(255, 255, 0)", color: "rgb(1, 32, 96)" });
+    await page.evaluate(() => document.documentElement.classList.remove("dark"));
 
     const panel = page.getByRole("tabpanel", { name: "Navidad 2026" });
     await expect(panel).toBeVisible();
@@ -75,6 +165,7 @@ test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 20
     const arteTab = tablist.getByRole("tab", { name: /Arte y Costura/i });
     await arteTab.click();
     await expect(arteTab).toHaveAttribute("aria-selected", "true");
+    await assertTabsFitInsideBar(page);
   });
 
   test("Enlace directo a producto /productos?producto=galleta-navidena abre la hoja con sus 2 presentaciones y agrega a la canasta", async ({

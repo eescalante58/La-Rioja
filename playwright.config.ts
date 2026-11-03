@@ -18,8 +18,16 @@ export default defineConfig({
       use: { viewport: { width: 320, height: 568 } },
     },
     {
+      name: 'Mobile-M (360x740)',
+      use: { viewport: { width: 360, height: 740 } },
+    },
+    {
       name: 'Mobile-S (375x667)',
       use: { viewport: { width: 375, height: 667 } },
+    },
+    {
+      name: 'Mobile-L (390x844)',
+      use: { viewport: { width: 390, height: 844 } },
     },
     {
       name: 'Tablet-P (768x1024)',
