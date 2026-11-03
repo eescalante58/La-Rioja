@@ -160,9 +160,20 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
     const bar = chipsRef.current;
     const chip = bar?.querySelector<HTMLElement>(`[data-chip="${activeLine}"]`);
     if (!bar || !chip) return;
-    const left = chip.offsetLeft - (bar.clientWidth - chip.clientWidth) / 2;
-    bar.scrollTo({ left, behavior: "smooth" });
+    if (bar.scrollWidth > bar.clientWidth + 1) {
+      const left = chip.offsetLeft - (bar.clientWidth - chip.clientWidth) / 2;
+      bar.scrollTo({ left, behavior: "smooth" });
+    } else if (bar.scrollLeft !== 0) {
+      bar.scrollTo({ left: 0, behavior: "auto" });
+    }
   }, [activeLine]);
+
+  /**
+   * Cuando el taller tiene 2 o 3 líneas (p. ej. Navidad 2026: «Costura navideña»,
+   * «Madera y decoración» y «Galletas navideñas»), en móvil (< sm) los chips se
+   * reparten el ancho útil completo sin desborde ni recorte lateral.
+   */
+  const splitLinesOnMobile = lines.length > 1 && lines.length <= 3;
 
   /** Desplaza la página hasta la línea, dejando la barra fija a la vista. */
   const goToLine = (id: number) => {
@@ -238,7 +249,11 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
         <nav aria-label="Líneas de productos" className="mt-2">
           <div
             ref={chipsRef}
-            className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className={
+              splitLinesOnMobile
+                ? "flex min-w-0 gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] sm:-mx-1 sm:px-1 [&::-webkit-scrollbar]:hidden"
+                : "-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            }
           >
             {lines.map((l) => {
               const active = l.id === activeLine;
@@ -252,7 +267,11 @@ export function ShopNav({ catalogs, activeSlug, onSelectCatalog, lines }: ShopNa
                     e.preventDefault();
                     goToLine(l.id);
                   }}
-                  className={`flex h-8 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] ${
+                  className={`${
+                    splitLinesOnMobile
+                      ? "shop-tab-label flex min-h-9 min-w-0 flex-1 basis-0 items-center justify-center rounded-full px-2 py-1 text-center text-[12px] leading-tight [text-wrap:balance] sm:h-8 sm:min-h-0 sm:flex-none sm:shrink-0 sm:whitespace-nowrap sm:px-3 sm:py-0 sm:text-[13px]"
+                      : "flex h-8 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-[13px]"
+                  } transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--shop-focus)] ${
                     active
                       ? "bg-[var(--shop-chip-line)] font-medium text-[var(--shop-text)]"
                       : "text-[var(--shop-text-3)] hover:text-[var(--shop-text)]"

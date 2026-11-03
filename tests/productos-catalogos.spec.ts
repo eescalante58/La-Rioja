@@ -68,6 +68,60 @@ async function assertTabsFitInsideBar(page: Page) {
   }
 }
 
+/**
+ * Verifica que el submenú de líneas de producto (cuando tiene <= 3 opciones, como
+ * Navidad 2026: «Costura navideña», «Madera y decoración» y «Galletas navideñas»)
+ * no desborde y que las 3 pestañas quepan completas dentro del ancho útil.
+ */
+async function assertLineChipsFitInsideBar(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const nav = document.querySelector<HTMLElement>('nav[aria-label="Líneas de productos"]');
+    const bar = nav?.firstElementChild as HTMLElement | null;
+    if (!bar) return null;
+    const barRect = bar.getBoundingClientRect();
+    const chips = Array.from(bar.querySelectorAll<HTMLElement>("a[data-chip]")).map((c) => {
+      const r = c.getBoundingClientRect();
+      return {
+        text: c.textContent?.trim() ?? "",
+        left: r.left,
+        right: r.right,
+        clientWidth: c.clientWidth,
+        scrollWidth: c.scrollWidth,
+        clientHeight: c.clientHeight,
+        scrollHeight: c.scrollHeight,
+      };
+    });
+    return {
+      barLeft: barRect.left,
+      barRight: barRect.right,
+      barClientWidth: bar.clientWidth,
+      barScrollWidth: bar.scrollWidth,
+      chips,
+    };
+  });
+
+  expect(metrics).not.toBeNull();
+  if (!metrics) return;
+
+  expect(metrics.barScrollWidth).toBeLessThanOrEqual(metrics.barClientWidth + 1);
+  for (const chip of metrics.chips) {
+    expect(chip.left, `chip "${chip.text}" left >= bar.left`).toBeGreaterThanOrEqual(
+      metrics.barLeft - 1,
+    );
+    expect(chip.right, `chip "${chip.text}" right <= bar.right`).toBeLessThanOrEqual(
+      metrics.barRight + 1,
+    );
+    expect(
+      chip.scrollWidth,
+      `chip "${chip.text}" scrollWidth <= clientWidth`,
+    ).toBeLessThanOrEqual(chip.clientWidth + 1);
+    expect(
+      chip.scrollHeight,
+      `chip "${chip.text}" scrollHeight <= clientHeight`,
+    ).toBeLessThanOrEqual(chip.clientHeight + 2);
+  }
+}
+
 test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 2026)", () => {
   test("Carga por defecto con Arte y Costura activo, píldora de Navidad 2026 e insignia Temporada sin recorte en claro y oscuro", async ({
     page,
@@ -124,12 +178,23 @@ test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 20
 
     await expect(navidadTab).toHaveAttribute("aria-selected", "true", { timeout: 10000 });
 
-    // Verificar que las 3 pestañas estén completas dentro de la barra en modo claro
+    // Verificar que las 3 pestañas y las 3 líneas de Navidad 2026 estén completas dentro de la barra en modo claro
     await assertTabsFitInsideBar(page);
+    await assertLineChipsFitInsideBar(page);
+
+    // Verificar también en 412 px (Android grande) cuando estamos en el proyecto Mobile-L (390 px)
+    const initialViewport = page.viewportSize();
+    if (initialViewport?.width === 390) {
+      await page.setViewportSize({ width: 412, height: 915 });
+      await assertTabsFitInsideBar(page);
+      await assertLineChipsFitInsideBar(page);
+      await page.setViewportSize(initialViewport);
+    }
 
     // Verificar en modo oscuro: fondo amarillo (#ffff00) y texto navy (#012060) de alto contraste
     await page.evaluate(() => document.documentElement.classList.add("dark"));
     await assertTabsFitInsideBar(page);
+    await assertLineChipsFitInsideBar(page);
     await expect
       .poll(async () =>
         navidadTab.evaluate((el) => {
