@@ -144,7 +144,7 @@ test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 20
       return;
     }
 
-    await expect(page.locator("#navidad-2026")).toHaveCount(1);
+    await expect(page.locator("#temporada")).toHaveCount(1);
     await expect(navidadTab).toContainText("Temporada");
 
     // Verificar todas las pestañas completas dentro de la barra en modo claro
@@ -164,10 +164,10 @@ test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 20
     await page.evaluate(() => document.documentElement.classList.remove("dark"));
   });
 
-  test("Enlace directo con ancla /productos#navidad-2026 activa el catálogo navideño, muestra las 3 pestañas sin recorte, sus 3 líneas, productos y PDF propio", async ({
+  test("Enlace directo con ancla /productos#temporada activa el catálogo navideño, muestra las 3 pestañas sin recorte, sus 3 líneas, productos y PDF propio", async ({
     page,
   }) => {
-    await page.goto("/productos#navidad-2026", { waitUntil: "domcontentloaded" });
+    await page.goto("/productos#temporada", { waitUntil: "domcontentloaded" });
 
     const tablist = page.getByRole("tablist", { name: "Talleres" });
     const navidadTab = tablist.getByRole("tab", { name: /Navidad 2026/i });
@@ -275,7 +275,7 @@ test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 20
     }
 
     await seasonalBtn.click();
-    await expect(page).toHaveURL(/\/productos.*navidad-2026/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/productos.*#temporada/, { timeout: 15000 });
 
     const tablist = page.getByRole("tablist", { name: "Talleres" });
     const navidadTab = tablist.getByRole("tab", { name: /Navidad 2026/i });
@@ -292,7 +292,7 @@ test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 20
     const campaignLink = page.getByRole("link", { name: /Haz tus compras/i }).first();
     if ((await campaignLink.count()) > 0) {
       await campaignLink.click();
-      await expect(page).toHaveURL(/\/productos.*navidad-2026/, { timeout: 15000 });
+      await expect(page).toHaveURL(/\/productos.*#temporada/, { timeout: 15000 });
       await expect(
         page.getByRole("tablist", { name: "Talleres" }).getByRole("tab", { name: /Navidad 2026/i }),
       ).toHaveAttribute("aria-selected", "true", { timeout: 15000 });

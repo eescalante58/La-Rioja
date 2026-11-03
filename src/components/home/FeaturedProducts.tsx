@@ -50,7 +50,7 @@ export function FeaturedProducts({ products, seasonalCatalog }: Props) {
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             {seasonalCatalog && (
               <Link
-                href={`/productos?taller=${seasonalCatalog.slug}#${seasonalCatalog.slug}`}
+                href="/productos?taller=temporada#temporada"
                 className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#9b1c2e] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#7f1625] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9b1c2e] focus-visible:ring-offset-2"
               >
                 <span>Catálogo {seasonalCatalog.name}</span>

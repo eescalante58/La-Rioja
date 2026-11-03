@@ -45,21 +45,48 @@ function productFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get("producto");
 }
 
+/** Determina si un catálogo corresponde al catálogo de temporada. */
+function isSeasonalCatalog(c: { slug: string; badge?: string | null }): boolean {
+  return (
+    c.slug === "temporada" ||
+    c.slug.startsWith("navidad") ||
+    Boolean(c.badge && c.badge.toLowerCase().includes("temporada")) ||
+    (c.slug !== "arte-y-costura" && c.slug !== "panaderia")
+  );
+}
+
+/** Nombre del ancla pública para un catálogo (`temporada` para el catálogo estacional). */
+function anchorForCatalog(c: { slug: string; badge?: string | null }): string {
+  return isSeasonalCatalog(c) ? "temporada" : c.slug;
+}
+
 /**
- * Obtiene el slug del catálogo solicitado en la URL (`?taller=<slug>`, `?catalogo=<slug>`
- * o el hash `#<slug>`), si coincide con alguno de los catálogos activos.
+ * Resuelve un valor de ancla o parámetro (`temporada`, `navidad-2026`, `arte-y-costura`, etc.)
+ * al `slug` real del catálogo activo correspondiente.
+ */
+function resolveCatalogSlug(raw: string | null, catalogs: PublicCatalog[]): string | null {
+  if (!raw) return null;
+  const key = raw.trim().toLowerCase();
+  const exact = catalogs.find((c) => c.slug.toLowerCase() === key);
+  if (exact) return exact.slug;
+  if (key === "temporada" || key.startsWith("navidad")) {
+    const seasonal = catalogs.find(isSeasonalCatalog);
+    if (seasonal) return seasonal.slug;
+  }
+  return null;
+}
+
+/**
+ * Obtiene el slug del catálogo solicitado en la URL (`?taller=temporada`, `?catalogo=...`
+ * o el hash `#temporada` / `#<slug>`), si coincide con alguno de los catálogos activos.
  */
 function catalogSlugFromUrl(catalogs: PublicCatalog[]): string | null {
   if (typeof window === "undefined") return null;
   const params = new URLSearchParams(window.location.search);
-  const fromQuery = params.get("taller") ?? params.get("catalogo");
-  if (fromQuery && catalogs.some((c) => c.slug === fromQuery)) {
-    return fromQuery;
-  }
-  const fromHash = decodeURIComponent(window.location.hash.slice(1));
-  if (fromHash && catalogs.some((c) => c.slug === fromHash)) {
-    return fromHash;
-  }
+  const fromQuery = resolveCatalogSlug(params.get("taller") ?? params.get("catalogo"), catalogs);
+  if (fromQuery) return fromQuery;
+  const fromHash = resolveCatalogSlug(decodeURIComponent(window.location.hash.slice(1)), catalogs);
+  if (fromHash) return fromHash;
   return null;
 }
 
@@ -95,19 +122,24 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // Permite enlazar un catálogo desde otras áreas del sitio: /productos#navidad-2026 o /productos?taller=navidad-2026
+  // Permite enlazar un catálogo desde otras áreas del sitio: /productos#temporada o /productos?taller=temporada
   useEffect(() => {
     const applyTargetCatalog = (slug: string, scroll: boolean) => {
       setActiveSlug(slug);
-      // Asegura que el hash refleje el catálogo activo en la barra de direcciones
-      if (window.location.hash !== `#${slug}`) {
+      const matched = catalogs.find((c) => c.slug === slug);
+      const anchor = matched ? anchorForCatalog(matched) : slug;
+      // Asegura que el hash refleje el ancla oficial (#temporada para el catálogo estacional)
+      if (window.location.hash !== `#${anchor}`) {
         const url = new URL(window.location.href);
-        url.hash = slug;
+        url.hash = anchor;
         window.history.replaceState(window.history.state, "", url.toString());
       }
       if (scroll) {
         requestAnimationFrame(() => {
-          const target = document.getElementById(slug) ?? document.getElementById("catalogo");
+          const target =
+            document.getElementById(anchor) ??
+            document.getElementById(slug) ??
+            document.getElementById("catalogo");
           if (target) {
             const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
             target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
@@ -124,7 +156,7 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
     };
 
     if (!syncFromLocation(true)) {
-      // En iOS/Safari con <Link href="/productos#slug"> de Next.js App Router, el hash
+      // En iOS/Safari con <Link href="/productos#temporada"> de Next.js App Router, el hash
       // puede asentarse en el siguiente tick tras la transición; verificamos de nuevo.
       const retryTimers = [50, 180, 400].map((ms) =>
         setTimeout(() => {
@@ -154,14 +186,19 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
     };
   }, [catalogs]);
 
-  const selectCatalog = useCallback((slug: string) => {
-    setActiveSlug(slug);
-    const url = new URL(window.location.href);
-    url.searchParams.delete("taller");
-    url.searchParams.delete("catalogo");
-    url.hash = slug;
-    window.history.replaceState(window.history.state, "", url.toString());
-  }, []);
+  const selectCatalog = useCallback(
+    (slug: string) => {
+      setActiveSlug(slug);
+      const matched = catalogs.find((c) => c.slug === slug);
+      const anchor = matched ? anchorForCatalog(matched) : slug;
+      const url = new URL(window.location.href);
+      url.searchParams.delete("taller");
+      url.searchParams.delete("catalogo");
+      url.hash = anchor;
+      window.history.replaceState(window.history.state, "", url.toString());
+    },
+    [catalogs],
+  );
 
   /** Variantes a la venta (para ajustar la canasta guardada). */
   const available = useMemo(() => {
@@ -239,11 +276,16 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
 
   return (
     <CartProvider available={available}>
-      {/* Anclas DOM por cada catálogo activo para permitir enlaces directos (#navidad-2026, #arte-y-costura, etc.) desde cualquier área del sitio */}
+      {/* Anclas DOM por cada catálogo activo para permitir enlaces directos (#temporada, #arte-y-costura, etc.) desde cualquier área del sitio */}
       <div aria-hidden="true" className="relative">
-        {catalogs.map((c) => (
-          <span key={c.slug} id={c.slug} className="block scroll-mt-nav" />
-        ))}
+        {catalogs.map((c) => {
+          const anchor = anchorForCatalog(c);
+          return (
+            <span key={c.slug} id={anchor} className="block scroll-mt-nav">
+              {anchor !== c.slug && <span id={c.slug} className="block scroll-mt-nav" />}
+            </span>
+          );
+        })}
       </div>
 
       <ShopNav

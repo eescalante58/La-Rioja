@@ -58,12 +58,22 @@ export default function CatalogsTab({ companyId, data, setData }: ShopTabProps) 
 
   const productCount = (lineId: number) => data.products.filter((p) => p.line_id === lineId).length;
 
-  const copyAnchorLink = async (slug: string) => {
-    const relative = `/productos#${slug}`;
+  const anchorFor = (c: ProductCatalog): string => {
+    const badge = c.badge ?? (c.slug.startsWith("navidad") ? "Temporada" : null);
+    const isSeasonal =
+      c.slug === "temporada" ||
+      c.slug.startsWith("navidad") ||
+      Boolean(badge && badge.toLowerCase().includes("temporada")) ||
+      (c.slug !== "arte-y-costura" && c.slug !== "panaderia");
+    return isSeasonal ? "temporada" : c.slug;
+  };
+
+  const copyAnchorLink = async (anchor: string) => {
+    const relative = `/productos#${anchor}`;
     try {
       await navigator.clipboard.writeText(relative);
-      setCopiedSlug(slug);
-      setTimeout(() => setCopiedSlug((cur) => (cur === slug ? null : cur)), 2000);
+      setCopiedSlug(anchor);
+      setTimeout(() => setCopiedSlug((cur) => (cur === anchor ? null : cur)), 2000);
     } catch {
       // Ignorar si clipboard no está disponible
     }
@@ -273,6 +283,7 @@ export default function CatalogsTab({ companyId, data, setData }: ShopTabProps) 
         const lines = data.lines.filter((l) => l.catalog_id === c.id);
         const busy = busyKey === `catalog-${c.id}`;
         const badge = c.badge ?? (c.slug.startsWith("navidad") ? "Temporada" : null);
+        const anchor = anchorFor(c);
         return (
           <section
             key={c.id}
@@ -295,12 +306,12 @@ export default function CatalogsTab({ companyId, data, setData }: ShopTabProps) 
                   )}
                   <button
                     type="button"
-                    onClick={() => copyAnchorLink(c.slug)}
+                    onClick={() => copyAnchorLink(anchor)}
                     title="Copiar enlace directo al catálogo para usar en otras secciones del sitio"
                     className="inline-flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   >
-                    <code>/productos#{c.slug}</code>
-                    {copiedSlug === c.slug ? (
+                    <code>/productos#{anchor}</code>
+                    {copiedSlug === anchor ? (
                       <Check size={12} className="text-green-600" />
                     ) : (
                       <Copy size={12} />

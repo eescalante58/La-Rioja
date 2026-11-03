@@ -11,8 +11,10 @@ function normalizeShopAnchorHref(rawHref: string): string {
   const trimmed = rawHref.trim();
   const match = trimmed.match(/^\/productos#([a-z0-9-]+)$/i);
   if (match) {
-    const slug = match[1].toLowerCase();
-    return `/productos?taller=${slug}#${slug}`;
+    const rawSlug = match[1].toLowerCase();
+    const anchor =
+      rawSlug === "temporada" || rawSlug.startsWith("navidad") ? "temporada" : rawSlug;
+    return `/productos?taller=${anchor}#${anchor}`;
   }
   return trimmed || "#";
 }

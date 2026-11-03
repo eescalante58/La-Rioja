@@ -102,7 +102,7 @@ Un catálogo de temporada (por ejemplo, **Navidad 2026**) convive con los catál
 
 - **Ocultar fuera de temporada:** en la tarjeta del catálogo, pulsa el botón **Publicado** (pasa a **Oculto**). En menos de un minuto desaparece la pestaña de `/productos`, sus productos dejan de aceptarse en nuevos pedidos y el enlace de temporada de la página de inicio se oculta automáticamente, **conservando intactos sus productos, fotos, precios y PDF** para la siguiente temporada.
 - **Volver a publicar:** pulsa **Oculto** (pasa a **Publicado**) y el catálogo reaparece de inmediato con todo su contenido.
-- **Enlace directo con ancla (`/productos#<identificador>`):** cada catálogo cuenta con un botón `/productos#<slug>` junto a su nombre para copiar su enlace directo (por ejemplo, `/productos#navidad-2026`). Puedes usar ese enlace en campañas del inicio, banners o redes sociales para llevar al visitante directamente a ese catálogo desplegado.
+- **Enlace directo con ancla (`/productos#temporada` o `/productos#<identificador>`):** cada catálogo cuenta con un botón junto a su nombre para copiar su enlace directo (para el catálogo de temporada es `/productos#temporada`). Puedes usar ese enlace en campañas del inicio, banners o redes sociales para llevar al visitante directamente a ese catálogo desplegado.
 - **Notas importantes:**
   - Mientras el catálogo tenga un PDF cargado, quien conserve el enlace directo del archivo PDF podrá seguir abriéndolo aunque el catálogo esté oculto. Si deseas retirar también el PDF de internet, usa el botón **Quitar** (basurero) en la fila del PDF.
   - Evita marcar productos de temporada como **Destacado en el inicio**, o recuerda que al ocultar su catálogo dejarán de mostrarse en la portada.
