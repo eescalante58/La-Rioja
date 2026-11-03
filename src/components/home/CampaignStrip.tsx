@@ -7,6 +7,16 @@ interface Props {
   rows: SiteContent[];
 }
 
+function normalizeShopAnchorHref(rawHref: string): string {
+  const trimmed = rawHref.trim();
+  const match = trimmed.match(/^\/productos#([a-z0-9-]+)$/i);
+  if (match) {
+    const slug = match[1].toLowerCase();
+    return `/productos?taller=${slug}#${slug}`;
+  }
+  return trimmed || "#";
+}
+
 /** Sección 2 — Hasta seis campañas activas del CMS (cl_campaign_1..6). No se renderiza si no hay ninguna vigente. */
 export function CampaignStrip({ rows }: Props) {
   const campaigns: Campaign[] = rows.flatMap((row) => {
@@ -19,7 +29,7 @@ export function CampaignStrip({ rows }: Props) {
     const title = (row.title && row.title.trim()) || parsed.data.title?.trim() || "";
     const text = (row.description && row.description.trim()) || parsed.data.text?.trim() || "";
     if (!title && !text && !row.image_url) return [];
-    const href = parsed.data.href.trim() || "#";
+    const href = normalizeShopAnchorHref(parsed.data.href);
     const linkLabel = parsed.data.linkLabel.trim() || (parsed.data.href.trim() ? "Ver más" : "");
     const imageAlt = parsed.data.imageAlt.trim() || title || "Campaña La Rioja";
     const imageUrl = row.image_url && row.image_url.trim() ? row.image_url.trim() : null;

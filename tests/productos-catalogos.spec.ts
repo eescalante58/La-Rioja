@@ -261,4 +261,41 @@ test.describe("Catálogos en /productos (Arte y Costura, Panadería y Navidad 20
     // Se cierra la hoja y la canasta refleja 1 producto ($9.00)
     await expect(page.getByRole("button", { name: /Ver canasta: 1 producto/i })).toBeVisible();
   });
+
+  test("Desde la portada (/): al oprimir «Haz tus compras» o «Catálogo Navidad 2026 TEMPORADA» navega y activa Navidad 2026", async ({
+    page,
+  }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+
+    // 1) Botón «Catálogo Navidad 2026 Temporada» en la sección Compra con propósito
+    const seasonalBtn = page.getByRole("link", { name: /Catálogo Navidad 2026/i });
+    if ((await seasonalBtn.count()) === 0) {
+      test.skip(true, "El catálogo Navidad 2026 está oculto actualmente.");
+      return;
+    }
+
+    await seasonalBtn.click();
+    await expect(page).toHaveURL(/\/productos.*navidad-2026/, { timeout: 15000 });
+
+    const tablist = page.getByRole("tablist", { name: "Talleres" });
+    const navidadTab = tablist.getByRole("tab", { name: /Navidad 2026/i });
+    await expect(navidadTab).toHaveAttribute("aria-selected", "true", { timeout: 15000 });
+    await expect(
+      page.getByRole("tabpanel", { name: "Navidad 2026" }).getByRole("heading", {
+        name: "Navidad 2026",
+        level: 2,
+      }),
+    ).toBeVisible();
+
+    // 2) Enlace «Haz tus compras →» de la tarjeta de campaña navideña en la portada
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const campaignLink = page.getByRole("link", { name: /Haz tus compras/i }).first();
+    if ((await campaignLink.count()) > 0) {
+      await campaignLink.click();
+      await expect(page).toHaveURL(/\/productos.*navidad-2026/, { timeout: 15000 });
+      await expect(
+        page.getByRole("tablist", { name: "Talleres" }).getByRole("tab", { name: /Navidad 2026/i }),
+      ).toHaveAttribute("aria-selected", "true", { timeout: 15000 });
+    }
+  });
 });

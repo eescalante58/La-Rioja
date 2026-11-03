@@ -46,6 +46,24 @@ function productFromUrl(): string | null {
 }
 
 /**
+ * Obtiene el slug del catálogo solicitado en la URL (`?taller=<slug>`, `?catalogo=<slug>`
+ * o el hash `#<slug>`), si coincide con alguno de los catálogos activos.
+ */
+function catalogSlugFromUrl(catalogs: PublicCatalog[]): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get("taller") ?? params.get("catalogo");
+  if (fromQuery && catalogs.some((c) => c.slug === fromQuery)) {
+    return fromQuery;
+  }
+  const fromHash = decodeURIComponent(window.location.hash.slice(1));
+  if (fromHash && catalogs.some((c) => c.slug === fromHash)) {
+    return fromHash;
+  }
+  return null;
+}
+
+/**
  * Tienda pública (rediseño "Cuadrícula de productos"): navegación fija con
  * canasta, talleres y líneas; encabezado del taller (lema, «Quiénes somos»,
  * catálogo PDF); una cuadrícula de 2-5 columnas por línea; hoja de detalle
@@ -77,29 +95,70 @@ export function ShopCatalog({ catalogs, whatsappDigits }: ShopCatalogProps) {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // Permite enlazar un catálogo desde otras áreas del sitio: /productos#navidad-2026
+  // Permite enlazar un catálogo desde otras áreas del sitio: /productos#navidad-2026 o /productos?taller=navidad-2026
   useEffect(() => {
-    const syncFromHash = (scroll: boolean) => {
-      const fromHash = decodeURIComponent(window.location.hash.slice(1));
-      if (!fromHash || !catalogs.some((c) => c.slug === fromHash)) return;
-      setActiveSlug(fromHash);
+    const applyTargetCatalog = (slug: string, scroll: boolean) => {
+      setActiveSlug(slug);
+      // Asegura que el hash refleje el catálogo activo en la barra de direcciones
+      if (window.location.hash !== `#${slug}`) {
+        const url = new URL(window.location.href);
+        url.hash = slug;
+        window.history.replaceState(window.history.state, "", url.toString());
+      }
       if (scroll) {
-        const target = document.getElementById(fromHash) ?? document.getElementById("catalogo");
-        if (target) {
-          const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-          target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-        }
+        requestAnimationFrame(() => {
+          const target = document.getElementById(slug) ?? document.getElementById("catalogo");
+          if (target) {
+            const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+          }
+        });
       }
     };
-    syncFromHash(true);
-    const onHashChange = () => syncFromHash(true);
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
+
+    const syncFromLocation = (scroll: boolean) => {
+      const targetSlug = catalogSlugFromUrl(catalogs);
+      if (!targetSlug) return false;
+      applyTargetCatalog(targetSlug, scroll);
+      return true;
+    };
+
+    if (!syncFromLocation(true)) {
+      // En iOS/Safari con <Link href="/productos#slug"> de Next.js App Router, el hash
+      // puede asentarse en el siguiente tick tras la transición; verificamos de nuevo.
+      const retryTimers = [50, 180, 400].map((ms) =>
+        setTimeout(() => {
+          syncFromLocation(true);
+        }, ms),
+      );
+      const onHashOrPop = () => {
+        syncFromLocation(true);
+      };
+      window.addEventListener("hashchange", onHashOrPop);
+      window.addEventListener("popstate", onHashOrPop);
+      return () => {
+        retryTimers.forEach(clearTimeout);
+        window.removeEventListener("hashchange", onHashOrPop);
+        window.removeEventListener("popstate", onHashOrPop);
+      };
+    }
+
+    const onHashOrPop = () => {
+      syncFromLocation(true);
+    };
+    window.addEventListener("hashchange", onHashOrPop);
+    window.addEventListener("popstate", onHashOrPop);
+    return () => {
+      window.removeEventListener("hashchange", onHashOrPop);
+      window.removeEventListener("popstate", onHashOrPop);
+    };
   }, [catalogs]);
 
   const selectCatalog = useCallback((slug: string) => {
     setActiveSlug(slug);
     const url = new URL(window.location.href);
+    url.searchParams.delete("taller");
+    url.searchParams.delete("catalogo");
     url.hash = slug;
     window.history.replaceState(window.history.state, "", url.toString());
   }, []);
