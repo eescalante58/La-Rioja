@@ -57,23 +57,41 @@ export async function Footer() {
 
   const ctaMeta = (ctaContent?.metadata ?? {}) as Record<string, string>;
 
+  const mapsRow = Array.isArray(socialLinks)
+    ? socialLinks.find((l: SiteContent) => l.section_key === "google maps")
+    : null;
+  const mapsMeta = (mapsRow?.metadata as Record<string, unknown>) || {};
+  const mapsMetaUrl = typeof mapsMeta.url === "string" ? mapsMeta.url.trim() : "";
+  const mapsDesc = mapsRow?.description?.trim() || "";
+
   // Datos dinámicos de contacto desde el CMS con fallback
   const tel1 = ctaMeta.telefono_1 || "7731-0792";
   const tel2 = ctaMeta.telefono_2 || "2248-4198";
   const direccion =
     ctaMeta.direccion ||
-    "Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador";
+    (mapsDesc && !mapsDesc.startsWith("http") ? mapsDesc : "Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador");
 
   const getSocialLink = (key: string): string => {
     if (!Array.isArray(socialLinks)) return "#";
     const link = socialLinks.find((l: SiteContent) => l.section_key === key);
-    const desc = link?.description?.trim();
-    if (!desc || desc === "#") return "#";
-    if (desc.startsWith("http://") || desc.startsWith("https://") || desc.startsWith("mailto:")) return desc;
-    return `https://${desc}`;
+    if (!link) return "#";
+    const meta = (link.metadata as Record<string, unknown>) || {};
+    const metaUrl = typeof meta.url === "string" ? meta.url.trim() : "";
+    const desc = link.description?.trim();
+    const candidate = metaUrl || (desc && desc.startsWith("http") ? desc : "");
+    if (!candidate && desc && desc !== "#" && !desc.startsWith("Urb.")) {
+      return desc.startsWith("http://") || desc.startsWith("https://") || desc.startsWith("mailto:")
+        ? desc
+        : `https://${desc}`;
+    }
+    if (!candidate || candidate === "#") return "#";
+    if (candidate.startsWith("http://") || candidate.startsWith("https://") || candidate.startsWith("mailto:")) return candidate;
+    return `https://${candidate}`;
   };
 
-  const mapsUrl = getSocialLink("google maps");
+  const mapsUrl = mapsMetaUrl
+    ? (mapsMetaUrl.startsWith("http") ? mapsMetaUrl : `https://${mapsMetaUrl}`)
+    : getSocialLink("google maps");
   const waNumber = tel1.replace(/\D/g, "");
   const waUrl = getSocialLink("whatsapp") !== "#" ? getSocialLink("whatsapp") : `https://wa.me/${waNumber}`;
   const igUrl = getSocialLink("instagram");

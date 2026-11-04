@@ -19,6 +19,15 @@ test.describe("Sección «Conoce nuestras instalaciones» en /about", () => {
     await expect(section).toBeVisible();
     await expect(section).toHaveAttribute("aria-labelledby", "instalaciones-titulo");
 
+    // Verificar que muestre la dirección física y el enlace a Google Maps
+    const addressText = section.getByText("Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador");
+    await expect(addressText).toBeVisible();
+
+    const mapsLink = section.locator('a[href*="maps"]', { hasText: "Ver en Google Maps" });
+    await expect(mapsLink).toBeVisible();
+    await expect(mapsLink).toHaveAttribute("target", "_blank");
+    await expect(mapsLink).toHaveAttribute("rel", "noopener noreferrer");
+
     // Verificar que esté después de #sostenibilidad en el DOM
     const isAfterSolidario = await page.evaluate(() => {
       const solidario = document.getElementById("sostenibilidad");

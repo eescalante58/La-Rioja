@@ -4,7 +4,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { MatriculaPageClient } from "@/components/matricula/MatriculaPageClient";
 import { isMatriculaActive, getMatriculaPageData } from "@/lib/matricula/matricula-service";
-import { getSiteGallery, getSectionContent } from "@/services/cms";
+import { getSiteGallery, getSectionContent, getPageContent } from "@/services/cms";
 import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 60;
@@ -59,14 +59,26 @@ export default async function MatriculaPage() {
     notFound();
   }
 
-  const [pageData, facilityItems, aboutFacilities] = await Promise.all([
+  const [pageData, facilityItems, aboutFacilities, socialMedia] = await Promise.all([
     getMatriculaPageData(),
     getSiteGallery("quienes somos", "cl_instalaciones"),
     getSectionContent("quienes somos", "cl_instalaciones"),
+    getPageContent("social media"),
   ]);
   const configMeta = (pageData.config?.metadata || {}) as Record<string, unknown>;
   const admissionYear = Number(configMeta.admission_year) || 2027;
   const aboutFacilitiesActive = Boolean(aboutFacilities);
+
+  const mapsItem = Array.isArray(socialMedia)
+    ? socialMedia.find((s) => s.section_key === "google maps")
+    : null;
+  const mapsMeta = (mapsItem?.metadata as Record<string, unknown>) || {};
+  const mapsUrl = typeof mapsMeta.url === "string" && mapsMeta.url.trim()
+    ? mapsMeta.url.trim()
+    : (mapsItem?.description?.startsWith("http") ? mapsItem.description.trim() : "");
+  const address = mapsItem?.description && !mapsItem.description.startsWith("http")
+    ? mapsItem.description.trim()
+    : "Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador";
 
   return (
     <div className="flex min-h-screen flex-col bg-white dark:bg-gray-950">
@@ -77,6 +89,8 @@ export default async function MatriculaPage() {
           admissionYear={admissionYear}
           facilityItems={facilityItems}
           aboutFacilitiesActive={aboutFacilitiesActive}
+          address={address}
+          mapsUrl={mapsUrl}
         />
       </main>
       <Footer />

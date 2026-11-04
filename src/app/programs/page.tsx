@@ -116,9 +116,13 @@ export default async function ProgramsPage() {
     getMatriculaPageData(),
   ]);
   const section = (key: string) => content.find((s) => s.section_key === key);
-  const social = (key: string) =>
-    socialMedia.find((s) => s.section_key === key)?.description?.trim() ?? "";
+  const socialRow = (key: string) => socialMedia.find((s) => s.section_key === key);
+  const social = (key: string) => socialRow(key)?.description?.trim() ?? "";
   const whatsapp = whatsappDigits(social("whatsapp"));
+  const mapsRow = socialRow("google maps");
+  const mapsMeta = (mapsRow?.metadata as Record<string, unknown>) || {};
+  const mapsMetaUrl = typeof mapsMeta.url === "string" ? mapsMeta.url.trim() : "";
+  const mapsUrl = httpsUrl(mapsMetaUrl || social("google maps"));
 
   const configMeta = (matriculaData.config?.metadata || {}) as Record<string, unknown>;
   const admissionYear = Number(configMeta.admission_year) || 2027;
@@ -249,7 +253,7 @@ export default async function ProgramsPage() {
       <ProgramsCta
         closing={section("cl_cierre")}
         whatsapp={whatsapp}
-        mapsUrl={httpsUrl(social("google maps"))}
+        mapsUrl={mapsUrl}
       />
 
       <Footer />

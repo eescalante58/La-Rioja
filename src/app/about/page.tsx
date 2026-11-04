@@ -101,11 +101,23 @@ function toStats(rows: CmsSection[]): Stat[] {
  * supabase/migrations/20261107000000_quienes_somos_galeria_instalaciones.sql).
  */
 export default async function AboutPage() {
-  const [content, matriculaData] = await Promise.all([
+  const [content, matriculaData, socialMedia] = await Promise.all([
     getPageContent("quienes somos") as Promise<CmsSection[]>,
     getMatriculaPageData(),
+    getPageContent("social media") as Promise<CmsSection[]>,
   ]);
   const section = (key: string) => content.find((s) => s.section_key === key);
+
+  const mapsItem = Array.isArray(socialMedia)
+    ? socialMedia.find((s) => s.section_key === "google maps")
+    : null;
+  const mapsMeta = (mapsItem?.metadata as Record<string, unknown>) || {};
+  const mapsUrl = typeof mapsMeta.url === "string" && mapsMeta.url.trim()
+    ? mapsMeta.url.trim()
+    : (mapsItem?.description?.startsWith("http") ? mapsItem.description.trim() : "");
+  const address = mapsItem?.description && !mapsItem.description.startsWith("http")
+    ? mapsItem.description.trim()
+    : "Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador";
 
   const configMeta = (matriculaData.config?.metadata || {}) as Record<string, unknown>;
   const modalConfig: AdmissionModalConfig = {
@@ -210,6 +222,8 @@ export default async function AboutPage() {
           intro={facilities}
           items={facilityItems}
           modalConfig={modalConfig}
+          address={address}
+          mapsUrl={mapsUrl}
         />
       )}
 

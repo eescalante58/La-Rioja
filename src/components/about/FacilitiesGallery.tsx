@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MapPin, ArrowUpRight } from "lucide-react";
 import { textOr, type CmsSection } from "@/lib/cms-content";
 import {
   CONTAINER,
@@ -24,6 +24,10 @@ interface FacilitiesGalleryProps {
   items: SiteGalleryItem[];
   /** Configuración del modal de matrícula para el botón «Agendar una visita». */
   modalConfig?: AdmissionModalConfig;
+  /** Dirección física oficial de la sede. */
+  address?: string;
+  /** Enlace a Google Maps. */
+  mapsUrl?: string;
 }
 
 /**
@@ -31,7 +35,13 @@ interface FacilitiesGalleryProps {
  * Server Component con alternancia de fondo blanco (SECTION_PLAIN)
  * entre el modelo solidario (gris) y el cierre (oscuro).
  */
-export function FacilitiesGallery({ intro, items, modalConfig }: FacilitiesGalleryProps) {
+export function FacilitiesGallery({
+  intro,
+  items,
+  modalConfig,
+  address,
+  mapsUrl,
+}: FacilitiesGalleryProps) {
   if (items.length === 0) return null;
 
   const parsedMeta = instalacionesMetaSchema.safeParse(intro?.metadata || {});
@@ -72,6 +82,24 @@ export function FacilitiesGallery({ intro, items, modalConfig }: FacilitiesGalle
               <p className={`m-0 text-base md:text-lg leading-relaxed ${MUTED}`}>
                 {description}
               </p>
+            )}
+            {address && (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-700 dark:text-gray-200 pt-1">
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <MapPin className="h-4 w-4 shrink-0 text-larioja-azul dark:text-larioja-amarillo" aria-hidden="true" />
+                  <span>{address}</span>
+                </span>
+                {mapsUrl && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-[44px] items-center gap-1 font-semibold text-larioja-azul dark:text-larioja-amarillo hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-azul dark:focus-visible:outline-larioja-amarillo"
+                  >
+                    Ver en Google Maps <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </a>
+                )}
+              </div>
             )}
           </div>
 

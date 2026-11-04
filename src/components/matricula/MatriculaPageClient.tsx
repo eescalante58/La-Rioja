@@ -22,6 +22,8 @@ interface MatriculaPageClientProps {
   admissionYear: number;
   facilityItems?: SiteGalleryItem[];
   aboutFacilitiesActive?: boolean;
+  address?: string;
+  mapsUrl?: string;
 }
 
 export function MatriculaPageClient({
@@ -29,6 +31,8 @@ export function MatriculaPageClient({
   admissionYear,
   facilityItems = [],
   aboutFacilitiesActive = false,
+  address,
+  mapsUrl,
 }: MatriculaPageClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalOrigin, setModalOrigin] = useState<MatriculaModalOrigin>("hero");
@@ -74,6 +78,8 @@ export function MatriculaPageClient({
         section={pageData.instalaciones}
         items={facilityItems}
         aboutActive={aboutFacilitiesActive}
+        address={address}
+        mapsUrl={mapsUrl}
       />
 
       {/* Sección de Proceso homologada con /programs#admision */}

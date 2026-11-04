@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { Expand } from "lucide-react";
+import { Expand, MapPin, ArrowUpRight } from "lucide-react";
 import { BTN_YELLOW, EYEBROW, SECTION_ANCHOR } from "@/components/site/section-ui";
 import { GalleryThumb, buildGalleryThumbAriaLabel } from "@/components/about/GalleryThumb";
 import { matriculaInstalacionesMetaSchema } from "@/lib/validation/matricula";
@@ -20,6 +20,10 @@ interface MatriculaInstalacionesProps {
   items: SiteGalleryItem[];
   /** Si la sección #instalaciones de /about está activa (muestra el enlace secundario). */
   aboutActive: boolean;
+  /** Dirección física oficial de la sede. */
+  address?: string;
+  /** Enlace a Google Maps. */
+  mapsUrl?: string;
 }
 
 /**
@@ -31,6 +35,8 @@ export function MatriculaInstalaciones({
   section,
   items,
   aboutActive,
+  address,
+  mapsUrl,
 }: MatriculaInstalacionesProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const lastTriggerElRef = useRef<HTMLButtonElement | null>(null);
@@ -108,6 +114,25 @@ export function MatriculaInstalaciones({
               <p className="m-0 mb-6 text-base sm:text-[17px] leading-relaxed text-white/90">
                 {description}
               </p>
+            )}
+
+            {address && (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-white/90 mb-5">
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <MapPin className="h-4 w-4 shrink-0 text-larioja-amarillo" aria-hidden="true" />
+                  <span>{address}</span>
+                </span>
+                {mapsUrl && (
+                  <a
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-[44px] items-center gap-1 font-semibold text-larioja-amarillo hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-larioja-amarillo"
+                  >
+                    Ver en Google Maps <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </a>
+                )}
+              </div>
             )}
 
             <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-x-6 sm:gap-y-3">

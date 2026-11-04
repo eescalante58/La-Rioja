@@ -22,6 +22,15 @@ test.describe("Bloque «Conoce nuestras instalaciones» en /matricula", () => {
       "matricula-instalaciones-titulo",
     );
 
+    // Verificar que muestre la dirección física y el enlace a Google Maps
+    const addressText = section.getByText("Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador");
+    await expect(addressText).toBeVisible();
+
+    const mapsLink = section.locator('a[href*="maps"]', { hasText: "Ver en Google Maps" });
+    await expect(mapsLink).toBeVisible();
+    await expect(mapsLink).toHaveAttribute("target", "_blank");
+    await expect(mapsLink).toHaveAttribute("rel", "noopener noreferrer");
+
     // 2. Verificar posición en el DOM: después de MatriculaProgramas y antes de #proceso
     const positionChecks = await page.evaluate(() => {
       const instalaciones = document.getElementById("instalaciones");
