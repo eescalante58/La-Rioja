@@ -3,7 +3,7 @@ import { extractYouTubeId } from "@/lib/video-url";
 import { cmsInternalHrefSchema } from "./cms";
 
 export const SITE_GALLERY_BUCKET = "site_gallery";
-export const SITE_GALLERY_MAX_ITEMS = 30;
+export const SITE_GALLERY_MAX_ITEMS = 60;
 export const SITE_GALLERY_IMAGE_MAX_BYTES = 4 * 1024 * 1024; // 4 MB (post-compresión WebP)
 export const SITE_GALLERY_VIDEO_MAX_BYTES = 50 * 1024 * 1024; // 50 MB
 export const SITE_GALLERY_ALLOWED_IMAGE_TYPES = [
@@ -142,7 +142,7 @@ export const instalacionesMetaSchema = z.object({
     .max(24, "El texto del chip no puede exceder 24 caracteres")
     .catch("Instalaciones"),
   fotos_visibles: z
-    .union([z.literal(5), z.literal(9)])
+    .union([z.literal(5), z.literal(9), z.literal(13), z.literal(17)])
     .catch(5),
   mostrar_leyendas: z.boolean().catch(true),
   boton: z

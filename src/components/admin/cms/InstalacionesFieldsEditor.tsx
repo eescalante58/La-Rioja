@@ -15,8 +15,8 @@ export function InstalacionesFieldsEditor({
   onChange,
 }: InstalacionesFieldsEditorProps) {
   const chip = typeof metadata.chip === "string" ? metadata.chip : "Instalaciones";
-  const fotosVisibles =
-    metadata.fotos_visibles === 9 || metadata.fotos_visibles === "9" ? 9 : 5;
+  const rawFotos = Number(metadata.fotos_visibles);
+  const fotosVisibles = [5, 9, 13, 17].includes(rawFotos) ? rawFotos : 5;
   const mostrarLeyendas =
     typeof metadata.mostrar_leyendas === "boolean"
       ? metadata.mostrar_leyendas
@@ -83,6 +83,8 @@ export function InstalacionesFieldsEditor({
           >
             <SelectItem value="5">5 fotos (1 portada grande + 4 laterales)</SelectItem>
             <SelectItem value="9">9 fotos (1 portada grande + 8 cuadrícula)</SelectItem>
+            <SelectItem value="13">13 fotos (1 portada grande + 12 cuadrícula)</SelectItem>
+            <SelectItem value="17">17 fotos (1 portada grande + 16 cuadrícula)</SelectItem>
           </Select>
           <p className="text-xs text-gray-500">
             En celular el carrusel muestra siempre todas las fotos activas.

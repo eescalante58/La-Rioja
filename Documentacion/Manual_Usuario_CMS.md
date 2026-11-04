@@ -124,7 +124,7 @@ Los enlaces (`enlace`, `enlace_1`, `enlace_2`) solo aceptan rutas del sitio (`/p
 | `cl_equipo`, `cl_rol_1..4` | «Nuestro equipo» y tarjetas por rol | — |
 | `cl_solidario` | Modelo solidario (#sostenibilidad) | `dato` («7 de 10»), `dato_texto` |
 | `cl_fuente_1..4` | Fuentes de ingreso | `enlace_texto`, `enlace` (vacíos = sin enlace) |
-| `cl_instalaciones` | Galería «Conoce nuestras instalaciones» (#instalaciones) | `chip` (nombre del enlace), `fotos_visibles` (5 o 9), `mostrar_leyendas`, `boton_visita` (texto del botón verde «Agendar una visita» en el pie del mosaico; vacío = ocultar), `boton`, `enlace`. Las fotos y videos se administran en su propio panel interactivo debajo del formulario |
+| `cl_instalaciones` | Galería «Conoce nuestras instalaciones» (#instalaciones) | `chip` (nombre del enlace), `fotos_visibles` (5, 9, 13 o 17), `mostrar_leyendas`, `boton_visita` (texto del botón verde «Agendar una visita» en el pie del mosaico; vacío = ocultar), `boton`, `enlace`. Las fotos y videos se administran en su propio panel interactivo debajo del formulario |
 | `cl_cierre` | Banner final | `resaltado`, `boton_1`, `enlace_1`, `boton_2`, `enlace_2`, `foto` |
 
 > **Fotos:** solo se publican fotos de estudiantes y del equipo que hayan dado su autorización.
@@ -134,7 +134,9 @@ Los enlaces (`enlace`, `enlace_1`, `enlace_2`) solo aceptan rutas del sitio (`/p
 
 Al editar la sección `cl_instalaciones` en **Contenido General → Quienes Somos**, aparece el panel interactivo **Fotos y Videos de la Galería**:
 
-1. **Guardado automático e instantáneo:** A diferencia de los textos de la sección (que requieren pulsar «Guardar cambios»), las fotos, videos, leyendas y el orden **se guardan al instante** en la base de datos al realizar cualquier cambio.
+1. **Capacidad máxima (hasta 60 elementos) e inhibición preventiva:** La galería soporta hasta 60 fotos, videos subidos y videos de YouTube. Al alcanzar exactamente los 60 elementos, la interfaz muestra un aviso destacado de capacidad máxima e inhibe (deshabilita con cursor bloqueado) el botón «Subir fotos o videos», el dropzone y el registro de YouTube. Al eliminar cualquier elemento, los controles se rehabilitan de forma instantánea.
+2. **Opciones de cuadrícula en escritorio:** En «Configuración de la sección», el selector «Fotos visibles en el mosaico» permite elegir entre **5, 9, 13 o 17 fotos** (1 portada principal + bloques en múltiplos de 4 columnas). En celulares, el carrusel táctil muestra siempre todas las fotos activas con contador numérico y barra de progreso.
+3. **Guardado automático e instantáneo:** A diferencia de los textos de la sección (que requieren pulsar «Guardar cambios»), las fotos, videos, leyendas y el orden **se guardan al instante** en la base de datos al realizar cualquier cambio.
 2. **Subida de fotos:** Arrastra archivos al recuadro o presiona **Subir fotos o videos**. Las imágenes (JPG, PNG o WebP) se comprimen automáticamente a WebP de 1920 px antes de subirse directamente a Supabase Storage.
 3. **Subida de videos:** Acepta videos directos MP4 o WebM de hasta 50 MB. El navegador extrae automáticamente un fotograma de portada en alta calidad (WebP) y la duración en segundos antes de subirlos.
 4. **Videos de YouTube:** En el recuadro lateral, pega cualquier enlace de YouTube (`https://youtu.be/...` o `youtube.com/watch?v=...`) y pulsa **Agregar enlace**. Se incrustará en el visor sin consumir almacenamiento ni ancho de banda.

@@ -550,6 +550,7 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 | `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
 
 **Notas adicionales:**
+- **Capacidad y límites:** Hasta 60 elementos por galería institucional (`SITE_GALLERY_MAX_ITEMS = 60`), con validación en servidor (`site-gallery-actions.ts`) e inhibición reactiva del botón de subida en el gestor administrativo (`SiteGalleryManager.tsx`). Opciones de fotos visibles en escritorio: 5, 9, 13 o 17 elementos.
 - **Constraints:** UNIQUE (`page`, `gallery_key`, `content_order`) `DEFERRABLE INITIALLY DEFERRED` para reordenamiento transaccional atómico; `CHECK` de coherencia según `media_type`.
 - **Lectura pública:** Solo filas con `is_active = true`.
 - **Triggers:** `trg_site_gallery_media_updated_at` actualiza automáticamente `updated_at = now()`.

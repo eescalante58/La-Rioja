@@ -589,12 +589,19 @@ export function SiteGalleryManager({ page, galleryKey }: SiteGalleryManagerProps
   // Subida de archivos directa a Storage
   const handleFilesUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    if (isMaxReached) {
+      setStatusMessage({
+        type: "error",
+        text: `Límite máximo de ${SITE_GALLERY_MAX_ITEMS} elementos alcanzado. Debe eliminar algún elemento para subir nuevos.`,
+      });
+      return;
+    }
     const fileList = Array.from(files);
 
     if (items.length + fileList.length > SITE_GALLERY_MAX_ITEMS) {
       setStatusMessage({
         type: "error",
-        text: `No se pueden agregar ${fileList.length} archivo(s). El límite máximo es de ${SITE_GALLERY_MAX_ITEMS} elementos.`,
+        text: `No se pueden agregar ${fileList.length} archivo(s). El límite máximo es de ${SITE_GALLERY_MAX_ITEMS} elementos (actuales: ${items.length}).`,
       });
       return;
     }
@@ -760,6 +767,13 @@ export function SiteGalleryManager({ page, galleryKey }: SiteGalleryManagerProps
   const handleAddYouTube = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!youtubeUrl.trim()) return;
+    if (isMaxReached) {
+      setStatusMessage({
+        type: "error",
+        text: `Límite máximo de ${SITE_GALLERY_MAX_ITEMS} elementos alcanzado. Debe eliminar algún elemento para agregar nuevos.`,
+      });
+      return;
+    }
 
     setYoutubeLoading(true);
     setStatusMessage({ type: "busy", text: "Registrando video de YouTube…" });
@@ -826,6 +840,7 @@ export function SiteGalleryManager({ page, galleryKey }: SiteGalleryManagerProps
   };
 
   const activeCount = items.filter((i) => i.is_active).length;
+  const isMaxReached = items.length >= SITE_GALLERY_MAX_ITEMS;
 
   return (
     <Card className="p-6 border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 rounded-xl space-y-6">
@@ -872,32 +887,71 @@ export function SiteGalleryManager({ page, galleryKey }: SiteGalleryManagerProps
         La foto o video en la <strong>posición #1</strong> es la portada grande del mosaico.
       </Callout>
 
+      {/* Aviso destacado cuando se alcanza el límite de 60 elementos */}
+      {isMaxReached && (
+        <Callout
+          title={`Capacidad máxima alcanzada (${SITE_GALLERY_MAX_ITEMS} de ${SITE_GALLERY_MAX_ITEMS} elementos)`}
+          color="amber"
+          icon={AlertCircle}
+        >
+          Se ha alcanzado el límite máximo de {SITE_GALLERY_MAX_ITEMS} fotos y videos en la galería. Para subir nuevas imágenes o agregar más videos, debes eliminar alguno de los existentes.
+        </Callout>
+      )}
+
       {/* Zona de subida de archivos y enlace de YouTube */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Dropzone para archivos directos */}
         <div
-          onDragOver={(e) => e.preventDefault()}
+          onDragOver={(e) => {
+            if (!isMaxReached) e.preventDefault();
+          }}
           onDrop={(e) => {
             e.preventDefault();
+            if (isMaxReached) {
+              setStatusMessage({
+                type: "error",
+                text: `Límite máximo de ${SITE_GALLERY_MAX_ITEMS} elementos alcanzado. Debe eliminar algún elemento para subir nuevos.`,
+              });
+              return;
+            }
             handleFilesUpload(e.dataTransfer.files);
           }}
-          className="lg:col-span-2 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-5 text-center flex flex-col items-center justify-center gap-2 hover:border-larioja-azul dark:hover:border-larioja-amarillo transition-colors bg-gray-50/50 dark:bg-gray-900/30"
+          className={`lg:col-span-2 border-2 border-dashed rounded-xl p-5 text-center flex flex-col items-center justify-center gap-2 transition-colors ${
+            isMaxReached
+              ? "border-amber-300 dark:border-amber-700/60 bg-amber-50/40 dark:bg-amber-950/20 opacity-70 cursor-not-allowed"
+              : "border-gray-300 dark:border-gray-700 hover:border-larioja-azul dark:hover:border-larioja-amarillo bg-gray-50/50 dark:bg-gray-900/30"
+          }`}
         >
-          <Upload size={24} className="text-gray-400" />
+          <Upload size={24} className={isMaxReached ? "text-amber-500" : "text-gray-400"} />
           <div className="text-xs text-gray-600 dark:text-gray-300">
-            <span className="font-semibold text-larioja-azul dark:text-larioja-amarillo">
-              Arrastra fotos o videos aquí
-            </span>{" "}
-            o presiona el botón para seleccionar
+            {isMaxReached ? (
+              <span className="font-semibold text-amber-700 dark:text-amber-400">
+                Límite máximo alcanzado ({SITE_GALLERY_MAX_ITEMS} fotos/videos)
+              </span>
+            ) : (
+              <>
+                <span className="font-semibold text-larioja-azul dark:text-larioja-amarillo">
+                  Arrastra fotos o videos aquí
+                </span>{" "}
+                o presiona el botón para seleccionar
+              </>
+            )}
           </div>
           <p className="text-[11px] text-gray-400 max-w-md">
             Fotos JPG, PNG o WebP (optimizadas a 1920px) · Videos MP4 o WebM (máx. 50 MB con extracción automática de portada) · Máximo {SITE_GALLERY_MAX_ITEMS} elementos
           </p>
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadProgress !== null}
-            className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+            onClick={() => {
+              if (!isMaxReached) fileInputRef.current?.click();
+            }}
+            disabled={isMaxReached || uploadProgress !== null}
+            title={
+              isMaxReached
+                ? `Límite máximo de ${SITE_GALLERY_MAX_ITEMS} fotos alcanzado`
+                : "Subir fotos o videos"
+            }
+            className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Plus size={14} />
             Subir fotos o videos
@@ -906,6 +960,7 @@ export function SiteGalleryManager({ page, galleryKey }: SiteGalleryManagerProps
             ref={fileInputRef}
             type="file"
             multiple
+            disabled={isMaxReached}
             accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
             className="hidden"
             onChange={(e) => handleFilesUpload(e.target.files)}
@@ -935,14 +990,24 @@ export function SiteGalleryManager({ page, galleryKey }: SiteGalleryManagerProps
               type="text"
               value={youtubeUrl}
               onChange={(e) => setYoutubeUrl(e.target.value)}
-              placeholder="https://youtu.be/... o youtube.com/watch?v=..."
-              className="w-full px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 outline-none focus:border-larioja-azul text-xs"
+              disabled={isMaxReached}
+              placeholder={
+                isMaxReached
+                  ? `Límite de ${SITE_GALLERY_MAX_ITEMS} elementos alcanzado`
+                  : "https://youtu.be/... o youtube.com/watch?v=..."
+              }
+              className="w-full px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 outline-none focus:border-larioja-azul text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
           <button
             type="submit"
-            disabled={youtubeLoading || !youtubeUrl.trim()}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-larioja-azul text-white dark:bg-larioja-amarillo dark:text-larioja-azul font-semibold text-xs hover:opacity-90 disabled:opacity-50"
+            disabled={isMaxReached || youtubeLoading || !youtubeUrl.trim()}
+            title={
+              isMaxReached
+                ? `Límite de ${SITE_GALLERY_MAX_ITEMS} elementos alcanzado`
+                : undefined
+            }
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-larioja-azul text-white dark:bg-larioja-amarillo dark:text-larioja-azul font-semibold text-xs hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {youtubeLoading ? (
               <Loader2 size={13} className="animate-spin" />

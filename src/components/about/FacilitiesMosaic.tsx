@@ -159,18 +159,32 @@ export function FacilitiesMosaic({
             {carouselIndex + 1} / {total}
           </span>
 
-          <div className="flex items-center gap-1.5" aria-hidden="true">
-            {items.map((_, i) => (
-              <span
-                key={i}
-                className={`h-2 rounded-full transition-all ${
-                  i === carouselIndex
-                    ? "w-6 bg-larioja-azul dark:bg-larioja-amarillo"
-                    : "w-2 bg-gray-300 dark:bg-gray-700"
-                }`}
+          {total <= 12 ? (
+            <div className="flex items-center gap-1.5" aria-hidden="true">
+              {items.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-2 rounded-full transition-all ${
+                    i === carouselIndex
+                      ? "w-6 bg-larioja-azul dark:bg-larioja-amarillo"
+                      : "w-2 bg-gray-300 dark:bg-gray-700"
+                  }`}
+                />
+              ))}
+            </div>
+          ) : (
+            <div
+              className="w-24 sm:w-32 h-1.5 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden"
+              aria-hidden="true"
+            >
+              <div
+                className="h-full bg-larioja-azul dark:bg-larioja-amarillo transition-all duration-150 rounded-full"
+                style={{
+                  width: `${Math.round(((carouselIndex + 1) / total) * 100)}%`,
+                }}
               />
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

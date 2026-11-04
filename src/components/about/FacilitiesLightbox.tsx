@@ -365,7 +365,9 @@ export default function FacilitiesLightbox({
       <nav
         ref={thumbnailsNavRef}
         aria-label="Miniaturas"
-        className="flex items-center justify-start sm:justify-center gap-2 px-4 sm:px-6 py-2 border-t border-white/10 overflow-x-auto z-30 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))] landscape-phone:hidden"
+        className={`flex items-center gap-2 px-4 sm:px-6 py-2 border-t border-white/10 overflow-x-auto z-30 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-[max(0.75rem,env(safe-area-inset-bottom))] landscape-phone:hidden ${
+          total > 8 ? "justify-start" : "justify-start sm:justify-center"
+        }`}
       >
         {items.map((it, idx) => {
           const isSelected = idx === currentIndex;
