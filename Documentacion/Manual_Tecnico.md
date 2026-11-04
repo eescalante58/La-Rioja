@@ -931,6 +931,13 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `idx_registration_attempts_ip_time` | (client_ip, attempted_at DESC) — ventana anti-ráfaga |
 | `uq_site_content_page_section_order` | UNIQUE (page, section_key, content_order) |
 | `idx_site_content_matricula_unique` | UNIQUE (page, section_key) WHERE page = 'matricula' — unicidad de las 19 claves de Matrícula |
+| `idx_site_content_admin_order` | (page, section_key, content_order) — orden compuesto para el panel de Gestión CMS |
+| `idx_site_content_page_active_order` | (page, is_active, content_order) — consultas públicas activas por página |
+| `idx_faqs_section_id` | (section_id) — acelera JOIN FK entre `faqs` y `faq_sections` |
+| `idx_faqs_content_order` | (content_order ASC) — ordenamiento de preguntas sin sort en memoria |
+| `idx_faq_sections_content_order` | (content_order ASC) — ordenamiento de secciones FAQ sin sort en memoria |
+| `idx_event_gallery_created_at` | (created_at DESC) — fotos recientes para la pestaña Galería del CMS |
+| `idx_event_gallery_event_order` | (event_id, content_order ASC) — galería pública y administrativa por evento |
 | `idx_contact_submissions_idempotency_key` | UNIQUE (idempotency_key) WHERE idempotency_key IS NOT NULL — idempotencia de prospectos de `/matricula` |
 | `user_companies` | PK (user_id, company_id) + idx (company_id, user_id) + (user_id, company_id, role_id) |
 | `product_lines_catalog_order_idx` / `products_line_order_idx` / `product_variants_product_order_idx` | Orden de líneas, productos y variantes en la tienda |
@@ -1141,7 +1148,9 @@ Sub-página `/admin/bingo/manual`: manual de usuario embebido.
 
 ### 7.5 `/admin/cms` — Gestión de contenido
 
-`CMSManagerClient`, `CMSTable`, `CMSFilters`, `CMSCreateDialog`, `CMSEditForm` (`/admin/cms/[id]`), `MatriculaFieldsEditor`, `CMSViewDialog`, `CMSDeleteDialog`, `GalleryManagement`, `FAQManager`/`FAQTable`/`FAQSectionTable`.
+`page.tsx` (SSR optimizado, consulta exclusiva de `site_content` activo para la pestaña inicial) + `CMSTabsContainer`: pestañas secundarias cargadas bajo demanda con `next/dynamic` (`FAQTabLazy`, `GalleryTabLazy`, `MetaPixelTabLazy`, `GoogleAdsTabLazy`), conservando en memoria las pestañas visitadas y evitando cascadas de consultas iniciales en el servidor. Cuenta con `loading.tsx` para feedback visual instantáneo (< 50 ms percibidos).
+
+Componentes cliente: `CMSManagerClient`, `CMSTable` (paginación local de 20 registros por página para minimizar nodos del DOM), `CMSFilters` (sincronización en URL vía `window.history.replaceState` sin revalidación de ruta ni jitter), `CMSCreateDialog`, `CMSEditForm` (`/admin/cms/[id]`), `MatriculaFieldsEditor`, `CMSViewDialog`, `CMSDeleteDialog`, `GalleryManagement`, `FAQManager`/`FAQTable`/`FAQSectionTable`. Operaciones de datos desacopladas consumen endpoints dedicados o `callAction` → `POST /api/actions` (`cms.getFAQAdminData`, `cms.getGalleryManagementData`, `/api/cms/meta-config`, `/api/cms/google-ads-config`).
 
 - CRUD de secciones `site_content` por página (`home`, `quienes somos`, `bingo`, `tombola`, `programs`, `productos`, `services`, `apoyanos`, `privacidad`, `matricula`, `footer`, `contact`, `global`, `social media`, `whatsapp message`), con filtros por página, estado (`active`/`inactive`) y búsqueda textual, orden de presentación, activación e imágenes a `cms_images`.
   - **Títulos de pestaña (`section_key = 'pestaña'`):** parametrizan el `<title>` de cada página pública. En `matricula`, `pestaña.is_active` actúa como interruptor maestro de publicación de `/matricula` y de los enlaces en navegación/sitemap.

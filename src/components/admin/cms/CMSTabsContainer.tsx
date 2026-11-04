@@ -10,17 +10,32 @@ import {
   Activity,
   Target,
 } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// Importaciones dinámicas bajo demanda con esqueletos ligeros
+const FAQTabLazy = dynamic(() => import("./FAQTabLazy"), {
+  loading: () => <div className="h-96 w-full bg-slate-900/5 animate-pulse rounded-2xl" />,
+});
+const GalleryTabLazy = dynamic(() => import("./GalleryTabLazy"), {
+  loading: () => <div className="h-96 w-full bg-slate-900/5 animate-pulse rounded-2xl" />,
+});
+const MetaPixelTabLazy = dynamic(() => import("./MetaPixelTabLazy"), {
+  loading: () => <div className="h-96 w-full bg-slate-900/5 animate-pulse rounded-2xl" />,
+});
+const GoogleAdsTabLazy = dynamic(() => import("./GoogleAdsTabLazy"), {
+  loading: () => <div className="h-96 w-full bg-slate-900/5 animate-pulse rounded-2xl" />,
+});
 
 interface CMSTabsContainerProps {
   contentPanel: React.ReactNode;
-  faqPanel: React.ReactNode;
-  galleryPanel: React.ReactNode;
-  metaPixelPanel: React.ReactNode;
-  googleAdsPanel: React.ReactNode;
+  faqPanel?: React.ReactNode;
+  galleryPanel?: React.ReactNode;
+  metaPixelPanel?: React.ReactNode;
+  googleAdsPanel?: React.ReactNode;
 }
 
 /**
- * Contenedor de pestañas del CMS con persistencia de pestaña activa.
+ * Contenedor de pestañas del CMS con persistencia de pestaña activa y carga diferida (lazy loading).
  * Soporta navegación directa por URL (?tab=contenido, ?tab=faq, ?tab=galeria, ?tab=meta-pixel, ?tab=google-ads).
  */
 export default function CMSTabsContainer({
@@ -32,54 +47,60 @@ export default function CMSTabsContainer({
 }: CMSTabsContainerProps) {
   const searchParams = useSearchParams();
   const [selectedTab, setSelectedTab] = useState(0);
+  const [visitedTabs, setVisitedTabs] = useState<Set<number>>(() => new Set([0]));
 
   useEffect(() => {
     // 1. Prioridad: parámetro en URL (?tab=faq, ?tab=galeria, ?tab=contenido, ?tab=meta-pixel, ?tab=google-ads)
     const tabParam = searchParams.get("tab")?.toLowerCase();
+    let initialIndex = 0;
+
     if (tabParam === "faq" || tabParam === "1") {
-      setSelectedTab(1);
-      return;
-    }
-    if (tabParam === "gallery" || tabParam === "galeria" || tabParam === "2") {
-      setSelectedTab(2);
-      return;
-    }
-    if (
+      initialIndex = 1;
+    } else if (tabParam === "gallery" || tabParam === "galeria" || tabParam === "2") {
+      initialIndex = 2;
+    } else if (
       tabParam === "meta-pixel" ||
       tabParam === "metapixel" ||
       tabParam === "pixel" ||
       tabParam === "3"
     ) {
-      setSelectedTab(3);
-      return;
-    }
-    if (
+      initialIndex = 3;
+    } else if (
       tabParam === "google-ads" ||
       tabParam === "googleads" ||
       tabParam === "gads" ||
       tabParam === "4"
     ) {
-      setSelectedTab(4);
-      return;
-    }
-    if (tabParam === "content" || tabParam === "contenido" || tabParam === "0") {
-      setSelectedTab(0);
-      return;
+      initialIndex = 4;
+    } else if (tabParam === "content" || tabParam === "contenido" || tabParam === "0") {
+      initialIndex = 0;
+    } else {
+      // 2. Persistencia en sessionStorage tras recargas de formulario
+      const saved = sessionStorage.getItem("cms_selected_tab");
+      if (saved !== null) {
+        const idx = parseInt(saved, 10);
+        if (!isNaN(idx) && idx >= 0 && idx <= 4) {
+          initialIndex = idx;
+        }
+        sessionStorage.removeItem("cms_selected_tab");
+      }
     }
 
-    // 2. Persistencia en sessionStorage tras recargas de formulario
-    const saved = sessionStorage.getItem("cms_selected_tab");
-    if (saved !== null) {
-      const idx = parseInt(saved, 10);
-      if (!isNaN(idx) && idx >= 0 && idx <= 4) {
-        setSelectedTab(idx);
-      }
-      sessionStorage.removeItem("cms_selected_tab");
-    }
+    setSelectedTab(initialIndex);
+    setVisitedTabs((prev) => {
+      const next = new Set(prev);
+      next.add(initialIndex);
+      return next;
+    });
   }, [searchParams]);
 
   const handleTabChange = (index: number) => {
     setSelectedTab(index);
+    setVisitedTabs((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
     sessionStorage.setItem("cms_selected_tab", String(index));
     try {
       const url = new URL(window.location.href);
@@ -139,16 +160,24 @@ export default function CMSTabsContainer({
           <div className="mt-6">{contentPanel}</div>
         </TabPanel>
         <TabPanel>
-          <div className="mt-6">{faqPanel}</div>
+          <div className="mt-6">
+            {faqPanel || ((selectedTab === 1 || visitedTabs.has(1)) && <FAQTabLazy />)}
+          </div>
         </TabPanel>
         <TabPanel>
-          <div className="mt-6">{galleryPanel}</div>
+          <div className="mt-6">
+            {galleryPanel || ((selectedTab === 2 || visitedTabs.has(2)) && <GalleryTabLazy />)}
+          </div>
         </TabPanel>
         <TabPanel>
-          <div className="mt-6">{metaPixelPanel}</div>
+          <div className="mt-6">
+            {metaPixelPanel || ((selectedTab === 3 || visitedTabs.has(3)) && <MetaPixelTabLazy />)}
+          </div>
         </TabPanel>
         <TabPanel>
-          <div className="mt-6">{googleAdsPanel}</div>
+          <div className="mt-6">
+            {googleAdsPanel || ((selectedTab === 4 || visitedTabs.has(4)) && <GoogleAdsTabLazy />)}
+          </div>
         </TabPanel>
       </TabPanels>
     </TabGroup>

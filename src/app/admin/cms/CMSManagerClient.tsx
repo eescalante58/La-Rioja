@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Title, Text, Button } from "@tremor/react";
 import { Plus } from "lucide-react";
 import { callAction } from "@/lib/action-client";
@@ -43,7 +43,6 @@ interface CMSManagerClientProps {
 
 export default function CMSManagerClient({ initialContent }: CMSManagerClientProps) {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const rawInitialPage = searchParams.get("page") || "all";
   const rawInitialStatus = searchParams.get("status") || "all";
@@ -54,19 +53,22 @@ export default function CMSManagerClient({ initialContent }: CMSManagerClientPro
   const [searchFilter, setSearchFilter] = useState(searchParams.get("search") || "");
 
   useEffect(() => {
-    const params = new URLSearchParams(searchParams);
-    if (pageFilter !== "all") params.set("page", pageFilter);
-    else params.delete("page");
-    if (statusFilter !== "all") params.set("status", statusFilter);
-    else params.delete("status");
-    if (searchFilter) params.set("search", searchFilter);
-    else params.delete("search");
+    try {
+      const url = new URL(window.location.href);
+      if (pageFilter !== "all") url.searchParams.set("page", pageFilter);
+      else url.searchParams.delete("page");
 
-    const queryString = params.toString();
-    router.replace(`/admin/cms${queryString ? `?${queryString}` : ""}`, {
-      scroll: false,
-    });
-  }, [pageFilter, statusFilter, searchFilter, router, searchParams]);
+      if (statusFilter !== "all") url.searchParams.set("status", statusFilter);
+      else url.searchParams.delete("status");
+
+      if (searchFilter) url.searchParams.set("search", searchFilter);
+      else url.searchParams.delete("search");
+
+      window.history.replaceState({}, "", url.toString());
+    } catch {
+      // Ignorar en entornos donde window.location no esté disponible
+    }
+  }, [pageFilter, statusFilter, searchFilter]);
 
   const isQuienesSomosAlias = (val: string | null | undefined) =>
     val === "quienes somos" || val === "about";

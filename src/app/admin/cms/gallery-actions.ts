@@ -280,3 +280,24 @@ export const getGalleryImages = getGalleryImagesInternal;
 export const getGalleryEvent = getGalleryEventInternal;
 export const updateGalleryImagesOrder = withRole(4, updateGalleryImagesOrderInternal);
 export const deleteGalleryImage = withRole(4, deleteGalleryImageInternal);
+
+/**
+ * Obtiene los eventos y las imágenes de la galería para la pestaña de Galería en el CMS.
+ */
+async function getGalleryManagementDataInternal(_roleCtx: RoleContext) {
+  const supabase = createAdminClient();
+  const [eventsRes, galleryRes] = await Promise.all([
+    supabase.from("events").select("*").order("created_at", { ascending: false }),
+    supabase.from("event_gallery").select("*").order("created_at", { ascending: false }),
+  ]);
+
+  return {
+    success: true,
+    events: eventsRes.data || [],
+    images: galleryRes.data || [],
+    galleryError: galleryRes.error?.message || null,
+  };
+}
+
+export const getGalleryManagementData = withRole(4, getGalleryManagementDataInternal);
+

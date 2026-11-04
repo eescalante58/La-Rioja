@@ -100,12 +100,14 @@ import {
   createFAQSection,
   updateFAQSection,
   deleteFAQSection,
+  getFAQAdminData,
 } from "@/app/admin/cms/actions";
 
 import {
   bulkUploadGalleryImages,
   deleteGalleryImage,
   updateGalleryImagesOrder,
+  getGalleryManagementData,
 } from "@/app/admin/cms/gallery-actions";
 
 import {
@@ -252,9 +254,11 @@ const REGISTRY: Record<string, ActionFn> = {
   "cms.createFAQSection": createFAQSection,
   "cms.updateFAQSection": updateFAQSection,
   "cms.deleteFAQSection": deleteFAQSection,
+  "cms.getFAQAdminData": getFAQAdminData,
   "cms.bulkUploadGalleryImages": bulkUploadGalleryImages,
   "cms.deleteGalleryImage": deleteGalleryImage,
   "cms.updateGalleryImagesOrder": updateGalleryImagesOrder,
+  "cms.getGalleryManagementData": getGalleryManagementData,
   "cms.listSiteGalleryItems": listSiteGalleryItems,
   "cms.prepareSiteGalleryUpload": prepareSiteGalleryUpload,
   "cms.confirmSiteGalleryUpload": confirmSiteGalleryUpload,

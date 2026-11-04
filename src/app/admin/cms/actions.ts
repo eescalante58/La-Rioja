@@ -796,3 +796,33 @@ async function deleteCMSContentInternal(id: string, context: RoleContext) {
 }
 
 export const deleteCMSContent = withRole(10, deleteCMSContentInternal);
+
+/**
+ * Obtiene las preguntas frecuentes y secciones de FAQ para el panel de administración.
+ */
+async function getFAQAdminDataInternal(_roleCtx: RoleContext) {
+  const supabase = createAdminClient();
+  const [faqsRes, sectionsRes] = await Promise.all([
+    supabase
+      .from("faqs")
+      .select("*, faq_sections(title)")
+      .order("content_order", { ascending: true }),
+    supabase
+      .from("faq_sections")
+      .select("*")
+      .order("content_order", { ascending: true }),
+  ]);
+
+  if (faqsRes.error) {
+    return { success: false, error: formatFriendlyError(faqsRes.error) };
+  }
+
+  return {
+    success: true,
+    faqs: faqsRes.data || [],
+    faqSections: sectionsRes.data || [],
+  };
+}
+
+export const getFAQAdminData = withRole(4, getFAQAdminDataInternal);
+
