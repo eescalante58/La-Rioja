@@ -4,11 +4,16 @@ import React, { useState, useEffect } from "react";
 import MetaPixelConfigManager from "@/components/admin/cms/MetaPixelConfigManager";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import type { MetaAdminConfig } from "@/types/meta-tracking";
+import {
+  getCachedMetaConfig,
+  setCachedMetaConfig,
+  subscribeCmsTabsCache,
+} from "@/lib/cms/tabs-prefetch";
 
 export default function MetaPixelTabLazy() {
-  const [config, setConfig] = useState<MetaAdminConfig | null>(null);
-  const [canEdit, setCanEdit] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState<MetaAdminConfig | null>(() => getCachedMetaConfig()?.config ?? null);
+  const [canEdit, setCanEdit] = useState<boolean>(() => getCachedMetaConfig()?.canEdit ?? true);
+  const [loading, setLoading] = useState<boolean>(() => !getCachedMetaConfig());
   const [error, setError] = useState<string | null>(null);
 
   const loadData = async () => {
@@ -22,9 +27,11 @@ export default function MetaPixelTabLazy() {
       if (res.ok && json.success && json.data) {
         setConfig(json.data);
         setCanEdit(true);
+        setCachedMetaConfig({ config: json.data, canEdit: true });
       } else {
         if (res.status === 403) {
           setCanEdit(false);
+          setCachedMetaConfig({ config: null, canEdit: false });
           setError("Se requiere rol Administrador (nivel 8) para configurar Meta Pixel.");
         } else {
           setError(json.error || "Error al obtener la configuración de Meta Pixel.");
@@ -42,14 +49,35 @@ export default function MetaPixelTabLazy() {
   };
 
   useEffect(() => {
+    const cached = getCachedMetaConfig();
+    if (cached) {
+      setConfig(cached.config);
+      setCanEdit(cached.canEdit);
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = subscribeCmsTabsCache(() => {
+      const fresh = getCachedMetaConfig();
+      if (fresh) {
+        setConfig(fresh.config);
+        setCanEdit(fresh.canEdit);
+        setLoading(false);
+      }
+    });
+
     loadData();
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-        <div className="h-96 w-full bg-slate-100 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800" />
+      <div className="space-y-4 opacity-60 animate-pulse transition-opacity duration-300 py-1">
+        <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800/60 rounded-xl" />
+        <div className="h-80 w-full bg-slate-100 dark:bg-slate-850/40 rounded-2xl border border-slate-200/50 dark:border-slate-800/50" />
       </div>
     );
   }
@@ -72,9 +100,11 @@ export default function MetaPixelTabLazy() {
   }
 
   return (
-    <MetaPixelConfigManager
-      initialConfig={config}
-      canEdit={canEdit}
-    />
+    <div className="animate-fade-in transition-opacity duration-200">
+      <MetaPixelConfigManager
+        initialConfig={config}
+        canEdit={canEdit}
+      />
+    </div>
   );
 }

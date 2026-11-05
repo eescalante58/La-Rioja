@@ -11,19 +11,30 @@ import {
   Target,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { prefetchCmsTabs } from "@/lib/cms/tabs-prefetch";
 
-// Importaciones dinámicas bajo demanda con esqueletos ligeros
+// Esqueleto unificado y atenuado para la carga de componentes dinámicos
+function TabSkeletonFallback() {
+  return (
+    <div className="space-y-4 opacity-50 animate-pulse transition-opacity duration-300 py-1">
+      <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800/60 rounded-xl" />
+      <div className="h-72 w-full bg-slate-100 dark:bg-slate-850/40 rounded-2xl border border-slate-200/40 dark:border-slate-800/40" />
+    </div>
+  );
+}
+
+// Importaciones dinámicas bajo demanda con esqueleto unificado y atenuado
 const FAQTabLazy = dynamic(() => import("./FAQTabLazy"), {
-  loading: () => <div className="h-96 w-full bg-slate-900/5 animate-pulse rounded-2xl" />,
+  loading: TabSkeletonFallback,
 });
 const GalleryTabLazy = dynamic(() => import("./GalleryTabLazy"), {
-  loading: () => <div className="h-96 w-full bg-slate-900/5 animate-pulse rounded-2xl" />,
+  loading: TabSkeletonFallback,
 });
 const MetaPixelTabLazy = dynamic(() => import("./MetaPixelTabLazy"), {
-  loading: () => <div className="h-96 w-full bg-slate-900/5 animate-pulse rounded-2xl" />,
+  loading: TabSkeletonFallback,
 });
 const GoogleAdsTabLazy = dynamic(() => import("./GoogleAdsTabLazy"), {
-  loading: () => <div className="h-96 w-full bg-slate-900/5 animate-pulse rounded-2xl" />,
+  loading: TabSkeletonFallback,
 });
 
 interface CMSTabsContainerProps {
@@ -32,6 +43,58 @@ interface CMSTabsContainerProps {
   galleryPanel?: React.ReactNode;
   metaPixelPanel?: React.ReactNode;
   googleAdsPanel?: React.ReactNode;
+}
+
+/**
+ * Resuelve síncronamente el índice de la pestaña inicial a partir de los searchParams
+ * o del almacenamiento de sesión si existiese.
+ */
+function resolveInitialTab(searchParams: ReturnType<typeof useSearchParams>): number {
+  const tabParam = searchParams.get("tab")?.toLowerCase();
+
+  if (tabParam === "faq" || tabParam === "1") {
+    return 1;
+  }
+  if (tabParam === "gallery" || tabParam === "galeria" || tabParam === "2") {
+    return 2;
+  }
+  if (
+    tabParam === "meta-pixel" ||
+    tabParam === "metapixel" ||
+    tabParam === "pixel" ||
+    tabParam === "3"
+  ) {
+    return 3;
+  }
+  if (
+    tabParam === "google-ads" ||
+    tabParam === "googleads" ||
+    tabParam === "gads" ||
+    tabParam === "4"
+  ) {
+    return 4;
+  }
+  if (tabParam === "content" || tabParam === "contenido" || tabParam === "0") {
+    return 0;
+  }
+
+  // 2. Persistencia en sessionStorage tras recargas de formulario
+  if (typeof window !== "undefined") {
+    try {
+      const saved = sessionStorage.getItem("cms_selected_tab");
+      if (saved !== null) {
+        const idx = parseInt(saved, 10);
+        if (!isNaN(idx) && idx >= 0 && idx <= 4) {
+          sessionStorage.removeItem("cms_selected_tab");
+          return idx;
+        }
+      }
+    } catch {
+      // sessionStorage no disponible o restringido
+    }
+  }
+
+  return 0;
 }
 
 /**
@@ -46,53 +109,37 @@ export default function CMSTabsContainer({
   googleAdsPanel,
 }: CMSTabsContainerProps) {
   const searchParams = useSearchParams();
-  const [selectedTab, setSelectedTab] = useState(0);
-  const [visitedTabs, setVisitedTabs] = useState<Set<number>>(() => new Set([0]));
+  const [selectedTab, setSelectedTab] = useState<number>(() => resolveInitialTab(searchParams));
+  const [visitedTabs, setVisitedTabs] = useState<Set<number>>(
+    () => new Set([resolveInitialTab(searchParams)])
+  );
 
   useEffect(() => {
-    // 1. Prioridad: parámetro en URL (?tab=faq, ?tab=galeria, ?tab=contenido, ?tab=meta-pixel, ?tab=google-ads)
-    const tabParam = searchParams.get("tab")?.toLowerCase();
-    let initialIndex = 0;
-
-    if (tabParam === "faq" || tabParam === "1") {
-      initialIndex = 1;
-    } else if (tabParam === "gallery" || tabParam === "galeria" || tabParam === "2") {
-      initialIndex = 2;
-    } else if (
-      tabParam === "meta-pixel" ||
-      tabParam === "metapixel" ||
-      tabParam === "pixel" ||
-      tabParam === "3"
-    ) {
-      initialIndex = 3;
-    } else if (
-      tabParam === "google-ads" ||
-      tabParam === "googleads" ||
-      tabParam === "gads" ||
-      tabParam === "4"
-    ) {
-      initialIndex = 4;
-    } else if (tabParam === "content" || tabParam === "contenido" || tabParam === "0") {
-      initialIndex = 0;
-    } else {
-      // 2. Persistencia en sessionStorage tras recargas de formulario
-      const saved = sessionStorage.getItem("cms_selected_tab");
-      if (saved !== null) {
-        const idx = parseInt(saved, 10);
-        if (!isNaN(idx) && idx >= 0 && idx <= 4) {
-          initialIndex = idx;
-        }
-        sessionStorage.removeItem("cms_selected_tab");
-      }
-    }
-
-    setSelectedTab(initialIndex);
+    const currentTab = resolveInitialTab(searchParams);
+    setSelectedTab(currentTab);
     setVisitedTabs((prev) => {
+      if (prev.has(currentTab)) return prev;
       const next = new Set(prev);
-      next.add(initialIndex);
+      next.add(currentTab);
       return next;
     });
   }, [searchParams]);
+
+  // Pre-carga en segundo plano de datos y componentes de pestañas secundarias en tiempo ocioso
+  useEffect(() => {
+    prefetchCmsTabs();
+
+    if (typeof window !== "undefined") {
+      const timer = setTimeout(() => {
+        // Carga diferida de los chunks JS para 0 ms de latencia al hacer clic
+        import("./FAQTabLazy");
+        import("./GalleryTabLazy");
+        import("./MetaPixelTabLazy");
+        import("./GoogleAdsTabLazy");
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const handleTabChange = (index: number) => {
     setSelectedTab(index);

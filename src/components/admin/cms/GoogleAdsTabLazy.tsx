@@ -4,11 +4,20 @@ import React, { useState, useEffect } from "react";
 import GoogleAdsConfigManager from "@/components/admin/cms/GoogleAdsConfigManager";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import type { GoogleAdsAdminConfig } from "@/types/google-ads-tracking";
+import {
+  getCachedGoogleAdsConfig,
+  setCachedGoogleAdsConfig,
+  subscribeCmsTabsCache,
+} from "@/lib/cms/tabs-prefetch";
 
 export default function GoogleAdsTabLazy() {
-  const [config, setConfig] = useState<GoogleAdsAdminConfig | null>(null);
-  const [canEdit, setCanEdit] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState<GoogleAdsAdminConfig | null>(
+    () => getCachedGoogleAdsConfig()?.config ?? null
+  );
+  const [canEdit, setCanEdit] = useState<boolean>(
+    () => getCachedGoogleAdsConfig()?.canEdit ?? true
+  );
+  const [loading, setLoading] = useState<boolean>(() => !getCachedGoogleAdsConfig());
   const [error, setError] = useState<string | null>(null);
 
   const loadData = async () => {
@@ -22,9 +31,11 @@ export default function GoogleAdsTabLazy() {
       if (res.ok && json.success && json.data) {
         setConfig(json.data);
         setCanEdit(true);
+        setCachedGoogleAdsConfig({ config: json.data, canEdit: true });
       } else {
         if (res.status === 403) {
           setCanEdit(false);
+          setCachedGoogleAdsConfig({ config: null, canEdit: false });
           setError("Se requiere rol Administrador (nivel 8) para configurar Google Ads.");
         } else {
           setError(json.error || "Error al obtener la configuración de Google Ads.");
@@ -42,14 +53,35 @@ export default function GoogleAdsTabLazy() {
   };
 
   useEffect(() => {
+    const cached = getCachedGoogleAdsConfig();
+    if (cached) {
+      setConfig(cached.config);
+      setCanEdit(cached.canEdit);
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = subscribeCmsTabsCache(() => {
+      const fresh = getCachedGoogleAdsConfig();
+      if (fresh) {
+        setConfig(fresh.config);
+        setCanEdit(fresh.canEdit);
+        setLoading(false);
+      }
+    });
+
     loadData();
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-        <div className="h-96 w-full bg-slate-100 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800" />
+      <div className="space-y-4 opacity-60 animate-pulse transition-opacity duration-300 py-1">
+        <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800/60 rounded-xl" />
+        <div className="h-80 w-full bg-slate-100 dark:bg-slate-850/40 rounded-2xl border border-slate-200/50 dark:border-slate-800/50" />
       </div>
     );
   }
@@ -72,9 +104,11 @@ export default function GoogleAdsTabLazy() {
   }
 
   return (
-    <GoogleAdsConfigManager
-      initialConfig={config}
-      canEdit={canEdit}
-    />
+    <div className="animate-fade-in transition-opacity duration-200">
+      <GoogleAdsConfigManager
+        initialConfig={config}
+        canEdit={canEdit}
+      />
+    </div>
   );
 }

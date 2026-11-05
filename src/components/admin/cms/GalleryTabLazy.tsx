@@ -5,15 +5,12 @@ import GalleryManagement from "@/components/admin/cms/GalleryManagement";
 import { callAction } from "@/lib/action-client";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import type { InventoryEventRef } from "@/types/bingo";
-
-interface GalleryImage {
-  id: string;
-  company_id: number;
-  event_id: string;
-  image_url: string;
-  is_active: boolean;
-  content_order: number;
-}
+import {
+  getCachedGalleryData,
+  setCachedGalleryData,
+  subscribeCmsTabsCache,
+  type GalleryImage,
+} from "@/lib/cms/tabs-prefetch";
 
 interface GalleryDataResponse {
   success: boolean;
@@ -28,8 +25,8 @@ export default function GalleryTabLazy() {
     events: InventoryEventRef[];
     images: GalleryImage[];
     galleryError?: string | null;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  } | null>(() => getCachedGalleryData());
+  const [loading, setLoading] = useState<boolean>(() => !getCachedGalleryData());
   const [error, setError] = useState<string | null>(null);
 
   const loadData = async () => {
@@ -41,11 +38,13 @@ export default function GalleryTabLazy() {
         []
       );
       if (res && res.success) {
-        setData({
+        const payload = {
           events: res.events || [],
           images: res.images || [],
           galleryError: res.galleryError,
-        });
+        };
+        setData(payload);
+        setCachedGalleryData(payload);
       } else {
         setError(res?.error || "Error al cargar la galería.");
       }
@@ -61,18 +60,37 @@ export default function GalleryTabLazy() {
   };
 
   useEffect(() => {
+    const cached = getCachedGalleryData();
+    if (cached) {
+      setData(cached);
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = subscribeCmsTabsCache(() => {
+      const fresh = getCachedGalleryData();
+      if (fresh) {
+        setData(fresh);
+        setLoading(false);
+      }
+    });
+
     loadData();
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+      <div className="space-y-4 opacity-60 animate-pulse transition-opacity duration-300 py-1">
+        <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800/60 rounded-xl" />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="aspect-square bg-slate-100 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800"
+              className="aspect-square bg-slate-100 dark:bg-slate-850/40 rounded-2xl border border-slate-200/50 dark:border-slate-800/50"
             />
           ))}
         </div>
@@ -104,9 +122,11 @@ export default function GalleryTabLazy() {
   }
 
   return (
-    <GalleryManagement
-      events={data.events}
-      initialImages={data.images}
-    />
+    <div className="animate-fade-in transition-opacity duration-200">
+      <GalleryManagement
+        events={data.events}
+        initialImages={data.images}
+      />
+    </div>
   );
 }
