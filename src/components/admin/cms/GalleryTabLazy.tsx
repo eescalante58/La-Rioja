@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import GalleryManagement from "@/components/admin/cms/GalleryManagement";
 import { callAction } from "@/lib/action-client";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, Loader2 } from "lucide-react";
 import type { InventoryEventRef } from "@/types/bingo";
 import {
   getCachedGalleryData,
@@ -84,16 +84,9 @@ export default function GalleryTabLazy() {
 
   if (loading) {
     return (
-      <div className="space-y-4 opacity-60 animate-pulse transition-opacity duration-300 py-1">
-        <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800/60 rounded-xl" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
-            <div
-              key={i}
-              className="aspect-square bg-slate-100 dark:bg-slate-850/40 rounded-2xl border border-slate-200/50 dark:border-slate-800/50"
-            />
-          ))}
-        </div>
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-500 dark:text-slate-400">
+        <Loader2 className="h-8 w-8 animate-spin text-larioja-azul dark:text-larioja-amarillo" />
+        <span className="text-xs font-medium">Cargando galería...</span>
       </div>
     );
   }

@@ -9,32 +9,33 @@ import {
   Image as ImageIcon,
   Activity,
   Target,
+  Loader2,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { prefetchCmsTabs } from "@/lib/cms/tabs-prefetch";
 
-// Esqueleto unificado y atenuado para la carga de componentes dinámicos
-function TabSkeletonFallback() {
+// Indicador de carga con ruedita continua (spinner) para componentes dinámicos
+function TabSpinnerFallback() {
   return (
-    <div className="space-y-4 opacity-50 animate-pulse transition-opacity duration-300 py-1">
-      <div className="h-10 w-48 bg-slate-200 dark:bg-slate-800/60 rounded-xl" />
-      <div className="h-72 w-full bg-slate-100 dark:bg-slate-850/40 rounded-2xl border border-slate-200/40 dark:border-slate-800/40" />
+    <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-500 dark:text-slate-400">
+      <Loader2 className="h-8 w-8 animate-spin text-larioja-azul dark:text-larioja-amarillo" />
+      <span className="text-xs font-medium">Cargando contenido...</span>
     </div>
   );
 }
 
-// Importaciones dinámicas bajo demanda con esqueleto unificado y atenuado
+// Importaciones dinámicas bajo demanda con spinner continuo
 const FAQTabLazy = dynamic(() => import("./FAQTabLazy"), {
-  loading: TabSkeletonFallback,
+  loading: TabSpinnerFallback,
 });
 const GalleryTabLazy = dynamic(() => import("./GalleryTabLazy"), {
-  loading: TabSkeletonFallback,
+  loading: TabSpinnerFallback,
 });
 const MetaPixelTabLazy = dynamic(() => import("./MetaPixelTabLazy"), {
-  loading: TabSkeletonFallback,
+  loading: TabSpinnerFallback,
 });
 const GoogleAdsTabLazy = dynamic(() => import("./GoogleAdsTabLazy"), {
-  loading: TabSkeletonFallback,
+  loading: TabSpinnerFallback,
 });
 
 interface CMSTabsContainerProps {

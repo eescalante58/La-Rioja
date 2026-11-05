@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import MetaPixelConfigManager from "@/components/admin/cms/MetaPixelConfigManager";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, Loader2 } from "lucide-react";
 import type { MetaAdminConfig } from "@/types/meta-tracking";
 import {
   getCachedMetaConfig,
@@ -75,9 +75,9 @@ export default function MetaPixelTabLazy() {
 
   if (loading) {
     return (
-      <div className="space-y-4 opacity-60 animate-pulse transition-opacity duration-300 py-1">
-        <div className="h-10 w-64 bg-slate-200 dark:bg-slate-800/60 rounded-xl" />
-        <div className="h-80 w-full bg-slate-100 dark:bg-slate-850/40 rounded-2xl border border-slate-200/50 dark:border-slate-800/50" />
+      <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-500 dark:text-slate-400">
+        <Loader2 className="h-8 w-8 animate-spin text-larioja-azul dark:text-larioja-amarillo" />
+        <span className="text-xs font-medium">Cargando Meta Pixel...</span>
       </div>
     );
   }
