@@ -86,6 +86,10 @@ import {
   removeUserFromCompany,
   updateUserCompanyRole,
   getUserCompanies,
+  upsertPermission,
+  createSecRole,
+  assignSecRole,
+  revokeSecRole,
 } from "@/app/admin/settings/users/actions";
 
 import { updateMyProfile, updateMyPassword } from "@/app/admin/profile/actions";
@@ -239,6 +243,10 @@ const REGISTRY: Record<string, ActionFn> = {
   "users.removeUserFromCompany": removeUserFromCompany,
   "users.updateUserCompanyRole": updateUserCompanyRole,
   "users.getUserCompanies": getUserCompanies,
+  "users.upsertPermission": upsertPermission,
+  "users.createSecRole": createSecRole,
+  "users.assignSecRole": assignSecRole,
+  "users.revokeSecRole": revokeSecRole,
 
   // Perfil propio
   "profile.updateMyProfile": updateMyProfile,

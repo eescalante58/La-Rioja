@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test:responsiveness": "playwright test",
-    "test:responsiveness:ui": "playwright test --ui"
+    "test:responsiveness:ui": "playwright test --ui",
+    "sec:routes": "node scripts/gen-security-routes.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

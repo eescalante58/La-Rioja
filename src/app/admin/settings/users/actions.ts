@@ -479,3 +479,178 @@ export async function getUserCompanies(userId: string) {
   }
   return data;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MÓDULO DE SEGURIDAD — sec_* Server Actions
+// Requieren nivel 9+ (Admin). Las tablas sec_* deben existir en la BD (Fase 1).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Devuelve todos los roles del módulo de seguridad. */
+export async function getSecRoles() {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("sec_roles")
+    .select("id, code, name, description, is_super_admin, is_system, is_active")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching sec_roles:", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+/** Devuelve la jerarquía completa módulo → opción → recurso. */
+export async function getModuleTree() {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("sec_modules")
+    .select(
+      `id, code, name, icon, order_index,
+       sec_options (
+         id, code, name, path_route, order_index,
+         sec_resources ( id, table_name, display_name )
+       )`,
+    )
+    .eq("is_active", true)
+    .order("order_index", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching module tree:", error);
+    return [];
+  }
+
+  return (data ?? []).map((mod) => ({
+    ...mod,
+    options: (mod.sec_options ?? [])
+      .sort((a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index)
+      .map((opt: { sec_resources?: unknown[]; [key: string]: unknown }) => ({
+        ...opt,
+        resources: opt.sec_resources ?? [],
+      })),
+  }));
+}
+
+/** Devuelve todas las filas de sec_permissions (todos los roles). */
+export async function getSecPermissions() {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("sec_permissions")
+    .select("role_id, option_id, resource_id, actions_mask");
+
+  if (error) {
+    console.error("Error fetching sec_permissions:", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+/** Inserta o actualiza la máscara de permisos para un rol/opción/recurso. */
+export async function upsertPermission(
+  roleId: string,
+  optionId: string,
+  resourceId: string | null,
+  mask: number,
+) {
+  const { error: authError } = await requireRoleLevel(9);
+  if (authError) return { error: authError };
+
+  const supabase = createAdminClient();
+
+  if (mask === 0) {
+    // Sin permisos: eliminar la fila si existe
+    const query = supabase
+      .from("sec_permissions")
+      .delete()
+      .eq("role_id", roleId)
+      .eq("option_id", optionId);
+    if (resourceId) query.eq("resource_id", resourceId);
+    else query.is("resource_id", null);
+    const { error } = await query;
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabase
+      .from("sec_permissions")
+      .upsert(
+        { role_id: roleId, option_id: optionId, resource_id: resourceId, actions_mask: mask },
+        { onConflict: "role_id,option_id,resource_id" },
+      );
+    if (error) return { error: error.message };
+  }
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
+/** Crea un nuevo rol en sec_roles. */
+export async function createSecRole(code: string, name: string, description: string) {
+  const { error: authError } = await requireRoleLevel(9);
+  if (authError) return { error: authError };
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("sec_roles")
+    .insert({ code: code.toUpperCase(), name, description, is_active: true })
+    .select("id, code, name, description, is_super_admin, is_system, is_active")
+    .single();
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/settings/users");
+  return { data };
+}
+
+/** Devuelve todas las asignaciones de roles a usuarios (sec_user_roles). */
+export async function getSecUserRoles() {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("sec_user_roles")
+    .select("id, user_id, role_id, valid_from, valid_to, is_active, sec_roles (code, name)")
+    .order("valid_from", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching sec_user_roles:", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+/** Asigna un rol de seguridad a un usuario. */
+export async function assignSecRole(
+  userId: string,
+  roleId: string,
+  validFrom: string,
+  validTo: string | null,
+) {
+  const { error: authError } = await requireRoleLevel(9);
+  if (authError) return { error: authError };
+
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("sec_user_roles")
+    .insert({ user_id: userId, role_id: roleId, valid_from: validFrom, valid_to: validTo ?? null, is_active: true })
+    .select("id, user_id, role_id, valid_from, valid_to, is_active, sec_roles (code, name)")
+    .single();
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/settings/users");
+  return { data };
+}
+
+/** Revoca una asignación de rol (desactiva la fila). */
+export async function revokeSecRole(assignmentId: string) {
+  const { error: authError } = await requireRoleLevel(9);
+  if (authError) return { error: authError };
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("sec_user_roles")
+    .update({ is_active: false, valid_to: new Date().toISOString() })
+    .eq("id", assignmentId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}

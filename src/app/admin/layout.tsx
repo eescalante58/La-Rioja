@@ -6,6 +6,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { cookies } from "next/headers";
 import { UserProvider } from "@/providers/UserProvider";
 import UserNav from "@/components/layout/UserNav";
+import { PermissionProvider } from "@/lib/security/permission-context";
 
 export const metadata: Metadata = {
   title: {
@@ -28,8 +29,23 @@ export default async function AdminLayout({
   const selectedCompanyName =
     cookieStore.get("selected_company_name")?.value || "Empresa";
 
+  // Cargar snapshot de permisos para el PermissionProvider del cliente.
+  // Si el JWT Hook no está activo aún, getSessionAuthz lanza error — se silencia
+  // y el provider opera sin snapshot (acceso controlado solo por el middleware).
+  let authzSession: { userId: string; snapshot: import("@/lib/security/types").PermissionSnapshot } | null = null;
+  try {
+    const { getSessionAuthz } = await import("@/lib/security/server");
+    authzSession = await getSessionAuthz();
+  } catch {
+    // JWT hook no activado o RPC no disponible: continuar sin snapshot
+  }
+
   return (
     <UserProvider>
+      <PermissionProvider
+        snapshot={authzSession?.snapshot ?? null}
+        userId={authzSession?.userId ?? null}
+      >
       <div className="flex h-screen bg-gray-50 dark:bg-black transition-colors">
         <AdminSidebar companyName={selectedCompanyName} />
 
@@ -64,6 +80,7 @@ export default async function AdminLayout({
           </main>
         </div>
       </div>
+      </PermissionProvider>
     </UserProvider>
   );
 }
