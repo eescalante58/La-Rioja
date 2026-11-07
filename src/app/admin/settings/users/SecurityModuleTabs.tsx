@@ -93,9 +93,21 @@ export default function SecurityModuleTabs({
   const [tabBarHeight, setTabBarHeight] = useState(44);
 
   useEffect(() => {
-    if (tabBarRef.current) {
-      setTabBarHeight(tabBarRef.current.getBoundingClientRect().height);
-    }
+    const measure = () => {
+      if (!tabBarRef.current) return;
+      const tabBarRect = tabBarRef.current.getBoundingClientRect();
+      const mainEl = tabBarRef.current.closest("main");
+      if (mainEl) {
+        // top correcto = distancia desde el borde superior del scroll container (main)
+        // hasta el borde inferior del tab bar. Incluye el padding-top del main.
+        setTabBarHeight(tabBarRect.bottom - mainEl.getBoundingClientRect().top);
+      } else {
+        setTabBarHeight(tabBarRect.height);
+      }
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
   }, []);
 
   return (
