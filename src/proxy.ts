@@ -93,23 +93,32 @@ export async function proxy(request: NextRequest) {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        if (session) {
-          try {
-            const [, b64] = session.access_token.split(".");
-            const payload = JSON.parse(atob(b64.replace(/-/g, "+").replace(/_/g, "/"))) as {
-              app_authz?: { sa?: boolean; r?: Record<string, unknown> };
-            };
-            const authz = payload.app_authz;
-            // Deny if no authz claims, or no roles and not superadmin
-            if (!authz || (!authz.sa && (!authz.r || Object.keys(authz.r).length === 0))) {
-              const denyUrl = new URL("/acceso-denegado", request.url);
-              denyUrl.searchParams.set("from", request.nextUrl.pathname);
-              return NextResponse.redirect(denyUrl);
-            }
-          } catch {
-            // JWT parse error → deny access
-            return NextResponse.redirect(new URL("/acceso-denegado", request.url));
+        // No session → claims can't be verified → deny
+        if (!session) {
+          const denyUrl = new URL("/acceso-denegado", request.url);
+          denyUrl.searchParams.set("from", request.nextUrl.pathname);
+          return NextResponse.redirect(denyUrl);
+        }
+        try {
+          const [, b64] = session.access_token.split(".");
+          // base64url → base64 with padding
+          const padded = b64
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(b64.length + ((4 - (b64.length % 4)) % 4), "=");
+          const payload = JSON.parse(atob(padded)) as {
+            app_authz?: { sa?: boolean; r?: Record<string, unknown> };
+          };
+          const authz = payload.app_authz;
+          // Deny if no authz claims, or no roles and not superadmin
+          if (!authz || (!authz.sa && (!authz.r || Object.keys(authz.r).length === 0))) {
+            const denyUrl = new URL("/acceso-denegado", request.url);
+            denyUrl.searchParams.set("from", request.nextUrl.pathname);
+            return NextResponse.redirect(denyUrl);
           }
+        } catch {
+          // JWT parse error → deny access
+          return NextResponse.redirect(new URL("/acceso-denegado", request.url));
         }
       }
     }
