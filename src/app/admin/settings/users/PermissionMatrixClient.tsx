@@ -13,6 +13,24 @@ import type {
 } from "./SecurityModuleTabs";
 import { callAction } from "@/lib/action-client";
 
+/** Orden de módulos según el menú principal del admin. */
+const NAV_MODULE_ORDER: Record<string, number> = {
+  dashboard: 1,
+  cms: 2,
+  producto: 3,
+  bingo: 4,
+  configurac: 5,
+  galer: 6,
+};
+
+function moduleNavIndex(name: string): number {
+  const lower = name.toLowerCase();
+  for (const [key, order] of Object.entries(NAV_MODULE_ORDER)) {
+    if (lower.includes(key)) return order;
+  }
+  return 99;
+}
+
 const ACTIONS: Action[] = [
   "READ",
   "WRITE",
@@ -67,6 +85,20 @@ export default function PermissionMatrixClient({
   const [saving, setSaving] = useState(false);
   const [pendingChanges, setPendingChanges] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const sortedModuleTree = [...moduleTree].sort(
+    (a, b) => moduleNavIndex(a.name) - moduleNavIndex(b.name),
+  );
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(
+    () => new Set(moduleTree.map((m) => m.id)),
+  );
+  const toggleModule = (modId: string) =>
+    setExpandedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(modId)) next.delete(modId);
+      else next.add(modId);
+      return next;
+    });
 
   const selectedRole = secRoles.find((r) => r.id === selectedRoleId);
   const isLocked = selectedRole?.is_super_admin ?? false;
@@ -285,114 +317,132 @@ export default function PermissionMatrixClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {moduleTree.map((mod) => (
-                    <>
-                      {/* Fila de módulo */}
-                      <tr key={`mod-${mod.id}`} className="bg-gray-50 dark:bg-gray-800/60">
-                        <td
-                          colSpan={ACTIONS.length + 3}
-                          className="font-semibold text-sm text-gray-700 dark:text-gray-300 py-2 px-4 border-b border-gray-200 dark:border-gray-700"
+                  {sortedModuleTree.map((mod) => {
+                    const isExpanded = expandedModules.has(mod.id);
+                    return (
+                      <>
+                        {/* Fila de módulo — expandible */}
+                        <tr
+                          key={`mod-${mod.id}`}
+                          className="bg-gray-50 dark:bg-gray-800/60 cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
+                          onClick={() => toggleModule(mod.id)}
                         >
-                          {mod.name}
-                        </td>
-                      </tr>
+                          <td
+                            colSpan={ACTIONS.length + 3}
+                            className="font-semibold text-sm text-gray-700 dark:text-gray-300 py-2 px-4 border-b border-gray-200 dark:border-gray-700"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center justify-center w-4 h-4 rounded border border-gray-400 dark:border-gray-600 text-gray-500 text-[10px] font-bold leading-none select-none flex-shrink-0">
+                                {isExpanded ? "−" : "+"}
+                              </span>
+                              {mod.name}
+                              <span className="text-xs font-normal text-gray-400 ml-1">
+                                ({mod.options.length})
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
 
-                      {mod.options.map((opt: SecOption) => {
-                        const optMask = getMask(opt.id);
-                        return (
-                          <>
-                            {/* Fila de opción */}
-                            <tr
-                              key={`opt-${opt.id}`}
-                              className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/30"
-                            >
-                              <td className="font-medium text-sm py-2 pl-8 pr-4 text-gray-800 dark:text-gray-200">
-                                {opt.name}
-                              </td>
-                              {ACTIONS.map((a) => {
-                                const checked = (optMask & ACTION_BITS[a]) !== 0;
-                                return (
-                                  <td key={a} className="text-center px-1 py-2">
-                                    <input
-                                      type="checkbox"
-                                      checked={checked}
-                                      disabled={isLocked}
-                                      onChange={() => toggleBit(opt.id, a)}
-                                      className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
-                                      title={
-                                        isLocked ? "Rol con acceso irrestricto" : ACTION_LABELS[a]
-                                      }
-                                    />
-                                  </td>
-                                );
-                              })}
-                              <td className="text-center px-1 py-2">
-                                <input
-                                  type="checkbox"
-                                  checked={optMask === 255}
-                                  disabled={isLocked}
-                                  onChange={() => toggleAll(opt.id)}
-                                  className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
-                                  title="Seleccionar todas las acciones"
-                                />
-                              </td>
-                              <td className="text-center px-1 py-2">
-                                <Badge color={optMask > 0 ? "blue" : "gray"} size="xs">
-                                  {optMask}
-                                </Badge>
-                              </td>
-                            </tr>
-
-                            {/* Filas de recursos */}
-                            {opt.resources.map((res: SecResource) => {
-                              const resMask = getMask(opt.id, res.id);
-                              return (
+                        {isExpanded &&
+                          mod.options.map((opt: SecOption) => {
+                            const optMask = getMask(opt.id);
+                            return (
+                              <>
+                                {/* Fila de opción */}
                                 <tr
-                                  key={`res-${res.id}`}
-                                  className="bg-gray-50/50 dark:bg-gray-900/30 border-b border-gray-100 dark:border-gray-800"
+                                  key={`opt-${opt.id}`}
+                                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/30"
                                 >
-                                  <td className="text-xs text-gray-500 dark:text-gray-400 py-1.5 pl-14 pr-4">
-                                    {res.display_name}{" "}
-                                    <span className="font-mono text-gray-400">
-                                      ({res.table_name})
-                                    </span>
+                                  <td className="font-medium text-sm py-2 pl-8 pr-4 text-gray-800 dark:text-gray-200">
+                                    {opt.name}
                                   </td>
                                   {ACTIONS.map((a) => {
-                                    const checked = (resMask & ACTION_BITS[a]) !== 0;
+                                    const checked = (optMask & ACTION_BITS[a]) !== 0;
                                     return (
-                                      <td key={a} className="text-center px-1 py-1.5">
+                                      <td key={a} className="text-center px-1 py-2">
                                         <input
                                           type="checkbox"
                                           checked={checked}
                                           disabled={isLocked}
-                                          onChange={() => toggleBit(opt.id, a, res.id)}
+                                          onChange={() => toggleBit(opt.id, a)}
                                           className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                                          title={
+                                            isLocked
+                                              ? "Rol con acceso irrestricto"
+                                              : ACTION_LABELS[a]
+                                          }
                                         />
                                       </td>
                                     );
                                   })}
-                                  <td className="text-center px-1 py-1.5">
+                                  <td className="text-center px-1 py-2">
                                     <input
                                       type="checkbox"
-                                      checked={resMask === 255}
+                                      checked={optMask === 255}
                                       disabled={isLocked}
-                                      onChange={() => toggleAll(opt.id, res.id)}
+                                      onChange={() => toggleAll(opt.id)}
                                       className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                                      title="Seleccionar todas las acciones"
                                     />
                                   </td>
-                                  <td className="text-center px-1 py-1.5">
-                                    <Badge color={resMask > 0 ? "blue" : "gray"} size="xs">
-                                      {resMask}
+                                  <td className="text-center px-1 py-2">
+                                    <Badge color={optMask > 0 ? "blue" : "gray"} size="xs">
+                                      {optMask}
                                     </Badge>
                                   </td>
                                 </tr>
-                              );
-                            })}
-                          </>
-                        );
-                      })}
-                    </>
-                  ))}
+
+                                {/* Filas de recursos */}
+                                {opt.resources.map((res: SecResource) => {
+                                  const resMask = getMask(opt.id, res.id);
+                                  return (
+                                    <tr
+                                      key={`res-${res.id}`}
+                                      className="bg-gray-50/50 dark:bg-gray-900/30 border-b border-gray-100 dark:border-gray-800"
+                                    >
+                                      <td className="text-xs text-gray-500 dark:text-gray-400 py-1.5 pl-14 pr-4">
+                                        {res.display_name}{" "}
+                                        <span className="font-mono text-gray-400">
+                                          ({res.table_name})
+                                        </span>
+                                      </td>
+                                      {ACTIONS.map((a) => {
+                                        const checked = (resMask & ACTION_BITS[a]) !== 0;
+                                        return (
+                                          <td key={a} className="text-center px-1 py-1.5">
+                                            <input
+                                              type="checkbox"
+                                              checked={checked}
+                                              disabled={isLocked}
+                                              onChange={() => toggleBit(opt.id, a, res.id)}
+                                              className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                                            />
+                                          </td>
+                                        );
+                                      })}
+                                      <td className="text-center px-1 py-1.5">
+                                        <input
+                                          type="checkbox"
+                                          checked={resMask === 255}
+                                          disabled={isLocked}
+                                          onChange={() => toggleAll(opt.id, res.id)}
+                                          className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        />
+                                      </td>
+                                      <td className="text-center px-1 py-1.5">
+                                        <Badge color={resMask > 0 ? "blue" : "gray"} size="xs">
+                                          {resMask}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </>
+                            );
+                          })}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

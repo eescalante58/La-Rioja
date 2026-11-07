@@ -5,14 +5,16 @@ import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
 import { Users, Shield, UserCheck } from "lucide-react";
 import dynamic from "next/dynamic";
 
-const PermissionMatrixClient = dynamic(
-  () => import("./PermissionMatrixClient"),
-  { loading: () => <div className="h-96 w-full bg-slate-900/5 dark:bg-slate-100/5 animate-pulse rounded-2xl" /> }
-);
-const UserRolesClient = dynamic(
-  () => import("./UserRolesClient"),
-  { loading: () => <div className="h-96 w-full bg-slate-900/5 dark:bg-slate-100/5 animate-pulse rounded-2xl" /> }
-);
+const PermissionMatrixClient = dynamic(() => import("./PermissionMatrixClient"), {
+  loading: () => (
+    <div className="h-96 w-full bg-slate-900/5 dark:bg-slate-100/5 animate-pulse rounded-2xl" />
+  ),
+});
+const UserRolesClient = dynamic(() => import("./UserRolesClient"), {
+  loading: () => (
+    <div className="h-96 w-full bg-slate-900/5 dark:bg-slate-100/5 animate-pulse rounded-2xl" />
+  ),
+});
 
 // Tipos importados desde las pantallas legacy para reutilizar en el tab Usuarios
 import type UserManagerClient from "./UserManagerClient";
@@ -90,11 +92,13 @@ export default function SecurityModuleTabs({
 
   return (
     <TabGroup index={tabIndex} onIndexChange={setTabIndex}>
-      <TabList className="mb-6">
-        <Tab icon={Users}>Usuarios</Tab>
-        <Tab icon={Shield}>Roles · Permisos</Tab>
-        <Tab icon={UserCheck}>Asignación de Roles</Tab>
-      </TabList>
+      <div className="sticky top-0 z-20 bg-white dark:bg-black -mx-4 md:-mx-6 px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 mb-6">
+        <TabList>
+          <Tab icon={Users}>Usuarios</Tab>
+          <Tab icon={Shield}>Roles · Permisos</Tab>
+          <Tab icon={UserCheck}>Asignación de Roles</Tab>
+        </TabList>
+      </div>
       <TabPanels>
         <TabPanel>
           <UserManagerComponent {...userManagerProps} />
@@ -108,12 +112,14 @@ export default function SecurityModuleTabs({
         </TabPanel>
         <TabPanel>
           <UserRolesClient
-            users={userManagerProps.initialUsers as Array<{
-              id: string;
-              full_name: string | null;
-              email: string;
-              avatar_url: string | null;
-            }>}
+            users={
+              userManagerProps.initialUsers as Array<{
+                id: string;
+                full_name: string | null;
+                email: string;
+                avatar_url: string | null;
+              }>
+            }
             secRoles={secRoles}
             initialAssignments={userRoleAssignments}
           />
