@@ -17,13 +17,34 @@ import {
 } from "@tremor/react";
 import { Plus, Search, Infinity } from "lucide-react";
 import { ACTION_BITS, type Action } from "@/lib/security/types";
-import type { SecRole, SecModule, SecOption, SecResource, SecPermission } from "./SecurityModuleTabs";
+import type {
+  SecRole,
+  SecModule,
+  SecOption,
+  SecResource,
+  SecPermission,
+} from "./SecurityModuleTabs";
 import { callAction } from "@/lib/action-client";
 
-const ACTIONS: Action[] = ["READ", "WRITE", "UPDATE", "DELETE", "PRINT", "DOWNLOAD", "UPLOAD", "EXECUTE"];
+const ACTIONS: Action[] = [
+  "READ",
+  "WRITE",
+  "UPDATE",
+  "DELETE",
+  "PRINT",
+  "DOWNLOAD",
+  "UPLOAD",
+  "EXECUTE",
+];
 const ACTION_LABELS: Record<Action, string> = {
-  READ: "Leer", WRITE: "Crear", UPDATE: "Editar", DELETE: "Borrar",
-  PRINT: "Impr.", DOWNLOAD: "Export.", UPLOAD: "Import.", EXECUTE: "Exec.",
+  READ: "Leer",
+  WRITE: "Crear",
+  UPDATE: "Editar",
+  DELETE: "Borrar",
+  PRINT: "Impr.",
+  DOWNLOAD: "Export.",
+  UPLOAD: "Import.",
+  EXECUTE: "Exec.",
   ALL: "Todas",
 };
 
@@ -46,7 +67,11 @@ interface Props {
   initialPermissions: SecPermission[];
 }
 
-export default function PermissionMatrixClient({ secRoles, moduleTree, initialPermissions }: Props) {
+export default function PermissionMatrixClient({
+  secRoles,
+  moduleTree,
+  initialPermissions,
+}: Props) {
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(
     secRoles.find((r) => !r.is_super_admin)?.id ?? secRoles[0]?.id ?? null,
   );
@@ -59,9 +84,7 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
   const selectedRole = secRoles.find((r) => r.id === selectedRoleId);
   const isLocked = selectedRole?.is_super_admin ?? false;
 
-  const maskMap: MaskMap = selectedRoleId
-    ? buildMaskMap(permissions, selectedRoleId)
-    : new Map();
+  const maskMap: MaskMap = selectedRoleId ? buildMaskMap(permissions, selectedRoleId) : new Map();
 
   const getMask = (optionId: string, resourceId?: string): number => {
     const key = resourceId ? `${optionId}:${resourceId}` : optionId;
@@ -73,18 +96,28 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
       if (!selectedRoleId || isLocked) return;
       const bit = ACTION_BITS[action];
       const currentMask = getMask(optionId, resourceId);
-      const newMask = (currentMask & bit) ? (currentMask & ~bit) : (currentMask | bit);
+      const newMask = currentMask & bit ? currentMask & ~bit : currentMask | bit;
 
       // Optimistic update
       setPermissions((prev) => {
         const others = prev.filter(
           (p) =>
-            !(p.role_id === selectedRoleId &&
+            !(
+              p.role_id === selectedRoleId &&
               p.option_id === optionId &&
-              p.resource_id === (resourceId ?? null)),
+              p.resource_id === (resourceId ?? null)
+            ),
         );
         if (newMask === 0) return others;
-        return [...others, { role_id: selectedRoleId, option_id: optionId, resource_id: resourceId ?? null, actions_mask: newMask }];
+        return [
+          ...others,
+          {
+            role_id: selectedRoleId,
+            option_id: optionId,
+            resource_id: resourceId ?? null,
+            actions_mask: newMask,
+          },
+        ];
       });
       setPendingChanges((n) => n + 1);
 
@@ -93,7 +126,12 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
       debounceRef.current = setTimeout(async () => {
         setSaving(true);
         try {
-          await callAction("users.upsertPermission", [selectedRoleId, optionId, resourceId ?? null, newMask]);
+          await callAction("users.upsertPermission", [
+            selectedRoleId,
+            optionId,
+            resourceId ?? null,
+            newMask,
+          ]);
           setPendingChanges(0);
         } finally {
           setSaving(false);
@@ -112,12 +150,22 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
       setPermissions((prev) => {
         const others = prev.filter(
           (p) =>
-            !(p.role_id === selectedRoleId &&
+            !(
+              p.role_id === selectedRoleId &&
               p.option_id === optionId &&
-              p.resource_id === (resourceId ?? null)),
+              p.resource_id === (resourceId ?? null)
+            ),
         );
         if (newMask === 0) return others;
-        return [...others, { role_id: selectedRoleId, option_id: optionId, resource_id: resourceId ?? null, actions_mask: newMask }];
+        return [
+          ...others,
+          {
+            role_id: selectedRoleId,
+            option_id: optionId,
+            resource_id: resourceId ?? null,
+            actions_mask: newMask,
+          },
+        ];
       });
       setPendingChanges((n) => n + 1);
 
@@ -125,7 +173,12 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
       debounceRef.current = setTimeout(async () => {
         setSaving(true);
         try {
-          await callAction("users.upsertPermission", [selectedRoleId, optionId, resourceId ?? null, newMask]);
+          await callAction("users.upsertPermission", [
+            selectedRoleId,
+            optionId,
+            resourceId ?? null,
+            newMask,
+          ]);
           setPendingChanges(0);
         } finally {
           setSaving(false);
@@ -186,9 +239,13 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
                   {role.name}
                 </span>
                 {role.is_super_admin ? (
-                  <Badge color="red" size="xs">SuperAdmin</Badge>
+                  <Badge color="red" size="xs">
+                    SuperAdmin
+                  </Badge>
                 ) : role.is_system ? (
-                  <Badge color="gray" size="xs">Sistema</Badge>
+                  <Badge color="gray" size="xs">
+                    Sistema
+                  </Badge>
                 ) : null}
               </div>
               <span className="font-mono text-xs text-gray-500">{role.code}</span>
@@ -209,13 +266,15 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
                 )}
               </div>
               {isLocked && (
-                <Badge color="red" icon={Infinity}>Acceso irrestricto</Badge>
+                <Badge color="red" icon={Infinity}>
+                  Acceso irrestricto
+                </Badge>
               )}
             </div>
 
-            <div className="overflow-x-auto mt-4">
+            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] mt-4">
               <Table>
-                <TableHead>
+                <TableHead className="sticky top-0 z-10 bg-white dark:bg-gray-900 shadow-sm">
                   <TableRow>
                     <TableHeaderCell className="min-w-[200px]">Opción / Recurso</TableHeaderCell>
                     {ACTIONS.map((a) => (
@@ -223,8 +282,12 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
                         {ACTION_LABELS[a]}
                       </TableHeaderCell>
                     ))}
-                    <TableHeaderCell className="text-center px-1 text-xs w-14">Todas</TableHeaderCell>
-                    <TableHeaderCell className="text-center px-1 text-xs w-14">Máscara</TableHeaderCell>
+                    <TableHeaderCell className="text-center px-1 text-xs w-14">
+                      Todas
+                    </TableHeaderCell>
+                    <TableHeaderCell className="text-center px-1 text-xs w-14">
+                      Máscara
+                    </TableHeaderCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -232,7 +295,10 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
                     <>
                       {/* Fila de módulo */}
                       <TableRow key={`mod-${mod.id}`} className="bg-gray-50 dark:bg-gray-800/60">
-                        <TableCell colSpan={ACTIONS.length + 3} className="font-semibold text-sm text-gray-700 dark:text-gray-300 py-2">
+                        <TableCell
+                          colSpan={ACTIONS.length + 3}
+                          className="font-semibold text-sm text-gray-700 dark:text-gray-300 py-2"
+                        >
                           {mod.name}
                         </TableCell>
                       </TableRow>
@@ -254,7 +320,9 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
                                       disabled={isLocked}
                                       onChange={() => toggleBit(opt.id, a)}
                                       className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
-                                      title={isLocked ? "Rol con acceso irrestricto" : ACTION_LABELS[a]}
+                                      title={
+                                        isLocked ? "Rol con acceso irrestricto" : ACTION_LABELS[a]
+                                      }
                                     />
                                   </TableCell>
                                 );
@@ -280,10 +348,15 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
                             {opt.resources.map((res: SecResource) => {
                               const resMask = getMask(opt.id, res.id);
                               return (
-                                <TableRow key={`res-${res.id}`} className="bg-gray-50/50 dark:bg-gray-900/30">
+                                <TableRow
+                                  key={`res-${res.id}`}
+                                  className="bg-gray-50/50 dark:bg-gray-900/30"
+                                >
                                   <TableCell className="text-xs text-gray-600 dark:text-gray-400 pl-10">
                                     {res.display_name}{" "}
-                                    <span className="font-mono text-gray-400">({res.table_name})</span>
+                                    <span className="font-mono text-gray-400">
+                                      ({res.table_name})
+                                    </span>
                                   </TableCell>
                                   {ACTIONS.map((a) => {
                                     const checked = (resMask & ACTION_BITS[a]) !== 0;
@@ -329,7 +402,9 @@ export default function PermissionMatrixClient({ secRoles, moduleTree, initialPe
             {pendingChanges > 0 && (
               <div className="mt-4 flex items-center gap-3 text-sm text-amber-600 dark:text-amber-400">
                 <span className="inline-block h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                {saving ? "Guardando..." : `${pendingChanges} cambio${pendingChanges > 1 ? "s" : ""} pendiente${pendingChanges > 1 ? "s" : ""}`}
+                {saving
+                  ? "Guardando..."
+                  : `${pendingChanges} cambio${pendingChanges > 1 ? "s" : ""} pendiente${pendingChanges > 1 ? "s" : ""}`}
               </div>
             )}
           </Card>
