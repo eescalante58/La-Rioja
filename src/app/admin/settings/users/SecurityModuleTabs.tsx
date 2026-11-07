@@ -92,7 +92,7 @@ export default function SecurityModuleTabs({
 
   return (
     <TabGroup index={tabIndex} onIndexChange={setTabIndex}>
-      <div className="sticky top-0 z-20 bg-white dark:bg-black -mx-4 md:-mx-6 px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 mb-6">
+      <div className="sticky top-0 z-30 bg-white dark:bg-black -mx-4 md:-mx-6 px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 mb-6">
         <TabList>
           <Tab icon={Users}>Usuarios</Tab>
           <Tab icon={Shield}>Roles · Permisos</Tab>

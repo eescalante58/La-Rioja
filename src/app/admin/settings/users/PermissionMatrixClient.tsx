@@ -218,30 +218,31 @@ export default function PermissionMatrixClient({
     <div className="flex flex-col lg:flex-row gap-6 items-start">
       {/* Panel de roles */}
       <Card className="lg:w-72 shrink-0 !border-[#012060] dark:!border-dark-tremor-border">
-        <div className="flex items-center justify-between mb-3">
-          <Title className="text-sm font-semibold">Roles</Title>
-          <Button
-            size="xs"
-            variant="secondary"
-            icon={Plus}
-            onClick={async () => {
-              const code = prompt("Código del nuevo rol (MAYÚSCULAS):");
-              const name = prompt("Nombre del rol:");
-              if (!code || !name) return;
-              await callAction("users.createSecRole", [code, name, ""]);
-            }}
-          >
-            Nuevo
-          </Button>
+        <div className="sticky top-12 z-20 bg-white dark:bg-gray-900 -mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between mb-3">
+            <Title className="text-sm font-semibold">Roles</Title>
+            <Button
+              size="xs"
+              variant="secondary"
+              icon={Plus}
+              onClick={async () => {
+                const code = prompt("Código del nuevo rol (MAYÚSCULAS):");
+                const name = prompt("Nombre del rol:");
+                if (!code || !name) return;
+                await callAction("users.createSecRole", [code, name, ""]);
+              }}
+            >
+              Nuevo
+            </Button>
+          </div>
+          <TextInput
+            placeholder="Buscar..."
+            icon={Search}
+            value={search}
+            onValueChange={setSearch}
+          />
         </div>
-        <TextInput
-          placeholder="Buscar..."
-          icon={Search}
-          value={search}
-          onValueChange={setSearch}
-          className="mb-3"
-        />
-        <div className="flex flex-col gap-1.5 max-h-[600px] overflow-y-auto pr-1">
+        <div className="flex flex-col gap-1.5 max-h-[600px] overflow-y-auto pr-1 mt-3">
           {filteredRoles.map((role) => (
             <button
               key={role.id}
@@ -278,18 +279,20 @@ export default function PermissionMatrixClient({
       <div className="flex-1 min-w-0">
         {selectedRole ? (
           <Card className="!border-[#012060] dark:!border-dark-tremor-border">
-            <div className="flex items-center justify-between mb-1">
-              <div>
-                <Title className="text-lg">{selectedRole.name}</Title>
-                {selectedRole.description && (
-                  <Text className="text-sm text-gray-500 mt-0.5">{selectedRole.description}</Text>
+            <div className="sticky top-12 z-20 bg-white dark:bg-gray-900 -mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Title className="text-lg">{selectedRole.name}</Title>
+                  {selectedRole.description && (
+                    <Text className="text-sm text-gray-500 mt-0.5">{selectedRole.description}</Text>
+                  )}
+                </div>
+                {isLocked && (
+                  <Badge color="red" icon={Infinity}>
+                    Acceso irrestricto
+                  </Badge>
                 )}
               </div>
-              {isLocked && (
-                <Badge color="red" icon={Infinity}>
-                  Acceso irrestricto
-                </Badge>
-              )}
             </div>
 
             {/* HTML nativo: Tremor <Table> agrega overflow-auto internamente,
