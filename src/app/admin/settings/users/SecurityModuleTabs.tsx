@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
 import { Users, Shield, UserCheck } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -89,10 +89,21 @@ export default function SecurityModuleTabs({
   ...userManagerProps
 }: Props) {
   const [tabIndex, setTabIndex] = useState(0);
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const [tabBarHeight, setTabBarHeight] = useState(44);
+
+  useEffect(() => {
+    if (tabBarRef.current) {
+      setTabBarHeight(tabBarRef.current.getBoundingClientRect().height);
+    }
+  }, []);
 
   return (
     <TabGroup index={tabIndex} onIndexChange={setTabIndex}>
-      <div className="sticky top-0 z-30 bg-white dark:bg-black -mx-4 md:-mx-6 px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 mb-6">
+      <div
+        ref={tabBarRef}
+        className="sticky top-0 z-30 bg-white dark:bg-black -mx-4 md:-mx-6 px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 mb-6"
+      >
         <TabList>
           <Tab icon={Users}>Usuarios</Tab>
           <Tab icon={Shield}>Roles · Permisos</Tab>
@@ -108,6 +119,7 @@ export default function SecurityModuleTabs({
             secRoles={secRoles}
             moduleTree={moduleTree}
             initialPermissions={permissions}
+            stickyTop={tabBarHeight}
           />
         </TabPanel>
         <TabPanel>

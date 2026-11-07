@@ -71,12 +71,15 @@ interface Props {
   secRoles: SecRole[];
   moduleTree: SecModule[];
   initialPermissions: SecPermission[];
+  /** Altura del tab bar sticky (px) — para posicionar los headers de panel justo debajo. */
+  stickyTop?: number;
 }
 
 export default function PermissionMatrixClient({
   secRoles,
   moduleTree,
   initialPermissions,
+  stickyTop = 44,
 }: Props) {
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(
     secRoles.find((r) => !r.is_super_admin)?.id ?? secRoles[0]?.id ?? null,
@@ -218,7 +221,10 @@ export default function PermissionMatrixClient({
     <div className="flex flex-col lg:flex-row gap-6 items-start">
       {/* Panel de roles */}
       <Card className="lg:w-72 shrink-0 !border-[#012060] dark:!border-dark-tremor-border">
-        <div className="sticky top-12 z-20 bg-white dark:bg-gray-900 -mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <div
+          className="sticky z-20 bg-white dark:bg-gray-900 -mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800"
+          style={{ top: stickyTop }}
+        >
           <div className="flex items-center justify-between mb-3">
             <Title className="text-sm font-semibold">Roles</Title>
             <Button
@@ -279,7 +285,10 @@ export default function PermissionMatrixClient({
       <div className="flex-1 min-w-0">
         {selectedRole ? (
           <Card className="!border-[#012060] dark:!border-dark-tremor-border">
-            <div className="sticky top-12 z-20 bg-white dark:bg-gray-900 -mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <div
+              className="sticky z-20 bg-white dark:bg-gray-900 -mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800"
+              style={{ top: stickyTop }}
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <Title className="text-lg">{selectedRole.name}</Title>
