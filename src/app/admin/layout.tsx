@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Building2 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { AdminSidebar } from "./AdminSidebar";
@@ -43,21 +42,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       "[AdminLayout] getSessionAuthz error:",
       e instanceof Error ? e.message : String(e),
     );
-  }
-
-  // Si el usuario está autenticado pero no tiene ningún acceso de admin,
-  // redirigir a /acceso-denegado en lugar de renderizar el panel.
-  if (authzSession?.userId) {
-    const snap = authzSession.snapshot;
-    const hasAdminAccess =
-      snap?.sa === true || Object.keys(snap?.o ?? {}).length > 0 || (snap?.ma ?? []).length > 0;
-    if (!hasAdminAccess) {
-      console.log(
-        "[AdminLayout] usuario sin permisos admin → /acceso-denegado",
-        authzSession.userId,
-      );
-      redirect("/acceso-denegado");
-    }
   }
 
   return (
