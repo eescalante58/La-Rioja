@@ -17,15 +17,15 @@ export default async function AccesoDenegadoPage({
         </div>
         <Title className="text-xl">Acceso denegado</Title>
         <Text className="mt-2 text-gray-600 dark:text-gray-400">
-          No tienes permisos para acceder a esta sección.
+          Tu usuario no tiene roles asignados en el sistema.
         </Text>
         {params.from && (
           <div className="mt-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 px-4 py-2 text-xs text-gray-500 font-mono break-all">
             {params.from}
           </div>
         )}
-        <Text className="mt-3 text-xs text-gray-400">
-          Solicita acceso a un Administrador de módulo o Super Administrador.
+        <Text className="mt-3 text-sm text-gray-500">
+          Comunícate con el Administrador para que te asigne los roles correspondientes.
         </Text>
         <div className="mt-5 flex flex-col items-center gap-3">
           <Link href="/admin/profile">

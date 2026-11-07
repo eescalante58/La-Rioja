@@ -85,20 +85,17 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/auth/select-company", request.url));
     }
 
-    // Security module: block users without sec_user_roles assignment.
-    // /admin/profile is exempt so the user can still view their profile and log out.
-    if (process.env.SECURITY_MODULE_ENABLED === "true") {
-      const SECURITY_BYPASS = ["/admin/profile"];
-      if (!SECURITY_BYPASS.some((p) => request.nextUrl.pathname.startsWith(p))) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        // No session → claims can't be verified → deny
-        if (!session) {
-          const denyUrl = new URL("/acceso-denegado", request.url);
-          denyUrl.searchParams.set("from", request.nextUrl.pathname);
-          return NextResponse.redirect(denyUrl);
-        }
+    // Security module: when the Supabase JWT hook injects app_authz ({ v, sa, ma, o })
+    // into the token, deny /admin access if the user has no superadmin flag, no module-admin
+    // codes (ma) and no option permissions (o). When app_authz is absent the hook is not
+    // configured and the check is skipped gracefully.
+    // /admin/profile is exempt so the user can log out even after being denied.
+    const SECURITY_BYPASS = ["/admin/profile"];
+    if (!SECURITY_BYPASS.some((p) => request.nextUrl.pathname.startsWith(p))) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) {
         try {
           const [, b64] = session.access_token.split(".");
           // base64url → base64 with padding
@@ -110,21 +107,19 @@ export async function proxy(request: NextRequest) {
             app_authz?: { sa?: boolean; ma?: unknown[]; o?: Record<string, unknown> };
           };
           const authz = payload.app_authz;
-          // Deny if: no authz, or not superadmin AND no option permissions AND no module-admin roles.
-          // JWT structure: { v, sa, ma, o } — 'o' maps option_code→mask, 'ma' is module-admin codes array.
+          // Only enforce when app_authz is present (hook is configured).
           if (
-            !authz ||
-            (!authz.sa &&
-              Object.keys(authz.o ?? {}).length === 0 &&
-              (!authz.ma || authz.ma.length === 0))
+            authz &&
+            !authz.sa &&
+            Object.keys(authz.o ?? {}).length === 0 &&
+            (!authz.ma || authz.ma.length === 0)
           ) {
             const denyUrl = new URL("/acceso-denegado", request.url);
             denyUrl.searchParams.set("from", request.nextUrl.pathname);
             return NextResponse.redirect(denyUrl);
           }
         } catch {
-          // JWT parse error → deny access
-          return NextResponse.redirect(new URL("/acceso-denegado", request.url));
+          // JWT parse failed — allow through to avoid locking out legitimate users
         }
       }
     }
