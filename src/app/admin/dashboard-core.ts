@@ -255,30 +255,30 @@ async function getSelectedCompanyId() {
  * @returns {Promise<DashboardData>} Dashboard statistics and event data.
  */
 export async function getDashboardDataCore(): Promise<DashboardData> {
-  const supabaseAdmin = createAdminClient(); // For data
-  const supabase = await createClient(); // For user session
-  const companyId = await getSelectedCompanyId();
-
-  if (!companyId) {
-    return { success: false, error: "No company selected" };
-  }
-
-  // Get current user role using the client that knows about cookies
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let userLevel = 0;
-  if (user) {
-    const { data: userData } = await supabaseAdmin
-      .from("users")
-      .select("roles:role_id (level)")
-      .eq("id", user.id)
-      .single();
-    userLevel = roleLevelOf(userData);
-  }
-
   try {
+    const supabaseAdmin = createAdminClient(); // For data
+    const supabase = await createClient(); // For user session
+    const companyId = await getSelectedCompanyId();
+
+    if (!companyId) {
+      return { success: false, error: "No company selected" };
+    }
+
+    // Get current user role using the client that knows about cookies
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let userLevel = 0;
+    if (user) {
+      const { data: userData } = await supabaseAdmin
+        .from("users")
+        .select("roles:role_id (level)")
+        .eq("id", user.id)
+        .single();
+      userLevel = roleLevelOf(userData);
+    }
+
     // 1. Fetch company info and general stats in parallel
     const [companyRes, cmsRes, customersRes, contactsRes, allEventsRes, recentInvoicesRes] =
       await Promise.all([

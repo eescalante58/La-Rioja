@@ -6,10 +6,12 @@ import RealtimeDashboardWrapper from "@/components/admin/RealtimeDashboardWrappe
 import { getPageTabTitle } from "@/services/cms";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const tabTitle = await getPageTabTitle("admin", "La Rioja - Centro de Formación Laboral");
-  return {
-    title: { absolute: tabTitle },
-  };
+  try {
+    const tabTitle = await getPageTabTitle("admin", "La Rioja - Centro de Formación Laboral");
+    return { title: { absolute: tabTitle } };
+  } catch {
+    return { title: { absolute: "La Rioja Admin" } };
+  }
 }
 
 /**
@@ -17,17 +19,27 @@ export async function generateMetadata(): Promise<Metadata> {
  * Server component that fetches initial data and wraps it in a realtime client component.
  */
 export default async function AdminDashboard() {
-  const data = await getDashboardData();
+  try {
+    const data = await getDashboardData();
 
-  if (!data.success) {
+    if (!data.success) {
+      return (
+        <div className="flex flex-col items-center justify-center h-[60vh] text-center p-6">
+          <AlertCircle size={48} className="text-rose-500 mb-4" />
+          <Title className="text-rose-500">Error al cargar el Dashboard</Title>
+          <Text className="mt-2">{data.error}</Text>
+        </div>
+      );
+    }
+
+    return <RealtimeDashboardWrapper initialData={data} />;
+  } catch {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-center p-6">
         <AlertCircle size={48} className="text-rose-500 mb-4" />
         <Title className="text-rose-500">Error al cargar el Dashboard</Title>
-        <Text className="mt-2">{data.error}</Text>
+        <Text className="mt-2">Ocurrió un error inesperado. Por favor intenta de nuevo.</Text>
       </div>
     );
   }
-
-  return <RealtimeDashboardWrapper initialData={data} />;
 }
