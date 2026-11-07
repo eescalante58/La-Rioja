@@ -66,9 +66,7 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
   const getActiveAssignments = (userId: string) =>
     assignments.filter(
       (a) =>
-        a.user_id === userId &&
-        a.is_active &&
-        (!a.valid_to || new Date(a.valid_to) > new Date()),
+        a.user_id === userId && a.is_active && (!a.valid_to || new Date(a.valid_to) > new Date()),
     );
 
   const filteredUsers = users.filter(
@@ -81,7 +79,10 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
     if (!newRoleId) return;
     setSaving(true);
     try {
-      const result = await callAction<{ data: SecUserRole | null; error: string | null }>("users.assignSecRole", [userId, newRoleId, newValidFrom, newValidTo || null]);
+      const result = await callAction<{ data: SecUserRole | null; error: string | null }>(
+        "users.assignSecRole",
+        [userId, newRoleId, newValidFrom, newValidTo || null],
+      );
       if (result.data) {
         setAssignments((prev) => [...prev, result.data as SecUserRole]);
         setNewRoleId("");
@@ -105,7 +106,7 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
   };
 
   return (
-    <Card>
+    <Card className="!border-[#012060] dark:!border-dark-tremor-border">
       <div className="flex items-center justify-between mb-4">
         <Title>Asignación de Roles</Title>
         <TextInput
@@ -194,7 +195,11 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
                           <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
                             Rol
                           </label>
-                          <Select value={newRoleId} onValueChange={setNewRoleId} placeholder="Seleccionar rol...">
+                          <Select
+                            value={newRoleId}
+                            onValueChange={setNewRoleId}
+                            placeholder="Seleccionar rol..."
+                          >
                             {secRoles
                               .filter((r) => r.is_active)
                               .map((r) => (

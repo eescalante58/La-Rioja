@@ -184,7 +184,7 @@ export default function PermissionMatrixClient({
   return (
     <div className="flex flex-col lg:flex-row gap-6 items-start">
       {/* Panel de roles */}
-      <Card className="lg:w-72 shrink-0">
+      <Card className="lg:w-72 shrink-0 !border-[#012060] dark:!border-dark-tremor-border">
         <div className="flex items-center justify-between mb-3">
           <Title className="text-sm font-semibold">Roles</Title>
           <Button
@@ -217,8 +217,8 @@ export default function PermissionMatrixClient({
               className={[
                 "w-full text-left rounded-lg px-3 py-2.5 border transition-colors",
                 selectedRoleId === role.id
-                  ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700"
-                  : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800",
+                  ? "bg-blue-50 dark:bg-blue-900/20 border-[#012060] dark:border-blue-700"
+                  : "bg-white dark:bg-gray-900 border-[#012060]/30 dark:border-gray-700 hover:bg-gray-50 hover:border-[#012060]/60 dark:hover:bg-gray-800",
               ].join(" ")}
             >
               <div className="flex items-center justify-between gap-2 mb-0.5">
@@ -244,7 +244,7 @@ export default function PermissionMatrixClient({
       {/* Matriz de permisos */}
       <div className="flex-1 min-w-0">
         {selectedRole ? (
-          <Card>
+          <Card className="!border-[#012060] dark:!border-dark-tremor-border">
             <div className="flex items-center justify-between mb-1">
               <div>
                 <Title className="text-lg">{selectedRole.name}</Title>
@@ -261,7 +261,7 @@ export default function PermissionMatrixClient({
 
             {/* HTML nativo: Tremor <Table> agrega overflow-auto internamente,
                 lo que rompe position:sticky. Con <table> nativo tenemos control total. */}
-            <div className="overflow-auto max-h-[calc(100vh-280px)] mt-4 rounded-md border border-gray-200 dark:border-gray-700">
+            <div className="overflow-auto max-h-[calc(100vh-280px)] mt-4 rounded-md border border-[#012060] dark:border-gray-700">
               <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-10 bg-white dark:bg-gray-900 shadow-sm">
                   <tr className="border-b border-gray-200 dark:border-gray-700">
@@ -408,7 +408,7 @@ export default function PermissionMatrixClient({
             )}
           </Card>
         ) : (
-          <Card>
+          <Card className="!border-[#012060] dark:!border-dark-tremor-border">
             <Text className="text-center text-gray-500 py-16">
               Selecciona un rol para ver y editar su matriz de permisos.
             </Text>
