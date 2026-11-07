@@ -1,20 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import {
-  Card,
-  Title,
-  Text,
-  Badge,
-  Button,
-  TextInput,
-  Table,
-  TableHead,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  TableCell,
-} from "@tremor/react";
+import { Card, Title, Text, Badge, Button, TextInput } from "@tremor/react";
 import { Plus, Search, Infinity } from "lucide-react";
 import { ACTION_BITS, type Action } from "@/lib/security/types";
 import type {
@@ -272,48 +259,60 @@ export default function PermissionMatrixClient({
               )}
             </div>
 
-            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] mt-4">
-              <Table>
-                <TableHead className="sticky top-0 z-10 bg-white dark:bg-gray-900 shadow-sm">
-                  <TableRow>
-                    <TableHeaderCell className="min-w-[200px]">Opción / Recurso</TableHeaderCell>
+            {/* HTML nativo: Tremor <Table> agrega overflow-auto internamente,
+                lo que rompe position:sticky. Con <table> nativo tenemos control total. */}
+            <div className="overflow-auto max-h-[calc(100vh-280px)] mt-4 rounded-md border border-gray-200 dark:border-gray-700">
+              <table className="w-full text-sm border-collapse">
+                <thead className="sticky top-0 z-10 bg-white dark:bg-gray-900 shadow-sm">
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400 min-w-[200px] whitespace-nowrap">
+                      Opción / Recurso
+                    </th>
                     {ACTIONS.map((a) => (
-                      <TableHeaderCell key={a} className="text-center px-1 text-xs w-14">
+                      <th
+                        key={a}
+                        className="text-center py-3 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-14 whitespace-nowrap"
+                      >
                         {ACTION_LABELS[a]}
-                      </TableHeaderCell>
+                      </th>
                     ))}
-                    <TableHeaderCell className="text-center px-1 text-xs w-14">
+                    <th className="text-center py-3 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-14">
                       Todas
-                    </TableHeaderCell>
-                    <TableHeaderCell className="text-center px-1 text-xs w-14">
+                    </th>
+                    <th className="text-center py-3 px-1 text-xs font-medium text-gray-500 dark:text-gray-400 w-14">
                       Máscara
-                    </TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
                   {moduleTree.map((mod) => (
                     <>
                       {/* Fila de módulo */}
-                      <TableRow key={`mod-${mod.id}`} className="bg-gray-50 dark:bg-gray-800/60">
-                        <TableCell
+                      <tr key={`mod-${mod.id}`} className="bg-gray-50 dark:bg-gray-800/60">
+                        <td
                           colSpan={ACTIONS.length + 3}
-                          className="font-semibold text-sm text-gray-700 dark:text-gray-300 py-2"
+                          className="font-semibold text-sm text-gray-700 dark:text-gray-300 py-2 px-4 border-b border-gray-200 dark:border-gray-700"
                         >
                           {mod.name}
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
 
                       {mod.options.map((opt: SecOption) => {
                         const optMask = getMask(opt.id);
                         return (
                           <>
                             {/* Fila de opción */}
-                            <TableRow key={`opt-${opt.id}`}>
-                              <TableCell className="font-medium text-sm pl-5">{opt.name}</TableCell>
+                            <tr
+                              key={`opt-${opt.id}`}
+                              className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/30"
+                            >
+                              <td className="font-medium text-sm py-2 pl-8 pr-4 text-gray-800 dark:text-gray-200">
+                                {opt.name}
+                              </td>
                               {ACTIONS.map((a) => {
                                 const checked = (optMask & ACTION_BITS[a]) !== 0;
                                 return (
-                                  <TableCell key={a} className="text-center px-1">
+                                  <td key={a} className="text-center px-1 py-2">
                                     <input
                                       type="checkbox"
                                       checked={checked}
@@ -324,10 +323,10 @@ export default function PermissionMatrixClient({
                                         isLocked ? "Rol con acceso irrestricto" : ACTION_LABELS[a]
                                       }
                                     />
-                                  </TableCell>
+                                  </td>
                                 );
                               })}
-                              <TableCell className="text-center px-1">
+                              <td className="text-center px-1 py-2">
                                 <input
                                   type="checkbox"
                                   checked={optMask === 255}
@@ -336,32 +335,32 @@ export default function PermissionMatrixClient({
                                   className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
                                   title="Seleccionar todas las acciones"
                                 />
-                              </TableCell>
-                              <TableCell className="text-center px-1">
+                              </td>
+                              <td className="text-center px-1 py-2">
                                 <Badge color={optMask > 0 ? "blue" : "gray"} size="xs">
                                   {optMask}
                                 </Badge>
-                              </TableCell>
-                            </TableRow>
+                              </td>
+                            </tr>
 
                             {/* Filas de recursos */}
                             {opt.resources.map((res: SecResource) => {
                               const resMask = getMask(opt.id, res.id);
                               return (
-                                <TableRow
+                                <tr
                                   key={`res-${res.id}`}
-                                  className="bg-gray-50/50 dark:bg-gray-900/30"
+                                  className="bg-gray-50/50 dark:bg-gray-900/30 border-b border-gray-100 dark:border-gray-800"
                                 >
-                                  <TableCell className="text-xs text-gray-600 dark:text-gray-400 pl-10">
+                                  <td className="text-xs text-gray-500 dark:text-gray-400 py-1.5 pl-14 pr-4">
                                     {res.display_name}{" "}
                                     <span className="font-mono text-gray-400">
                                       ({res.table_name})
                                     </span>
-                                  </TableCell>
+                                  </td>
                                   {ACTIONS.map((a) => {
                                     const checked = (resMask & ACTION_BITS[a]) !== 0;
                                     return (
-                                      <TableCell key={a} className="text-center px-1">
+                                      <td key={a} className="text-center px-1 py-1.5">
                                         <input
                                           type="checkbox"
                                           checked={checked}
@@ -369,10 +368,10 @@ export default function PermissionMatrixClient({
                                           onChange={() => toggleBit(opt.id, a, res.id)}
                                           className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
                                         />
-                                      </TableCell>
+                                      </td>
                                     );
                                   })}
-                                  <TableCell className="text-center px-1">
+                                  <td className="text-center px-1 py-1.5">
                                     <input
                                       type="checkbox"
                                       checked={resMask === 255}
@@ -380,13 +379,13 @@ export default function PermissionMatrixClient({
                                       onChange={() => toggleAll(opt.id, res.id)}
                                       className="cursor-pointer accent-blue-600 disabled:opacity-40 disabled:cursor-not-allowed"
                                     />
-                                  </TableCell>
-                                  <TableCell className="text-center px-1">
+                                  </td>
+                                  <td className="text-center px-1 py-1.5">
                                     <Badge color={resMask > 0 ? "blue" : "gray"} size="xs">
                                       {resMask}
                                     </Badge>
-                                  </TableCell>
-                                </TableRow>
+                                  </td>
+                                </tr>
                               );
                             })}
                           </>
@@ -394,8 +393,8 @@ export default function PermissionMatrixClient({
                       })}
                     </>
                   ))}
-                </TableBody>
-              </Table>
+                </tbody>
+              </table>
             </div>
 
             {/* Barra inferior */}
