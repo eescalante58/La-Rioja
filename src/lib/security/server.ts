@@ -1,15 +1,15 @@
 // lib/security/server.ts — autorización en Server Components, layouts y Server Actions
-import 'server-only';
-import { cache } from 'react';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import "server-only";
+import { cache } from "react";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import {
   canOption,
   canResource,
   type Action,
   type AuthzClaims,
   type PermissionSnapshot,
-} from './types';
+} from "./types";
 
 // Alias para compatibilidad con el patrón del módulo de seguridad
 export const createSupabaseServer = createClient;
@@ -51,17 +51,21 @@ export const getSessionAuthz = cache(async (): Promise<SessionAuthz | null> => {
   const cached = readCache(key);
   if (cached) return { userId: claims.sub, snapshot: cached };
 
-  const { data: snap, error } = await supabase.rpc('get_my_permissions');
-  if (error) throw new Error(`No se pudieron cargar los permisos: ${error.message}`);
+  const { data: snap, error } = await supabase.rpc("get_my_permissions");
+  // Retornar null en lugar de lanzar: React cache() almacena el rechazo y lo
+  // re-lanza en cualquier otro componente del árbol que llame esta función,
+  // escapando los try/catch intermedios. Con null el layout y las páginas
+  // continúan sin snapshot (acceso controlado por el middleware).
+  if (error) return null;
   writeCache(key, snap as PermissionSnapshot);
   return { userId: claims.sub, snapshot: snap as PermissionSnapshot };
 });
 
 /** Guard de página/layout: redirige si no puede abrir la opción. */
-export async function requireOption(optionCode: string, action: Action = 'READ') {
+export async function requireOption(optionCode: string, action: Action = "READ") {
   const session = await getSessionAuthz();
-  if (!session) redirect('/login');
-  if (!canOption(session.snapshot, optionCode, action)) redirect('/acceso-denegado');
+  if (!session) redirect("/login");
+  if (!canOption(session.snapshot, optionCode, action)) redirect("/acceso-denegado");
   return session;
 }
 
@@ -77,7 +81,7 @@ export class ForbiddenError extends Error {
  */
 export async function requirePermission(optionCode: string, table: string, action: Action) {
   const session = await getSessionAuthz();
-  if (!session) throw new ForbiddenError('sin sesión');
+  if (!session) throw new ForbiddenError("sin sesión");
   if (!canResource(session.snapshot, optionCode, table, action)) {
     throw new ForbiddenError(`${action} sobre ${table} en ${optionCode}`);
   }
