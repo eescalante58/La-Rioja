@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Card, Title, Text, Badge, Button, TextInput } from "@tremor/react";
 import { Plus, Search, Infinity } from "lucide-react";
 import { ACTION_BITS, type Action } from "@/lib/security/types";
@@ -86,26 +86,6 @@ export default function PermissionMatrixClient({
   const [saving, setSaving] = useState(false);
   const [pendingChanges, setPendingChanges] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [panelHeight, setPanelHeight] = useState<number | null>(null);
-
-  useEffect(() => {
-    const measure = () => {
-      if (!panelRef.current) return;
-      const mainEl = panelRef.current.closest("main");
-      if (!mainEl) return;
-      const mainRect = mainEl.getBoundingClientRect();
-      const panelRect = panelRef.current.getBoundingClientRect();
-      const pb = parseFloat(getComputedStyle(mainEl).paddingBottom);
-      // Altura disponible: desde la parte superior de este elemento hasta el borde
-      // inferior del área de contenido de main (descontando el padding inferior).
-      const h = mainRect.bottom - pb - panelRect.top;
-      setPanelHeight(Math.max(400, Math.floor(h)));
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
 
   const sortedModuleTree = [...moduleTree].sort(
     (a, b) => moduleNavIndex(a.name) - moduleNavIndex(b.name),
@@ -235,15 +215,19 @@ export default function PermissionMatrixClient({
   );
 
   return (
-    <div
-      ref={panelRef}
-      className="flex flex-col lg:flex-row gap-6"
-      style={panelHeight ? { height: panelHeight } : undefined}
-    >
+    /*
+     * Contenedor raíz: en desktop (lg) ocupa exactamente la altura disponible
+     * bajo la barra de pestañas usando dvh. Los paneles scroll internamente;
+     * la página (main) NO hace scroll. En mobile los paneles se apilan
+     * con altura natural.
+     *
+     * Desglose del offset 200px:
+     *   64px admin header + 24px main-pt + ~44px tab bar + 24px mb-6
+     *   + 8px TabPanel mt-2 + 24px main-pb = ~188px → 200px con margen.
+     */
+    <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100dvh-200px)] lg:overflow-hidden">
       {/* Panel de roles */}
-      <Card
-        className={`lg:w-72 shrink-0 !border-[#012060] dark:!border-dark-tremor-border${panelHeight ? " flex flex-col overflow-hidden" : ""}`}
-      >
+      <Card className="lg:w-72 shrink-0 !border-[#012060] dark:!border-dark-tremor-border lg:flex lg:flex-col lg:overflow-hidden">
         <div className="-mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
           <div className="flex items-center justify-between mb-3">
             <Title className="text-sm font-semibold">Roles</Title>
@@ -268,9 +252,7 @@ export default function PermissionMatrixClient({
             onValueChange={setSearch}
           />
         </div>
-        <div
-          className={`flex flex-col gap-1.5 pr-1 mt-3 ${panelHeight ? "flex-1 overflow-y-auto" : "max-h-[600px] overflow-y-auto"}`}
-        >
+        <div className="flex flex-col gap-1.5 pr-1 mt-3 max-h-[600px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto">
           {filteredRoles.map((role) => (
             <button
               key={role.id}
@@ -304,11 +286,9 @@ export default function PermissionMatrixClient({
       </Card>
 
       {/* Matriz de permisos */}
-      <div className={`flex-1 min-w-0${panelHeight ? " h-full" : ""}`}>
+      <div className="flex-1 min-w-0 lg:h-full lg:min-h-0">
         {selectedRole ? (
-          <Card
-            className={`!border-[#012060] dark:!border-dark-tremor-border${panelHeight ? " flex flex-col overflow-hidden h-full" : ""}`}
-          >
+          <Card className="!border-[#012060] dark:!border-dark-tremor-border lg:flex lg:flex-col lg:overflow-hidden lg:h-full">
             <div className="-mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
               <div className="flex items-center justify-between">
                 <div>
@@ -327,9 +307,7 @@ export default function PermissionMatrixClient({
 
             {/* HTML nativo: Tremor <Table> agrega overflow-auto internamente,
                 lo que rompe position:sticky. Con <table> nativo tenemos control total. */}
-            <div
-              className={`mt-4 rounded-md border border-[#012060] dark:border-gray-700 ${panelHeight ? "flex-1 overflow-auto" : "overflow-auto max-h-[calc(100vh-280px)]"}`}
-            >
+            <div className="mt-4 rounded-md border border-[#012060] dark:border-gray-700 overflow-auto max-h-[calc(100vh-280px)] lg:max-h-none lg:flex-1 lg:min-h-0">
               <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-10 bg-white dark:bg-gray-900 shadow-sm">
                   <tr className="border-b border-gray-200 dark:border-gray-700">
