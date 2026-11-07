@@ -1,14 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  buildFbcCookie,
-  buildFbpCookie,
-  FB_COOKIE_OPTIONS,
-} from "@/lib/tracking/fb-cookies";
-import {
-  buildGclCookie,
-  GOOGLE_COOKIE_OPTIONS,
-} from "@/lib/tracking/google-cookies";
+import { buildFbcCookie, buildFbpCookie, FB_COOKIE_OPTIONS } from "@/lib/tracking/fb-cookies";
+import { buildGclCookie, GOOGLE_COOKIE_OPTIONS } from "@/lib/tracking/google-cookies";
 
 /**
  * Proxy to handle canonical domain redirection, session refreshing and route protection.
@@ -88,13 +81,37 @@ export async function proxy(request: NextRequest) {
     }
 
     // Force company selection if not set
-    if (
-      !selectedCompany &&
-      request.nextUrl.pathname !== "/auth/select-company"
-    ) {
-      return NextResponse.redirect(
-        new URL("/auth/select-company", request.url),
-      );
+    if (!selectedCompany && request.nextUrl.pathname !== "/auth/select-company") {
+      return NextResponse.redirect(new URL("/auth/select-company", request.url));
+    }
+
+    // Security module: block users without sec_user_roles assignment.
+    // /admin/profile is exempt so the user can still view their profile and log out.
+    if (process.env.SECURITY_MODULE_ENABLED === "true") {
+      const SECURITY_BYPASS = ["/admin/profile"];
+      if (!SECURITY_BYPASS.some((p) => request.nextUrl.pathname.startsWith(p))) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          try {
+            const [, b64] = session.access_token.split(".");
+            const payload = JSON.parse(atob(b64.replace(/-/g, "+").replace(/_/g, "/"))) as {
+              app_authz?: { sa?: boolean; r?: Record<string, unknown> };
+            };
+            const authz = payload.app_authz;
+            // Deny if no authz claims, or no roles and not superadmin
+            if (!authz || (!authz.sa && (!authz.r || Object.keys(authz.r).length === 0))) {
+              const denyUrl = new URL("/acceso-denegado", request.url);
+              denyUrl.searchParams.set("from", request.nextUrl.pathname);
+              return NextResponse.redirect(denyUrl);
+            }
+          } catch {
+            // JWT parse error → deny access
+            return NextResponse.redirect(new URL("/acceso-denegado", request.url));
+          }
+        }
+      }
     }
   }
 
@@ -102,8 +119,7 @@ export async function proxy(request: NextRequest) {
   if (
     user &&
     selectedCompany &&
-    (request.nextUrl.pathname === "/login" ||
-      request.nextUrl.pathname === "/auth/select-company")
+    (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/auth/select-company")
   ) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
@@ -130,11 +146,7 @@ export async function proxy(request: NextRequest) {
     if (gclid) {
       const existingGcl = request.cookies.get("_gcl_aw")?.value;
       if (!existingGcl || !existingGcl.includes(gclid)) {
-        response.cookies.set(
-          "_gcl_aw",
-          buildGclCookie(gclid),
-          GOOGLE_COOKIE_OPTIONS
-        );
+        response.cookies.set("_gcl_aw", buildGclCookie(gclid), GOOGLE_COOKIE_OPTIONS);
       }
     }
 
@@ -142,11 +154,7 @@ export async function proxy(request: NextRequest) {
     if (gbraid) {
       const existingGbraid = request.cookies.get("_gcl_gb")?.value;
       if (!existingGbraid || !existingGbraid.includes(gbraid)) {
-        response.cookies.set(
-          "_gcl_gb",
-          buildGclCookie(gbraid),
-          GOOGLE_COOKIE_OPTIONS
-        );
+        response.cookies.set("_gcl_gb", buildGclCookie(gbraid), GOOGLE_COOKIE_OPTIONS);
       }
     }
 
@@ -154,11 +162,7 @@ export async function proxy(request: NextRequest) {
     if (wbraid) {
       const existingWbraid = request.cookies.get("_gcl_ag")?.value;
       if (!existingWbraid || !existingWbraid.includes(wbraid)) {
-        response.cookies.set(
-          "_gcl_ag",
-          buildGclCookie(wbraid),
-          GOOGLE_COOKIE_OPTIONS
-        );
+        response.cookies.set("_gcl_ag", buildGclCookie(wbraid), GOOGLE_COOKIE_OPTIONS);
       }
     }
   }

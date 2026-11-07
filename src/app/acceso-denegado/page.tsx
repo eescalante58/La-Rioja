@@ -1,6 +1,6 @@
-import Link from 'next/link';
-import { Card, Title, Text, Button } from '@tremor/react';
-import { ShieldX, ArrowLeft } from 'lucide-react';
+import Link from "next/link";
+import { Card, Title, Text, Button } from "@tremor/react";
+import { ShieldX, ArrowLeft } from "lucide-react";
 
 export default async function AccesoDenegadoPage({
   searchParams,
@@ -27,11 +27,14 @@ export default async function AccesoDenegadoPage({
         <Text className="mt-3 text-xs text-gray-400">
           Solicita acceso a un Administrador de módulo o Super Administrador.
         </Text>
-        <Link href="/admin" className="inline-block mt-5">
-          <Button variant="secondary" icon={ArrowLeft}>
-            Volver al panel
-          </Button>
-        </Link>
+        <div className="mt-5 flex flex-col items-center gap-3">
+          <Link href="/admin/profile">
+            <Button variant="secondary" icon={ArrowLeft}>
+              Ir a mi perfil
+            </Button>
+          </Link>
+          <Text className="text-xs text-gray-400">Desde tu perfil puedes cerrar sesión.</Text>
+        </div>
       </Card>
     </div>
   );
