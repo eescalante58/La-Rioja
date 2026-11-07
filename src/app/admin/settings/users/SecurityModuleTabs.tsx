@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@tremor/react";
 import { Users, Shield, UserCheck } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -89,33 +89,10 @@ export default function SecurityModuleTabs({
   ...userManagerProps
 }: Props) {
   const [tabIndex, setTabIndex] = useState(0);
-  const tabBarRef = useRef<HTMLDivElement>(null);
-  const [tabBarHeight, setTabBarHeight] = useState(44);
-
-  useEffect(() => {
-    const measure = () => {
-      if (!tabBarRef.current) return;
-      const tabBarRect = tabBarRef.current.getBoundingClientRect();
-      const mainEl = tabBarRef.current.closest("main");
-      if (mainEl) {
-        // top correcto = distancia desde el borde superior del scroll container (main)
-        // hasta el borde inferior del tab bar. Incluye el padding-top del main.
-        setTabBarHeight(tabBarRect.bottom - mainEl.getBoundingClientRect().top);
-      } else {
-        setTabBarHeight(tabBarRect.height);
-      }
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
 
   return (
     <TabGroup index={tabIndex} onIndexChange={setTabIndex}>
-      <div
-        ref={tabBarRef}
-        className="sticky top-0 z-30 bg-white dark:bg-black -mx-4 md:-mx-6 px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 mb-6"
-      >
+      <div className="sticky top-0 z-30 bg-white dark:bg-black -mx-4 md:-mx-6 px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 mb-6">
         <TabList>
           <Tab icon={Users}>Usuarios</Tab>
           <Tab icon={Shield}>Roles · Permisos</Tab>
@@ -131,7 +108,6 @@ export default function SecurityModuleTabs({
             secRoles={secRoles}
             moduleTree={moduleTree}
             initialPermissions={permissions}
-            stickyTop={tabBarHeight}
           />
         </TabPanel>
         <TabPanel>
