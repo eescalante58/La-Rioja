@@ -107,11 +107,17 @@ export async function proxy(request: NextRequest) {
             .replace(/_/g, "/")
             .padEnd(b64.length + ((4 - (b64.length % 4)) % 4), "=");
           const payload = JSON.parse(atob(padded)) as {
-            app_authz?: { sa?: boolean; r?: Record<string, unknown> };
+            app_authz?: { sa?: boolean; ma?: unknown[]; o?: Record<string, unknown> };
           };
           const authz = payload.app_authz;
-          // Deny if no authz claims, or no roles and not superadmin
-          if (!authz || (!authz.sa && (!authz.r || Object.keys(authz.r).length === 0))) {
+          // Deny if: no authz, or not superadmin AND no option permissions AND no module-admin roles.
+          // JWT structure: { v, sa, ma, o } — 'o' maps option_code→mask, 'ma' is module-admin codes array.
+          if (
+            !authz ||
+            (!authz.sa &&
+              Object.keys(authz.o ?? {}).length === 0 &&
+              (!authz.ma || authz.ma.length === 0))
+          ) {
             const denyUrl = new URL("/acceso-denegado", request.url);
             denyUrl.searchParams.set("from", request.nextUrl.pathname);
             return NextResponse.redirect(denyUrl);
