@@ -41,24 +41,30 @@ export interface SessionAuthz {
 
 /** Una sola resolución por petición (React cache) y por versión (LRU). */
 export const getSessionAuthz = cache(async (): Promise<SessionAuthz | null> => {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  const claims = data?.claims;
-  if (!claims?.sub) return null;
+  // El try/catch envuelve TODO el cuerpo: React cache() almacena el resultado
+  // de la Promise. Si la Promise rechaza (p.ej. createClient lanza, getClaims
+  // lanza, o get_my_permissions hace RAISE EXCEPTION 'data not found' para
+  // usuarios sin filas en sec_user_roles), el rechazo queda cacheado y se
+  // re-lanza en CUALQUIER otro llamante del árbol sin try/catch. Con este
+  // try/catch la Promise siempre resuelve; React cachea null, no un rechazo.
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getClaims();
+    const claims = data?.claims;
+    if (!claims?.sub) return null;
 
-  const authz = claims.app_authz as AuthzClaims | undefined;
-  const key = `${claims.sub}:${authz?.v ?? 0}`;
-  const cached = readCache(key);
-  if (cached) return { userId: claims.sub, snapshot: cached };
+    const authz = claims.app_authz as AuthzClaims | undefined;
+    const key = `${claims.sub}:${authz?.v ?? 0}`;
+    const cached = readCache(key);
+    if (cached) return { userId: claims.sub, snapshot: cached };
 
-  const { data: snap, error } = await supabase.rpc("get_my_permissions");
-  // Retornar null en lugar de lanzar: React cache() almacena el rechazo y lo
-  // re-lanza en cualquier otro componente del árbol que llame esta función,
-  // escapando los try/catch intermedios. Con null el layout y las páginas
-  // continúan sin snapshot (acceso controlado por el middleware).
-  if (error) return null;
-  writeCache(key, snap as PermissionSnapshot);
-  return { userId: claims.sub, snapshot: snap as PermissionSnapshot };
+    const { data: snap, error } = await supabase.rpc("get_my_permissions");
+    if (error) return null;
+    writeCache(key, snap as PermissionSnapshot);
+    return { userId: claims.sub, snapshot: snap as PermissionSnapshot };
+  } catch {
+    return null;
+  }
 });
 
 /** Guard de página/layout: redirige si no puede abrir la opción. */
