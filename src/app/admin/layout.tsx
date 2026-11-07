@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Building2 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { AdminSidebar } from "./AdminSidebar";
@@ -22,7 +23,13 @@ export const metadata: Metadata = {
  * @param {React.ReactNode} props.children - Child components to render.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
+  let cookieStore: Awaited<ReturnType<typeof cookies>>;
+  try {
+    cookieStore = await cookies();
+  } catch (e) {
+    console.error("[AdminLayout] cookies() error:", e instanceof Error ? e.message : String(e));
+    throw e;
+  }
   const selectedCompanyName = cookieStore.get("selected_company_name")?.value || "Empresa";
 
   // Cargar snapshot de permisos para el PermissionProvider del cliente.
@@ -31,8 +38,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   let authzSession: Awaited<ReturnType<typeof getSessionAuthz>> = null;
   try {
     authzSession = await getSessionAuthz();
-  } catch {
-    // Guard de seguridad: nunca debe llegar aquí, pero si llega continuamos
+  } catch (e) {
+    console.error(
+      "[AdminLayout] getSessionAuthz error:",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+
+  // Si el usuario está autenticado pero no tiene ningún acceso de admin,
+  // redirigir a /acceso-denegado en lugar de renderizar el panel.
+  if (authzSession?.userId) {
+    const snap = authzSession.snapshot;
+    const hasAdminAccess =
+      snap?.sa === true || Object.keys(snap?.o ?? {}).length > 0 || (snap?.ma ?? []).length > 0;
+    if (!hasAdminAccess) {
+      console.log(
+        "[AdminLayout] usuario sin permisos admin → /acceso-denegado",
+        authzSession.userId,
+      );
+      redirect("/acceso-denegado");
+    }
   }
 
   return (
