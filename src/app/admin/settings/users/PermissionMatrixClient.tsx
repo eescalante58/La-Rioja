@@ -18,6 +18,7 @@ const NAV_MODULE_ORDER: Record<string, number> = {
   dashboard: 1,
   cms: 2,
   producto: 3,
+  tienda: 3,
   bingo: 4,
   configurac: 5,
   galer: 6,
