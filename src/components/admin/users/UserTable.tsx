@@ -18,16 +18,12 @@ interface User {
   secondary_email: string | null;
   phone: string | null;
   status: string;
-  role_id: number;
-  roles: { name: string; level: number } | null;
   avatar_url: string | null;
 }
 
 interface UserTableProps {
   users: User[];
   currentUserId?: string;
-  canEditUser: (userId: string) => boolean;
-  canManageRoles: boolean;
   onEdit: (user: User) => void;
   onDelete: (id: string) => void;
   onManageCompanies: (user: User) => void;
@@ -36,8 +32,6 @@ interface UserTableProps {
 export default function UserTable({
   users,
   currentUserId,
-  canEditUser,
-  canManageRoles,
   onEdit,
   onDelete,
   onManageCompanies,
@@ -48,7 +42,6 @@ export default function UserTable({
         <TableRow>
           <TableHeaderCell>Usuario</TableHeaderCell>
           <TableHeaderCell>Email</TableHeaderCell>
-          <TableHeaderCell>Rol</TableHeaderCell>
           <TableHeaderCell>Estado</TableHeaderCell>
           <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
         </TableRow>
@@ -62,8 +55,7 @@ export default function UserTable({
                   src={u.avatar_url || ""}
                   className="h-8 w-8 rounded-full bg-gray-100"
                   onError={(e) =>
-                    (e.currentTarget.src =
-                      "https://www.gravatar.com/avatar/000?d=mp")
+                    (e.currentTarget.src = "https://www.gravatar.com/avatar/000?d=mp")
                   }
                   alt="Avatar"
                 />
@@ -72,36 +64,17 @@ export default function UserTable({
             </TableCell>
             <TableCell>{u.email}</TableCell>
             <TableCell>
-              <Badge color="blue">{u.roles?.name}</Badge>
-            </TableCell>
-            <TableCell>
-              <Badge color={u.status === "active" ? "emerald" : "rose"}>
-                {u.status}
-              </Badge>
+              <Badge color={u.status === "active" ? "emerald" : "rose"}>{u.status}</Badge>
             </TableCell>
             <TableCell className="text-right space-x-2">
-              {canEditUser(u.id) && (
-                <>
-                  <Button
-                    variant="light"
-                    size="xs"
-                    color="amber"
-                    onClick={() => onManageCompanies(u)}
-                  >
-                    Empresas
-                  </Button>
-                  <Button variant="light" size="xs" onClick={() => onEdit(u)}>
-                    Editar
-                  </Button>
-                </>
-              )}
-              {canManageRoles && u.id !== currentUserId && (
-                <Button
-                  variant="light"
-                  size="xs"
-                  color="rose"
-                  onClick={() => onDelete(u.id)}
-                >
+              <Button variant="light" size="xs" color="amber" onClick={() => onManageCompanies(u)}>
+                Empresas
+              </Button>
+              <Button variant="light" size="xs" onClick={() => onEdit(u)}>
+                Editar
+              </Button>
+              {u.id !== currentUserId && (
+                <Button variant="light" size="xs" color="rose" onClick={() => onDelete(u.id)}>
                   Eliminar
                 </Button>
               )}

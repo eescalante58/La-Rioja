@@ -4,21 +4,16 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
 import { withRole } from "@/lib/auth/guards";
-import { userSchema, roleSchema, type UserInput, type RoleInput } from "@/lib/validation/users";
+import { userSchema, type UserInput } from "@/lib/validation/users";
 
 /**
- * Server action to fetch all users with their roles.
+ * Devuelve todos los usuarios del sistema.
  */
-export async function getUsersWithRoles() {
+export async function getUsers() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("users")
-    .select(
-      `
-      *,
-      roles:role_id (name, level)
-    `,
-    )
+    .select("id, email, full_name, secondary_email, phone, status, avatar_url")
     .order("full_name", { ascending: true });
 
   if (error) {
@@ -29,24 +24,7 @@ export async function getUsersWithRoles() {
 }
 
 /**
- * Server action to fetch all available roles.
- */
-export async function getRoles() {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("roles")
-    .select("*")
-    .order("level", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching roles:", error);
-    return [];
-  }
-  return data;
-}
-
-/**
- * Server action to fetch all country codes.
+ * Devuelve los códigos de país disponibles.
  */
 export async function getCountryCodes() {
   const supabase = await createClient();
@@ -63,7 +41,7 @@ export async function getCountryCodes() {
 }
 
 /**
- * Helper to log user activity.
+ * Helper para registrar actividad del usuario.
  */
 async function logActivity(
   action: string,
@@ -91,7 +69,6 @@ async function logActivity(
 }
 
 async function createNewUserInternal(rawInput: UserInput) {
-  // Validation with Zod
   const validation = userSchema.safeParse(rawInput);
   if (!validation.success) {
     return {
@@ -100,7 +77,6 @@ async function createNewUserInternal(rawInput: UserInput) {
   }
   const data = validation.data;
 
-  // Need a special client with Service Role Key for admin operations
   let supabaseAdmin;
   try {
     supabaseAdmin = createAdminClient();
@@ -111,10 +87,9 @@ async function createNewUserInternal(rawInput: UserInput) {
     };
   }
 
-  // 1. Create user in Supabase Auth
   const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: data.email,
-    password: "Rioja2026!", // Temporary password
+    password: "Rioja2026!",
     email_confirm: true,
     user_metadata: { full_name: data.full_name },
   });
@@ -123,29 +98,23 @@ async function createNewUserInternal(rawInput: UserInput) {
     return { error: authError.message };
   }
 
-  // 2. Profile update (public.users)
   const { error: profileError } = await supabaseAdmin.from("users").upsert({
     id: authUser.user.id,
     email: data.email,
     full_name: data.full_name,
     secondary_email: data.secondary_email,
     phone: data.phone,
-    role_id: data.role_id,
     avatar_url: data.avatar_url,
     status: "active",
     updated_at: new Date().toISOString(),
   });
 
   if (profileError) {
-    // Rollback auth user creation if profile fails
     await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
     return { error: profileError.message };
   }
 
-  await logActivity("CREATE", "users", authUser.user.id, {
-    email: data.email,
-    role_id: data.role_id,
-  });
+  await logActivity("CREATE", "users", authUser.user.id, { email: data.email });
 
   revalidatePath("/admin/settings/users");
   return { success: true };
@@ -154,7 +123,7 @@ async function createNewUserInternal(rawInput: UserInput) {
 export const createNewUser = withRole(8, createNewUserInternal);
 
 /**
- * Server action to upload a user avatar.
+ * Sube un avatar de usuario a Storage.
  */
 export async function uploadUserAvatar(file: FormData) {
   const supabase = await createClient();
@@ -175,7 +144,7 @@ export async function uploadUserAvatar(file: FormData) {
 }
 
 /**
- * Server action to update a user's role and status.
+ * Actualiza datos del perfil de un usuario.
  */
 export async function updateUser(userId: string, rawInput: unknown) {
   const supabase = await createClient();
@@ -187,7 +156,6 @@ export async function updateUser(userId: string, rawInput: unknown) {
 
   const { level: currentLevel } = await requireRoleLevel(0);
 
-  // Validation with Zod
   const validation = userSchema.partial().safeParse(rawInput);
   if (!validation.success) {
     return {
@@ -196,7 +164,6 @@ export async function updateUser(userId: string, rawInput: unknown) {
   }
   const data = validation.data;
 
-  // RBAC: Admins (80+) can update anyone. Others can only update themselves.
   const isSelf = currentUser.id === userId;
   const isAdmin = currentLevel >= 8;
   const isAuthorized = isSelf || isAdmin;
@@ -205,11 +172,8 @@ export async function updateUser(userId: string, rawInput: unknown) {
     return { error: "No tienes permisos para actualizar este perfil." };
   }
 
-  // Security: Non-admins cannot change their own role or status
   const finalData = { ...data };
   if (!isAdmin) {
-    // If self-editing and NOT admin, remove role_id and status from update
-    delete finalData.role_id;
     delete finalData.status;
   }
 
@@ -219,7 +183,6 @@ export async function updateUser(userId: string, rawInput: unknown) {
       full_name: finalData.full_name,
       secondary_email: finalData.secondary_email,
       phone: finalData.phone,
-      role_id: finalData.role_id,
       status: finalData.status,
       avatar_url: finalData.avatar_url,
       updated_at: new Date().toISOString(),
@@ -239,7 +202,6 @@ export async function updateUser(userId: string, rawInput: unknown) {
 async function deleteUserInternal(userId: string) {
   const supabase = createAdminClient();
 
-  // Note: This only deletes from our 'users' table, not Supabase Auth
   const { error } = await supabase.from("users").delete().eq("id", userId);
 
   if (error) {
@@ -254,119 +216,17 @@ async function deleteUserInternal(userId: string) {
 
 export const deleteUser = withRole(10, deleteUserInternal);
 
-async function createRoleInternal(rawInput: RoleInput) {
-  // Validation with Zod
-  const validation = roleSchema.safeParse(rawInput);
-  if (!validation.success) {
-    return {
-      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
-    };
-  }
-  const data = validation.data;
-
-  const supabase = createAdminClient();
-
-  // Obtener el siguiente role_id disponible para garantizar consistencia y evitar colisiones
-  const { data: maxRole } = await supabase
-    .from("roles")
-    .select("role_id")
-    .order("role_id", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const nextRoleId = ((maxRole?.role_id as number | undefined) || 0) + 1;
-
-  const { data: newRole, error } = await supabase
-    .from("roles")
-    .insert([{ ...data, role_id: nextRoleId }])
-    .select()
-    .single();
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  await logActivity("CREATE", "roles", newRole.role_id.toString(), data);
-
-  revalidatePath("/admin/settings/users");
-  return { success: true };
-}
-
-export const createRole = withRole(10, createRoleInternal);
-
-async function updateRoleInternal(roleId: number, rawInput: unknown) {
-  // Validation with Zod
-  const validation = roleSchema.partial().safeParse(rawInput);
-  if (!validation.success) {
-    return {
-      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
-    };
-  }
-  const data = validation.data;
-
-  const supabase = createAdminClient();
-  const { error } = await supabase
-    .from("roles")
-    .update({
-      ...data,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("role_id", roleId);
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  await logActivity("UPDATE", "roles", roleId.toString(), data);
-
-  revalidatePath("/admin/settings/users");
-  return { success: true };
-}
-
-export const updateRole = withRole(10, updateRoleInternal);
-
-async function deleteRoleInternal(roleId: number) {
-  const supabase = createAdminClient();
-  const { error } = await supabase.from("roles").delete().eq("role_id", roleId);
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  await logActivity("DELETE", "roles", roleId.toString());
-
-  revalidatePath("/admin/settings/users");
-  return { success: true };
-}
-
-export const deleteRole = withRole(10, deleteRoleInternal);
-
 /**
- * Asigna una empresa a un usuario con un rol específico.
- * @param {string} userId - ID del usuario.
- * @param {number} companyId - ID de la empresa.
- * @param {number} roleId - ID del rol en la empresa.
- * @returns {Promise<{ success?: boolean; error?: string }>} Resultado de la asignación.
+ * Asigna una empresa a un usuario.
  */
-async function assignUserToCompanyInternal(userId: string, companyId: number, roleId: number) {
+async function assignUserToCompanyInternal(userId: string, companyId: number) {
   const supabase = createAdminClient();
-
-  const { data: roleData, error: roleError } = await supabase
-    .from("roles")
-    .select("name")
-    .eq("role_id", roleId)
-    .single();
-
-  if (roleError || !roleData) {
-    return { error: "El rol seleccionado no es válido o no existe." };
-  }
 
   const { error } = await supabase.from("user_companies").insert([
     {
       user_id: userId,
       company_id: companyId,
-      role_id: roleId,
-      role: roleData.name,
+      role: "Miembro",
     },
   ]);
 
@@ -374,10 +234,7 @@ async function assignUserToCompanyInternal(userId: string, companyId: number, ro
     return { error: error.message };
   }
 
-  await logActivity("ASSIGN_COMPANY", "user_companies", userId, {
-    company_id: companyId,
-    role_id: roleId,
-  });
+  await logActivity("ASSIGN_COMPANY", "user_companies", userId, { company_id: companyId });
 
   revalidatePath("/admin/settings/users");
   return { success: true };
@@ -386,10 +243,7 @@ async function assignUserToCompanyInternal(userId: string, companyId: number, ro
 export const assignUserToCompany = withRole(8, assignUserToCompanyInternal);
 
 /**
- * Remueve la asignación de una empresa a un usuario.
- * @param {string} userId - ID del usuario.
- * @param {number} companyId - ID de la empresa.
- * @returns {Promise<{ success?: boolean; error?: string }>} Resultado de la eliminación.
+ * Elimina la asignación de una empresa a un usuario.
  */
 async function removeUserFromCompanyInternal(userId: string, companyId: number) {
   const supabase = createAdminClient();
@@ -402,9 +256,7 @@ async function removeUserFromCompanyInternal(userId: string, companyId: number) 
     return { error: error.message };
   }
 
-  await logActivity("REMOVE_COMPANY", "user_companies", userId, {
-    company_id: companyId,
-  });
+  await logActivity("REMOVE_COMPANY", "user_companies", userId, { company_id: companyId });
 
   revalidatePath("/admin/settings/users");
   return { success: true };
@@ -413,58 +265,13 @@ async function removeUserFromCompanyInternal(userId: string, companyId: number) 
 export const removeUserFromCompany = withRole(8, removeUserFromCompanyInternal);
 
 /**
- * Actualiza el rol de un usuario dentro de una empresa asignada.
- * @param {string} userId - ID del usuario.
- * @param {number} companyId - ID de la empresa.
- * @param {number} roleId - ID del nuevo rol.
- * @returns {Promise<{ success?: boolean; error?: string }>} Resultado de la actualización.
- */
-async function updateUserCompanyRoleInternal(userId: string, companyId: number, roleId: number) {
-  const supabase = createAdminClient();
-
-  const { data: roleData, error: roleError } = await supabase
-    .from("roles")
-    .select("name")
-    .eq("role_id", roleId)
-    .single();
-
-  if (roleError || !roleData) {
-    return { error: "El rol seleccionado no es válido o no existe." };
-  }
-
-  const { error } = await supabase
-    .from("user_companies")
-    .update({
-      role_id: roleId,
-      role: roleData.name,
-      updated_at: new Date().toISOString(),
-    })
-    .match({ user_id: userId, company_id: companyId });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  revalidatePath("/admin/settings/users");
-  return { success: true };
-}
-
-export const updateUserCompanyRole = withRole(8, updateUserCompanyRoleInternal);
-
-/**
- * Server action to fetch user-company relationships.
+ * Devuelve las empresas asignadas a un usuario.
  */
 export async function getUserCompanies(userId: string) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("user_companies")
-    .select(
-      `
-      *,
-      company:company_id (company_name),
-      role_data:role_id (name)
-    `,
-    )
+    .select("user_id, company_id, role, company:company_id (company_name)")
     .eq("user_id", userId);
 
   if (error) {
@@ -476,7 +283,6 @@ export async function getUserCompanies(userId: string) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MÓDULO DE SEGURIDAD — sec_* Server Actions
-// Requieren nivel 9+ (Admin). Las tablas sec_* deben existir en la BD (Fase 1).
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Devuelve todos los roles del módulo de seguridad. */
@@ -554,7 +360,6 @@ export async function upsertPermission(
   const supabase = createAdminClient();
 
   if (mask === 0) {
-    // Sin permisos: eliminar la fila si existe
     const query = supabase
       .from("sec_permissions")
       .delete()
@@ -605,7 +410,6 @@ export async function updateSecRole(id: string, name: string, description: strin
 
   const supabase = createAdminClient();
 
-  // Guard explícito: verificar que el rol existe y no es protegido
   const { data: target } = await supabase
     .from("sec_roles")
     .select("is_super_admin, is_system")
@@ -627,14 +431,13 @@ export async function updateSecRole(id: string, name: string, description: strin
   return { success: true };
 }
 
-/** Elimina un rol de seguridad no-sistema. Falla si el rol es SuperAdmin, de sistema o tiene asignaciones activas. */
+/** Elimina un rol de seguridad no-sistema. Falla si tiene asignaciones activas. */
 export async function deleteSecRole(id: string) {
   const { error: authError } = await requireRoleLevel(9);
   if (authError) return { error: authError };
 
   const supabase = createAdminClient();
 
-  // Guard explícito: verificar que el rol existe y no es protegido
   const { data: target } = await supabase
     .from("sec_roles")
     .select("is_super_admin, is_system, name")
@@ -645,7 +448,6 @@ export async function deleteSecRole(id: string) {
   if (target.is_super_admin) return { error: "El rol Super Administrador no puede eliminarse." };
   if (target.is_system) return { error: "Los roles de sistema no pueden eliminarse." };
 
-  // Verificar que no tenga asignaciones activas antes de borrar
   const { count } = await supabase
     .from("sec_user_roles")
     .select("id", { count: "exact", head: true })

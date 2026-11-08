@@ -1,31 +1,13 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { singleRelation } from "@/lib/utils";
-import type { Tables } from "@/types/database";
-
-type RoleLevel = Pick<Tables<"roles">, "level">;
 
 /**
- * Fila de `users` con la relación `roles:role_id (level)`. En ejecución
- * la relación many-to-one llega como objeto; el cliente sin tipos de
- * esquema la infiere como arreglo, por eso se aceptan ambas formas.
- */
-export interface UserRoleLevelRow {
-  roles: RoleLevel | RoleLevel[] | null;
-}
-
-/**
- * Nivel de rol de una fila `users` consultada con `roles:role_id (level)`.
- * @param row Fila consultada (o null si no existe).
- * @returns Nivel del rol, o 0 si no tiene.
- */
-export function roleLevelOf(row: UserRoleLevelRow | null | undefined): number {
-  return singleRelation(row?.roles)?.level || 0;
-}
-
-/**
- * Checks if a user is authenticated and has a minimum role level.
- * @param minLevel Minimum level required (SuperAdmin: 10, Admin: 8, Editor: 6, Operator: 4)
- * @returns {Promise<{user: User | null, level: number, error?: string}>}
+ * Verifica si el usuario autenticado tiene un nivel de privilegio suficiente.
+ * El nivel se deriva del módulo de seguridad (sec_user_roles + sec_roles):
+ *   - 10 → el usuario tiene al menos un rol con is_super_admin = true
+ *   - 8  → el usuario tiene al menos un rol activo (no vencido) sin is_super_admin
+ *   - 0  → sin roles activos
+ *
+ * @param minLevel Nivel mínimo requerido (SuperAdmin=10, Admin/cualquier rol=8, solo autenticado=0)
  */
 export async function requireRoleLevel(minLevel: number) {
   const supabase = await createClient();
@@ -37,15 +19,35 @@ export async function requireRoleLevel(minLevel: number) {
     return { user: null, level: 0, error: "No autenticado" };
   }
 
-  // Use Admin client to fetch role level to avoid RLS issues during auth check
-  const supabaseAdmin = createAdminClient();
-  const { data: userData } = await supabaseAdmin
-    .from("users")
-    .select("roles:role_id (level)")
-    .eq("id", user.id)
-    .single();
+  if (minLevel <= 0) {
+    return { user, level: 1 };
+  }
 
-  const level = roleLevelOf(userData);
+  const admin = createAdminClient();
+  const now = new Date().toISOString();
+
+  const { data: assignments } = await admin
+    .from("sec_user_roles")
+    .select("sec_roles(is_super_admin)")
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .or(`valid_to.is.null,valid_to.gte.${now}`);
+
+  const rows = (assignments ?? []) as Array<{
+    sec_roles: { is_super_admin: boolean } | Array<{ is_super_admin: boolean }> | null;
+  }>;
+
+  const isSuperAdmin = rows.some((a) => {
+    const r = a.sec_roles;
+    if (!r) return false;
+    if (Array.isArray(r)) return r.some((x) => x.is_super_admin);
+    return r.is_super_admin;
+  });
+
+  const hasAnyRole = rows.length > 0;
+
+  // Mapeo: super_admin → 10, cualquier rol activo → 8, sin roles → 0
+  const level = isSuperAdmin ? 10 : hasAnyRole ? 8 : 0;
 
   if (level < minLevel) {
     return {
@@ -59,9 +61,8 @@ export async function requireRoleLevel(minLevel: number) {
 }
 
 /**
- * Validates if the user has access to a specific company.
- * @param companyId The ID of the company to check access for.
- * @returns {Promise<{authorized: boolean, role?: string, error?: string}>}
+ * Valida si el usuario autenticado tiene membresía en la empresa indicada.
+ * No depende del sistema de roles; solo verifica la fila en user_companies.
  */
 export async function requireCompanyAccess(companyId: number | string) {
   const supabase = await createClient();

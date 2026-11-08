@@ -16,11 +16,9 @@ const UserRolesClient = dynamic(() => import("./UserRolesClient"), {
   ),
 });
 
-// Tipos importados desde las pantallas legacy para reutilizar en el tab Usuarios
-import type UserManagerClient from "./UserManagerClient";
-type UserManagerProps = React.ComponentProps<typeof UserManagerClient>;
+import UserManagerClient from "./UserManagerClient";
 
-// Tipos para las nuevas pantallas de seguridad
+// Tipos para las pantallas de seguridad
 export interface SecRole {
   id: string;
   code: string;
@@ -72,21 +70,48 @@ export interface SecUserRole {
   sec_roles: Array<{ code: string; name: string }> | null;
 }
 
-interface Props extends UserManagerProps {
+interface SimpleUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  secondary_email: string | null;
+  phone: string | null;
+  status: string;
+  avatar_url: string | null;
+}
+
+interface Company {
+  company_id: number;
+  company_name: string;
+}
+
+interface CountryCode {
+  iso2: string;
+  name: string;
+  phone_code: string;
+  flag_emoji: string;
+}
+
+interface Props {
+  initialUsers: SimpleUser[];
+  companies: Company[];
+  countryCodes: CountryCode[];
+  currentUserId?: string;
   secRoles: SecRole[];
   moduleTree: SecModule[];
   permissions: SecPermission[];
   userRoleAssignments: SecUserRole[];
-  UserManagerComponent: React.ComponentType<UserManagerProps>;
 }
 
 export default function SecurityModuleTabs({
+  initialUsers,
+  companies,
+  countryCodes,
+  currentUserId,
   secRoles,
   moduleTree,
   permissions,
   userRoleAssignments,
-  UserManagerComponent,
-  ...userManagerProps
 }: Props) {
   const [tabIndex, setTabIndex] = useState(0);
 
@@ -101,7 +126,12 @@ export default function SecurityModuleTabs({
       </div>
       <TabPanels>
         <TabPanel>
-          <UserManagerComponent {...userManagerProps} />
+          <UserManagerClient
+            initialUsers={initialUsers}
+            companies={companies}
+            countryCodes={countryCodes}
+            currentUserId={currentUserId}
+          />
         </TabPanel>
         <TabPanel>
           <PermissionMatrixClient
@@ -109,19 +139,13 @@ export default function SecurityModuleTabs({
             moduleTree={moduleTree}
             initialPermissions={permissions}
             initialAssignments={userRoleAssignments}
-            users={
-              userManagerProps.initialUsers as Array<{
-                id: string;
-                full_name: string | null;
-                email: string;
-              }>
-            }
+            users={initialUsers}
           />
         </TabPanel>
         <TabPanel>
           <UserRolesClient
             users={
-              userManagerProps.initialUsers as Array<{
+              initialUsers as Array<{
                 id: string;
                 full_name: string | null;
                 email: string;

@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { withRole, type RoleContext } from "@/lib/auth/guards";
-import { roleLevelOf } from "@/lib/auth/authorization";
+import { requireRoleLevel } from "@/lib/auth/authorization";
 
 /**
  * Helper to log user activity.
@@ -37,20 +37,8 @@ async function logActivity(
  * Helper to check if the current user has a specific minimum role level.
  */
 async function checkMinLevel(minLevel: number) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { data: userData } = await supabase
-    .from("users")
-    .select("roles:role_id (level)")
-    .eq("id", user.id)
-    .single();
-
-  const level = roleLevelOf(userData);
-  return level >= minLevel;
+  const result = await requireRoleLevel(minLevel);
+  return !result.error;
 }
 
 /**
@@ -126,8 +114,7 @@ async function saveCompanyInternal(formData: FormData, context: RoleContext) {
 
     if (!error && (!data || data.length === 0)) {
       return {
-        error:
-          "No se encontró la empresa o no tienes permisos para actualizarla.",
+        error: "No se encontró la empresa o no tienes permisos para actualizarla.",
       };
     }
 
@@ -162,10 +149,7 @@ export const saveCompany = withRole(8, saveCompanyInternal);
 async function deleteCompanyInternal(id: number, context: RoleContext) {
   const { user } = context;
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("companies")
-    .delete()
-    .eq("company_id", id);
+  const { error } = await supabase.from("companies").delete().eq("company_id", id);
 
   if (error) {
     return { error: error.message };

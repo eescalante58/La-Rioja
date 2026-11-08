@@ -21,13 +21,7 @@ interface User {
   secondary_email: string | null;
   phone: string | null;
   status: string;
-  role_id: number;
   avatar_url: string | null;
-}
-
-interface Role {
-  role_id: number;
-  name: string;
 }
 
 interface CountryCode {
@@ -41,17 +35,10 @@ interface UserDialogProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  roles: Role[];
   countryCodes: CountryCode[];
 }
 
-export default function UserDialog({
-  isOpen,
-  onClose,
-  user,
-  roles,
-  countryCodes,
-}: UserDialogProps) {
+export default function UserDialog({ isOpen, onClose, user, countryCodes }: UserDialogProps) {
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
@@ -85,16 +72,15 @@ export default function UserDialog({
     }
     const data = {
       full_name: (formData.get("full_name") as string) || user.full_name || "",
-      role_id: formData.get("role_id") ? parseInt(formData.get("role_id") as string) : user.role_id,
       status: ((formData.get("status") as string) || user.status) as "active" | "inactive",
       secondary_email: (formData.get("secondary_email") as string) || "",
       phone: `${formData.get("phone_code")}${formData.get("phone_number")}`,
       avatar_url: avatarUrl,
     };
-    const res = await callAction<{ success?: boolean; error?: string }>(
-      "users.updateUser",
-      [user.id, data],
-    );
+    const res = await callAction<{ success?: boolean; error?: string }>("users.updateUser", [
+      user.id,
+      data,
+    ]);
     if (res.success) window.location.reload();
     else {
       alert("Error: " + res.error);
@@ -114,22 +100,26 @@ export default function UserDialog({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex flex-col items-center gap-4 mb-4">
               <div className="relative group">
-                <img src={avatarPreview || "https://www.gravatar.com/avatar/000?d=mp"} className="h-24 w-24 rounded-full object-cover border-4 border-gray-50 shadow-lg" alt="Avatar" />
+                <img
+                  src={avatarPreview || "https://www.gravatar.com/avatar/000?d=mp"}
+                  className="h-24 w-24 rounded-full object-cover border-4 border-gray-50 shadow-lg"
+                  alt="Avatar"
+                />
                 <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
                   <Upload size={20} />
-                  <input type="file" name="avatar" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                  <input
+                    type="file"
+                    name="avatar"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                  />
                 </label>
               </div>
             </div>
             <div className="space-y-1">
               <Text className="text-xs font-bold uppercase text-gray-500">Nombre Completo</Text>
               <TextInput name="full_name" defaultValue={user?.full_name || ""} required />
-            </div>
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase text-gray-500">Rol del Sistema</Text>
-              <Select name="role_id" defaultValue={String(user?.role_id)}>
-                {roles.map((r) => <SelectItem key={r.role_id} value={String(r.role_id)}>{r.name}</SelectItem>)}
-              </Select>
             </div>
             <div className="space-y-1">
               <Text className="text-xs font-bold uppercase text-gray-500">Estado</Text>
@@ -141,18 +131,41 @@ export default function UserDialog({
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-1 space-y-1">
                 <Text className="text-xs font-bold uppercase text-gray-500">Código</Text>
-                <Select name="phone_code" defaultValue={countryCodes.find(c => user?.phone?.startsWith(c.phone_code))?.phone_code || "503"}>
-                  {countryCodes.map((c) => <SelectItem key={c.iso2} value={c.phone_code}>{c.flag_emoji} +{c.phone_code}</SelectItem>)}
+                <Select
+                  name="phone_code"
+                  defaultValue={
+                    countryCodes.find((c) => user?.phone?.startsWith(c.phone_code))?.phone_code ||
+                    "503"
+                  }
+                >
+                  {countryCodes.map((c) => (
+                    <SelectItem key={c.iso2} value={c.phone_code}>
+                      {c.flag_emoji} +{c.phone_code}
+                    </SelectItem>
+                  ))}
                 </Select>
               </div>
               <div className="col-span-2 space-y-1">
                 <Text className="text-xs font-bold uppercase text-gray-500">Teléfono</Text>
-                <TextInput name="phone_number" icon={Smartphone} defaultValue={user?.phone?.replace(/^\d+/, "") || ""} />
+                <TextInput
+                  name="phone_number"
+                  icon={Smartphone}
+                  defaultValue={user?.phone?.replace(/^\d+/, "") || ""}
+                />
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-4">
-              <Button variant="secondary" onClick={onClose} disabled={loading}>Cancelar</Button>
-              <Button icon={Save} className="bg-larioja-azul text-white hover:bg-larioja-azul/90" loading={loading} type="submit">Guardar Cambios</Button>
+              <Button variant="secondary" onClick={onClose} disabled={loading}>
+                Cancelar
+              </Button>
+              <Button
+                icon={Save}
+                className="bg-larioja-azul text-white hover:bg-larioja-azul/90"
+                loading={loading}
+                type="submit"
+              >
+                Guardar Cambios
+              </Button>
             </div>
           </form>
         </DialogPanel>

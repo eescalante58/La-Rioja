@@ -15,7 +15,6 @@ import {
   TableHeaderCell,
   TableBody,
   TableCell,
-  Badge,
 } from "@tremor/react";
 import { X, Building2, Trash } from "lucide-react";
 import { callAction } from "@/lib/action-client";
@@ -30,17 +29,11 @@ interface Company {
   company_name: string;
 }
 
-interface Role {
-  role_id: number;
-  name: string;
-}
-
 interface UserCompany {
   user_id: string;
   company_id: number;
-  role_id: number;
-  company: { company_name: string };
-  role_data: { name: string };
+  role: string | null;
+  company: { company_name: string } | null;
 }
 
 interface UserCompaniesDialogProps {
@@ -48,7 +41,6 @@ interface UserCompaniesDialogProps {
   onClose: () => void;
   user: User | null;
   allCompanies: Company[];
-  roles: Role[];
 }
 
 export default function UserCompaniesDialog({
@@ -56,7 +48,6 @@ export default function UserCompaniesDialog({
   onClose,
   user,
   allCompanies,
-  roles,
 }: UserCompaniesDialogProps) {
   const [loading, setLoading] = useState(false);
   const [userCompanies, setUserCompanies] = useState<UserCompany[]>([]);
@@ -83,11 +74,7 @@ export default function UserCompaniesDialog({
     const formData = new FormData(e.currentTarget);
     const res = await callAction<{ success?: boolean; error?: string }>(
       "users.assignUserToCompany",
-      [
-        user.id,
-        parseInt(formData.get("company_id") as string),
-        parseInt(formData.get("role_id") as string),
-      ],
+      [user.id, parseInt(formData.get("company_id") as string)],
     );
     if (res.success) {
       await loadUserCompanies();
@@ -131,7 +118,7 @@ export default function UserCompaniesDialog({
 
           <form
             onSubmit={handleAssign}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700"
           >
             <Select name="company_id" placeholder="Empresa..." required>
               {allCompanies.map((c) => (
@@ -140,14 +127,11 @@ export default function UserCompaniesDialog({
                 </SelectItem>
               ))}
             </Select>
-            <Select name="role_id" placeholder="Rol..." required>
-              {roles.map((r) => (
-                <SelectItem key={r.role_id} value={String(r.role_id)}>
-                  {r.name}
-                </SelectItem>
-              ))}
-            </Select>
-            <Button className="bg-larioja-azul text-white hover:bg-larioja-azul/90" loading={loading} type="submit">
+            <Button
+              className="bg-larioja-azul text-white hover:bg-larioja-azul/90"
+              loading={loading}
+              type="submit"
+            >
               Asignar
             </Button>
           </form>
@@ -163,47 +147,35 @@ export default function UserCompaniesDialog({
                 <TableHead>
                   <TableRow>
                     <TableHeaderCell>Empresa</TableHeaderCell>
-                    <TableHeaderCell>Rol</TableHeaderCell>
-                    <TableHeaderCell className="text-right">
-                      Acciones
-                    </TableHeaderCell>
+                    <TableHeaderCell className="text-right">Acciones</TableHeaderCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {userCompanies.map((uc) => (
                     <TableRow key={uc.company_id}>
-                      <TableCell className="font-bold">
-                        {uc.company?.company_name}
-                      </TableCell>
-                      <TableCell>
-                        <Badge color="blue">{uc.role_data?.name}</Badge>
-                      </TableCell>
+                      <TableCell className="font-bold">{uc.company?.company_name}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="light"
-                          icon={Trash}
-                          color="rose"
                           size="xs"
+                          color="rose"
+                          icon={Trash}
                           onClick={() => handleRemove(uc.company_id)}
-                          disabled={loading}
-                        />
+                          loading={loading}
+                        >
+                          Quitar
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : (
-              <div className="py-10 text-center bg-gray-50 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-100 dark:border-gray-700">
-                <Text className="italic text-gray-400">
-                  No hay empresas asignadas.
-                </Text>
+              <div className="py-10 text-center">
+                <Building2 size={32} className="text-gray-300 mx-auto mb-3" />
+                <Text className="text-gray-500">Sin empresas asignadas</Text>
               </div>
             )}
-          </div>
-          <div className="mt-6 flex justify-end">
-            <Button variant="secondary" onClick={onClose}>
-              Cerrar
-            </Button>
           </div>
         </DialogPanel>
       </div>

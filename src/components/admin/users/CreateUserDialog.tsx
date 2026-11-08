@@ -14,11 +14,6 @@ import {
 import { X, UserPlus, Upload, Smartphone } from "lucide-react";
 import { callAction, callActionForm } from "@/lib/action-client";
 
-interface Role {
-  role_id: number;
-  name: string;
-}
-
 interface CountryCode {
   iso2: string;
   name: string;
@@ -29,16 +24,10 @@ interface CountryCode {
 interface CreateUserDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  roles: Role[];
   countryCodes: CountryCode[];
 }
 
-export default function CreateUserDialog({
-  isOpen,
-  onClose,
-  roles,
-  countryCodes,
-}: CreateUserDialogProps) {
+export default function CreateUserDialog({ isOpen, onClose, countryCodes }: CreateUserDialogProps) {
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
@@ -67,16 +56,14 @@ export default function CreateUserDialog({
     const data = {
       email: formData.get("email") as string,
       full_name: formData.get("full_name") as string,
-      role_id: parseInt(formData.get("role_id") as string),
-      secondary_email: formData.get("secondary_email") as string || "",
+      secondary_email: (formData.get("secondary_email") as string) || "",
       phone: `${formData.get("phone_code")}${formData.get("phone_number")}`,
       avatar_url: avatarUrl,
       status: "active" as const,
     };
-    const res = await callAction<{ success?: boolean; error?: string }>(
-      "users.createNewUser",
-      [data],
-    );
+    const res = await callAction<{ success?: boolean; error?: string }>("users.createNewUser", [
+      data,
+    ]);
     if (res.success) window.location.reload();
     else {
       alert("Error: " + res.error);
@@ -96,10 +83,20 @@ export default function CreateUserDialog({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex flex-col items-center gap-4 mb-4">
               <div className="relative group">
-                <img src={avatarPreview || "https://www.gravatar.com/avatar/000?d=mp"} className="h-24 w-24 rounded-full object-cover border-4 border-gray-50 shadow-lg" alt="Avatar" />
+                <img
+                  src={avatarPreview || "https://www.gravatar.com/avatar/000?d=mp"}
+                  className="h-24 w-24 rounded-full object-cover border-4 border-gray-50 shadow-lg"
+                  alt="Avatar"
+                />
                 <label className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
                   <Upload size={20} />
-                  <input type="file" name="avatar" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                  <input
+                    type="file"
+                    name="avatar"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                  />
                 </label>
               </div>
             </div>
@@ -111,17 +108,15 @@ export default function CreateUserDialog({
               <Text className="text-xs font-bold uppercase text-gray-500">Nombre Completo</Text>
               <TextInput name="full_name" placeholder="Juan Pérez" required />
             </div>
-            <div className="space-y-1">
-              <Text className="text-xs font-bold uppercase text-gray-500">Rol del Sistema</Text>
-              <Select name="role_id" defaultValue={String(roles[0]?.role_id)}>
-                {roles.map((r) => <SelectItem key={r.role_id} value={String(r.role_id)}>{r.name}</SelectItem>)}
-              </Select>
-            </div>
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-1 space-y-1">
                 <Text className="text-xs font-bold uppercase text-gray-500">Código</Text>
                 <Select name="phone_code" defaultValue="503">
-                  {countryCodes.map((c) => <SelectItem key={c.iso2} value={c.phone_code}>{c.flag_emoji} +{c.phone_code}</SelectItem>)}
+                  {countryCodes.map((c) => (
+                    <SelectItem key={c.iso2} value={c.phone_code}>
+                      {c.flag_emoji} +{c.phone_code}
+                    </SelectItem>
+                  ))}
                 </Select>
               </div>
               <div className="col-span-2 space-y-1">
@@ -130,8 +125,17 @@ export default function CreateUserDialog({
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-4">
-              <Button variant="secondary" onClick={onClose} disabled={loading}>Cancelar</Button>
-              <Button icon={UserPlus} className="bg-larioja-azul text-white hover:bg-larioja-azul/90" loading={loading} type="submit">Crear Usuario</Button>
+              <Button variant="secondary" onClick={onClose} disabled={loading}>
+                Cancelar
+              </Button>
+              <Button
+                icon={UserPlus}
+                className="bg-larioja-azul text-white hover:bg-larioja-azul/90"
+                loading={loading}
+                type="submit"
+              >
+                Crear Usuario
+              </Button>
             </div>
           </form>
         </DialogPanel>

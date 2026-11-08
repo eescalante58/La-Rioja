@@ -2,7 +2,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { getErrorMessage, singleRelation } from "@/lib/utils";
 import type { Tables } from "@/types/database";
-import { roleLevelOf } from "@/lib/auth/authorization";
+import { requireRoleLevel } from "@/lib/auth/authorization";
 
 type Invoice = Tables<"invoices">;
 type Card = Tables<"cards">;
@@ -271,12 +271,8 @@ export async function getDashboardDataCore(): Promise<DashboardData> {
 
     let userLevel = 0;
     if (user) {
-      const { data: userData } = await supabaseAdmin
-        .from("users")
-        .select("roles:role_id (level)")
-        .eq("id", user.id)
-        .single();
-      userLevel = roleLevelOf(userData);
+      const authResult = await requireRoleLevel(0);
+      userLevel = authResult.level ?? 0;
     }
 
     // 1. Fetch company info and general stats in parallel
