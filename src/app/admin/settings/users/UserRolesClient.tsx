@@ -150,27 +150,33 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
                       {activeRoles.length === 0 ? (
                         <Text className="text-xs text-gray-400">Sin roles asignados</Text>
                       ) : (
-                        activeRoles.map((a) => (
-                          <div key={a.id} className="flex items-center gap-1">
-                            <Badge color="blue" size="xs">
-                              {a.sec_roles?.[0]?.name ?? a.role_id}
-                            </Badge>
-                            {a.valid_to && (
-                              <span className="text-xs text-gray-400">
-                                hasta {new Date(a.valid_to).toLocaleDateString("es-SV")}
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => handleRevoke(a.id)}
-                              disabled={saving}
-                              className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-                              title="Revocar rol"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ))
+                        activeRoles.map((a) => {
+                          const roleName =
+                            a.sec_roles?.[0]?.name ??
+                            secRoles.find((r) => r.id === a.role_id)?.name ??
+                            a.role_id;
+                          return (
+                            <div key={a.id} className="flex items-center gap-1">
+                              <Badge color="blue" size="xs">
+                                {roleName}
+                              </Badge>
+                              {a.valid_to && (
+                                <span className="text-xs text-gray-400">
+                                  hasta {new Date(a.valid_to).toLocaleDateString("es-SV")}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleRevoke(a.id)}
+                                disabled={saving}
+                                className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                                title="Revocar rol"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </TableCell>
@@ -190,7 +196,7 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
                 {isExpanded && (
                   <TableRow key={`${user.id}-assign`}>
                     <TableCell colSpan={3}>
-                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 flex flex-wrap gap-4 items-end">
+                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-[#012060] dark:border-dark-tremor-border p-4 flex flex-wrap gap-4 items-end">
                         <div className="flex flex-col gap-1 min-w-[200px]">
                           <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
                             Rol
@@ -217,7 +223,7 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
                             type="date"
                             value={newValidFrom}
                             onChange={(e) => setNewValidFrom(e.target.value)}
-                            className="h-9 rounded-tremor-default border border-tremor-border dark:border-dark-tremor-border bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-white"
+                            className="h-9 rounded-tremor-default border border-[#012060] dark:border-dark-tremor-border bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-white"
                           />
                         </div>
                         <div className="flex flex-col gap-1">
@@ -229,7 +235,7 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
                             value={newValidTo}
                             onChange={(e) => setNewValidTo(e.target.value)}
                             min={newValidFrom}
-                            className="h-9 rounded-tremor-default border border-tremor-border dark:border-dark-tremor-border bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-white"
+                            className="h-9 rounded-tremor-default border border-[#012060] dark:border-dark-tremor-border bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-white"
                           />
                         </div>
                         <Button
