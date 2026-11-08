@@ -1,0 +1,14 @@
+{
+  "qa_sa@qa.larioja.test": "9b3e6139-d76c-4443-94c7-0c2b2a8500b6",
+  "qa_admin_users@qa.larioja.test": "530c0b1c-2175-4c90-aca0-45b683e166b8",
+  "qa_users_read@qa.larioja.test": "259e68d6-6e77-4636-8c64-eb9763e10db7",
+  "qa_users_write@qa.larioja.test": "43b563f4-98f4-4bad-a78a-bc6a659653cf",
+  "qa_bingo@qa.larioja.test": "1fb6a6da-d9e3-430b-be6a-8ac71ff375b3",
+  "qa_multi@qa.larioja.test": "d71e1a92-72c4-4827-8fd9-eea84f1f5a7a",
+  "qa_norole@qa.larioja.test": "dce26e45-7a42-4ebe-9bbf-f525b206e652",
+  "qa_expired@qa.larioja.test": "0fb93428-a1db-4299-ac2e-25acab9ea453",
+  "qa_future@qa.larioja.test": "b06e0096-b343-4e08-b650-b15df9780b99",
+  "qa_inactive_assign@qa.larioja.test": "41d2b4a6-6274-4533-b187-1e66792e69c9",
+  "qa_inactive_role@qa.larioja.test": "25f5c964-c6fd-4ac2-baaa-f44556fed26d",
+  "qa_nocompany@qa.larioja.test": "4f6af498-3396-4bfc-9aa6-9373e07bdb32"
+}

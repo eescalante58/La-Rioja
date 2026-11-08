@@ -1,0 +1,643 @@
+{
+  "sec_roles": {
+    "data": [
+      {
+        "id": "324da038-13df-4155-ad41-9e411075015d",
+        "code": "ADMIN_EMPRESA",
+        "name": "admin_empresa",
+        "is_super_admin": false,
+        "is_system": false,
+        "is_active": true
+      },
+      {
+        "id": "be0b6c6a-90e4-491c-a671-c996347a9fe7",
+        "code": "BINGO_ADMIN",
+        "name": "Administrador de Bingo",
+        "is_super_admin": false,
+        "is_system": true,
+        "is_active": true
+      },
+      {
+        "id": "09eaccae-17c0-4ae7-8c2b-ccc25f3e996d",
+        "code": "CONFIG_ADMIN",
+        "name": "Administrador de Configuración",
+        "is_super_admin": false,
+        "is_system": true,
+        "is_active": true
+      },
+      {
+        "id": "a899b020-ac29-4cbd-9396-89b2c3c13629",
+        "code": "CMS_EDITOR",
+        "name": "Editor de Contenido",
+        "is_super_admin": false,
+        "is_system": true,
+        "is_active": true
+      },
+      {
+        "id": "2a8a2b9e-6516-4c0c-b079-ea89525442aa",
+        "code": "SHOP_MANAGER",
+        "name": "Gestor de Tienda",
+        "is_super_admin": false,
+        "is_system": true,
+        "is_active": true
+      },
+      {
+        "id": "a970136c-227e-4415-bc63-3b0f849f1a1a",
+        "code": "OPERATOR",
+        "name": "Operador de Bingo",
+        "is_super_admin": false,
+        "is_system": true,
+        "is_active": true
+      },
+      {
+        "id": "06035699-60ba-4d44-b307-d7a59d2516aa",
+        "code": "SUPER_ADMIN",
+        "name": "Super Administrador",
+        "is_super_admin": true,
+        "is_system": true,
+        "is_active": true
+      }
+    ]
+  },
+  "sec_modules": {
+    "data": [
+      {
+        "id": "28dec30a-f1fb-4ecc-9d2a-05732d92ce6f",
+        "code": "DASHBOARD",
+        "name": "Dashboard",
+        "is_active": true,
+        "order_index": 1
+      },
+      {
+        "id": "d39d3c30-5545-4eed-b85c-0fe1436e8380",
+        "code": "BINGO",
+        "name": "Bingo",
+        "is_active": true,
+        "order_index": 2
+      },
+      {
+        "id": "42d3137d-908e-457e-8219-c5422613a0be",
+        "code": "CMS",
+        "name": "Contenido (CMS)",
+        "is_active": true,
+        "order_index": 3
+      },
+      {
+        "id": "04773ed8-d980-40a5-80e8-279aa24440c8",
+        "code": "SHOP",
+        "name": "Tienda",
+        "is_active": true,
+        "order_index": 4
+      },
+      {
+        "id": "803537fc-5a6b-4a47-aea4-304025166ab0",
+        "code": "CONFIG",
+        "name": "Configuración",
+        "is_active": true,
+        "order_index": 9
+      }
+    ]
+  },
+  "sec_options": {
+    "data": [
+      {
+        "id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9",
+        "code": "BINGO_EVENTS",
+        "name": "Eventos y cartones",
+        "path_route": "/admin/bingo",
+        "is_active": true,
+        "module_id": "d39d3c30-5545-4eed-b85c-0fe1436e8380"
+      },
+      {
+        "id": "a94bb18d-317d-4309-8499-af10e05b3e37",
+        "code": "BINGO_WHEELS",
+        "name": "Ruedas / Tómbola",
+        "path_route": "/admin/bingo",
+        "is_active": true,
+        "module_id": "d39d3c30-5545-4eed-b85c-0fe1436e8380"
+      },
+      {
+        "id": "cc3aab87-171d-4035-a78c-aa51113c4afc",
+        "code": "CFG_AUDIT",
+        "name": "Auditoría",
+        "path_route": "/admin/settings/logs",
+        "is_active": true,
+        "module_id": "803537fc-5a6b-4a47-aea4-304025166ab0"
+      },
+      {
+        "id": "247f2cd4-dffc-4a3a-a734-df24ff0ec71d",
+        "code": "CFG_COMPANIES",
+        "name": "Empresas",
+        "path_route": "/admin/settings/companies",
+        "is_active": true,
+        "module_id": "803537fc-5a6b-4a47-aea4-304025166ab0"
+      },
+      {
+        "id": "2c18b0e1-91cc-49cf-9734-b0c06bcdb537",
+        "code": "CFG_CONTACT_MSGS",
+        "name": "Mensajes de contacto",
+        "path_route": "/admin/settings/contact",
+        "is_active": true,
+        "module_id": "803537fc-5a6b-4a47-aea4-304025166ab0"
+      },
+      {
+        "id": "e676ac3b-2c22-451e-aef0-205115336523",
+        "code": "CFG_COUNTRY_CODES",
+        "name": "Códigos de Países",
+        "path_route": "/admin/settings/countries",
+        "is_active": true,
+        "module_id": "803537fc-5a6b-4a47-aea4-304025166ab0"
+      },
+      {
+        "id": "b8b5c3c3-f3b6-44ee-b5e5-2b2e25400f97",
+        "code": "CFG_REG_LIMITS",
+        "name": "Límites de registro",
+        "path_route": "/admin/settings/registration-limits",
+        "is_active": true,
+        "module_id": "803537fc-5a6b-4a47-aea4-304025166ab0"
+      },
+      {
+        "id": "43a6c9b4-875e-44f8-ab02-08cc4dea2a58",
+        "code": "CFG_SECURITY",
+        "name": "Seguridad (RLS/vistas)",
+        "path_route": "/admin/settings/security",
+        "is_active": true,
+        "module_id": "803537fc-5a6b-4a47-aea4-304025166ab0"
+      },
+      {
+        "id": "d027093e-77af-4ec0-801e-d0849ac9e1ae",
+        "code": "CFG_STUDENTS",
+        "name": "Alumnos",
+        "path_route": "/admin/settings/students",
+        "is_active": true,
+        "module_id": "803537fc-5a6b-4a47-aea4-304025166ab0"
+      },
+      {
+        "id": "d0da84b7-02b2-4f06-a501-baffa64332ea",
+        "code": "CFG_TEST_DATA",
+        "name": "Datos de backup/prueba",
+        "path_route": "/admin/settings/test-data",
+        "is_active": true,
+        "module_id": "803537fc-5a6b-4a47-aea4-304025166ab0"
+      },
+      {
+        "id": "b9c3c4f5-7799-4aba-afcc-b58c728d10c1",
+        "code": "CFG_USERS_ROLES",
+        "name": "Usuarios y Roles",
+        "path_route": "/admin/settings/users",
+        "is_active": true,
+        "module_id": "803537fc-5a6b-4a47-aea4-304025166ab0"
+      },
+      {
+        "id": "88210cde-3fd8-4edb-be72-937d93838fbd",
+        "code": "CMS_CONTENT",
+        "name": "Contenido del sitio",
+        "path_route": "/admin/cms",
+        "is_active": true,
+        "module_id": "42d3137d-908e-457e-8219-c5422613a0be"
+      },
+      {
+        "id": "9360a5f6-6e86-4f95-89fc-30c323e3e327",
+        "code": "CMS_GOOGLE_ADS",
+        "name": "Google Ads & GA4",
+        "path_route": "/admin/cms",
+        "is_active": true,
+        "module_id": "42d3137d-908e-457e-8219-c5422613a0be"
+      },
+      {
+        "id": "58f2ad26-6f7a-4ec1-865b-ee187cadf64e",
+        "code": "CMS_META_PIXEL",
+        "name": "Meta Pixel & CAPI",
+        "path_route": "/admin/cms",
+        "is_active": true,
+        "module_id": "42d3137d-908e-457e-8219-c5422613a0be"
+      },
+      {
+        "id": "dfee709c-dabc-4578-b511-c96aa4d39455",
+        "code": "DASH_HOME",
+        "name": "Dashboard principal",
+        "path_route": "/admin",
+        "is_active": true,
+        "module_id": "28dec30a-f1fb-4ecc-9d2a-05732d92ce6f"
+      },
+      {
+        "id": "bc472f73-1cd1-4c6e-ada4-edc3b8e383dc",
+        "code": "SHOP_ORDERS",
+        "name": "Pedidos",
+        "path_route": "/admin/productos",
+        "is_active": true,
+        "module_id": "04773ed8-d980-40a5-80e8-279aa24440c8"
+      },
+      {
+        "id": "dfd54a0b-485f-41de-a149-a2ab37e5154e",
+        "code": "SHOP_PRODUCTS",
+        "name": "Productos y catálogos",
+        "path_route": "/admin/productos",
+        "is_active": true,
+        "module_id": "04773ed8-d980-40a5-80e8-279aa24440c8"
+      }
+    ]
+  },
+  "sec_resources": {
+    "data": [
+      {
+        "id": "f55e7ebf-7b36-4ad3-be72-2de854724c6e",
+        "table_name": "cards",
+        "display_name": "Cartones",
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9"
+      },
+      {
+        "id": "d45bdc63-38ad-407c-ab22-9bc015309311",
+        "table_name": "cms_google_ads_config",
+        "display_name": "Config. Google Ads",
+        "option_id": "9360a5f6-6e86-4f95-89fc-30c323e3e327"
+      },
+      {
+        "id": "350884d6-249e-4016-bc7b-484c571d4d15",
+        "table_name": "cms_google_ads_logs",
+        "display_name": "Logs Google Ads",
+        "option_id": "9360a5f6-6e86-4f95-89fc-30c323e3e327"
+      },
+      {
+        "id": "da30adfb-f00f-48e0-8f5c-3cd53beb159d",
+        "table_name": "cms_meta_logs",
+        "display_name": "Logs Meta Pixel",
+        "option_id": "58f2ad26-6f7a-4ec1-865b-ee187cadf64e"
+      },
+      {
+        "id": "e3602951-adaa-49f7-9eae-fabd5c8f57d0",
+        "table_name": "cms_meta_tracking_config",
+        "display_name": "Config. Meta Pixel",
+        "option_id": "58f2ad26-6f7a-4ec1-865b-ee187cadf64e"
+      },
+      {
+        "id": "548d77e8-7766-4aab-a9ad-925bcba96a7a",
+        "table_name": "companies",
+        "display_name": "Empresas",
+        "option_id": "247f2cd4-dffc-4a3a-a734-df24ff0ec71d"
+      },
+      {
+        "id": "6ff1829d-4e8f-49d3-a158-3755d512474d",
+        "table_name": "contact_submissions",
+        "display_name": "Solicitudes de contacto",
+        "option_id": "2c18b0e1-91cc-49cf-9734-b0c06bcdb537"
+      },
+      {
+        "id": "644ed7aa-4827-46c9-8feb-854074df4800",
+        "table_name": "country_codes",
+        "display_name": "Códigos de países",
+        "option_id": "e676ac3b-2c22-451e-aef0-205115336523"
+      },
+      {
+        "id": "e32530a4-53a6-4eb4-8b51-e46860104b2e",
+        "table_name": "customer_phone_number",
+        "display_name": "Clientes (teléfonos)",
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9"
+      },
+      {
+        "id": "81265671-c006-4eb7-8b89-436d9446673f",
+        "table_name": "event_gallery",
+        "display_name": "Galería de eventos",
+        "option_id": "88210cde-3fd8-4edb-be72-937d93838fbd"
+      },
+      {
+        "id": "922ea352-3e28-4ff1-8c3e-1391daa0fab1",
+        "table_name": "events",
+        "display_name": "Eventos",
+        "option_id": "dfee709c-dabc-4578-b511-c96aa4d39455"
+      },
+      {
+        "id": "2399e914-3b61-447b-a9e1-2ef931715426",
+        "table_name": "events",
+        "display_name": "Eventos",
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9"
+      },
+      {
+        "id": "a0431a87-63f7-4108-a0d5-c9129b38aac3",
+        "table_name": "faq_sections",
+        "display_name": "Secciones de FAQ",
+        "option_id": "88210cde-3fd8-4edb-be72-937d93838fbd"
+      },
+      {
+        "id": "dc112ce9-2e96-4e0a-8b1e-7b9b230e06a7",
+        "table_name": "faqs",
+        "display_name": "Preguntas frecuentes",
+        "option_id": "88210cde-3fd8-4edb-be72-937d93838fbd"
+      },
+      {
+        "id": "b7401da5-e891-414b-90e0-4a2148ac181c",
+        "table_name": "invoices",
+        "display_name": "Facturas",
+        "option_id": "dfee709c-dabc-4578-b511-c96aa4d39455"
+      },
+      {
+        "id": "c02a5b8a-e7c2-4cd8-9d72-26118c4b8cce",
+        "table_name": "invoices",
+        "display_name": "Facturas",
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9"
+      },
+      {
+        "id": "873ac7ce-0c5e-44c5-9715-b53d4c415693",
+        "table_name": "orders",
+        "display_name": "Pedidos",
+        "option_id": "bc472f73-1cd1-4c6e-ada4-edc3b8e383dc"
+      },
+      {
+        "id": "57db2fd4-00bf-46bf-9a9a-cb255128acd9",
+        "table_name": "product_catalogs",
+        "display_name": "Catálogos",
+        "option_id": "dfd54a0b-485f-41de-a149-a2ab37e5154e"
+      },
+      {
+        "id": "05e42a38-e0ec-4282-b5ac-7f785a2dcf08",
+        "table_name": "product_lines",
+        "display_name": "Líneas de producto",
+        "option_id": "dfd54a0b-485f-41de-a149-a2ab37e5154e"
+      },
+      {
+        "id": "de6444d9-a5b8-4634-a479-c921c0d79308",
+        "table_name": "product_variants",
+        "display_name": "Variantes",
+        "option_id": "dfd54a0b-485f-41de-a149-a2ab37e5154e"
+      },
+      {
+        "id": "1e7c34f0-c029-49a3-98a8-3ed27a6df7e4",
+        "table_name": "products",
+        "display_name": "Productos",
+        "option_id": "dfd54a0b-485f-41de-a149-a2ab37e5154e"
+      },
+      {
+        "id": "5a9f32e1-a66a-40f3-9fd1-4020c41ed698",
+        "table_name": "registration_limits",
+        "display_name": "Límites de registro",
+        "option_id": "b8b5c3c3-f3b6-44ee-b5e5-2b2e25400f97"
+      },
+      {
+        "id": "e5b1d2c7-2107-43d5-8815-1028a9fa1bce",
+        "table_name": "roles",
+        "display_name": "Roles legacy",
+        "option_id": "b9c3c4f5-7799-4aba-afcc-b58c728d10c1"
+      },
+      {
+        "id": "da10fdc0-738e-4257-a2c5-d44e11c2ab11",
+        "table_name": "sec_audit_log",
+        "display_name": "Bitácora de seguridad",
+        "option_id": "cc3aab87-171d-4035-a78c-aa51113c4afc"
+      },
+      {
+        "id": "ad71f3a8-3d59-4d1a-8824-e47a407abdad",
+        "table_name": "sec_module_admins",
+        "display_name": "Administradores de módulo",
+        "option_id": "b9c3c4f5-7799-4aba-afcc-b58c728d10c1"
+      },
+      {
+        "id": "252ac61d-f954-46a2-878d-e4208eecd4b7",
+        "table_name": "sec_permissions",
+        "display_name": "Matriz de permisos",
+        "option_id": "b9c3c4f5-7799-4aba-afcc-b58c728d10c1"
+      },
+      {
+        "id": "33036be1-1d9f-471c-90fb-996f2fd1bd09",
+        "table_name": "sec_roles",
+        "display_name": "Roles de seguridad",
+        "option_id": "b9c3c4f5-7799-4aba-afcc-b58c728d10c1"
+      },
+      {
+        "id": "f702e649-d91f-497e-a5aa-648436a99e11",
+        "table_name": "sec_user_roles",
+        "display_name": "Asignación de roles",
+        "option_id": "b9c3c4f5-7799-4aba-afcc-b58c728d10c1"
+      },
+      {
+        "id": "bcaa4241-1616-4c0e-b64b-ac912a13f0b6",
+        "table_name": "site_content",
+        "display_name": "Contenido del sitio",
+        "option_id": "88210cde-3fd8-4edb-be72-937d93838fbd"
+      },
+      {
+        "id": "483cde38-7273-4860-8440-479f109b521d",
+        "table_name": "students",
+        "display_name": "Alumnos",
+        "option_id": "d027093e-77af-4ec0-801e-d0849ac9e1ae"
+      },
+      {
+        "id": "628b002a-bda0-43e2-96a5-0a90dde1f3b3",
+        "table_name": "students_cards",
+        "display_name": "Asignación de cartones",
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9"
+      },
+      {
+        "id": "9e184d06-8d50-4056-8b22-ba50be0fc12c",
+        "table_name": "students_cards",
+        "display_name": "Cartones de alumnos",
+        "option_id": "d027093e-77af-4ec0-801e-d0849ac9e1ae"
+      },
+      {
+        "id": "c855daae-aba8-4779-9574-5bddeecab821",
+        "table_name": "user_activity_log",
+        "display_name": "Bitácora de actividad",
+        "option_id": "cc3aab87-171d-4035-a78c-aa51113c4afc"
+      },
+      {
+        "id": "b4f41e59-ba4c-4308-beff-42ba62712411",
+        "table_name": "user_companies",
+        "display_name": "Membresías empresa-usuario",
+        "option_id": "b9c3c4f5-7799-4aba-afcc-b58c728d10c1"
+      },
+      {
+        "id": "db0a9a53-f60a-4bda-b11d-f532d409f5bd",
+        "table_name": "users",
+        "display_name": "Usuarios",
+        "option_id": "b9c3c4f5-7799-4aba-afcc-b58c728d10c1"
+      },
+      {
+        "id": "2f605d9c-eea7-4ac2-b15b-fd1f080e9f7e",
+        "table_name": "wheel_configs",
+        "display_name": "Ruedas / tómbolas",
+        "option_id": "a94bb18d-317d-4309-8499-af10e05b3e37"
+      },
+      {
+        "id": "011b9ed4-5a76-4b02-bdf4-10555e8625a7",
+        "table_name": "wheel_items",
+        "display_name": "Premios de rueda",
+        "option_id": "a94bb18d-317d-4309-8499-af10e05b3e37"
+      },
+      {
+        "id": "f3cfc0a9-0aca-4ec8-972d-d517ce50640e",
+        "table_name": "wheel_spins",
+        "display_name": "Giros registrados",
+        "option_id": "a94bb18d-317d-4309-8499-af10e05b3e37"
+      },
+      {
+        "id": "99fc271b-c2b5-4671-9fae-3012d0fbd6c0",
+        "table_name": "wheels_presents_cards",
+        "display_name": "Premios tómbola",
+        "option_id": "dfee709c-dabc-4578-b511-c96aa4d39455"
+      },
+      {
+        "id": "f691754f-b135-4955-b1eb-3b2bc002aff1",
+        "table_name": "wheels_presents_cards",
+        "display_name": "Cartones de tómbola",
+        "option_id": "a94bb18d-317d-4309-8499-af10e05b3e37"
+      }
+    ]
+  },
+  "sec_permissions_count": 17,
+  "perms_by_role": {
+    "be0b6c6a-90e4-491c-a671-c996347a9fe7": [
+      {
+        "option_id": "dfee709c-dabc-4578-b511-c96aa4d39455",
+        "resource_id": null,
+        "mask": 1
+      }
+    ],
+    "09eaccae-17c0-4ae7-8c2b-ccc25f3e996d": [
+      {
+        "option_id": "dfee709c-dabc-4578-b511-c96aa4d39455",
+        "resource_id": null,
+        "mask": 1
+      }
+    ],
+    "a899b020-ac29-4cbd-9396-89b2c3c13629": [
+      {
+        "option_id": "dfee709c-dabc-4578-b511-c96aa4d39455",
+        "resource_id": null,
+        "mask": 1
+      }
+    ],
+    "2a8a2b9e-6516-4c0c-b079-ea89525442aa": [
+      {
+        "option_id": "dfee709c-dabc-4578-b511-c96aa4d39455",
+        "resource_id": null,
+        "mask": 1
+      }
+    ],
+    "a970136c-227e-4415-bc63-3b0f849f1a1a": [
+      {
+        "option_id": "e676ac3b-2c22-451e-aef0-205115336523",
+        "resource_id": null,
+        "mask": 1
+      },
+      {
+        "option_id": "e676ac3b-2c22-451e-aef0-205115336523",
+        "resource_id": "644ed7aa-4827-46c9-8feb-854074df4800",
+        "mask": 1
+      },
+      {
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9",
+        "resource_id": null,
+        "mask": 1
+      },
+      {
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9",
+        "resource_id": "2399e914-3b61-447b-a9e1-2ef931715426",
+        "mask": 1
+      },
+      {
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9",
+        "resource_id": "c02a5b8a-e7c2-4cd8-9d72-26118c4b8cce",
+        "mask": 55
+      },
+      {
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9",
+        "resource_id": "628b002a-bda0-43e2-96a5-0a90dde1f3b3",
+        "mask": 11
+      },
+      {
+        "option_id": "a94bb18d-317d-4309-8499-af10e05b3e37",
+        "resource_id": null,
+        "mask": 1
+      },
+      {
+        "option_id": "a94bb18d-317d-4309-8499-af10e05b3e37",
+        "resource_id": "2f605d9c-eea7-4ac2-b15b-fd1f080e9f7e",
+        "mask": 1
+      },
+      {
+        "option_id": "a94bb18d-317d-4309-8499-af10e05b3e37",
+        "resource_id": "011b9ed4-5a76-4b02-bdf4-10555e8625a7",
+        "mask": 1
+      },
+      {
+        "option_id": "a94bb18d-317d-4309-8499-af10e05b3e37",
+        "resource_id": "f3cfc0a9-0aca-4ec8-972d-d517ce50640e",
+        "mask": 1
+      },
+      {
+        "option_id": "a94bb18d-317d-4309-8499-af10e05b3e37",
+        "resource_id": "f691754f-b135-4955-b1eb-3b2bc002aff1",
+        "mask": 1
+      },
+      {
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9",
+        "resource_id": "f55e7ebf-7b36-4ad3-be72-2de854724c6e",
+        "mask": 255
+      },
+      {
+        "option_id": "1f750eab-b3a7-4170-9928-0fa2767fd0e9",
+        "resource_id": "e32530a4-53a6-4eb4-8b51-e46860104b2e",
+        "mask": 255
+      }
+    ]
+  },
+  "sec_user_roles_active": {
+    "count": 3,
+    "data": [
+      {
+        "id": "94b1a5ac-ea95-4ca5-90f9-889f7e7d6193",
+        "user_id": "152bfe6e-d1dc-4d8f-8467-7dec4263db0f",
+        "role_id": "06035699-60ba-4d44-b307-d7a59d2516aa",
+        "valid_from": "2026-11-07T00:00:39.699302+00:00",
+        "valid_to": null,
+        "is_active": true
+      },
+      {
+        "id": "1900a3ee-410b-4cbc-b7d3-be5c2ce80f45",
+        "user_id": "308531bd-f131-436f-abe7-7a4b8edd0d99",
+        "role_id": "06035699-60ba-4d44-b307-d7a59d2516aa",
+        "valid_from": "2026-11-08T00:00:00+00:00",
+        "valid_to": null,
+        "is_active": true
+      },
+      {
+        "id": "7cb41bbe-e6e9-4760-b964-2f3116d23a56",
+        "user_id": "1a699651-0d02-4bf3-bcd5-f96a450fffcf",
+        "role_id": "06035699-60ba-4d44-b307-d7a59d2516aa",
+        "valid_from": "2026-11-08T00:00:00+00:00",
+        "valid_to": null,
+        "is_active": true
+      }
+    ]
+  },
+  "sec_authz_version": {
+    "data": [
+      {
+        "user_id": "1a699651-0d02-4bf3-bcd5-f96a450fffcf",
+        "version": 1,
+        "updated_at": "2026-11-08T01:29:05.438914+00:00"
+      },
+      {
+        "user_id": "308531bd-f131-436f-abe7-7a4b8edd0d99",
+        "version": 1,
+        "updated_at": "2026-11-08T01:28:48.538457+00:00"
+      },
+      {
+        "user_id": "6cfd9e0f-a123-44d5-896c-c35fa85bf06b",
+        "version": 4,
+        "updated_at": "2026-11-07T01:43:58.898894+00:00"
+      },
+      {
+        "user_id": "152bfe6e-d1dc-4d8f-8467-7dec4263db0f",
+        "version": 1,
+        "updated_at": "2026-11-07T00:00:39.699302+00:00"
+      }
+    ]
+  },
+  "companies": {
+    "data": null,
+    "error": "column companies.id does not exist"
+  },
+  "qa_users_existing": [],
+  "qa_roles_existing": [],
+  "total_users": 5
+}
