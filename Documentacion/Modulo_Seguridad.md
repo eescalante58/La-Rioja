@@ -1,6 +1,6 @@
 # Módulo de Seguridad — Filosofía, Fundamentos y Referencia Técnica
 
-**Versión del documento:** 1.0.0  
+**Versión del documento:** 2.0.0  
 **Fecha:** noviembre de 2026  
 **Aplica a:** La Rioja — Centro de Formación Laboral (backoffice `/admin`)
 
@@ -8,16 +8,16 @@
 
 ## 1. Filosofía y principios de diseño
 
-### 1.1 Dos sistemas de autorización en coexistencia
+### 1.1 Sistema de autorización unificado
 
-El sistema tiene **dos capas de autorización** que conviven durante la transición al módulo de seguridad avanzado:
+El sistema utiliza **una sola capa de autorización** basada en el módulo de seguridad avanzado (`sec_*`). El sistema de roles legado (`roles`, `users.role_id`) fue eliminado completamente en noviembre de 2026.
 
 | Capa | Sistema | Almacenamiento | Momento de verificación |
 | :--- | :------ | :------------- | :---------------------- |
-| **Legado** | Nivel de rol numérico (`roles.level`) + membresía en empresa (`user_companies`) | BD via Admin client | Server Actions / Route Handlers (run-time) |
 | **Avanzado** | Máscara de bits por opción y recurso (`sec_permissions`) + snapshot en JWT | JWT claim `app_authz` + snapshot en memoria | Proxy (edge), layout server, Server Action, Route Handler |
+| **Base legado** (compatibilidad) | Nivel derivado de `sec_user_roles` → nivel numérico equivalente | `sec_user_roles` + `sec_roles.is_super_admin` via Admin client | Server Actions / Route Handlers (run-time) |
 
-Ambas capas son **aditivas**: la capa legado actúa como red de seguridad mientras la capa avanzada se activa tabla a tabla y función a función. Una página puede usar ambas simultáneamente (el guard dual en `page.tsx` lo ejemplifica).
+La capa "Base legado" es un adaptador que permite que las ~50 llamadas a `withRole(N, fn)` y `requireRoleLevel(N)` distribuidas en toda la app sigan funcionando sin refactorización masiva. Internamente ya consultan `sec_user_roles` —no la tabla `roles` eliminada. La migración completa a `requirePermission(optionCode, table, action)` se realizará progresivamente.
 
 ### 1.2 Principio de menor privilegio
 
@@ -267,15 +267,16 @@ Mapeo de rutas a opciones de seguridad. Mantenido a mano hasta que el módulo es
 | `AUTHENTICATED_ONLY` | Rutas que requieren sesión pero sin opción sec_* asignada |
 | `matchRoute(path)` | Retorna el `SecuredRoute` que corresponde a la ruta |
 
-### 3.5 `src/lib/auth/authorization.ts` (capa legado)
+### 3.5 `src/lib/auth/authorization.ts` (adaptador de compatibilidad)
 
 | Exportación | Descripción |
 | :---------- | :---------- |
-| `requireRoleLevel(minLevel)` | Verifica nivel de rol global del usuario |
-| `requireCompanyAccess(companyId)` | Verifica membresía en la empresa |
-| `roleLevelOf(row)` | Extrae el nivel del rol de una fila de `users` |
+| `requireRoleLevel(minLevel)` | Verifica nivel equivalente consultando `sec_user_roles`. Nivel 10 = `is_super_admin`, nivel 8 = cualquier rol activo, nivel 0 = solo autenticado |
+| `requireCompanyAccess(companyId)` | Verifica membresía en la empresa (consulta `user_companies`, sin FK a `roles`) |
 
-### 3.6 `src/lib/auth/guards.ts` (capa legado)
+> **Nota:** `roleLevelOf()` fue eliminado en v2.0.0 junto con la tabla `roles`. Todo código que necesite el nivel del usuario debe usar `requireRoleLevel()` directamente.
+
+### 3.6 `src/lib/auth/guards.ts` (adaptador de compatibilidad)
 
 | Exportación | Descripción |
 | :---------- | :---------- |
@@ -428,10 +429,11 @@ Mapeo de rutas a opciones de seguridad. Mantenido a mano hasta que el módulo es
 
 | Tabla | Descripción | Rol en seguridad |
 | :---- | :---------- | :--------------- |
-| `users` | Perfil del usuario | Contiene `role_id` (rol legado) y es el origen de `auth.users.id` |
-| `roles` | Catálogo de roles legado con `level` numérico | Base de `requireRoleLevel()` |
-| `user_companies` | Membresía usuario-empresa | Base de `requireCompanyAccess()` y del filtrado RLS |
+| `users` | Perfil del usuario | Origen de `auth.users.id`; ya **no** contiene `role_id` (eliminado en v2.0.0) |
+| `user_companies` | Membresía usuario-empresa | Base de `requireCompanyAccess()` y del filtrado RLS multi-tenant |
 | `user_activity_log` | Bitácora de auditoría | Registro de acciones administrativas |
+
+> **Tablas eliminadas en v2.0.0:** `public.roles` (catálogo de roles legado), columnas `users.role_id` y `user_companies.role_id`. Ver migración `supabase/migrations/20261107000001_remove_legacy_roles.sql`.
 
 ### 4.3 RPC de permisos
 
@@ -527,48 +529,47 @@ Este patrón garantiza que un usuario solo vea los datos de las empresas a las q
 
 Todas las tablas del módulo de seguridad avanzado tienen RLS habilitado. La lógica de acceso es la siguiente:
 
-| Tabla | Política de lectura | Política de escritura | Función auxiliar |
-| :---- | :------------------ | :-------------------- | :--------------- |
-| `sec_roles` | Todos los usuarios autenticados | Solo `is_superadmin()` | `SECURITY DEFINER` |
+| Tabla | Política de lectura | Política de escritura | Notas |
+| :---- | :------------------ | :-------------------- | :---- |
+| `sec_roles` | Todos los usuarios autenticados | Solo SuperAdmin (`is_super_admin = true` en `sec_user_roles`) | Acceso admin vía `createAdminClient()` |
 | `sec_modules` | Todos los usuarios autenticados | Solo SuperAdmin | — |
 | `sec_options` | Todos los usuarios autenticados | Solo SuperAdmin | — |
 | `sec_resources` | Todos los usuarios autenticados | Solo SuperAdmin | — |
-| `sec_permissions` | Todos los usuarios autenticados | Solo nivel ≥ 9 | — |
+| `sec_permissions` | Todos los usuarios autenticados | Solo nivel ≥ 9 en `sec_user_roles` | — |
 | `sec_user_roles` | Propio usuario o nivel ≥ 9 | Solo nivel ≥ 9 | — |
 | `sec_authz_version` | Propio usuario (`user_id = auth.uid()`) | Solo función hook (`SECURITY DEFINER`) | Trigger `on_authz_change` |
 
 #### 5.5.5 El problema de recursión en RLS y `SECURITY DEFINER`
 
-Una trampa clásica al proteger la tabla `roles` (legado) con RLS es la recursión infinita: si la política `USING` de `roles` hace un `JOIN` con la misma tabla `roles` para verificar el nivel del usuario, PostgreSQL entra en un bucle (error `42P17`).
+Una trampa clásica al proteger tablas de autorización con RLS es la recursión infinita: si la política `USING` de una tabla hace un `JOIN` con sí misma o con otra tabla también protegida, PostgreSQL entra en un bucle (error `42P17`).
 
-La solución aplicada en este proyecto es una **función auxiliar `SECURITY DEFINER`**:
+> **Nota histórica:** En el sistema legado existía `public.is_superadmin()` —una función `SECURITY DEFINER` que consultaba `users JOIN roles` para verificar si el usuario tenía nivel 10. Fue eliminada en v2.0.0 junto con la tabla `roles`.
+
+El patrón `SECURITY DEFINER` sigue siendo relevante para las tablas `sec_*`. Si una política de `sec_roles` necesita consultar `sec_user_roles` (que a su vez protege por `sec_roles`), el ciclo se rompe usando una función auxiliar:
 
 ```sql
--- src: supabase/migrations/20261105000000_fix_roles_rls_recursion.sql
-CREATE OR REPLACE FUNCTION public.is_superadmin()
+-- Ejemplo para tablas sec_* si se requiriera recursión:
+CREATE OR REPLACE FUNCTION public.is_sec_superadmin()
 RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER        -- Se ejecuta con privilegios del propietario (postgres)
-STABLE                  -- Sin efectos secundarios; PostgreSQL puede cachearla
+STABLE
 SET search_path = public
 AS $$
   SELECT EXISTS (
-    SELECT 1 FROM users u
-    JOIN roles r ON r.role_id = u.role_id
-    WHERE u.id = auth.uid() AND r.level >= 10
+    SELECT 1 FROM sec_user_roles sur
+    JOIN sec_roles sr ON sr.id = sur.role_id
+    WHERE sur.user_id = auth.uid()
+      AND sur.is_active = true
+      AND sr.is_super_admin = true
+      AND (sur.valid_to IS NULL OR sur.valid_to > NOW())
   );
 $$;
-
--- La política de gestión la usa en vez de un sub-SELECT directo
-CREATE POLICY "roles_admin_manage_policy" ON public.roles
-  FOR ALL TO authenticated
-  USING (public.is_superadmin())
-  WITH CHECK (public.is_superadmin());
 ```
 
-**¿Por qué funciona?** `SECURITY DEFINER` hace que la función se ejecute con los permisos del usuario que la *creó* (normalmente `postgres`/propietario del esquema), no del usuario que la llama. Desde esa perspectiva, las políticas RLS de `roles` no se aplican dentro de la función, rompiendo el ciclo recursivo.
+**¿Por qué funciona?** `SECURITY DEFINER` hace que la función se ejecute con los permisos del usuario que la *creó* (normalmente `postgres`/propietario del esquema). Las políticas RLS de las tablas consultadas dentro de ella no se aplican en ese contexto, rompiendo el ciclo recursivo.
 
-Este mismo patrón aplica a cualquier tabla `sec_*` cuya política necesite consultar otra tabla también protegida por RLS.
+En la práctica, el sistema actual evita la recursión porque `createAdminClient()` (con `service_role`, BYPASSRLS) se usa para todas las consultas internas a las tablas `sec_*`. Las políticas RLS solo protegen el acceso directo externo (PostgREST / browser con clave anónima).
 
 #### 5.5.6 `createAdminClient()` y el bypass de RLS
 

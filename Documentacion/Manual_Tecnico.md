@@ -220,7 +220,7 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 | `last_second_name` | `text` | Segundo apellido. |
 | `email` | `text` | Correo electrónico institucional (UNIQUE). |
 | `phone` | `text` | Número de teléfono de contacto. |
-| `role_id` | `bigint` | ID del rol principal asignado (FK → `roles`). |
+| ~~`role_id`~~ | ~~`bigint`~~ | _Eliminado en nov-2026. No existe en la BD actual._ |
 | `status` | `text` | Estado de la cuenta (active, inactive). |
 | `avatar_url` | `text` | URL de la imagen de perfil (bucket `user_avatar`). |
 | `metadata` | `jsonb` | Información adicional en formato JSON. |
@@ -233,19 +233,9 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 
 - **Relaciones:** El trigger `handle_new_user` crea el perfil automáticamente al registrarse en `auth.users`.
 
-##### Tabla: `public.roles`
+##### ~~Tabla: `public.roles`~~ _(eliminada en nov-2026)_
 
-**Descripción:** Catálogo de roles con nivel/jerarquía y estado.
-
-| Columna | Tipo de Datos | Comentario |
-| :------ | :------------ | :--------- |
-| `role_id` | `bigint` | Identificador único del rol (PK). |
-| `name` | `text` | Nombre descriptivo del rol (admin, ventas, etc). UNIQUE. |
-| `description` | `text` | Descripción de las responsabilidades del rol. |
-| `level` | `integer` | Nivel de jerarquía para control de permisos. |
-| `is_active` | `boolean` | Estado de activación del rol. |
-| `created_at` | `timestamp with time zone` | Fecha de creación. |
-| `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
+> Esta tabla formaba parte del sistema de roles legado y fue eliminada completamente en noviembre de 2026 (migración `20261107000001_remove_legacy_roles.sql`). La autorización de usuarios ahora se gestiona exclusivamente a través del módulo de seguridad avanzado (`sec_roles`, `sec_user_roles`, `sec_permissions`). Ver `Documentacion/Modulo_Seguridad.md`.
 
 ##### Tabla: `public.user_companies`
 
@@ -255,8 +245,8 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 | :------ | :------------ | :--------- |
 | `user_id` | `uuid` | ID del usuario (PK/FK → `users`). |
 | `company_id` | `bigint` | ID de la empresa (PK/FK → `companies`). |
-| `role` | `text` | Nombre del rol dentro de esta empresa específica. |
-| `role_id` | `bigint` | ID técnico del rol asignado (FK → `roles`). |
+| `role` | `text` | Nombre del rol dentro de esta empresa específica (valor libre, ej: "Miembro"). |
+| ~~`role_id`~~ | ~~`bigint`~~ | _Eliminado en nov-2026._ |
 | `created_at` | `timestamp with time zone` | Fecha de vinculación. |
 | `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
 | `default_event_id` | `citext` | Evento por defecto del usuario en esta empresa. |
@@ -1054,13 +1044,13 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `idx_event_gallery_created_at` | (created_at DESC) — fotos recientes para la pestaña Galería del CMS |
 | `idx_event_gallery_event_order` | (event_id, content_order ASC) — galería pública y administrativa por evento |
 | `idx_contact_submissions_idempotency_key` | UNIQUE (idempotency_key) WHERE idempotency_key IS NOT NULL — idempotencia de prospectos de `/matricula` |
-| `user_companies` | PK (user_id, company_id) + idx (company_id, user_id) + (user_id, company_id, role_id) |
+| `user_companies` | PK (user_id, company_id) + idx (company_id, user_id) |
 | `product_lines_catalog_order_idx` / `products_line_order_idx` / `product_variants_product_order_idx` | Orden de líneas, productos y variantes en la tienda |
 | `products_company_active_order_idx` | (company_id, is_active, content_order) |
 | `shop_orders_company_status_created_idx` | (company_id, status, created_at DESC) — pestaña Pedidos por estado |
 | `shop_orders_ip_created_idx` / `shop_order_attempts_ip_time_idx` | Ventanas anti-abuso por IP |
 | `shop_order_items_order_idx` | Ítems de un pedido |
-| `users_email_key`, `roles_name_key`, `country_codes_iso2/iso3_key`, `customer_phone_number_company_id_phone_number_key` | Uniques de catálogos |
+| `users_email_key`, `country_codes_iso2/iso3_key`, `customer_phone_number_company_id_phone_number_key` | Uniques de catálogos |
 
 ### 4.4 Vistas
 
@@ -1081,7 +1071,10 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | :------ | :-------- |
 | `is_admin_global()` / `is_global_admin()` | true si el usuario es admin global |
 | `is_reader_global()` / `is_global_role(text)` | true para reader global / rol global arbitrario |
-| `role_id_by_name(text)` | Resuelve rol por nombre (sincronización role↔role_id) |
+| ~~`role_id_by_name(text)`~~ | _Eliminada en nov-2026 (dependía de la tabla `roles` legada)._ |
+| ~~`is_superadmin()`~~ | _Eliminada en nov-2026 (consultaba `users JOIN roles`). Reemplazada por consulta a `sec_user_roles`._ |
+| `custom_access_token_hook` | JWT Hook: inyecta `app_authz` en el token al emitirse/refrescarse |
+| `get_my_permissions()` | SECURITY DEFINER — retorna el `PermissionSnapshot` completo del usuario autenticado |
 
 **Negocio:**
 
@@ -1089,7 +1082,7 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | :------ | :-------- |
 | `set_timestamps()` | Trigger genérico `updated_at = now()` (la mayoría de las tablas) |
 | `update_updated_at_column()` | Variante del anterior usada por `faqs` y `faq_sections` |
-| `sync_user_companies_role()` | Mantiene consistente `role`↔`role_id` en user_companies |
+| ~~`sync_user_companies_role()`~~ | _Eliminada en nov-2026 (sincronizaba `role`↔`role_id`; el campo `role_id` fue eliminado)._ |
 | `log_user_activity(action, entity, entity_id uuid, metadata jsonb)` | Inserta en la bitácora `user_activity_log` |
 | `handle_new_user()` | SECURITY DEFINER — trigger en `auth.users`: crea el perfil en `public.users` al registrarse |
 | `fn_sync_cards_with_invoice()` | Trigger en `invoices`: sincroniza cartones con la factura (asociación de cartones) |
@@ -1134,7 +1127,7 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 | `tr_sync_cards_with_invoice` | invoices | `fn_sync_cards_with_invoice` — sincroniza cartones con la factura |
 | `tr_sync_event_sales` | invoices | `fn_update_event_total_sales` — mantiene `events.total_amount_solded` |
 | `tr_log_site_content_activity` | site_content | `fn_log_site_content_activity` — audita cambios del CMS |
-| `trg_user_companies_sync_role` | user_companies | Sincroniza rol textual ↔ role_id |
+| ~~`trg_user_companies_sync_role`~~ | ~~user_companies~~ | _Eliminado en nov-2026 (campo `role_id` eliminado)._ |
 | `on_auth_user_created` (`handle_new_user`) | auth.users | Crea el perfil en `public.users` al registrarse (schema auth) |
 | `trg_wheel_spins_prize_limit` | wheel_spins | Límite de premios por ruleta (serializa con FOR UPDATE) |
 | `trg_wheel_participating_prize_limit` / `trg_wheels_presents_prize_limit` | tablas de participantes | Límite de ganadores por tómbola |
@@ -1177,16 +1170,17 @@ Inventario verificado contra `pg_indexes` (producción, oct-2026). No se listan 
 3. Middleware (`ƒ Proxy`) protege rutas `/admin/*`; páginas usan `requireRoleLevel(minLevel)` en servidor.
 4. Route Handlers `/api/bingo/*` y `/api/dashboard` validan con `checkAdmin(companyId, minLevel=4)` = autenticación + nivel de rol + membresía de empresa (`requireCompanyAccess`).
 
-### 5.2 Roles y niveles
+### 5.2 Roles y niveles (módulo de seguridad avanzado)
 
-| Rol | Ámbito | Acceso típico |
-| :-- | :----- | :------------ |
-| `admin` (global) | Sistema | Todo, incluido CRUD de roles y auditoría |
-| `admin_empresa` | Empresa | CMS, bingo completo, configuración |
-| `ventas` | Empresa | Ventas/facturación, inventario, sorteos |
-| `reader` | Global | Dashboard solo lectura |
+Los roles ahora se gestionan exclusivamente en la tabla `sec_roles`. La tabla `roles` legada fue eliminada en nov-2026.
 
-Niveles de referencia en `src/lib/auth/authorization.ts`: SuperAdmin 10, Admin 8, Editor 6, Operator 4 (`checkAdmin` exige ≥4 por defecto).
+| Atributo | Valor | Significado en guards |
+| :------- | :---- | :-------------------- |
+| `is_super_admin = true` | Nivel equivalente 10 | Supera cualquier guard (`withRole(10)`, `checkAdmin`) |
+| Cualquier rol activo en `sec_user_roles` | Nivel equivalente 8 | Pasa guards `withRole(4)` y `withRole(8)` |
+| Sin rol asignado | Nivel equivalente 0 | Bloqueado por todos los guards |
+
+> Los roles concretos (nombre, código, descripción) se definen en `/admin/settings/users` → pestaña **Roles · Permisos**. Ver `Documentacion/Modulo_Seguridad.md` para la documentación completa.
 
 ### 5.3 Patrones de guard
 
@@ -1196,7 +1190,7 @@ Niveles de referencia en `src/lib/auth/authorization.ts`: SuperAdmin 10, Admin 8
 
 ### 5.4 Módulo de Seguridad Avanzado
 
-El sistema posee una capa de autorización de grano fino sobre el modelo de roles legacy. Conviven en paralelo: si el módulo avanzado tiene permisos para el usuario, estos tienen precedencia; si no, se cae al nivel de rol.
+El sistema utiliza exclusivamente el módulo de seguridad avanzado (`sec_*`) para toda la autorización. El modelo de roles legado fue eliminado en nov-2026.
 
 **Arquitectura de permisos (bitmask de 8 bits)**
 

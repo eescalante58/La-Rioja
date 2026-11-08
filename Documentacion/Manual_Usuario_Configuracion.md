@@ -49,13 +49,12 @@ Gestiona las cuentas de acceso al panel, los roles disponibles y la matriz de pe
 Administra las cuentas de acceso al sistema y su asignación a empresas.
 
 - **Buscar**: filtra por nombre o correo.
-- **Nuevo usuario**: crea la cuenta con nombre, correo, teléfono, rol principal y avatar (foto de perfil).
-- **Editar**: actualiza datos, rol y estado (activo/inactivo).
-  - La sección **Roles** dentro del formulario de edición muestra los roles del sistema legacy (nivel numérico).
-- **Empresas**: asigna a qué empresas pertenece el usuario y con qué rol en cada una — un mismo usuario puede tener roles distintos por empresa.
+- **Nuevo usuario**: crea la cuenta con nombre, correo y teléfono. El avatar (foto de perfil) es opcional.
+- **Editar**: actualiza nombre, teléfono, correo alternativo, avatar y estado (activo/inactivo).
+- **Empresas**: asigna a qué empresas pertenece el usuario. La asignación a empresa es suficiente para que pueda acceder; los permisos de operación se definen en la pestaña **Asignación de Roles**.
 - **Eliminar**: pide confirmación.
 
-> El campo **Nivel** del rol legacy controla acceso genérico (formularios, buscador, dashboard). Los permisos de grano fino se gestionan desde la pestaña **Roles · Permisos** y se asignan en **Asignación de Roles**.
+> Los permisos de acceso se gestionan exclusivamente en las pestañas **Roles · Permisos** y **Asignación de Roles**. No existe el campo "nivel de rol" legado — fue eliminado en noviembre de 2026.
 
 ### Pestaña Roles · Permisos
 
@@ -95,7 +94,7 @@ Vincula usuarios del sistema con los roles del módulo de seguridad avanzado. Un
 - **Activar / Desactivar**: alterna el estado de una asignación sin borrarla.
 - **Eliminar asignación**: borra la relación (pide confirmación).
 
-> Si un usuario no tiene ningún rol asignado aquí, el sistema cae al control de acceso legacy (nivel de rol numérico). Los permisos del módulo avanzado tienen **precedencia** sobre el sistema legacy cuando están configurados.
+> Si un usuario no tiene ningún rol asignado aquí, **no tendrá acceso** a las funcionalidades protegidas del sistema. Asegúrate de asignarle al menos un rol activo después de crearlo.
 
 ---
 
