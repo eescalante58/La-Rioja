@@ -479,17 +479,180 @@ El claim `app_authz` se inyecta en el token mediante un **Custom JWT Hook** conf
 
 ### 5.5 Row Level Security (RLS)
 
-Todas las tablas `sec_*` tienen RLS habilitado:
+#### 5.5.1 ¿Las RLS son dinámicas o se fijan por usuario?
 
-| Tabla | Política de lectura | Política de escritura |
-| :---- | :------------------ | :-------------------- |
-| `sec_roles` | Todos los usuarios autenticados | Solo nivel ≥ 9 |
-| `sec_modules` / `sec_options` / `sec_resources` | Todos los usuarios autenticados | Solo SuperAdmin |
-| `sec_permissions` | Todos los usuarios autenticados | Solo nivel ≥ 9 |
-| `sec_user_roles` | Propio usuario o nivel ≥ 9 | Solo nivel ≥ 9 |
-| `sec_authz_version` | Propio usuario | Solo función hook (SECURITY DEFINER) |
+**Las políticas RLS son completamente dinámicas**: PostgreSQL las evalúa en **cada consulta SQL**, en tiempo real, usando el contexto de sesión del momento. No se "calculan" ni se "fijan" en el momento del login; se recalculan cada vez que se ejecuta un `SELECT`, `INSERT`, `UPDATE` o `DELETE`.
 
-> Las consultas que usa el sistema internamente se ejecutan con `createAdminClient()` (service role), que bypasea RLS. Las políticas RLS protegen el acceso directo desde PostgREST/el cliente de browser.
+Esto significa:
+
+- Cuando el JWT del usuario cambia (por ejemplo, después de que se actualiza su versión de permisos y llama a `supabase.auth.refreshSession()`), la siguiente consulta ya opera con el JWT nuevo.
+- Si un administrador revoca el acceso a un usuario a las 14:00, ese usuario puede seguir usando el JWT anterior hasta que expire (máximo 1 hora en Supabase), pero cualquier consulta directa a PostgREST/browser ya refleja el cambio de inmediato, pues la función `auth.uid()` y `auth.jwt()` leen del token activo en la conexión.
+
+#### 5.5.2 Cómo funciona `auth.uid()` y `auth.jwt()` en PostgreSQL
+
+Cuando el cliente de Supabase (browser o server) realiza una petición a PostgREST, incluye el JWT en el header `Authorization`. PostgREST establece una sesión de PostgreSQL y llama internamente a:
+
+```sql
+SET LOCAL role = 'authenticated';
+SET LOCAL request.jwt.claims = '{ "sub": "uuid-del-usuario", "app_authz": {...}, ... }';
+```
+
+A partir de ese momento, en esa sesión de base de datos:
+
+- `auth.uid()` → retorna el `sub` del JWT (UUID del usuario).
+- `auth.jwt()` → retorna el JSON completo del JWT como `jsonb`.
+- `auth.jwt() -> 'app_authz'` → retorna el claim de autorización del módulo avanzado.
+
+Cada `USING (...)` y `WITH CHECK (...)` de las políticas RLS puede invocar estas funciones. Como se re-ejecutan por consulta y leen del estado de la sesión actual, reflejan siempre el token presente.
+
+#### 5.5.3 Patrón de las tablas de negocio (multi-tenant)
+
+Las tablas de negocio (`bingo_events`, `bingo_cards`, `invoices`, etc.) usan un patrón de RLS basado en membresía de empresa:
+
+```sql
+-- Ejemplo típico de política multi-tenant
+CREATE POLICY "company_access" ON bingo_events
+  FOR ALL TO authenticated
+  USING (
+    company_id IN (
+      SELECT company_id FROM user_companies
+      WHERE user_id = auth.uid()
+    )
+  );
+```
+
+Este patrón garantiza que un usuario solo vea los datos de las empresas a las que pertenece, **evaluado dinámicamente** en cada consulta usando `auth.uid()`.
+
+#### 5.5.4 Políticas RLS de las tablas `sec_*`
+
+Todas las tablas del módulo de seguridad avanzado tienen RLS habilitado. La lógica de acceso es la siguiente:
+
+| Tabla | Política de lectura | Política de escritura | Función auxiliar |
+| :---- | :------------------ | :-------------------- | :--------------- |
+| `sec_roles` | Todos los usuarios autenticados | Solo `is_superadmin()` | `SECURITY DEFINER` |
+| `sec_modules` | Todos los usuarios autenticados | Solo SuperAdmin | — |
+| `sec_options` | Todos los usuarios autenticados | Solo SuperAdmin | — |
+| `sec_resources` | Todos los usuarios autenticados | Solo SuperAdmin | — |
+| `sec_permissions` | Todos los usuarios autenticados | Solo nivel ≥ 9 | — |
+| `sec_user_roles` | Propio usuario o nivel ≥ 9 | Solo nivel ≥ 9 | — |
+| `sec_authz_version` | Propio usuario (`user_id = auth.uid()`) | Solo función hook (`SECURITY DEFINER`) | Trigger `on_authz_change` |
+
+#### 5.5.5 El problema de recursión en RLS y `SECURITY DEFINER`
+
+Una trampa clásica al proteger la tabla `roles` (legado) con RLS es la recursión infinita: si la política `USING` de `roles` hace un `JOIN` con la misma tabla `roles` para verificar el nivel del usuario, PostgreSQL entra en un bucle (error `42P17`).
+
+La solución aplicada en este proyecto es una **función auxiliar `SECURITY DEFINER`**:
+
+```sql
+-- src: supabase/migrations/20261105000000_fix_roles_rls_recursion.sql
+CREATE OR REPLACE FUNCTION public.is_superadmin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER        -- Se ejecuta con privilegios del propietario (postgres)
+STABLE                  -- Sin efectos secundarios; PostgreSQL puede cachearla
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM users u
+    JOIN roles r ON r.role_id = u.role_id
+    WHERE u.id = auth.uid() AND r.level >= 10
+  );
+$$;
+
+-- La política de gestión la usa en vez de un sub-SELECT directo
+CREATE POLICY "roles_admin_manage_policy" ON public.roles
+  FOR ALL TO authenticated
+  USING (public.is_superadmin())
+  WITH CHECK (public.is_superadmin());
+```
+
+**¿Por qué funciona?** `SECURITY DEFINER` hace que la función se ejecute con los permisos del usuario que la *creó* (normalmente `postgres`/propietario del esquema), no del usuario que la llama. Desde esa perspectiva, las políticas RLS de `roles` no se aplican dentro de la función, rompiendo el ciclo recursivo.
+
+Este mismo patrón aplica a cualquier tabla `sec_*` cuya política necesite consultar otra tabla también protegida por RLS.
+
+#### 5.5.6 `createAdminClient()` y el bypass de RLS
+
+Las operaciones internas del sistema (Server Actions, Route Handlers) **nunca** usan el cliente de Supabase del usuario para acceder a las tablas de seguridad. En su lugar, utilizan `createAdminClient()`:
+
+```typescript
+// src/lib/supabase/server.ts
+export function createAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,  // service_role
+  );
+}
+```
+
+La clave `service_role` hace que PostgreSQL establezca la sesión con `SET LOCAL role = 'service_role'`. Este rol tiene el privilegio `BYPASSRLS` en Supabase, lo que significa que **todas las políticas RLS se ignoran por completo** para ese cliente.
+
+Esto permite al sistema leer y escribir en las tablas `sec_*` sin las restricciones que protegen el acceso directo externo. El aislamiento de seguridad viene del hecho de que esta clave es un **secreto de servidor** (`SUPABASE_SERVICE_ROLE_KEY`, sin prefijo `NEXT_PUBLIC_`) que nunca llega al browser.
+
+> **Regla crítica:** `createAdminClient()` solo puede usarse en código de servidor (Server Components, Server Actions, Route Handlers). Usarlo en un componente `"use client"` o exponerlo vía una variable de entorno `NEXT_PUBLIC_` comprometería completamente la seguridad del sistema.
+
+#### 5.5.7 Supabase Realtime y RLS
+
+Las suscripciones de Supabase Realtime también respetan las políticas RLS. Cuando el cliente se suscribe a cambios de una tabla, Supabase evalúa la política `SELECT` del usuario al entregar cada evento: solo recibe las filas que podría consultar con un `SELECT` normal.
+
+En este sistema, la suscripción más sensible es la de `sec_authz_version`:
+
+```typescript
+// src/lib/security/permission-context.tsx
+supabase.channel(`authz:${userId}`)
+  .on("postgres_changes", {
+    event: "*",
+    schema: "public",
+    table: "sec_authz_version",
+    filter: `user_id=eq.${userId}`,    // Solo los cambios del propio usuario
+  }, async () => {
+    await supabase.auth.refreshSession(); // 1. Obtiene nuevo JWT con app_authz.v actualizado
+    router.refresh();                    // 2. El layout re-solicita el snapshot desde servidor
+  })
+```
+
+La política RLS de `sec_authz_version` (`USING (user_id = auth.uid())`) garantiza que un usuario solo recibe eventos de su propia fila, no de la de otros usuarios.
+
+#### 5.5.8 Flujo completo: cambio de permisos → nueva RLS efectiva
+
+```
+Administrador modifica permisos en /admin/settings/users
+        │
+        ▼
+Server Action / Route Handler (usa createAdminClient — bypasea RLS)
+  → Actualiza sec_role_permissions / sec_user_roles
+  → Trigger on_authz_change incrementa sec_authz_version.version
+        │
+        ▼ (Supabase Realtime — solo para ese user_id)
+PermissionProvider en el browser del usuario afectado
+  → supabase.auth.refreshSession()       ← nuevo JWT: app_authz.v actualizado
+  → router.refresh()                     ← Next.js re-renderiza el layout
+        │
+        ▼
+getSessionAuthz() en el server (layout.tsx)
+  → Verifica app_authz.v en nuevo JWT vs caché LRU
+  → Si versión nueva: re-consulta sec_role_permissions con createAdminClient
+  → Nuevo PermissionSnapshot distribuido por PermissionProvider
+        │
+        ▼
+RLS en PostgreSQL (para las consultas directas desde browser)
+  → auth.jwt() lee el nuevo JWT
+  → Políticas evaluadas con permisos actualizados
+  → Realtime también filtra con el nuevo JWT
+```
+
+#### 5.5.9 RLS como última línea de defensa
+
+En la arquitectura del módulo, el orden de las capas de control es:
+
+1. **Proxy / Edge** (`src/proxy.ts`) — verifica sesión y claim `app_authz`; redirección inmediata sin llegar al servidor de aplicación.
+2. **Guard de página** (`requireOption`) — Server Component; redirige si sin permiso READ.
+3. **Guard de API** (`checkAdmin`, `requireRoleLevel`) — Route Handlers; retorna 401/403.
+4. **Guard de acción** (`withRole`, `withCompanyAccess`) — Server Actions; lanza error.
+5. **RLS en PostgreSQL** — última barrera; bloquea la consulta SQL aunque las capas anteriores fallaran.
+
+Las capas 1–4 protegen a nivel de aplicación y retornan respuestas HTTP controladas. La capa 5 (RLS) es la **garantía de integridad de los datos**: incluso si hubiera un bug en las capas anteriores que permitiera llegar a una consulta no autorizada, PostgreSQL denegaría el acceso directamente.
+
+> En la práctica, las capas de aplicación atrapan prácticamente todos los accesos no autorizados. Las RLS son el seguro ante escenarios excepcionales: bugs, vulnerabilidades futuras, o acceso directo a la API de Supabase con credenciales de usuario (anon key).
 
 ---
 
