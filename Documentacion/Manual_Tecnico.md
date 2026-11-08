@@ -1265,7 +1265,15 @@ const { canView, can, isSuperAdmin } = usePermission("BINGO_EVENTS");
 
 **Verificación de opciones en el sidebar**
 
-`AdminSidebar` consulta `usePermission(optionCode)` por cada enlace. Si `canView` es `false` el enlace no se renderiza. Super Admin (`sa=true`) siempre ve todos los ítems.
+`AdminSidebar` usa el sub-componente `SidebarNavLink` que llama `usePermission(optionCode)` por cada enlace. La lógica de visibilidad es:
+
+```
+Sin optionCode            → siempre visible (Configuración, Galería)
+Sin snapshot (solo legacy)→ siempre visible; guard de la página protege
+Con optionCode + snapshot → oculto si !canView && !isSuperAdmin
+```
+
+`hasSnapshot` (campo que retorna `usePermission`) vale `true` solo cuando el usuario tiene al menos un rol asignado en `sec_user_roles`. Los usuarios que únicamente usan roles legacy ven el menú completo. Super Admin (`sa=true`) siempre ve todos los ítems. El componente se aplica a desktop y móvil.
 
 **Tablas del módulo de seguridad avanzado**
 

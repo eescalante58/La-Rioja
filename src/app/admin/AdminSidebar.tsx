@@ -19,9 +19,71 @@ import {
 } from "lucide-react";
 import { useUser } from "@/providers/UserProvider";
 import { signOut } from "../auth/actions";
+import { usePermission } from "@/lib/security/permission-context";
+
+interface NavLink {
+  href: string;
+  label: string;
+  icon: React.ElementType<{ size?: number }>;
+  external?: boolean;
+  /** Código de opción del módulo de seguridad avanzado. Sin valor = siempre visible. */
+  optionCode?: string;
+}
 
 interface AdminSidebarProps {
   companyName: string;
+}
+
+/** Renderiza un enlace del sidebar solo si el usuario tiene canView sobre la opción. */
+function SidebarNavLink({
+  link,
+  pathname,
+  mobile = false,
+}: {
+  link: NavLink;
+  pathname: string;
+  mobile?: boolean;
+}) {
+  const { canView, isSuperAdmin, hasSnapshot } = usePermission(link.optionCode ?? "_none_");
+
+  // Sin optionCode → siempre visible.
+  // Sin snapshot (usuario solo legacy) → siempre visible; el guard de la página protege.
+  // Con optionCode + snapshot → ocultar si no tiene canView ni es SuperAdmin.
+  if (link.optionCode && hasSnapshot && !isSuperAdmin && !canView) return null;
+
+  const isActive = pathname === link.href;
+
+  if (mobile) {
+    return (
+      <Link
+        href={link.href}
+        target={link.external ? "_blank" : undefined}
+        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors outline-none focus-visible:ring-4 focus-visible:ring-larioja-azul/40 ${
+          isActive
+            ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-md shadow-larioja-azul/10"
+            : "text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
+        }`}
+      >
+        <link.icon size={20} />
+        <span className="font-medium text-base">{link.label}</span>
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      href={link.href}
+      target={link.external ? "_blank" : undefined}
+      className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 text-lg font-bold outline-none focus-visible:ring-2 focus-visible:ring-larioja-azul ${
+        isActive
+          ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-lg shadow-larioja-azul/20"
+          : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
+      }`}
+    >
+      <link.icon size={22} />
+      <span>{link.label}</span>
+    </Link>
+  );
 }
 
 /**
@@ -51,11 +113,17 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
     };
   }, [isOpen]);
 
-  const navLinks = [
-    { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/cms", label: "Gestión CMS", icon: FileText },
-    { href: "/admin/productos", label: "Gestión Productos", icon: ShoppingBag },
-    { href: "/admin/bingo", label: "Gestión Bingo", icon: Ticket },
+  const navLinks: NavLink[] = [
+    { href: "/admin", label: "Dashboard", icon: LayoutDashboard, optionCode: "DASH_HOME" },
+    { href: "/admin/cms", label: "Gestión CMS", icon: FileText, optionCode: "CMS_CONTENT" },
+    {
+      href: "/admin/productos",
+      label: "Gestión Productos",
+      icon: ShoppingBag,
+      optionCode: "SHOP_PRODUCTS",
+    },
+    { href: "/admin/bingo", label: "Gestión Bingo", icon: Ticket, optionCode: "BINGO_EVENTS" },
+    // Configuración agrupa múltiples sub-opciones; los guards de cada sub-página controlan el acceso fino.
     { href: "/admin/settings", label: "Configuración", icon: Settings },
     { href: "/bingo", label: "Galería", icon: ImageIcon, external: true },
   ];
@@ -94,19 +162,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
 
         <nav className="flex-1 px-4 space-y-3">
           {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              target={link.external ? "_blank" : undefined}
-              className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 text-lg font-bold outline-none focus-visible:ring-2 focus-visible:ring-larioja-azul ${
-                pathname === link.href
-                  ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-lg shadow-larioja-azul/20"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
-              }`}
-            >
-              <link.icon size={22} />
-              <span>{link.label}</span>
-            </Link>
+            <SidebarNavLink key={link.href} link={link} pathname={pathname} />
           ))}
 
           <div className="pt-8 border-t border-gray-100 dark:border-gray-800 mt-6">
@@ -195,19 +251,7 @@ export function AdminSidebar({ companyName }: AdminSidebarProps) {
 
           <nav className="px-3 py-3 space-y-1">
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                target={link.external ? "_blank" : undefined}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-colors outline-none focus-visible:ring-4 focus-visible:ring-larioja-azul/40 ${
-                  pathname === link.href
-                    ? "bg-larioja-azul text-white dark:bg-slate-800 dark:text-white shadow-md shadow-larioja-azul/10"
-                    : "text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
-                }`}
-              >
-                <link.icon size={20} />
-                <span className="font-medium text-base">{link.label}</span>
-              </Link>
+              <SidebarNavLink key={link.href} link={link} pathname={pathname} mobile />
             ))}
 
             <div className="pt-2 mt-2 border-t border-gray-100 dark:border-gray-800">

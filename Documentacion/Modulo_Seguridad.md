@@ -189,7 +189,32 @@ if ('error' in result) return Response.json({ error: result.error }, { status: r
 
 ### 2.7 Visibilidad del menú sidebar
 
-El sidebar (`AdminSidebar.tsx`) actualmente **no** usa `usePermission` para filtrar los ítems de menú; los muestra todos. Las restricciones de acceso se aplican en la **página** (`page.tsx`) que redirige al usuario si intenta acceder sin permisos. Para un futuro filtrado del sidebar, agregar `usePermission` y el `canModule()` de `src/lib/security/types.ts`.
+El sidebar (`AdminSidebar.tsx`) utiliza el sub-componente `SidebarNavLink` para **ocultar automáticamente** las opciones a las que el usuario no tiene acceso. El filtrado opera en cliente con costo cero porque los datos ya están en el `PermissionProvider`.
+
+**Mapeo optionCode → entrada del menú**
+
+| Entrada | `optionCode` | Comportamiento |
+| :------ | :----------- | :------------- |
+| Dashboard | `DASH_HOME` | Oculto si no tiene READ |
+| Gestión CMS | `CMS_CONTENT` | Oculto si no tiene READ |
+| Gestión Productos | `SHOP_PRODUCTS` | Oculto si no tiene READ |
+| Gestión Bingo | `BINGO_EVENTS` | Oculto si no tiene READ |
+| Configuración | _(ninguno)_ | Siempre visible; guards por sub-página |
+| Galería | _(ninguno)_ | Siempre visible (enlace externo público) |
+
+**Lógica de `SidebarNavLink`**
+
+```tsx
+const { canView, isSuperAdmin, hasSnapshot } = usePermission(link.optionCode ?? "_none_");
+// Sin optionCode            → siempre visible (Configuración, Galería).
+// Sin snapshot (solo legacy)→ siempre visible; el guard de la página protege.
+// Con optionCode + snapshot → ocultar si !canView y !isSuperAdmin.
+if (link.optionCode && hasSnapshot && !isSuperAdmin && !canView) return null;
+```
+
+- **`hasSnapshot`**: `true` solo cuando el usuario tiene al menos un rol asignado en `sec_user_roles`. Usuarios que únicamente usan el sistema legacy (nivel de rol numérico) ven el sidebar completo — la protección real recae en el guard de la página.
+- **Super Admin** (`sa: true` en el JWT) siempre ve todos los ítems.
+- El componente se usa tanto en el sidebar desktop como en el sidebar móvil (prop `mobile`).
 
 ---
 

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 // lib/security/permission-context.tsx — proveedor, hook usePermission y componente <Can>
 
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
-import { canOption, canResource, type Action, type PermissionSnapshot } from './types';
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { createBrowserClient } from "@supabase/ssr";
+import { canOption, canResource, type Action, type PermissionSnapshot } from "./types";
 
 const PermissionContext = createContext<PermissionSnapshot | null>(null);
 
@@ -28,8 +28,13 @@ export function PermissionProvider({ snapshot, userId, children }: ProviderProps
     const channel = supabase
       .channel(`authz:${userId}`)
       .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'sec_authz_version', filter: `user_id=eq.${userId}` },
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "sec_authz_version",
+          filter: `user_id=eq.${userId}`,
+        },
         async () => {
           await supabase.auth.refreshSession(); // nuevo JWT con app_authz.v actualizado
           router.refresh(); // el layout vuelve a pedir el snapshot con la nueva versión
@@ -49,11 +54,13 @@ export function usePermission(optionCode: string) {
   return useMemo(
     () => ({
       /** ¿Puede abrir la pantalla? */
-      canView: canOption(snap, optionCode, 'READ'),
+      canView: canOption(snap, optionCode, "READ"),
       /** Sin tabla = nivel opción; con tabla = nivel entidad. */
       can: (action: Action, table?: string) =>
         table ? canResource(snap, optionCode, table, action) : canOption(snap, optionCode, action),
       isSuperAdmin: snap?.sa ?? false,
+      /** true cuando el usuario tiene un snapshot del módulo avanzado; false = solo sistema legacy. */
+      hasSnapshot: snap !== null,
     }),
     [snap, optionCode],
   );
