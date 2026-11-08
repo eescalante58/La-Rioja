@@ -154,7 +154,8 @@ export async function updateUser(userId: string, rawInput: unknown) {
 
   if (!currentUser) return { error: "No autenticado." };
 
-  const { level: currentLevel } = await requireRoleLevel(0);
+  // minLevel=1 para que requireRoleLevel consulte la DB y devuelva el nivel real
+  const { level: currentLevel } = await requireRoleLevel(1);
 
   const validation = userSchema.partial().safeParse(rawInput);
   if (!validation.success) {

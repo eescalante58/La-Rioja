@@ -271,7 +271,7 @@ export async function getDashboardDataCore(): Promise<DashboardData> {
 
     let userLevel = 0;
     if (user) {
-      const authResult = await requireRoleLevel(0);
+      const authResult = await requireRoleLevel(1);
       userLevel = authResult.level ?? 0;
     }
 
