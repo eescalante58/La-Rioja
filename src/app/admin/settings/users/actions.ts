@@ -1,15 +1,25 @@
 "use server";
 
+import { randomBytes } from "crypto";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { requireRoleLevel } from "@/lib/auth/authorization";
 import { withRole } from "@/lib/auth/guards";
 import { userSchema, type UserInput } from "@/lib/validation/users";
 
+/** Genera una contraseña temporal aleatoria de 12 caracteres. */
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#";
+  const bytes = randomBytes(12);
+  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+}
+
 /**
  * Devuelve todos los usuarios del sistema.
  */
 export async function getUsers() {
+  const { error: authError } = await requireRoleLevel(8);
+  if (authError) return [];
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("users")
@@ -89,7 +99,7 @@ async function createNewUserInternal(rawInput: UserInput) {
 
   const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: data.email,
-    password: "Rioja2026!",
+    password: generateTempPassword(),
     email_confirm: true,
     user_metadata: { full_name: data.full_name },
   });
@@ -126,6 +136,8 @@ export const createNewUser = withRole(8, createNewUserInternal);
  * Sube un avatar de usuario a Storage.
  */
 export async function uploadUserAvatar(file: FormData) {
+  const { error: authError } = await requireRoleLevel(8);
+  if (authError) return { error: "No autenticado." };
   const supabase = await createClient();
   const image = file.get("avatar") as File;
   const fileName = `${Date.now()}-${image.name}`;
@@ -269,6 +281,8 @@ export const removeUserFromCompany = withRole(8, removeUserFromCompanyInternal);
  * Devuelve las empresas asignadas a un usuario.
  */
 export async function getUserCompanies(userId: string) {
+  const { error: authError } = await requireRoleLevel(8);
+  if (authError) return [];
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("user_companies")
@@ -360,15 +374,25 @@ export async function upsertPermission(
 
   const supabase = createAdminClient();
 
+  // BUG-SEC-013: rechazar modificaciones sobre roles de sistema o super_admin
+  const { data: targetRole } = await supabase
+    .from("sec_roles")
+    .select("is_system, is_super_admin")
+    .eq("id", roleId)
+    .single();
+  if (targetRole?.is_system) return { error: "Los roles de sistema no pueden modificarse." };
+  if (targetRole?.is_super_admin)
+    return { error: "El rol Super Administrador no puede modificarse." };
+
   if (mask === 0) {
-    const query = supabase
+    // BUG-SEC-002: reasignar el query builder para que el filtro resource_id se aplique
+    let q = supabase
       .from("sec_permissions")
       .delete()
       .eq("role_id", roleId)
       .eq("option_id", optionId);
-    if (resourceId) query.eq("resource_id", resourceId);
-    else query.is("resource_id", null);
-    const { error } = await query;
+    q = resourceId ? q.eq("resource_id", resourceId) : q.is("resource_id", null);
+    const { error } = await q;
     if (error) return { error: error.message };
   } else {
     const { error } = await supabase
@@ -470,9 +494,12 @@ export async function deleteSecRole(id: string) {
 /** Devuelve todas las asignaciones de roles a usuarios (sec_user_roles). */
 export async function getSecUserRoles() {
   const supabase = createAdminClient();
+  // BUG-SEC-014: incluir is_active del rol para filtrar roles desactivados en la UI
   const { data, error } = await supabase
     .from("sec_user_roles")
-    .select("id, user_id, role_id, valid_from, valid_to, is_active, sec_roles (code, name)")
+    .select(
+      "id, user_id, role_id, valid_from, valid_to, is_active, sec_roles (code, name, is_active)",
+    )
     .order("valid_from", { ascending: false });
 
   if (error) {

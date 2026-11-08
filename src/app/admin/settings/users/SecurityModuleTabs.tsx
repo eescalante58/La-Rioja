@@ -67,7 +67,8 @@ export interface SecUserRole {
   valid_from: string;
   valid_to: string | null;
   is_active: boolean;
-  sec_roles: Array<{ code: string; name: string }> | null;
+  // BUG-SEC-014: incluir is_active del rol para filtrar roles desactivados
+  sec_roles: Array<{ code: string; name: string; is_active: boolean }> | null;
 }
 
 interface SimpleUser {

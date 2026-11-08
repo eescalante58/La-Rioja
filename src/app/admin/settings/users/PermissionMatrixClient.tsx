@@ -234,7 +234,8 @@ export default function PermissionMatrixClient({
     });
 
   const selectedRole = roles.find((r) => r.id === selectedRoleId);
-  const isLocked = selectedRole?.is_super_admin ?? false;
+  // BUG-SEC-013: también bloquear checkboxes para roles de sistema
+  const isLocked = (selectedRole?.is_super_admin ?? false) || (selectedRole?.is_system ?? false);
 
   const maskMap: MaskMap = selectedRoleId ? buildMaskMap(permissions, selectedRoleId) : new Map();
 

@@ -3,12 +3,11 @@ import { requireRoleLevel, requireCompanyAccess } from "@/lib/auth/authorization
 /**
  * Guard compartido de los Route Handlers /api/bingo/*.
  *
- * Requiere nivel de rol >= minLevel (4 operador por defecto; 6 editor
- * para envíos automáticos de WhatsApp) y membresía en la empresa
- * indicada. Devuelve el usuario autenticado o un descriptor de error
- * listo para responder como JSON.
+ * Requiere nivel de rol >= minLevel (8 = cualquier rol activo por defecto;
+ * 10 = solo SuperAdmin) y membresía en la empresa indicada.
+ * El adaptador solo reconoce 10, 8 y 0 — no existe nivel 4 ni 6.
  */
-export async function checkAdmin(companyId: number, minLevel = 4) {
+export async function checkAdmin(companyId: number, minLevel = 8) {
   const { user, error: roleError } = await requireRoleLevel(minLevel);
   if (roleError) {
     return { status: roleError === "No autenticado" ? 401 : 403, error: roleError };

@@ -63,10 +63,15 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
   const [newValidTo, setNewValidTo] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // BUG-SEC-014: filtrar también valid_from futuro y roles desactivados
   const getActiveAssignments = (userId: string) =>
     assignments.filter(
       (a) =>
-        a.user_id === userId && a.is_active && (!a.valid_to || new Date(a.valid_to) > new Date()),
+        a.user_id === userId &&
+        a.is_active &&
+        (!a.valid_from || new Date(a.valid_from) <= new Date()) &&
+        (!a.valid_to || new Date(a.valid_to) > new Date()) &&
+        a.sec_roles?.[0]?.is_active !== false,
     );
 
   const filteredUsers = users.filter(

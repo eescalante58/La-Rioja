@@ -620,7 +620,7 @@ Administrador modifica permisos en /admin/settings/users
         │
         ▼
 Server Action / Route Handler (usa createAdminClient — bypasea RLS)
-  → Actualiza sec_role_permissions / sec_user_roles
+  → Actualiza sec_permissions / sec_user_roles
   → Trigger on_authz_change incrementa sec_authz_version.version
         │
         ▼ (Supabase Realtime — solo para ese user_id)
@@ -631,7 +631,7 @@ PermissionProvider en el browser del usuario afectado
         ▼
 getSessionAuthz() en el server (layout.tsx)
   → Verifica app_authz.v en nuevo JWT vs caché LRU
-  → Si versión nueva: re-consulta sec_role_permissions con createAdminClient
+  → Si versión nueva: re-consulta sec_permissions con createAdminClient
   → Nuevo PermissionSnapshot distribuido por PermissionProvider
         │
         ▼

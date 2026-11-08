@@ -36,8 +36,8 @@ From `.devin/rules/no-rerender-completo.md`: calling a Server Action from a `"us
 ### Auth & multi-tenancy
 
 - `src/proxy.ts` (Next 16 proxy, formerly middleware) refreshes the Supabase session, redirects unauthenticated `/admin/*` to `/login`, and forces `/auth/select-company` until the `selected_company_id` cookie is set.
-- Role levels (`src/lib/auth/authorization.ts`): SuperAdmin 10, Admin 8, Editor 6, Operator 4. `requireRoleLevel(min)` + `requireCompanyAccess(companyId)` (membership in `user_companies`).
-- Guards: Server Actions wrap with `withRole` / `withCompanyAccess` (`src/lib/auth/guards.ts`); `/api/bingo/*` and `/api/dashboard` handlers call `checkAdmin(companyId, minLevel=4)` (`src/app/api/bingo/check-admin.ts`) → 401/403 JSON. Never expose admin data without one of these.
+- Role levels (`src/lib/auth/authorization.ts`): SuperAdmin 10, Any active role 8, No roles 0. `requireRoleLevel(min)` + `requireCompanyAccess(companyId)` (membership in `user_companies`). There are no levels 4 or 6.
+- Guards: Server Actions wrap with `withRole` / `withCompanyAccess` (`src/lib/auth/guards.ts`); `/api/bingo/*` and `/api/dashboard` handlers call `checkAdmin(companyId, minLevel=8)` (`src/app/api/bingo/check-admin.ts`) → 401/403 JSON. Never expose admin data without one of these.
 - Supabase clients: `src/lib/supabase/client.ts` (browser), `src/lib/supabase/server.ts` → `createClient()` (cookie session, RLS), `createStaticClient()` (no cookies, public/ISR), `createAdminClient()` (service role, bypasses RLS — server-only).
 
 ### Domains
