@@ -604,11 +604,22 @@ export async function updateSecRole(id: string, name: string, description: strin
   if (!id || !name.trim()) return { error: "Nombre requerido." };
 
   const supabase = createAdminClient();
+
+  // Guard explícito: verificar que el rol existe y no es protegido
+  const { data: target } = await supabase
+    .from("sec_roles")
+    .select("is_super_admin, is_system")
+    .eq("id", id)
+    .single();
+
+  if (!target) return { error: "Rol no encontrado." };
+  if (target.is_super_admin) return { error: "El rol Super Administrador no puede modificarse." };
+  if (target.is_system) return { error: "Los roles de sistema no pueden modificarse." };
+
   const { error } = await supabase
     .from("sec_roles")
     .update({ name: name.trim(), description: description.trim() })
-    .eq("id", id)
-    .eq("is_system", false); // No permite editar roles del sistema
+    .eq("id", id);
 
   if (error) return { error: error.message };
 
@@ -616,12 +627,23 @@ export async function updateSecRole(id: string, name: string, description: strin
   return { success: true };
 }
 
-/** Elimina un rol de seguridad no-sistema. Falla si el rol tiene asignaciones activas. */
+/** Elimina un rol de seguridad no-sistema. Falla si el rol es SuperAdmin, de sistema o tiene asignaciones activas. */
 export async function deleteSecRole(id: string) {
   const { error: authError } = await requireRoleLevel(9);
   if (authError) return { error: authError };
 
   const supabase = createAdminClient();
+
+  // Guard explícito: verificar que el rol existe y no es protegido
+  const { data: target } = await supabase
+    .from("sec_roles")
+    .select("is_super_admin, is_system, name")
+    .eq("id", id)
+    .single();
+
+  if (!target) return { error: "Rol no encontrado." };
+  if (target.is_super_admin) return { error: "El rol Super Administrador no puede eliminarse." };
+  if (target.is_system) return { error: "Los roles de sistema no pueden eliminarse." };
 
   // Verificar que no tenga asignaciones activas antes de borrar
   const { count } = await supabase
@@ -634,12 +656,7 @@ export async function deleteSecRole(id: string) {
     return { error: "El rol tiene usuarios asignados. Revoca las asignaciones primero." };
   }
 
-  const { error } = await supabase
-    .from("sec_roles")
-    .delete()
-    .eq("id", id)
-    .eq("is_system", false)
-    .eq("is_super_admin", false);
+  const { error } = await supabase.from("sec_roles").delete().eq("id", id);
 
   if (error) return { error: error.message };
 
