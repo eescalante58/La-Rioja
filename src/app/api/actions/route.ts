@@ -88,6 +88,8 @@ import {
   getUserCompanies,
   upsertPermission,
   createSecRole,
+  updateSecRole,
+  deleteSecRole,
   assignSecRole,
   revokeSecRole,
 } from "@/app/admin/settings/users/actions";
@@ -245,6 +247,8 @@ const REGISTRY: Record<string, ActionFn> = {
   "users.getUserCompanies": getUserCompanies,
   "users.upsertPermission": upsertPermission,
   "users.createSecRole": createSecRole,
+  "users.updateSecRole": updateSecRole,
+  "users.deleteSecRole": deleteSecRole,
   "users.assignSecRole": assignSecRole,
   "users.revokeSecRole": revokeSecRole,
 

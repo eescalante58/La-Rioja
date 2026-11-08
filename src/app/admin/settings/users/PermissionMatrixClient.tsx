@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { Card, Title, Text, Badge, Button, TextInput } from "@tremor/react";
-import { Plus, Search, Infinity } from "lucide-react";
+import { Plus, Search, Infinity, Pencil, Trash2, X, Check } from "lucide-react";
 import { ACTION_BITS, type Action } from "@/lib/security/types";
 import type {
   SecRole,
@@ -10,6 +10,7 @@ import type {
   SecOption,
   SecResource,
   SecPermission,
+  SecUserRole,
 } from "./SecurityModuleTabs";
 import { callAction } from "@/lib/action-client";
 
@@ -67,17 +68,28 @@ function buildMaskMap(permissions: SecPermission[], roleId: string): MaskMap {
   return map;
 }
 
+interface SimpleUser {
+  id: string;
+  full_name: string | null;
+  email: string;
+}
+
 interface Props {
   secRoles: SecRole[];
   moduleTree: SecModule[];
   initialPermissions: SecPermission[];
+  initialAssignments: SecUserRole[];
+  users: SimpleUser[];
 }
 
 export default function PermissionMatrixClient({
   secRoles,
   moduleTree,
   initialPermissions,
+  initialAssignments,
+  users,
 }: Props) {
+  const [roles, setRoles] = useState<SecRole[]>(secRoles);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(
     secRoles.find((r) => !r.is_super_admin)?.id ?? secRoles[0]?.id ?? null,
   );
@@ -86,6 +98,126 @@ export default function PermissionMatrixClient({
   const [saving, setSaving] = useState(false);
   const [pendingChanges, setPendingChanges] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Formulario inline de creación / edición de rol
+  type RoleFormMode = { mode: "create" } | { mode: "edit"; id: string };
+  const [roleForm, setRoleForm] = useState<RoleFormMode | null>(null);
+  const [formCode, setFormCode] = useState("");
+  const [formName, setFormName] = useState("");
+  const [formDesc, setFormDesc] = useState("");
+  const [formError, setFormError] = useState("");
+  const [formSaving, setFormSaving] = useState(false);
+
+  const openCreate = () => {
+    setFormCode("");
+    setFormName("");
+    setFormDesc("");
+    setFormError("");
+    setRoleForm({ mode: "create" });
+  };
+  const openEdit = (role: SecRole) => {
+    setFormCode(role.code);
+    setFormName(role.name);
+    setFormDesc(role.description ?? "");
+    setFormError("");
+    setRoleForm({ mode: "edit", id: role.id });
+  };
+  const closeForm = () => setRoleForm(null);
+
+  const handleSaveRole = async () => {
+    if (!formName.trim()) {
+      setFormError("El nombre es obligatorio.");
+      return;
+    }
+    if (roleForm?.mode === "create" && !formCode.trim()) {
+      setFormError("El código es obligatorio.");
+      return;
+    }
+    setFormSaving(true);
+    setFormError("");
+    try {
+      if (roleForm?.mode === "create") {
+        const res = await callAction<{ data?: SecRole; error?: string }>("users.createSecRole", [
+          formCode.trim().toUpperCase(),
+          formName.trim(),
+          formDesc.trim(),
+        ]);
+        if (res.error) {
+          setFormError(res.error);
+          return;
+        }
+        if (res.data) setRoles((prev) => [...prev, res.data as SecRole]);
+      } else if (roleForm?.mode === "edit") {
+        const res = await callAction<{ success?: boolean; error?: string }>("users.updateSecRole", [
+          roleForm.id,
+          formName.trim(),
+          formDesc.trim(),
+        ]);
+        if (res.error) {
+          setFormError(res.error);
+          return;
+        }
+        setRoles((prev) =>
+          prev.map((r) =>
+            r.id === (roleForm as { mode: "edit"; id: string }).id
+              ? { ...r, name: formName.trim(), description: formDesc.trim() }
+              : r,
+          ),
+        );
+      }
+      closeForm();
+    } finally {
+      setFormSaving(false);
+    }
+  };
+
+  // Estado de asignaciones — para mostrar usuarios por rol y bloquear eliminación
+  const [assignments] = useState<SecUserRole[]>(initialAssignments);
+  const getActiveUsersForRole = (roleId: string): SimpleUser[] => {
+    const activeIds = assignments
+      .filter(
+        (a) =>
+          a.role_id === roleId && a.is_active && (!a.valid_to || new Date(a.valid_to) > new Date()),
+      )
+      .map((a) => a.user_id);
+    return users.filter((u) => activeIds.includes(u.id));
+  };
+
+  // Confirmación inline de eliminación (sin window.confirm / alert)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string>("");
+  const [deleting, setDeleting] = useState(false);
+
+  const requestDelete = (role: SecRole) => {
+    const assigned = getActiveUsersForRole(role.id);
+    if (assigned.length > 0) {
+      setDeleteError(
+        `No se puede eliminar: tiene ${assigned.length} usuario${assigned.length > 1 ? "s" : ""} asignado${assigned.length > 1 ? "s" : ""}. Revoca las asignaciones primero.`,
+      );
+      setPendingDeleteId(null);
+      return;
+    }
+    setDeleteError("");
+    setPendingDeleteId(role.id);
+  };
+
+  const confirmDelete = async (role: SecRole) => {
+    setDeleting(true);
+    const res = await callAction<{ success?: boolean; error?: string }>("users.deleteSecRole", [
+      role.id,
+    ]);
+    setDeleting(false);
+    if (res.error) {
+      setDeleteError(res.error);
+      setPendingDeleteId(null);
+      return;
+    }
+    setRoles((prev) => prev.filter((r) => r.id !== role.id));
+    if (selectedRoleId === role.id)
+      setSelectedRoleId(roles.find((r) => r.id !== role.id)?.id ?? null);
+    setPendingDeleteId(null);
+    setDeleteError("");
+  };
 
   const sortedModuleTree = [...moduleTree].sort(
     (a, b) => moduleNavIndex(a.name) - moduleNavIndex(b.name),
@@ -101,7 +233,7 @@ export default function PermissionMatrixClient({
       return next;
     });
 
-  const selectedRole = secRoles.find((r) => r.id === selectedRoleId);
+  const selectedRole = roles.find((r) => r.id === selectedRoleId);
   const isLocked = selectedRole?.is_super_admin ?? false;
 
   const maskMap: MaskMap = selectedRoleId ? buildMaskMap(permissions, selectedRoleId) : new Map();
@@ -208,7 +340,7 @@ export default function PermissionMatrixClient({
     [selectedRoleId, isLocked, maskMap],
   );
 
-  const filteredRoles = secRoles.filter(
+  const filteredRoles = roles.filter(
     (r) =>
       r.name.toLowerCase().includes(search.toLowerCase()) ||
       r.code.toLowerCase().includes(search.toLowerCase()),
@@ -231,19 +363,11 @@ export default function PermissionMatrixClient({
         <div className="-mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
           <div className="flex items-center justify-between mb-3">
             <Title className="text-sm font-semibold">Roles</Title>
-            <Button
-              size="xs"
-              variant="secondary"
-              icon={Plus}
-              onClick={async () => {
-                const code = prompt("Código del nuevo rol (MAYÚSCULAS):");
-                const name = prompt("Nombre del rol:");
-                if (!code || !name) return;
-                await callAction("users.createSecRole", [code, name, ""]);
-              }}
-            >
-              Nuevo
-            </Button>
+            {!roleForm && (
+              <Button size="xs" variant="secondary" icon={Plus} onClick={openCreate}>
+                Nuevo
+              </Button>
+            )}
           </div>
           <TextInput
             placeholder="Buscar..."
@@ -252,36 +376,187 @@ export default function PermissionMatrixClient({
             onValueChange={setSearch}
           />
         </div>
-        <div className="flex flex-col gap-1.5 pr-1 mt-3 max-h-[600px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto">
-          {filteredRoles.map((role) => (
-            <button
-              key={role.id}
-              type="button"
-              onClick={() => setSelectedRoleId(role.id)}
-              className={[
-                "w-full text-left rounded-lg px-3 py-2.5 border transition-colors",
-                selectedRoleId === role.id
-                  ? "bg-blue-50 dark:bg-blue-900/20 border-[#012060] dark:border-blue-700"
-                  : "bg-white dark:bg-gray-900 border-[#012060]/30 dark:border-gray-700 hover:bg-gray-50 hover:border-[#012060]/60 dark:hover:bg-gray-800",
-              ].join(" ")}
-            >
-              <div className="flex items-center justify-between gap-2 mb-0.5">
-                <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                  {role.name}
-                </span>
-                {role.is_super_admin ? (
-                  <Badge color="red" size="xs">
-                    SuperAdmin
-                  </Badge>
-                ) : role.is_system ? (
-                  <Badge color="gray" size="xs">
-                    Sistema
-                  </Badge>
-                ) : null}
+
+        {/* Formulario inline crear / editar */}
+        {roleForm && (
+          <div className="mt-3 mx-0 p-3 rounded-lg border border-[#012060] dark:border-blue-700 bg-blue-50/60 dark:bg-blue-900/10 flex flex-col gap-2 shrink-0">
+            <p className="text-xs font-semibold text-[#012060] dark:text-blue-400">
+              {roleForm.mode === "create" ? "Nuevo rol" : "Editar rol"}
+            </p>
+            {roleForm.mode === "create" && (
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400">Código *</label>
+                <input
+                  type="text"
+                  value={formCode}
+                  onChange={(e) => setFormCode(e.target.value.toUpperCase())}
+                  placeholder="CODIGO_ROL"
+                  className="mt-0.5 w-full rounded-tremor-default border border-[#012060]/40 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 text-sm font-mono text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#012060]/30"
+                />
               </div>
-              <span className="font-mono text-xs text-gray-500">{role.code}</span>
-            </button>
-          ))}
+            )}
+            <div>
+              <label className="text-xs text-gray-500 dark:text-gray-400">Nombre *</label>
+              <input
+                type="text"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="Nombre del rol"
+                className="mt-0.5 w-full rounded-tremor-default border border-[#012060]/40 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#012060]/30"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 dark:text-gray-400">Descripción</label>
+              <input
+                type="text"
+                value={formDesc}
+                onChange={(e) => setFormDesc(e.target.value)}
+                placeholder="Opcional"
+                className="mt-0.5 w-full rounded-tremor-default border border-[#012060]/40 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#012060]/30"
+              />
+            </div>
+            {formError && <p className="text-xs text-red-600 dark:text-red-400">{formError}</p>}
+            <div className="flex gap-2 justify-end">
+              <Button
+                size="xs"
+                variant="secondary"
+                icon={X}
+                onClick={closeForm}
+                disabled={formSaving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="xs"
+                icon={Check}
+                onClick={handleSaveRole}
+                loading={formSaving}
+                disabled={formSaving}
+              >
+                Guardar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-1.5 pr-1 mt-3 max-h-[600px] lg:max-h-none lg:flex-1 lg:min-h-0 overflow-y-auto">
+          {filteredRoles.map((role) => {
+            const canEdit = !role.is_system && !role.is_super_admin;
+            return (
+              <div
+                key={role.id}
+                className={[
+                  "group flex items-start gap-1 rounded-lg border transition-colors",
+                  selectedRoleId === role.id
+                    ? "bg-blue-50 dark:bg-blue-900/20 border-[#012060] dark:border-blue-700"
+                    : "bg-white dark:bg-gray-900 border-[#012060]/30 dark:border-gray-700 hover:bg-gray-50 hover:border-[#012060]/60 dark:hover:bg-gray-800",
+                ].join(" ")}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRoleId(role.id);
+                    setPendingDeleteId(null);
+                    setDeleteError("");
+                  }}
+                  className="flex-1 text-left px-3 py-2.5 min-w-0"
+                >
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {role.name}
+                    </span>
+                    {role.is_super_admin ? (
+                      <Badge color="red" size="xs">
+                        SuperAdmin
+                      </Badge>
+                    ) : role.is_system ? (
+                      <Badge color="gray" size="xs">
+                        Sistema
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="font-mono text-xs text-gray-500">{role.code}</span>
+                    {(() => {
+                      const count = getActiveUsersForRole(role.id).length;
+                      return count > 0 ? (
+                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
+                          {count} usuario{count > 1 ? "s" : ""}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
+                </button>
+                {canEdit && pendingDeleteId !== role.id && (
+                  <div className="flex flex-col gap-0.5 py-2 pr-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      title="Editar"
+                      onClick={() => {
+                        openEdit(role);
+                        setDeleteError("");
+                        setPendingDeleteId(null);
+                      }}
+                      className="p-1 rounded text-gray-400 hover:text-[#012060] hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Eliminar"
+                      onClick={() => requestDelete(role)}
+                      className="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
+                {/* Confirmación inline de eliminación */}
+                {canEdit && pendingDeleteId === role.id && (
+                  <div className="flex flex-col items-end gap-1 py-2 pr-2 shrink-0">
+                    <span className="text-[10px] text-red-600 dark:text-red-400 font-medium leading-tight text-right max-w-[90px]">
+                      ¿Eliminar?
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        title="Cancelar"
+                        onClick={() => {
+                          setPendingDeleteId(null);
+                          setDeleteError("");
+                        }}
+                        className="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <X size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        title="Confirmar eliminación"
+                        disabled={deleting}
+                        onClick={() => confirmDelete(role)}
+                        className="p-1 rounded text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-40"
+                      >
+                        <Check size={12} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {/* Error de eliminación inline */}
+          {deleteError && (
+            <div className="mt-2 mx-0 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <p className="text-xs text-red-700 dark:text-red-400">{deleteError}</p>
+              <button
+                type="button"
+                onClick={() => setDeleteError("")}
+                className="mt-1 text-[10px] text-red-500 hover:underline"
+              >
+                Cerrar
+              </button>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -290,12 +565,30 @@ export default function PermissionMatrixClient({
         {selectedRole ? (
           <Card className="!border-[#012060] dark:!border-dark-tremor-border lg:flex lg:flex-col lg:overflow-hidden lg:h-full">
             <div className="-mx-6 px-6 pb-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
                   <Title className="text-lg">{selectedRole.name}</Title>
                   {selectedRole.description && (
                     <Text className="text-sm text-gray-500 mt-0.5">{selectedRole.description}</Text>
                   )}
+                  {/* Usuarios con este rol */}
+                  {(() => {
+                    const assigned = getActiveUsersForRole(selectedRole.id);
+                    if (assigned.length === 0)
+                      return <p className="text-xs text-gray-400 mt-1">Sin usuarios asignados.</p>;
+                    return (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {assigned.map((u) => (
+                          <span
+                            key={u.id}
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                          >
+                            {u.full_name ?? u.email}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
                 {isLocked && (
                   <Badge color="red" icon={Infinity}>

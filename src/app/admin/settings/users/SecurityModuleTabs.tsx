@@ -108,6 +108,14 @@ export default function SecurityModuleTabs({
             secRoles={secRoles}
             moduleTree={moduleTree}
             initialPermissions={permissions}
+            initialAssignments={userRoleAssignments}
+            users={
+              userManagerProps.initialUsers as Array<{
+                id: string;
+                full_name: string | null;
+                email: string;
+              }>
+            }
           />
         </TabPanel>
         <TabPanel>

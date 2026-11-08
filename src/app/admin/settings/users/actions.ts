@@ -94,7 +94,9 @@ async function createNewUserInternal(rawInput: UserInput) {
   // Validation with Zod
   const validation = userSchema.safeParse(rawInput);
   if (!validation.success) {
-    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+    return {
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
+    };
   }
   const data = validation.data;
 
@@ -105,38 +107,34 @@ async function createNewUserInternal(rawInput: UserInput) {
   } catch (clientErr) {
     console.error("Error creating supabase admin client:", clientErr);
     return {
-      error:
-        "Error de configuración: Clave de servicio de Supabase no disponible en el servidor.",
+      error: "Error de configuración: Clave de servicio de Supabase no disponible en el servidor.",
     };
   }
 
   // 1. Create user in Supabase Auth
-  const { data: authUser, error: authError } =
-    await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
-      password: "Rioja2026!", // Temporary password
-      email_confirm: true,
-      user_metadata: { full_name: data.full_name },
-    });
+  const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email: data.email,
+    password: "Rioja2026!", // Temporary password
+    email_confirm: true,
+    user_metadata: { full_name: data.full_name },
+  });
 
   if (authError) {
     return { error: authError.message };
   }
 
   // 2. Profile update (public.users)
-  const { error: profileError } = await supabaseAdmin
-    .from("users")
-    .upsert({
-      id: authUser.user.id,
-      email: data.email,
-      full_name: data.full_name,
-      secondary_email: data.secondary_email,
-      phone: data.phone,
-      role_id: data.role_id,
-      avatar_url: data.avatar_url,
-      status: "active",
-      updated_at: new Date().toISOString(),
-    });
+  const { error: profileError } = await supabaseAdmin.from("users").upsert({
+    id: authUser.user.id,
+    email: data.email,
+    full_name: data.full_name,
+    secondary_email: data.secondary_email,
+    phone: data.phone,
+    role_id: data.role_id,
+    avatar_url: data.avatar_url,
+    status: "active",
+    updated_at: new Date().toISOString(),
+  });
 
   if (profileError) {
     // Rollback auth user creation if profile fails
@@ -163,9 +161,7 @@ export async function uploadUserAvatar(file: FormData) {
   const image = file.get("avatar") as File;
   const fileName = `${Date.now()}-${image.name}`;
 
-  const { data, error } = await supabase.storage
-    .from("user_avatar")
-    .upload(fileName, image);
+  const { data, error } = await supabase.storage.from("user_avatar").upload(fileName, image);
 
   if (error) {
     return { error: error.message };
@@ -194,7 +190,9 @@ export async function updateUser(userId: string, rawInput: unknown) {
   // Validation with Zod
   const validation = userSchema.partial().safeParse(rawInput);
   if (!validation.success) {
-    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+    return {
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
+    };
   }
   const data = validation.data;
 
@@ -260,7 +258,9 @@ async function createRoleInternal(rawInput: RoleInput) {
   // Validation with Zod
   const validation = roleSchema.safeParse(rawInput);
   if (!validation.success) {
-    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+    return {
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
+    };
   }
   const data = validation.data;
 
@@ -298,7 +298,9 @@ async function updateRoleInternal(roleId: number, rawInput: unknown) {
   // Validation with Zod
   const validation = roleSchema.partial().safeParse(rawInput);
   if (!validation.success) {
-    return { error: "Datos inválidos: " + validation.error.issues.map(e => e.message).join(", ") };
+    return {
+      error: "Datos inválidos: " + validation.error.issues.map((e) => e.message).join(", "),
+    };
   }
   const data = validation.data;
 
@@ -346,11 +348,7 @@ export const deleteRole = withRole(10, deleteRoleInternal);
  * @param {number} roleId - ID del rol en la empresa.
  * @returns {Promise<{ success?: boolean; error?: string }>} Resultado de la asignación.
  */
-async function assignUserToCompanyInternal(
-  userId: string,
-  companyId: number,
-  roleId: number,
-) {
+async function assignUserToCompanyInternal(userId: string, companyId: number, roleId: number) {
   const supabase = createAdminClient();
 
   const { data: roleData, error: roleError } = await supabase
@@ -421,11 +419,7 @@ export const removeUserFromCompany = withRole(8, removeUserFromCompanyInternal);
  * @param {number} roleId - ID del nuevo rol.
  * @returns {Promise<{ success?: boolean; error?: string }>} Resultado de la actualización.
  */
-async function updateUserCompanyRoleInternal(
-  userId: string,
-  companyId: number,
-  roleId: number,
-) {
+async function updateUserCompanyRoleInternal(userId: string, companyId: number, roleId: number) {
   const supabase = createAdminClient();
 
   const { data: roleData, error: roleError } = await supabase
@@ -523,7 +517,9 @@ export async function getModuleTree() {
   return (data ?? []).map((mod) => ({
     ...mod,
     options: (mod.sec_options ?? [])
-      .sort((a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index)
+      .sort(
+        (a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index,
+      )
       .map((opt: { sec_resources?: unknown[]; [key: string]: unknown }) => ({
         ...opt,
         resources: opt.sec_resources ?? [],
@@ -600,6 +596,57 @@ export async function createSecRole(code: string, name: string, description: str
   return { data };
 }
 
+/** Actualiza nombre y descripción de un rol de seguridad (no modifica is_system ni is_super_admin). */
+export async function updateSecRole(id: string, name: string, description: string) {
+  const { error: authError } = await requireRoleLevel(9);
+  if (authError) return { error: authError };
+
+  if (!id || !name.trim()) return { error: "Nombre requerido." };
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("sec_roles")
+    .update({ name: name.trim(), description: description.trim() })
+    .eq("id", id)
+    .eq("is_system", false); // No permite editar roles del sistema
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
+/** Elimina un rol de seguridad no-sistema. Falla si el rol tiene asignaciones activas. */
+export async function deleteSecRole(id: string) {
+  const { error: authError } = await requireRoleLevel(9);
+  if (authError) return { error: authError };
+
+  const supabase = createAdminClient();
+
+  // Verificar que no tenga asignaciones activas antes de borrar
+  const { count } = await supabase
+    .from("sec_user_roles")
+    .select("id", { count: "exact", head: true })
+    .eq("role_id", id)
+    .eq("is_active", true);
+
+  if ((count ?? 0) > 0) {
+    return { error: "El rol tiene usuarios asignados. Revoca las asignaciones primero." };
+  }
+
+  const { error } = await supabase
+    .from("sec_roles")
+    .delete()
+    .eq("id", id)
+    .eq("is_system", false)
+    .eq("is_super_admin", false);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/settings/users");
+  return { success: true };
+}
+
 /** Devuelve todas las asignaciones de roles a usuarios (sec_user_roles). */
 export async function getSecUserRoles() {
   const supabase = createAdminClient();
@@ -628,7 +675,13 @@ export async function assignSecRole(
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("sec_user_roles")
-    .insert({ user_id: userId, role_id: roleId, valid_from: validFrom, valid_to: validTo ?? null, is_active: true })
+    .insert({
+      user_id: userId,
+      role_id: roleId,
+      valid_from: validFrom,
+      valid_to: validTo ?? null,
+      is_active: true,
+    })
     .select("id, user_id, role_id, valid_from, valid_to, is_active, sec_roles (code, name)")
     .single();
 
