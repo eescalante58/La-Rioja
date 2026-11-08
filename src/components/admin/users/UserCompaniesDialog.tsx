@@ -104,7 +104,7 @@ export default function UserCompaniesDialog({
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 sm:backdrop-blur-sm z-50" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
-        <DialogPanel className="max-w-2xl w-full bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[85vh] overflow-hidden">
+        <DialogPanel className="dialog-mobile max-w-2xl w-full bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col max-h-[85vh] overflow-hidden">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
               <Building2 size={24} className="text-larioja-azul" />

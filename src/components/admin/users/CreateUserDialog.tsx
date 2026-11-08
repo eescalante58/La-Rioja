@@ -75,7 +75,7 @@ export default function CreateUserDialog({ isOpen, onClose, countryCodes }: Crea
     <Dialog open={isOpen} onClose={onClose} static={true}>
       <div className="fixed inset-0 bg-gray-500/30 dark:bg-black/50 sm:backdrop-blur-sm z-50" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
-        <DialogPanel className="max-w-md w-full bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800">
+        <DialogPanel className="dialog-mobile max-w-md w-full bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-2xl sm:shadow-xl border border-gray-200 dark:border-gray-800">
           <div className="flex justify-between items-center mb-6">
             <Title>Nuevo Usuario</Title>
             <Button variant="light" icon={X} onClick={onClose} />
