@@ -11,7 +11,7 @@ Al entrar se muestran tarjetas con las opciones disponibles. Cada tarjeta lleva 
 | Opción | Para qué sirve |
 | :----- | :------------- |
 | Códigos de Países | Prefijos telefónicos para envíos de WhatsApp |
-| Usuarios y Roles | Accesos, perfiles y permisos por empresa |
+| Usuarios y Roles | Cuentas de acceso, roles, matriz de permisos avanzados y asignación de roles a usuarios |
 | Empresas | Entidades multi-empresa del sistema |
 | Alumnos | Registro maestro de estudiantes y sus niveles |
 | Seguridad | Políticas globales y auditoría de seguridad |
@@ -42,22 +42,60 @@ Administra el catálogo de prefijos telefónicos que se usan para armar los núm
 
 ## 3. Usuarios y Roles
 
-Gestiona las cuentas de acceso al panel y los roles disponibles.
+Gestiona las cuentas de acceso al panel, los roles disponibles y la matriz de permisos. La pantalla se organiza en **tres pestañas**:
 
 ### Pestaña Usuarios
+
+Administra las cuentas de acceso al sistema y su asignación a empresas.
 
 - **Buscar**: filtra por nombre o correo.
 - **Nuevo usuario**: crea la cuenta con nombre, correo, teléfono, rol principal y avatar (foto de perfil).
 - **Editar**: actualiza datos, rol y estado (activo/inactivo).
+  - La sección **Roles** dentro del formulario de edición muestra los roles del sistema legacy (nivel numérico).
 - **Empresas**: asigna a qué empresas pertenece el usuario y con qué rol en cada una — un mismo usuario puede tener roles distintos por empresa.
 - **Eliminar**: pide confirmación.
 
-### Pestaña Roles
+> El campo **Nivel** del rol legacy controla acceso genérico (formularios, buscador, dashboard). Los permisos de grano fino se gestionan desde la pestaña **Roles · Permisos** y se asignan en **Asignación de Roles**.
 
-- Catálogo de roles con nombre, descripción, **nivel de jerarquía** y estado activo.
-- Crear, editar y eliminar roles (con confirmación).
+### Pestaña Roles · Permisos
 
-> El **nivel** del rol determina qué ve y qué puede hacer el usuario (administrador, ventas, solo lectura, etc.).
+Matriz visual que define qué puede hacer cada rol del módulo de seguridad avanzado sobre cada opción del sistema y, si se requiere, sobre cada tabla de base de datos.
+
+**Estructura de la pantalla**
+
+- Columnas: los **roles** definidos en el sistema (ej: `ADMIN`, `OPERATOR`, `BINGO_MANAGER`).
+- Filas: los **módulos** del sistema con sus **opciones** (ej: módulo `BINGO` → opción `Gestión Bingo`).
+- Cada celda contiene un conjunto de **acciones** (casillas de verificación):
+  - **Leer** (R), **Crear** (W), **Editar** (U), **Eliminar** (D), **Imprimir** (P), **Descargar** (Dl), **Subir** (Up), **Ejecutar** (E).
+- Cuando una opción tiene **recursos** asociados (tablas de BD), se expande para mostrar el permiso por tabla.
+
+**Cómo usar la matriz**
+
+1. Localiza el módulo/opción en las filas.
+2. En la columna del rol que deseas configurar, marca o desmarca las acciones.
+3. Los cambios se guardan automáticamente al hacer clic en cada acción — no hay botón "Guardar" global.
+4. El color verde indica que la acción está habilitada; gris, deshabilitada.
+5. Para marcar/desmarcar todas las acciones de una celda de golpe, usa el icono **Todo** de la celda.
+
+**Roles especiales**
+
+- Un rol marcado como **Super Admin** tiene todos los permisos implícitos — su columna se muestra en azul y no se edita.
+- Los roles marcados como **Sistema** no pueden eliminarse desde la UI.
+
+> Los cambios se propagan de inmediato: cuando el sistema detecta un cambio de permisos, el JWT de los usuarios afectados se refresca y los permisos en pantalla se actualizan sin necesidad de que cierren sesión.
+
+### Pestaña Asignación de Roles
+
+Vincula usuarios del sistema con los roles del módulo de seguridad avanzado. Un usuario puede tener varios roles asignados con fechas de vigencia.
+
+**Funciones**
+
+- **Buscar usuario**: filtra la tabla por nombre o correo.
+- **Asignar rol**: selecciona usuario y rol; opcionalmente define fecha de inicio y fecha de expiración.
+- **Activar / Desactivar**: alterna el estado de una asignación sin borrarla.
+- **Eliminar asignación**: borra la relación (pide confirmación).
+
+> Si un usuario no tiene ningún rol asignado aquí, el sistema cae al control de acceso legacy (nivel de rol numérico). Los permisos del módulo avanzado tienen **precedencia** sobre el sistema legacy cuando están configurados.
 
 ---
 
@@ -93,16 +131,18 @@ Registro maestro de estudiantes que venden cartones en los eventos.
 
 ## 6. Seguridad
 
-Panel de **solo consulta** que audita la configuración de seguridad de la base de datos.
+Panel de **solo consulta** que audita la configuración de seguridad de la base de datos (Row Level Security, vistas y mejores prácticas).
+
+> Para gestionar **quién puede hacer qué** en el sistema (permisos de opciones y acciones), ve a **Usuarios y Roles → pestaña Roles · Permisos**.
 
 ### Secciones
 
-- **Alertas de Seguridad**: advertencias activas que requieren atención.
-- **RLS por Tabla**: estado del Row Level Security en cada tabla y sus políticas.
-- **Seguridad en Vistas**: políticas aplicadas a las vistas de la base de datos.
-- **Recomendaciones Globales**: buenas prácticas (menor privilegio, validación de esquema, monitoreo de logs).
+- **Alertas de Seguridad**: advertencias activas que requieren atención (tablas sin RLS, vistas con `security_definer`, etc.).
+- **RLS por Tabla**: estado del Row Level Security en cada tabla del esquema `public` y el detalle de sus políticas (SELECT, INSERT, UPDATE, DELETE).
+- **Seguridad en Vistas**: si las vistas heredan las políticas RLS del llamador (`security_invoker`) o las omiten.
+- **Recomendaciones Globales**: buenas prácticas implementadas (menor privilegio, validación de esquema, monitoreo de logs de Supabase).
 
-> Esta pantalla no modifica nada; sirve para verificar que la protección de datos esté bien configurada.
+> Esta pantalla no modifica nada; sirve para que el administrador verifique periódicamente que la protección de datos esté bien configurada. Los cambios correctivos se aplican como migraciones en la base de datos.
 
 ---
 

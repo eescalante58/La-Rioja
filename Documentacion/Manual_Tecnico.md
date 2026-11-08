@@ -300,6 +300,121 @@ Columnas y tipos verificados contra `information_schema.columns` (producción, o
 | `created_at` | `timestamp with time zone` | Fecha de creación. |
 | `updated_at` | `timestamp with time zone` | Fecha de última actualización. |
 
+#### Dominio seguridad avanzada (módulo sec_*)
+
+Estas tablas implementan el control de acceso de grano fino. Todas tienen RLS habilitado; el acceso de escritura está restringido a Super Admin vía `createAdminClient()` (service role). Referencia completa: `Documentacion/Modulo_Seguridad.md`.
+
+##### Tabla: `public.sec_modules`
+
+**Descripción:** Catálogo de módulos funcionales del sistema (agrupadores de opciones de menú).
+
+| Columna | Tipo | Comentario |
+| :------ | :--- | :--------- |
+| `id` | `uuid` | PK. |
+| `code` | `text` | Código único en mayúsculas (ej: `BINGO`, `CONFIG`). UNIQUE. |
+| `name` | `text` | Nombre legible del módulo. |
+| `icon` | `text` | Nombre del icono (Lucide). |
+| `order_index` | `integer` | Orden de presentación en la UI. |
+| `is_active` | `boolean` | Módulo habilitado. |
+| `created_at` | `timestamptz` | Fecha de creación. |
+| `updated_at` | `timestamptz` | Fecha de actualización. |
+
+##### Tabla: `public.sec_options`
+
+**Descripción:** Opciones de menú/funcionalidades protegibles, hijas de un módulo.
+
+| Columna | Tipo | Comentario |
+| :------ | :--- | :--------- |
+| `id` | `uuid` | PK. |
+| `module_id` | `uuid` | FK → `sec_modules`. |
+| `code` | `text` | Código único (ej: `BINGO_EVENTS`, `CFG_USERS_ROLES`). UNIQUE. |
+| `name` | `text` | Nombre legible. |
+| `path_route` | `text` | Ruta del Next.js a la que se aplica. |
+| `order_index` | `integer` | Orden dentro del módulo. |
+| `is_active` | `boolean` | Opción habilitada. |
+| `created_at` | `timestamptz` | Fecha de creación. |
+| `updated_at` | `timestamptz` | Fecha de actualización. |
+
+##### Tabla: `public.sec_resources`
+
+**Descripción:** Tablas/recursos de base de datos asociados a una opción (para control de acción a nivel tabla).
+
+| Columna | Tipo | Comentario |
+| :------ | :--- | :--------- |
+| `id` | `uuid` | PK. |
+| `option_id` | `uuid` | FK → `sec_options`. |
+| `table_name` | `text` | Nombre exacto de la tabla en Postgres. |
+| `display_name` | `text` | Nombre legible del recurso. |
+| `created_at` | `timestamptz` | Fecha de creación. |
+
+##### Tabla: `public.sec_roles`
+
+**Descripción:** Roles del sistema de seguridad avanzado (distintos de los roles legacy).
+
+| Columna | Tipo | Comentario |
+| :------ | :--- | :--------- |
+| `id` | `uuid` | PK. |
+| `code` | `text` | Código único en mayúsculas (ej: `ADMIN`, `OPERATOR`). UNIQUE. |
+| `name` | `text` | Nombre legible. |
+| `description` | `text` | Descripción del rol. |
+| `is_super_admin` | `boolean` | Si `true`, bypasea toda verificación de permisos. |
+| `is_system` | `boolean` | Rol protegido (no eliminable desde UI). |
+| `is_active` | `boolean` | Rol habilitado. |
+| `created_at` | `timestamptz` | Fecha de creación. |
+| `updated_at` | `timestamptz` | Fecha de actualización. |
+
+##### Tabla: `public.sec_role_permissions`
+
+**Descripción:** Permisos asignados a un rol: qué acciones puede hacer sobre una opción y/o recurso.
+
+| Columna | Tipo | Comentario |
+| :------ | :--- | :--------- |
+| `id` | `uuid` | PK. |
+| `role_id` | `uuid` | FK → `sec_roles`. |
+| `option_id` | `uuid` | FK → `sec_options`. |
+| `resource_id` | `uuid` | FK → `sec_resources` (nullable: si NULL aplica a toda la opción). |
+| `actions_mask` | `integer` | Bitmask de acciones permitidas (READ=1, WRITE=2, UPDATE=4, DELETE=8, PRINT=16, DOWNLOAD=32, UPLOAD=64, EXECUTE=128, ALL=255). |
+| `created_at` | `timestamptz` | Fecha de creación. |
+| `updated_at` | `timestamptz` | Fecha de actualización. |
+
+**Notas adicionales:**
+
+- **UNIQUE:** (`role_id`, `option_id`, `resource_id`).
+
+##### Tabla: `public.sec_user_roles`
+
+**Descripción:** Asignación de roles del módulo avanzado a usuarios, con vigencia temporal.
+
+| Columna | Tipo | Comentario |
+| :------ | :--- | :--------- |
+| `id` | `uuid` | PK. |
+| `user_id` | `uuid` | FK → `users`. |
+| `role_id` | `uuid` | FK → `sec_roles`. |
+| `valid_from` | `timestamptz` | Inicio de vigencia (default: ahora). |
+| `valid_to` | `timestamptz` | Fin de vigencia (nullable: sin expiración). |
+| `is_active` | `boolean` | Asignación activa. |
+| `created_at` | `timestamptz` | Fecha de creación. |
+| `updated_at` | `timestamptz` | Fecha de actualización. |
+
+**Notas adicionales:**
+
+- **UNIQUE:** (`user_id`, `role_id`).
+
+##### Tabla: `public.sec_authz_version`
+
+**Descripción:** Contador de versión de permisos por usuario. Se incrementa al modificar roles/permisos y activa la invalidación del JWT vía Supabase Realtime.
+
+| Columna | Tipo | Comentario |
+| :------ | :--- | :--------- |
+| `user_id` | `uuid` | PK, FK → `users`. |
+| `version` | `integer` | Versión actual; incrementa con cada cambio de permisos. Default 1. |
+| `updated_at` | `timestamptz` | Fecha de la última actualización. |
+
+**Notas adicionales:**
+
+- Escuchado por `PermissionProvider` vía Supabase Realtime (canal `sec_authz_version`).
+- El hook JWT lee esta versión para incluirla como `v` en el claim `app_authz`.
+
 #### Dominio Bingo
 
 ##### Tabla: `public.events`
@@ -1079,6 +1194,83 @@ Niveles de referencia en `src/lib/auth/authorization.ts`: SuperAdmin 10, Admin 8
 - **Route Handlers:** `checkAdmin(companyId)` → 401/403 JSON.
 - **Dispatcher:** `POST /api/actions` con `REGISTRY` whitelist (`"dominio.accion"`), invocable desde clientes con `callAction`/`callActionForm` (`src/lib/action-client.ts`).
 
+### 5.4 Módulo de Seguridad Avanzado
+
+El sistema posee una capa de autorización de grano fino sobre el modelo de roles legacy. Conviven en paralelo: si el módulo avanzado tiene permisos para el usuario, estos tienen precedencia; si no, se cae al nivel de rol.
+
+**Arquitectura de permisos (bitmask de 8 bits)**
+
+```
+READ=1 | WRITE=2 | UPDATE=4 | DELETE=8 | PRINT=16 | DOWNLOAD=32 | UPLOAD=64 | EXECUTE=128 | ALL=255
+```
+
+Cada recurso (opción de menú, tabla) lleva un entero donde cada bit activo habilita una acción. El valor `255` equivale a todos los permisos.
+
+**JWT y claim `app_authz`**
+
+Al autenticarse, Supabase inyecta el hook `src/lib/security/jwt-hook.sql` que escribe el claim `app_authz` en el JWT:
+
+```json
+{
+  "v": 42,          // versión de permisos del usuario (incrementa en cada cambio)
+  "sa": false,      // es SuperAdmin
+  "ma": ["BINGO","CONFIG"],   // módulos accesibles
+  "o": { "BINGO_EVENTS": 7, "CFG_USERS_ROLES": 3 }  // opciones → mask
+}
+```
+
+El proxy (`src/proxy.ts`) decodifica el JWT (base64url, sin verificar firma) para detectar acceso total denegado en el edge. Si `sa=false` y `o={}` y `ma=[]`, redirige a `/acceso-denegado` antes de llegar al servidor.
+
+**Snapshot de permisos**
+
+`getSessionAuthz()` (`src/lib/security/server.ts`) extiende `AuthzClaims` con permisos a nivel de tabla (`r`) llamando al RPC `get_my_permissions`. El resultado se almacena en un LRU en memoria (clave `userId:version`, TTL 5 min, máx. 500 entradas) y mediante `React.cache()` se resuelve una sola vez por petición HTTP.
+
+```typescript
+interface PermissionSnapshot extends AuthzClaims {
+  r: Record<string, number>;  // "BINGO_EVENTS::cards" → mask
+}
+```
+
+**Guards de servidor**
+
+| Función | Uso | Comportamiento ante fallo |
+| :------ | :-- | :------------------------ |
+| `requireOption(optionCode, action?)` | Server Components / layouts | `redirect("/acceso-denegado")` |
+| `requirePermission(optionCode, table, action)` | Server Actions / Route Handlers para acciones no gestionadas por RLS (PRINT, DOWNLOAD, etc.) | Lanza `ForbiddenError` |
+
+**Patrón dual (compatibilidad)**
+
+Las páginas ya migradas usan el patrón dual: intentan el sistema avanzado; si no está configurado (retorna `null`), delegan al sistema legacy:
+
+```typescript
+try {
+  await requireOption("CFG_USERS_ROLES");
+} catch {
+  const { error } = await requireRoleLevel(8);
+  if (error) redirect("/admin/settings");
+}
+```
+
+**Contexto en cliente**
+
+`PermissionProvider` (src/lib/security/permission-context.tsx) recibe el snapshot desde el layout y lo distribuye con React Context. Incluye una suscripción a Supabase Realtime en `sec_authz_version`: cuando el admin cambia permisos, el JWT se refresca y el cliente hace `router.refresh()` sin recargar la página.
+
+```tsx
+const { canView, can, isSuperAdmin } = usePermission("BINGO_EVENTS");
+// o declarativamente:
+<Can option="BINGO_EVENTS" action="DELETE" fallback={<span>Sin acceso</span>}>
+  <DeleteButton />
+</Can>
+```
+
+**Verificación de opciones en el sidebar**
+
+`AdminSidebar` consulta `usePermission(optionCode)` por cada enlace. Si `canView` es `false` el enlace no se renderiza. Super Admin (`sa=true`) siempre ve todos los ítems.
+
+**Tablas del módulo de seguridad avanzado**
+
+Ver §4.2 → "Dominio seguridad avanzada (módulo sec_*)". Documento de referencia completo: `Documentacion/Modulo_Seguridad.md`.
+
 ---
 
 ## 6. Despliegue y CI/CD
@@ -1254,6 +1446,7 @@ Client Component ──fetch('/api/...')──▶ Route Handler ──checkAdmin
 
 ## 9. Documentos Relacionados
 
+- `Documentacion/Modulo_Seguridad.md` — filosofía, fundamentos, flujos y diccionario de datos del módulo de seguridad avanzado
 - `Documentacion/ModeloBdBingo.md` — requerimientos y modelo de datos baseline
 - `Documentacion/Manual_Usuario_Productos.md` — manual de usuario de Gestión Productos (La Rioja Shop)
 - `Documentacion/Manual_Usuario_CMS.md`, `Manual_Usuario_Configuracion.md`, `Manual_Usuario_Dashboard.md` — manuales de usuario del admin
