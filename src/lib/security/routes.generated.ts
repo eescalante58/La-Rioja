@@ -16,45 +16,46 @@ export interface SecuredRoute {
  */
 export const SECURED_ROUTES: readonly SecuredRoute[] = [
   // CONFIG ─────────────────────────────────────────────────────────────
-  { prefix: '/admin/settings/users',                option: 'CFG_USERS_ROLES',   module: 'CONFIG' },
-  { prefix: '/admin/settings/logs',                 option: 'CFG_AUDIT',         module: 'CONFIG' },
-  { prefix: '/admin/settings/companies',            option: 'CFG_COMPANIES',     module: 'CONFIG' },
-  { prefix: '/admin/settings/countries',            option: 'CFG_COUNTRY_CODES', module: 'CONFIG' },
-  { prefix: '/admin/settings/students',             option: 'CFG_STUDENTS',      module: 'CONFIG' },
-  { prefix: '/admin/settings/contact',              option: 'CFG_CONTACT_MSGS',  module: 'CONFIG' },
-  { prefix: '/admin/settings/registration-limits',  option: 'CFG_REG_LIMITS',    module: 'CONFIG' },
-  { prefix: '/admin/settings/test-data',            option: 'CFG_TEST_DATA',     module: 'CONFIG' },
+  { prefix: "/admin/settings/users", option: "CFG_USERS_ROLES", module: "CONFIG" },
+  { prefix: "/admin/settings/logs", option: "CFG_AUDIT", module: "CONFIG" },
+  { prefix: "/admin/settings/companies", option: "CFG_COMPANIES", module: "CONFIG" },
+  { prefix: "/admin/settings/countries", option: "CFG_COUNTRY_CODES", module: "CONFIG" },
+  { prefix: "/admin/settings/students", option: "CFG_STUDENTS", module: "CONFIG" },
+  { prefix: "/admin/settings/contact", option: "CFG_CONTACT_MSGS", module: "CONFIG" },
+  { prefix: "/admin/settings/registration-limits", option: "CFG_REG_LIMITS", module: "CONFIG" },
+  { prefix: "/admin/settings/test-data", option: "CFG_TEST_DATA", module: "CONFIG" },
   // BINGO ───────────────────────────────────────────────────────────────
-  { prefix: '/admin/bingo',                         option: 'BINGO_EVENTS',      module: 'BINGO'  },
+  { prefix: "/admin/bingo", option: "BINGO_EVENTS", module: "BINGO" },
   // CMS ─────────────────────────────────────────────────────────────────
-  { prefix: '/admin/cms',                           option: 'CMS_CONTENT',       module: 'CMS'    },
+  { prefix: "/admin/cms", option: "CMS_CONTENT", module: "CMS" },
   // SHOP ────────────────────────────────────────────────────────────────
-  { prefix: '/admin/productos',                     option: 'SHOP_PRODUCTS',     module: 'SHOP'   },
+  { prefix: "/admin/productos", option: "SHOP_PRODUCTS", module: "SHOP" },
   // DASHBOARD ───────────────────────────────────────────────────────────
-  { prefix: '/admin',                               option: 'DASH_HOME',         module: 'DASHBOARD' },
+  { prefix: "/admin", option: "DASH_HOME", module: "DASHBOARD" },
 ];
 
 /** Rutas accesibles sin sesión. */
 export const PUBLIC_PREFIXES = [
-  '/login',
-  '/auth',
-  '/recuperar-clave',
-  '/registro',
-  '/registro-cancelado',
-  '/about',
-  '/apoyanos',
-  '/contact',
-  '/faq',
-  '/privacidad',
-  '/programs',
-  '/productos',
-  '/tombola',
-  '/bingo',
-  '/ruleta',
-  '/api',
-  '/matricula',
-  '/robots.txt',
-  '/sitemap.xml',
+  "/",
+  "/login",
+  "/auth",
+  "/recuperar-clave",
+  "/registro",
+  "/registro-cancelado",
+  "/about",
+  "/apoyanos",
+  "/contact",
+  "/faq",
+  "/privacidad",
+  "/programs",
+  "/productos",
+  "/tombola",
+  "/bingo",
+  "/ruleta",
+  "/api",
+  "/matricula",
+  "/robots.txt",
+  "/sitemap.xml",
 ] as const;
 
 /**
@@ -65,27 +66,26 @@ export const PUBLIC_PREFIXES = [
  */
 export const AUTHENTICATED_ONLY = [
   // Perfil y páginas auxiliares (ningún dato sensible propio)
-  '/admin/profile',
-  '/perfil',
-  '/acceso-denegado',
+  "/admin/profile",
+  "/perfil",
+  "/acceso-denegado",
   // Panel hub de configuración (solo muestra tarjetas de acceso rápido)
-  '/admin/settings',
+  "/admin/settings",
   // Seguridad RLS/vistas: solo SuperAdmin, guard en page.tsx (level 10)
-  '/admin/settings/security',
+  "/admin/settings/security",
   // Manuales (solo lectura de documentación interna)
-  '/admin/manual',
-  '/admin/settings/manual-tecnico',
-  '/admin/settings/manual-usuario',
-  '/admin/cms/manual',
-  '/admin/bingo/manual',
-  '/admin/productos/manual',
+  "/admin/manual",
+  "/admin/settings/manual-tecnico",
+  "/admin/settings/manual-usuario",
+  "/admin/cms/manual",
+  "/admin/bingo/manual",
+  "/admin/productos/manual",
 ] as const;
 
 const startsWithSegment = (path: string, prefix: string) =>
-  path === prefix || path.startsWith(prefix + '/');
+  path === prefix || path.startsWith(prefix + "/");
 
-export const isPublic = (path: string) =>
-  PUBLIC_PREFIXES.some((p) => startsWithSegment(path, p));
+export const isPublic = (path: string) => PUBLIC_PREFIXES.some((p) => startsWithSegment(path, p));
 
 export const isAuthenticatedOnly = (path: string) =>
   (AUTHENTICATED_ONLY as readonly string[]).some((p) => startsWithSegment(path, p));
