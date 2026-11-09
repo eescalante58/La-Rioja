@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Title, Text } from "@tremor/react";
 import { AlertCircle } from "lucide-react";
+import { redirect } from "next/navigation";
+import { requireRoleLevel } from "@/lib/auth/authorization";
 import { getDashboardData } from "./actions";
 import RealtimeDashboardWrapper from "@/components/admin/RealtimeDashboardWrapper";
 import { getPageTabTitle } from "@/services/cms";
@@ -19,6 +21,14 @@ export async function generateMetadata(): Promise<Metadata> {
  * Server component that fetches initial data and wraps it in a realtime client component.
  */
 export default async function AdminDashboard() {
+  try {
+    const { requireOption } = await import("@/lib/security/server");
+    await requireOption("DASH_HOME");
+  } catch {
+    const { error } = await requireRoleLevel(8);
+    if (error) redirect("/acceso-denegado");
+  }
+
   try {
     const data = await getDashboardData();
 
