@@ -814,7 +814,7 @@ Las cookies de Supabase se fijan con `HttpOnly=true`, `SameSite=Lax`, `Secure=tr
 
 ---
 
-## 9. Activar y desactivar el módulo de seguridad
+## 9. Activar y desactivar el módulo de seguridad en VERCEL
 
 El módulo de seguridad avanzado se controla con la variable de entorno `SECURITY_MODULE_ENABLED`. Cuando su valor es `"true"`, el proxy aplica la verificación de opciones sobre todas las rutas `/admin/*` catalogadas en `SECURED_ROUTES`. Cuando es `"false"` (o está ausente), el proxy deja pasar a cualquier usuario autenticado sin verificar sus permisos granulares.
 
