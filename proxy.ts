@@ -13,10 +13,7 @@ export async function proxy(request: NextRequest) {
   // Verificar rutas públicas ANTES de cualquier llamada a Supabase para evitar
   // que un error de red en getClaims() bloquee el acceso a páginas sin auth.
   const path = request.nextUrl.pathname;
-  if (path === "/" || isPublic(path)) {
-    response.headers.set("x-proxy-public", "1");
-    return response;
-  }
+  if (path === "/" || isPublic(path)) return response;
 
   // Feature flag: mantener en false hasta que el JWT Hook esté activado en Supabase
   // y el primer SuperAdmin tenga asignación en sec_user_roles.
