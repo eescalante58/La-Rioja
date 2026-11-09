@@ -71,6 +71,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // .+ en vez de .* para excluir la ruta raíz "/" (sin caracteres después de la barra).
+    // "/" es siempre pública; src/proxy.ts sigue manejando sus cookies de tracking.
+    "/((?!_next/static|_next/image|favicon.ico|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$)(.+))",
   ],
 };
