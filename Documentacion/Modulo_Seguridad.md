@@ -811,3 +811,62 @@ Las cookies de Supabase se fijan con `HttpOnly=true`, `SameSite=Lax`, `Secure=tr
 | Route Handler sin permiso | `checkAdmin()` / `requirePermission()` → HTTP 401/403 | Sí |
 | Acceso directo a BD sin RLS | RLS policies → error SQL | Sí |
 | Invalidación de permisos en tiempo real | Realtime `sec_authz_version` → refresca JWT | Automático |
+
+---
+
+## 9. Activar y desactivar el módulo de seguridad
+
+El módulo de seguridad avanzado se controla con la variable de entorno `SECURITY_MODULE_ENABLED`. Cuando su valor es `"true"`, el proxy aplica la verificación de opciones sobre todas las rutas `/admin/*` catalogadas en `SECURED_ROUTES`. Cuando es `"false"` (o está ausente), el proxy deja pasar a cualquier usuario autenticado sin verificar sus permisos granulares.
+
+### 9.1 Variable de entorno
+
+| Variable | Valor activo | Valor inactivo | Ámbito |
+| :------- | :----------- | :------------- | :----- |
+| `SECURITY_MODULE_ENABLED` | `"true"` | `"false"` o ausente | Servidor (sin prefijo `NEXT_PUBLIC_`) |
+
+> **Nota:** esta variable es solo de servidor. No debe exponerse con el prefijo `NEXT_PUBLIC_`, ya que contiene configuración de control de acceso. El layout admin la lee en un Server Component; el icono indicador (§9.4) también se evalúa en servidor.
+
+### 9.2 Comportamiento según el valor
+
+| Estado | Efecto en el proxy (`proxy.ts`) | Efecto en el navbar admin |
+| :----- | :------------------------------ | :------------------------ |
+| `true` | Verifica `app_authz` y `matchRoute(path)`; redirige a `/acceso-denegado` si sin permiso | Muestra icono candado (Lock) en ámbar |
+| `false` o ausente | Sale antes de la verificación de permisos; cualquier usuario autenticado accede a todas las rutas admin | No muestra el icono candado |
+
+Extracto del proxy donde se aplica el bypass:
+
+```typescript
+// proxy.ts
+const securityEnabled = process.env.SECURITY_MODULE_ENABLED === "true";
+// ...
+if (!securityEnabled) return response;  // ← bypass completo al módulo avanzado
+```
+
+### 9.3 Desactivar el módulo en producción (Vercel)
+
+1. Ir a **Vercel → proyecto `la-rioja` → Settings → Environment Variables**.
+2. Localizar `SECURITY_MODULE_ENABLED` y cambiar su valor de `true` a `false` (o eliminarla).
+3. Hacer clic en **Save**.
+4. Ir a **Deployments**, seleccionar el último deployment exitoso y elegir **⋯ → Redeploy**.
+5. Dejar marcado **"Use existing Build Cache"** (el redeploy con cache es suficiente; no hay cambio de código).
+6. Esperar a que el nuevo deployment quede en estado **Ready** y esté asignado al dominio de producción.
+
+> **Importante:** el cambio de la variable **no surte efecto de inmediato**. Vercel inyecta las variables de entorno en el momento del deployment, no las recarga en caliente. El redeploy es obligatorio.
+
+### 9.4 Indicador visual en el navbar admin
+
+El header del layout admin (`src/app/admin/layout.tsx`) muestra un icono de candado (lucide-react `Lock`) a la izquierda del toggle de tema cuando `SECURITY_MODULE_ENABLED=true`:
+
+- **Color:** ámbar (`text-amber-500 / dark:text-amber-400`).
+- **Tooltip:** "Módulo de seguridad activo" (al pasar el cursor).
+- **Implementación:** Server Component; lee `process.env.SECURITY_MODULE_ENABLED` directamente.
+
+```tsx
+{process.env.SECURITY_MODULE_ENABLED === "true" && (
+  <span title="Módulo de seguridad activo">
+    <Lock size={18} className="text-amber-500 dark:text-amber-400" />
+  </span>
+)}
+```
+
+Al desactivar el módulo y hacer redeploy, el icono desaparece automáticamente sin ningún cambio de código adicional.
