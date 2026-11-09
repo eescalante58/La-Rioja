@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Building2 } from "lucide-react";
+import { Building2, Lock } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { AdminSidebar } from "./AdminSidebar";
 import { cookies } from "next/headers";
@@ -73,6 +73,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </div>
 
               <div className="flex items-center gap-4 ml-auto">
+                {process.env.SECURITY_MODULE_ENABLED === "true" && (
+                  <Lock
+                    size={18}
+                    className="text-amber-500 dark:text-amber-400"
+                    title="Módulo de seguridad activo"
+                  />
+                )}
                 <ThemeToggle />
                 <UserNav />
               </div>
