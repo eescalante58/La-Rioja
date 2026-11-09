@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import {
   Card,
   Title,
@@ -63,6 +63,19 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
   const [newValidTo, setNewValidTo] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // BUG-SEC-018: sec_roles puede llegar como objeto o como arreglo según PostgREST
+  const getRoleIsActive = (r: SecUserRole["sec_roles"]) => {
+    if (!r) return true;
+    if (Array.isArray(r)) return r[0]?.is_active !== false;
+    return (r as { is_active?: boolean }).is_active !== false;
+  };
+
+  const getRoleName = (r: SecUserRole["sec_roles"]) => {
+    if (!r) return undefined;
+    if (Array.isArray(r)) return r[0]?.name;
+    return (r as { name?: string }).name;
+  };
+
   // BUG-SEC-014: filtrar también valid_from futuro y roles desactivados
   const getActiveAssignments = (userId: string) =>
     assignments.filter(
@@ -71,7 +84,7 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
         a.is_active &&
         (!a.valid_from || new Date(a.valid_from) <= new Date()) &&
         (!a.valid_to || new Date(a.valid_to) > new Date()) &&
-        a.sec_roles?.[0]?.is_active !== false,
+        getRoleIsActive(a.sec_roles),
     );
 
   const filteredUsers = users.filter(
@@ -137,8 +150,8 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
             const isExpanded = expandedUserId === user.id;
 
             return (
-              <>
-                <TableRow key={user.id}>
+              <Fragment key={user.id}>
+                <TableRow>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <UserAvatar user={user} />
@@ -157,7 +170,7 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
                       ) : (
                         activeRoles.map((a) => {
                           const roleName =
-                            a.sec_roles?.[0]?.name ??
+                            getRoleName(a.sec_roles) ??
                             secRoles.find((r) => r.id === a.role_id)?.name ??
                             a.role_id;
                           return (
@@ -199,7 +212,7 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
 
                 {/* Panel de asignación expandible */}
                 {isExpanded && (
-                  <TableRow key={`${user.id}-assign`}>
+                  <TableRow>
                     <TableCell colSpan={3}>
                       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-[#012060] dark:border-dark-tremor-border p-4 flex flex-wrap gap-4 items-end">
                         <div className="flex flex-col gap-1 min-w-[200px]">
@@ -256,7 +269,7 @@ export default function UserRolesClient({ users, secRoles, initialAssignments }:
                     </TableCell>
                   </TableRow>
                 )}
-              </>
+              </Fragment>
             );
           })}
         </TableBody>

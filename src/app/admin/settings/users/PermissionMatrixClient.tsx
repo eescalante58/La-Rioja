@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { Fragment, useState, useCallback, useRef } from "react";
 import { Card, Title, Text, Badge, Button, TextInput } from "@tremor/react";
 import { Plus, Search, Infinity, Pencil, Trash2, X, Check } from "lucide-react";
 import { ACTION_BITS, type Action } from "@/lib/security/types";
@@ -628,10 +628,9 @@ export default function PermissionMatrixClient({
                   {sortedModuleTree.map((mod) => {
                     const isExpanded = expandedModules.has(mod.id);
                     return (
-                      <>
+                      <Fragment key={mod.id}>
                         {/* Fila de módulo — expandible */}
                         <tr
-                          key={`mod-${mod.id}`}
                           className="bg-gray-50 dark:bg-gray-800/60 cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-800"
                           onClick={() => toggleModule(mod.id)}
                         >
@@ -655,12 +654,9 @@ export default function PermissionMatrixClient({
                           mod.options.map((opt: SecOption) => {
                             const optMask = getMask(opt.id);
                             return (
-                              <>
+                              <Fragment key={opt.id}>
                                 {/* Fila de opción */}
-                                <tr
-                                  key={`opt-${opt.id}`}
-                                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/30"
-                                >
+                                <tr className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
                                   <td className="font-medium text-sm py-2 pl-8 pr-4 text-gray-800 dark:text-gray-200">
                                     {opt.name}
                                   </td>
@@ -745,10 +741,10 @@ export default function PermissionMatrixClient({
                                     </tr>
                                   );
                                 })}
-                              </>
+                              </Fragment>
                             );
                           })}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>
