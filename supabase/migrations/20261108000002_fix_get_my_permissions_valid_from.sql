@@ -68,7 +68,7 @@ BEGIN
     AND (sp.actions_mask & 1) = 1;
 
   -- Mapa opción → máscara acumulada (OR de todos los roles)
-  SELECT jsonb_object_agg(so.code, agg_mask) INTO v_opts
+  SELECT jsonb_object_agg(t.code, t.agg_mask) INTO v_opts
   FROM (
     SELECT so.code, bit_or(sp.actions_mask) AS agg_mask
     FROM public.sec_permissions sp
@@ -78,7 +78,7 @@ BEGIN
   ) t;
 
   -- Mapa recurso → máscara acumulada ("OPCION_CODE:table_name")
-  SELECT jsonb_object_agg(key, agg_mask) INTO v_res
+  SELECT jsonb_object_agg(t.key, t.agg_mask) INTO v_res
   FROM (
     SELECT so.code || ':' || sr.table_name AS key,
            bit_or(sp.actions_mask) AS agg_mask
