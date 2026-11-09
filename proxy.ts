@@ -10,6 +10,11 @@ import { isAuthenticatedOnly, isPublic, matchRoute } from "@/lib/security/routes
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  // Verificar rutas públicas ANTES de cualquier llamada a Supabase para evitar
+  // que un error de red en getClaims() bloquee el acceso a páginas sin auth.
+  const path = request.nextUrl.pathname;
+  if (path === "/" || isPublic(path)) return response;
+
   // Feature flag: mantener en false hasta que el JWT Hook esté activado en Supabase
   // y el primer SuperAdmin tenga asignación en sec_user_roles.
   // Cambiar a true en .env (SECURITY_MODULE_ENABLED=true) después de verificar los claims.
@@ -35,11 +40,6 @@ export async function proxy(request: NextRequest) {
   // getClaims() valida la firma del JWT y refresca la sesión si expiró
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
-  const path = request.nextUrl.pathname;
-
-  // '/' necesita match exacto — startsWithSegment('/', '/') = true, pero forzamos
-  // aquí también para garantizar que el bundle recompilado no use caché vieja.
-  if (path === "/" || isPublic(path)) return response;
 
   if (!claims) {
     const login = request.nextUrl.clone();
