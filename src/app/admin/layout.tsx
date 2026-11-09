@@ -74,11 +74,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
               <div className="flex items-center gap-4 ml-auto">
                 {process.env.SECURITY_MODULE_ENABLED === "true" && (
-                  <Lock
-                    size={18}
-                    className="text-amber-500 dark:text-amber-400"
-                    title="Módulo de seguridad activo"
-                  />
+                  <span title="Módulo de seguridad activo">
+                    <Lock size={18} className="text-amber-500 dark:text-amber-400" />
+                  </span>
                 )}
                 <ThemeToggle />
                 <UserNav />
