@@ -91,7 +91,12 @@ export async function proxy(request: NextRequest) {
           ) {
             const denyUrl = new URL("/acceso-denegado", request.url);
             denyUrl.searchParams.set("from", request.nextUrl.pathname);
-            return NextResponse.redirect(denyUrl);
+            const denyResponse = NextResponse.redirect(denyUrl);
+            // Limpiar la cookie de empresa para romper el bucle de redirección:
+            // sin esta cookie, /login no redirige a /admin y el usuario puede
+            // cerrar sesión correctamente.
+            denyResponse.cookies.delete("selected_company_id");
+            return denyResponse;
           }
         } catch {
           // JWT parse failed — allow through to avoid locking out legitimate users
