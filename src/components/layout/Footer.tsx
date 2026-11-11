@@ -69,7 +69,9 @@ export async function Footer() {
   const tel2 = ctaMeta.telefono_2 || "2248-4198";
   const direccion =
     ctaMeta.direccion ||
-    (mapsDesc && !mapsDesc.startsWith("http") ? mapsDesc : "Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador");
+    (mapsDesc && !mapsDesc.startsWith("http")
+      ? mapsDesc
+      : "Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador");
 
   const getSocialLink = (key: string): string => {
     if (!Array.isArray(socialLinks)) return "#";
@@ -85,18 +87,29 @@ export async function Footer() {
         : `https://${desc}`;
     }
     if (!candidate || candidate === "#") return "#";
-    if (candidate.startsWith("http://") || candidate.startsWith("https://") || candidate.startsWith("mailto:")) return candidate;
+    if (
+      candidate.startsWith("http://") ||
+      candidate.startsWith("https://") ||
+      candidate.startsWith("mailto:")
+    )
+      return candidate;
     return `https://${candidate}`;
   };
 
   const mapsUrl = mapsMetaUrl
-    ? (mapsMetaUrl.startsWith("http") ? mapsMetaUrl : `https://${mapsMetaUrl}`)
+    ? mapsMetaUrl.startsWith("http")
+      ? mapsMetaUrl
+      : `https://${mapsMetaUrl}`
     : getSocialLink("google maps");
   const waNumber = tel1.replace(/\D/g, "");
-  const waUrl = getSocialLink("whatsapp") !== "#" ? getSocialLink("whatsapp") : `https://wa.me/${waNumber}`;
+  const waUrl =
+    getSocialLink("whatsapp") !== "#" ? getSocialLink("whatsapp") : `https://wa.me/${waNumber}`;
   const igUrl = getSocialLink("instagram");
   const fbUrl = getSocialLink("facebook");
-  const ytUrl = getSocialLink("youtube") !== "#" ? getSocialLink("youtube") : "https://www.youtube.com/@LaRiojaCFL";
+  const ytUrl =
+    getSocialLink("youtube") !== "#"
+      ? getSocialLink("youtube")
+      : "https://www.youtube.com/@LaRiojaCFL";
   const xUrl = getSocialLink("x") !== "#" ? getSocialLink("x") : getSocialLink("twitter");
 
   // Obtener correo desde CMS (page = 'social media', section_key = 'email', campo description)
@@ -105,11 +118,8 @@ export async function Footer() {
     ? socialLinks.find((l: SiteContent) => l.section_key === "email")
     : null;
   const rawEmail = emailRow?.description?.trim();
-  const cleanEmail = rawEmail
-    ? rawEmail.replace(/^(?:https?:\/\/|mailto:)+/i, "").trim()
-    : "";
-  const emailVal =
-    cleanEmail && cleanEmail !== "#" ? cleanEmail : "lariojacflsv@gmail.com";
+  const cleanEmail = rawEmail ? rawEmail.replace(/^(?:https?:\/\/|mailto:)+/i, "").trim() : "";
+  const emailVal = cleanEmail && cleanEmail !== "#" ? cleanEmail : "lariojacflsv@gmail.com";
 
   return (
     <footer
@@ -123,7 +133,6 @@ export async function Footer() {
       <div className="mx-auto max-w-screen-xl px-4 py-16 lg:px-8 lg:py-20">
         {/* Cuadrícula de 4 columnas */}
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
-          
           {/* Columna 1: Identidad, Misión y Redes Oficiales (lg:col-span-4) */}
           <div className="flex flex-col justify-between lg:col-span-4">
             <div>
@@ -141,8 +150,9 @@ export async function Footer() {
               </Link>
 
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/80">
-                Formando jóvenes y adultos con discapacidad intelectual para el trabajo y la
-                vida autónoma. Una obra comunitaria de <strong className="font-semibold text-white">ASPAPREM</strong> desde 1993.
+                Formando jóvenes y adultos con discapacidad intelectual para el trabajo y la vida
+                autónoma. Una obra comunitaria de{" "}
+                <strong className="font-semibold text-white">ASPAPREM</strong> desde 1994.
               </p>
             </div>
 
@@ -277,10 +287,12 @@ export async function Footer() {
               Contacto y Sede
             </p>
             <div className="mt-4 space-y-3.5 text-sm text-white/80">
-              
               {/* Dirección Física */}
               <div className="flex items-start gap-3">
-                <MapPin className="mt-1 h-5 w-5 shrink-0 text-larioja-amarillo" aria-hidden="true" />
+                <MapPin
+                  className="mt-1 h-5 w-5 shrink-0 text-larioja-amarillo"
+                  aria-hidden="true"
+                />
                 <div>
                   <p className="leading-snug text-white/90">{direccion}</p>
                   {mapsUrl && mapsUrl !== "#" && (
@@ -311,7 +323,9 @@ export async function Footer() {
                     )}
                     {tel2 && (
                       <>
-                        <span aria-hidden="true" className="text-white/40">·</span>
+                        <span aria-hidden="true" className="text-white/40">
+                          ·
+                        </span>
                         <a
                           href={`tel:${tel2}`}
                           className="inline-flex min-h-[44px] items-center hover:text-larioja-amarillo hover:underline"
@@ -338,7 +352,6 @@ export async function Footer() {
               )}
             </div>
           </div>
-
         </div>
 
         {/* Separador y Sub-footer con Copyright y Política de Privacidad */}
@@ -351,7 +364,9 @@ export async function Footer() {
             >
               Política de privacidad
             </Link>
-            <span aria-hidden="true" className="text-white/30">·</span>
+            <span aria-hidden="true" className="text-white/30">
+              ·
+            </span>
             <a
               href="#contenido"
               className="inline-flex min-h-[44px] items-center text-xs text-white/70 transition-colors hover:text-larioja-amarillo"
