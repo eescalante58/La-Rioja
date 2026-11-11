@@ -30,7 +30,7 @@ import type { AdmissionModalConfig } from "@/components/programs/AdmissionSteps"
 import type { MatriculaWhatsAppConfig, MatriculaUtmConfig } from "@/lib/validation/matricula";
 
 const DESCRIPTION =
-  "Conoce a La Rioja: ASPAPREM desde 1993 y el Centro de Formación Laboral para personas con discapacidad intelectual en El Salvador. Historia, modelo de atención, talleres y cómo nos sostenemos.";
+  "Conoce a La Rioja: ASPAPREM desde 1994 y el Centro de Formación Laboral para personas con discapacidad intelectual en El Salvador. Historia, modelo de atención, talleres y cómo nos sostenemos.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const tabTitle = await getPageTabTitle("quienes somos", "Quiénes Somos | La Rioja");
@@ -112,12 +112,16 @@ export default async function AboutPage() {
     ? socialMedia.find((s) => s.section_key === "google maps")
     : null;
   const mapsMeta = (mapsItem?.metadata as Record<string, unknown>) || {};
-  const mapsUrl = typeof mapsMeta.url === "string" && mapsMeta.url.trim()
-    ? mapsMeta.url.trim()
-    : (mapsItem?.description?.startsWith("http") ? mapsItem.description.trim() : "");
-  const address = mapsItem?.description && !mapsItem.description.startsWith("http")
-    ? mapsItem.description.trim()
-    : "Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador";
+  const mapsUrl =
+    typeof mapsMeta.url === "string" && mapsMeta.url.trim()
+      ? mapsMeta.url.trim()
+      : mapsItem?.description?.startsWith("http")
+        ? mapsItem.description.trim()
+        : "";
+  const address =
+    mapsItem?.description && !mapsItem.description.startsWith("http")
+      ? mapsItem.description.trim()
+      : "Urb. Lomas de Altamira, Calzada El Zenzontle, block 2 #7, San Salvador";
 
   const configMeta = (matriculaData.config?.metadata || {}) as Record<string, unknown>;
   const modalConfig: AdmissionModalConfig = {
@@ -128,9 +132,7 @@ export default async function AboutPage() {
   };
 
   const facilities = section("cl_instalaciones");
-  const facilityItems = facilities
-    ? await getSiteGallery("quienes somos", "cl_instalaciones")
-    : [];
+  const facilityItems = facilities ? await getSiteGallery("quienes somos", "cl_instalaciones") : [];
   const showFacilities = facilityItems.length > 0;
 
   const links: SectionLink[] = showFacilities
