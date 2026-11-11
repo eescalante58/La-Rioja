@@ -11,7 +11,7 @@ interface Props {
 export function HomeHero({ hero }: Props) {
   const meta = (hero?.metadata ?? {}) as Record<string, unknown>;
 
-  const antetitulo = ((meta.antetitulo as string) || "").trim() || "Desde 1993 · ASPAPREM";
+  const antetitulo = ((meta.antetitulo as string) || "").trim() || "Desde 1994 · ASPAPREM";
   const title = (hero?.title || "").trim() || "Formando futuros, integrando vidas";
   const description =
     (hero?.description || "").trim() ||
@@ -33,17 +33,12 @@ export function HomeHero({ hero }: Props) {
       : ["33a", "52+", "20p"];
 
   const cardTitulo =
-    (meta.card_foto_titulo as string) ??
-    (meta.foto_card_titulo as string) ??
-    "Comunidad La Rioja";
+    (meta.card_foto_titulo as string) ?? (meta.foto_card_titulo as string) ?? "Comunidad La Rioja";
   const cardSubtitulo =
     (meta.card_foto_subtitulo as string) ??
     (meta.foto_card_subtitulo as string) ??
     "Educación, taller y convivencia";
-  const cardTag =
-    (meta.card_foto_tag as string) ??
-    (meta.foto_card_tag as string) ??
-    "ASPAPREM";
+  const cardTag = (meta.card_foto_tag as string) ?? (meta.foto_card_tag as string) ?? "ASPAPREM";
 
   return (
     <section

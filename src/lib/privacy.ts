@@ -35,7 +35,7 @@ export const DEFAULT_PRIVACY_COPY: PrivacyCopy = {
 /** Contenido inicial en Markdown (9 secciones) usado en la migración y como respaldo pre-migración. */
 export const INITIAL_PRIVACY_MARKDOWN = `## 1. Quiénes somos y ámbito de aplicación
 
-La **Asociación Salvadoreña Pro-Ayuda a Personas con Discapacidad Intelectual (ASPAPREM)**, fundada en 1993 en San Salvador como una entidad apolítica, no lucrativa y no religiosa regida por la Ley de Asociaciones y Fundaciones sin Fines de Lucro del Ministerio de Gobernación, tiene a su cargo dos divisiones educativas y formativas:
+La **Asociación Salvadoreña Pro-Ayuda a Personas con Discapacidad Intelectual (ASPAPREM)**, fundada en 1994 en San Salvador como una entidad apolítica, no lucrativa y no religiosa regida por la Ley de Asociaciones y Fundaciones sin Fines de Lucro del Ministerio de Gobernación, tiene a su cargo dos divisiones educativas y formativas:
 
 - **Colegio La Rioja:** Programa escolar avalado por el Ministerio de Educación (MINED) orientado a jóvenes de entre 12 y 20 años de edad, ofreciendo estudios de primero a sexto grado con adecuaciones en educación especial.
 - **Centro de Formación Laboral La Rioja (CFL La Rioja):** Programas académicos, de autonomía para la vida independiente e inserción laboral a través de talleres vocacionales, enfocados en jóvenes y adultos de 20 a 55 años.
@@ -157,7 +157,7 @@ export async function getPrivacyPolicySection(): Promise<PrivacySectionData | nu
         persistSession: false,
         autoRefreshToken: false,
       },
-    }
+    },
   );
   const { data, error } = await supabase
     .from("site_content")

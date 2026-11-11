@@ -14,7 +14,7 @@ import { whatsappDigits } from "@/lib/whatsapp";
 import { getPageContent, getPageTabTitle } from "@/services/cms";
 
 const DESCRIPTION =
-  "Apadrina una beca, dona o alíate con La Rioja: formación laboral para personas con discapacidad intelectual en El Salvador desde 1993.";
+  "Apadrina una beca, dona o alíate con La Rioja: formación laboral para personas con discapacidad intelectual en El Salvador desde 1994.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const tabTitle = await getPageTabTitle("apoyanos", "Apóyanos | La Rioja");

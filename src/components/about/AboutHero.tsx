@@ -12,7 +12,7 @@ interface AboutHeroProps {
 
 /**
  * Hero de Nosotros (#inicio): lema, subtítulo, insignia de trayectoria
- * («Desde 1993»), botones a la historia y a Programas, y foto del grupo
+ * («Desde 1994»), botones a la historia y a Programas, y foto del grupo
  * (debajo del texto en celular).
  */
 export function AboutHero({ hero }: AboutHeroProps) {
@@ -31,9 +31,7 @@ export function AboutHero({ hero }: AboutHeroProps) {
     metaText(hero, "foto_card_subtitulo", "") ||
     "Educación, taller y convivencia";
   const cardTag =
-    metaText(hero, "card_foto_tag", "") ||
-    metaText(hero, "foto_card_tag", "") ||
-    "ASPAPREM";
+    metaText(hero, "card_foto_tag", "") || metaText(hero, "foto_card_tag", "") || "ASPAPREM";
 
   return (
     <section id="inicio" className="relative overflow-hidden bg-[#0A0C14] text-white">
